@@ -703,7 +703,7 @@ const DEFAULT = {
   weekStart: '2026-09-28', // 시간표 주의 월요일
   // [교시] = [시작, 끝]. 0교시는 수업이 있을 때만 표에 나타난다
   normal: [['08:00','08:50'],['09:00','09:50'],['10:00','10:50'],['11:00','11:50'],['14:00','14:50'],['15:00','15:50'],['16:00','16:50'],['17:00','17:50']],
-  // 공휴일 전날: 오전 09:00–11:50, 오후 13:00–15:50, 7교시 없음 (팀빌딩이 있으면 0교시 08:00)
+  // 공휴일 전날: 수업이 한 칸씩 당겨진다 — 1교시 수업이 0교시 자리(08:00)에서 시작해 15:50에 끝난다
   eve:    [['08:00','08:50'],['09:00','09:50'],['10:00','10:50'],['11:00','11:50'],['13:00','13:50'],['14:00','14:50'],['15:00','15:50'], null],
   classes: [ // day: 0=월 … 4=금, from–to: 교시
     { day: 0, from: 1, to: 3, subject: '민생', profs: ['이혜환'], room: 'A206' },
@@ -718,9 +718,9 @@ const DEFAULT = {
     { day: 3, from: 1, to: 3, subject: '민감', profs: ['신수안'], room: 'A206' },
     { day: 3, from: 4, to: 6, subject: '풍속', profs: ['서증원'], room: 'A206' },
     { day: 3, from: 7, to: 7, subject: '팀빌딩', profs: [], room: '미정' },
-    { day: 4, from: 0, to: 0, subject: '팀빌딩', profs: [], room: '미정' },
-    { day: 4, from: 1, to: 3, subject: '사격', profs: ['장영광'], room: 'A206' },
-    { day: 4, from: 4, to: 6, subject: '체포술', profs: ['강경덕', '전민주'], room: '유도장' },
+    { day: 4, from: 1, to: 1, subject: '팀빌딩', profs: [], room: '미정' },
+    { day: 4, from: 2, to: 4, subject: '사격', profs: ['장영광'], room: 'A206' },
+    { day: 4, from: 5, to: 7, subject: '체포술', profs: ['강경덕', '전민주'], room: '유도장' },
   ],
 };
 const DEFAULT_HOLIDAYS = ['2026-10-03']; // 개천절
@@ -745,12 +745,12 @@ const validData = (v) => !!v && isDate(v.weekStart) && validSlots(v.normal, fals
   && Array.isArray(v.classes) && v.classes.every(validClass) && overlapFree(v.classes);
 
 /* 예전(0교시 없는) 저장본은 0교시를 앞에 붙이고, 공휴일 전 시간은 새 기준으로 */
-const OLD_FRIDAY = '[{"day":4,"from":1,"to":1,"subject":"팀빌딩","profs":[],"room":"미정"},{"day":4,"from":2,"to":4,"subject":"사격","profs":["장영광"],"room":"A206"},{"day":4,"from":5,"to":7,"subject":"체포술","profs":["강경덕","전민주"],"room":"유도장"}]';
-// 손대지 않은 예전 금요일(팀빌딩 1교시 · 사격 2–4 · 체포술 5–7)은 새 기준(0교시 · 1–3 · 4–6)으로
+// 잠깐 쓰였던 금요일 기본값(팀빌딩 0교시 · 사격 1–3 · 체포술 4–6)은 원래 시간표로 되돌린다
+const TEMP_FRIDAY = '[{"day":4,"from":0,"to":0,"subject":"팀빌딩","profs":[],"room":"미정"},{"day":4,"from":1,"to":3,"subject":"사격","profs":["장영광"],"room":"A206"},{"day":4,"from":4,"to":6,"subject":"체포술","profs":["강경덕","전민주"],"room":"유도장"}]';
 const fixFriday = (v) => {
   if (!v || !Array.isArray(v.classes)) return v;
   const fri = v.classes.filter((c) => c.day === 4);
-  if (JSON.stringify(fri) !== OLD_FRIDAY) return v;
+  if (JSON.stringify(fri) !== TEMP_FRIDAY) return v;
   return { ...v, classes: v.classes.filter((c) => c.day !== 4).concat(clone(DEFAULT.classes.filter((c) => c.day === 4))) };
 };
 const migrate = (v) => fixFriday(v && Array.isArray(v.normal) && v.normal.length === 7
@@ -785,10 +785,9 @@ applyData();
 const isHoli = (i) => holidays.has(DAYS[i].date);
 const isEve = (i) => !isHoli(i) && holidays.has(nextDate(DAYS[i].date));
 const slotsFor = (i) => (isEve(i) ? EVE : NORMAL);
-// 공휴일 전날은 7교시가 없으므로 7교시 수업은 0교시(08:00)로 당겨진다 (0교시가 비어 있을 때)
-const movesToZero = (c) => isEve(c.day) && c.from === PMAX && c.to === PMAX && !slotsFor(c.day)[PMAX]
-  && !data.classes.some((x) => x.day === c.day && x.from === 0);
-const hasZero = (i) => data.classes.some((c) => c.day === i && (c.from === 0 || movesToZero(c)));
+// 공휴일 전날은 수업이 한 칸씩 당겨진다: 1교시 수업 → 0교시 자리(08:00), 7교시 수업 → 6교시 자리(15:00)
+const shiftOf = (day) => (isEve(day) ? 1 : 0);
+const hasZero = (i) => data.classes.some((c) => c.day === i && c.from - shiftOf(i) === 0);
 const showZero = () => editing || DAYS.some((_, i) => !isHoli(i) && hasZero(i));
 const rowsFor = () => (showZero() ? ALL_P : ALL_P.slice(1));            // 표에 그릴 교시
 const dayPeriods = (i) => ALL_P.filter((p) => slotsFor(i)[p] && (p > 0 || hasZero(i)));
@@ -801,13 +800,12 @@ const perLabel = (c) => (c.from === c.to ? `${c.from}교시` : `${c.from}–${c.
 let BLOCKS = [];
 function computeBlocks() {
   BLOCKS = data.classes.map((c) => {
-    const s = slotsFor(c.day), periods = [], moved = movesToZero(c);
-    const f = moved ? 0 : c.from, t = moved ? 0 : c.to;
-    for (let p = f; p <= t; p++) if (s[p]) periods.push({ p, s: s[p][0], e: s[p][1] });
+    const s = slotsFor(c.day), periods = [], sh = shiftOf(c.day);
+    for (let p = Math.max(0, c.from - sh); p <= c.to - sh; p++) if (s[p]) periods.push({ p, s: s[p][0], e: s[p][1] });
     const na = !periods.length; // 그날 없는 교시에만 걸친 수업
     return {
       day: c.day, from: na ? c.from : periods[0].p, to: na ? c.to : periods[periods.length - 1].p,
-      rawFrom: c.from, rawTo: c.to, moved,
+      rawFrom: c.from, rawTo: c.to,
       subject: c.subject, room: c.room || '미정', periods, free: !!c.free, na,
       prof: c.profs.length ? `${c.profs.join(' · ')} 교수님` : '',
       start: na ? '' : periods[0].s, end: na ? '' : periods[periods.length - 1].e,
@@ -1053,7 +1051,7 @@ function openDetail(n) {
       <div class="r"><dt>교시</dt><dd class="pl num">${b.periods.map((x) => `<div><b>${x.p}교시</b>${x.s} – ${x.e}</div>`).join('')}</dd></div>
       ${b.prof ? `<div class="r"><dt>교수님</dt><dd>${esc(b.prof.replace(/ 교수님$/, ''))}</dd></div>` : ''}
       <div class="r"><dt>강의실</dt><dd>${esc(roomLabel(b.room))}</dd></div>
-      ${b.moved ? '<div class="r"><dt>안내</dt><dd class="warn">공휴일 전날이라 7교시 → 0교시로 당겨졌어요</dd></div>' : ''}
+      ${ev ? '<div class="r"><dt>안내</dt><dd class="warn">공휴일 전날이라 한 교시씩 당겨졌어요</dd></div>' : ''}
     </dl>
     <div class="btnrow">
       <button class="close soft" id="detEdit">수정</button>
@@ -1191,7 +1189,7 @@ function renderTimes() {
           <input class="num" inputmode="numeric" maxlength="5" data-k="${k}" data-x="1" value="${e}" placeholder="${ph}" aria-label="${k}교시 끝">
         </span></div>`; }).join('')}
       </div>
-      ${tmTab === 'eve' ? '<p class="hint">비워 둔 교시는 공휴일 전날에 없는 교시로 처리돼요.</p>' : ''}
+      ${tmTab === 'eve' ? '<p class="hint">공휴일 전날은 수업이 한 칸씩 당겨져요 (1교시 수업 → 0교시 시간). 비워 둔 칸은 없는 시간이에요.</p>' : ''}
       <p class="ferr" id="tmErr" aria-live="polite"></p>
       <button type="submit" class="close">저장</button>
     </form>`;
@@ -1355,7 +1353,7 @@ function buildSettings() {
     <div class="grab"></div>
     <div class="top">
       <h2>공휴일 지정</h2>
-      <p class="lead">공휴일로 지정한 날의 <b>전날</b>은 ${EVE[1][0]} – ${lastEnd(EVE)} 시간표로 바뀌어요. 팀빌딩이 있으면 0교시 ${EVE[0][0]} – ${EVE[0][1]}부터예요.</p>
+      <p class="lead">공휴일로 지정한 날의 <b>전날</b>은 수업이 한 교시씩 당겨져 ${EVE[0][0]} 시작 · ${lastEnd(EVE)} 종료예요.</p>
     </div>
     <div class="week">${WEEK.map((d) => `
       <button class="wday" data-date="${d.date}" aria-label="${d.dow}요일 ${d.md} 공휴일">
@@ -1411,7 +1409,7 @@ function updateTop() {
   $('#thisWeek').hidden = mondayOf(iso(getNow())) === data.weekStart;
   $('#navRange').textContent = `${DAYS[0].md} – ${DAYS[4].md}`;
   const ev = idx(isEve), ho = idx(isHoli), lines = [];
-  if (ev.length) lines.push(`<p class="nl"><i class="o"></i><span>${dayNames(ev)}은 공휴일 전날이라 <b class="num">${EVE[1][0]} – ${lastEnd(EVE)}</b>예요 · 팀빌딩 시 <b class="num">${EVE[0][0]} – ${EVE[0][1]}</b></span></p>`);
+  if (ev.length) lines.push(`<p class="nl"><i class="o"></i><span>${dayNames(ev)}은 공휴일 전날이라 수업이 한 교시씩 당겨져 <b class="num">${EVE[0][0]} 시작 · ${lastEnd(EVE)} 종료</b>예요.</span></p>`);
   if (ho.length) lines.push(`<p class="nl"><i class="r"></i><span>${dayNames(ho)}은 <b class="r">공휴일</b>이라 수업이 없어요.</span></p>`);
   if (!lines.length) lines.push(`<p class="nl"><i class="b"></i><span>이번 주는 평소 시간표예요 · <b class="b num">${NORMAL[1][0]} – ${lastEnd(NORMAL)}</b>${DAYS.some((_, i) => hasZero(i)) ? ` · 0교시 <b class="b num">${NORMAL[0][0]}</b> 있음` : ''}</span></p>`);
   $('#notice').innerHTML = lines.join('');
