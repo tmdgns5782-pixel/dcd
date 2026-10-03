@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>갈현이룸태권도 상담 PPT</title>
+<style>
+/* ── 폰트: 샘플과 최대한 같은 계열 ──
+   제목·카드 제목·금액  → 여기어때 잘난체
+   표지 손글씨 문구      → 유토이미지 손글씨
+   본문                  → Pretendard
+   영문 서브타이틀       → Montserrat ExtraBold
+   붓글씨 로고 / 마무리 문구 → GPT 이미지 (폰트로는 재현 불가, 없을 때만 대체 표시) */
+@font-face { font-family: "Jalnan"; src: url("fonts/Jalnan.woff") format("woff"); font-display: block; }
+@font-face { font-family: "UtoHand"; src: url("fonts/UtoimageHand.woff") format("woff"); font-display: block; }
+@font-face { font-family: "Montserrat"; font-weight: 800; src: url("fonts/Montserrat-800.woff2") format("woff2"); font-display: block; }
+@font-face { font-family: "Pretendard"; font-weight: 45 920; src: url("../fonts/PretendardVariable.woff2") format("woff2-variations"); font-display: block; }
+
+:root {
+  --navy: #1b2a5e;
+  --ink: #222632;
+  --ink-2: #555b6b;
+  --red: #e5352f;
+  --blue: #1f63d6;
+  --orange: #f08a1c;
+  --yellow: #f6b91c;
+  --green: #36b36a;
+  --line: rgba(27, 42, 94, .08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: #d9dce3; }
+body { font-family: "Pretendard", sans-serif; color: var(--ink); padding: 32px 16px 80px; }
+
+/* 화면용 툴바 */
+.bar { max-width: 1280px; margin: 0 auto 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 14px; color: #4a4f5c; }
+.bar strong { font-size: 16px; color: #1d1f26; margin-right: auto; }
+.bar button { font: inherit; font-weight: 600; padding: 8px 14px; border: 0; border-radius: 8px; background: #fff; color: #1d1f26; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.bar label { display: flex; gap: 6px; align-items: center; background: #fff; padding: 8px 12px; border-radius: 8px; }
+
+/* 슬라이드: 1600×900 원본 좌표계, 화면 폭에 맞춰 축소 */
+.frame { position: relative; max-width: 1280px; margin: 0 auto 28px; aspect-ratio: 16 / 9; }
+.slide { position: absolute; left: 0; top: 0; width: 1600px; height: 900px; transform-origin: 0 0; overflow: hidden; border-radius: 18px; box-shadow: 0 10px 30px rgba(20, 30, 60, .14); background: #fff; }
+.pageno { position: absolute; left: 34px; bottom: 22px; font-size: 18px; color: #8a90a0; letter-spacing: .05em; }
+
+/* 공통 이미지 / 자리표시 */
+.asset { position: absolute; display: block; object-fit: contain; }
+.ph { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center;
+      border: 3px dashed rgba(27, 42, 94, .28); border-radius: 18px; background: rgba(255, 255, 255, .55); color: #4b5675; padding: 10px; }
+.ph b { font: 800 22px "Pretendard"; color: var(--navy); }
+.ph span { font-size: 15px; line-height: 1.35; }
+.ph code { font: 600 13px ui-monospace, monospace; color: #8a90a0; }
+body.hide-ph .ph { border-color: transparent; background: none; }
+body.hide-ph .ph * { visibility: hidden; }
+
+/* 공통 제목 */
+.head { position: absolute; display: flex; align-items: center; gap: 22px; }
+.num { width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; color: #fff; font: 40px/1 "Jalnan"; padding-top: 4px; flex: none; }
+.title { font: 66px/1 "Jalnan"; color: var(--navy); letter-spacing: -.01em; padding-top: 6px; }
+.lead { font-size: 27px; line-height: 1.45; color: var(--ink-2); font-weight: 500; }
+.jal { font-family: "Jalnan"; font-weight: 400; }
+
+/* ── 표지 / 마무리 공통 붓 배경 대체 ── */
+.brush-fallback { position: absolute; inset: 0; pointer-events: none; }
+.brush-fallback i { position: absolute; display: block; border-radius: 60px; }
+
+/* ── 2 교육철학 ── */
+.s2 { background: #fffaf2; }
+.phil { position: absolute; left: 110px; right: 110px; top: 385px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 40px; text-align: center; }
+.phil .ic { position: relative; width: 210px; height: 210px; margin: 0 auto 26px; }
+.phil h3 { font: 40px/1.2 "Jalnan"; color: var(--navy); margin-bottom: 14px; }
+.phil p { font-size: 25px; line-height: 1.5; color: var(--ink-2); font-weight: 500; }
+
+/* ── 카드형 프로그램 (3, 4) ── */
+.cards { position: absolute; display: grid; gap: 18px; }
+.card { position: relative; border-radius: 22px; padding: 22px 18px 0; text-align: center; overflow: hidden; border: 2px solid rgba(255,255,255,.7); }
+.card .no { position: absolute; left: 16px; top: 16px; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; color: #fff; font: 21px/1 "Jalnan"; padding-top: 2px; }
+.card h3 { font: 38px/1.2 "Jalnan"; color: var(--navy); margin-top: 52px; }
+.card p { margin-top: 12px; font-size: 22px; line-height: 1.45; color: var(--ink-2); font-weight: 500; min-height: 96px; }
+.card .pic { position: absolute; left: 6%; right: 6%; bottom: 0; height: 52%; }
+.card .pic .asset, .card .pic .ph { inset: 0; width: 100%; height: 100%; }
+.c-pink { background: #ffe3e8; } .c-pink .no { background: #f05b74; }
+.c-yel  { background: #fff1c9; } .c-yel .no  { background: #f2a516; }
+.c-blue { background: #dcebff; } .c-blue .no { background: #3a7be6; }
+.c-grn  { background: #ddf3dc; } .c-grn .no  { background: #3fae5c; }
+.c-pur  { background: #eae2ff; } .c-pur .no  { background: #8a68e0; }
+
+/* ── 5 인성교육 ── */
+.s5 { background: #fff8e8; }
+.virtues { position: absolute; left: 130px; right: 130px; top: 205px; display: grid; grid-template-columns: repeat(3, 1fr); row-gap: 26px; column-gap: 40px; }
+.virtue { width: 316px; height: 316px; margin: 0 auto; border-radius: 50%; display: flex; flex-direction: column; align-items: center; padding-top: 26px; text-align: center; }
+.virtue .ic { position: relative; width: 120px; height: 120px; }
+.virtue .ic .asset, .virtue .ic .ph { inset: 0; width: 100%; height: 100%; }
+.virtue h3 { font: 38px/1.2 "Jalnan"; color: var(--navy); margin-top: 6px; }
+.virtue p { margin-top: 8px; font-size: 22px; line-height: 1.4; color: var(--ink-2); font-weight: 500; }
+
+/* ── 6 시간표 ── */
+.s6 { background: #eaf3ff; }
+.tt { position: absolute; left: 110px; top: 200px; width: 760px; border-collapse: separate; border-spacing: 0; border-radius: 18px; overflow: hidden; background: #fff; box-shadow: 0 6px 18px rgba(31, 60, 120, .08); }
+.tt th { background: var(--navy); color: #fff; font: 600 28px "Pretendard"; height: 72px; }
+.tt td { font-size: 31px; font-weight: 600; text-align: center; height: 86px; border-top: 2px solid #e5ecf7; color: var(--ink); }
+.tt td:first-child { width: 220px; border-right: 2px solid #e5ecf7; font-weight: 700; }
+.tt small { font-size: 24px; color: var(--ink-2); font-weight: 600; }
+
+/* ── 7 원비 ── */
+.s7 { background: #fff7e3; }
+.prices { position: absolute; left: 110px; right: 110px; top: 220px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
+.price { border-radius: 26px; text-align: center; padding: 34px 0 40px; border: 3px solid rgba(255,255,255,.8); }
+.price .k { font: 42px/1 "Jalnan"; color: var(--navy); }
+.price .v { font: 104px/1 "Jalnan"; color: var(--ink); margin-top: 26px; }
+.price .v small { font-size: 66px; }
+.checks { position: absolute; left: 120px; top: 600px; list-style: none; display: grid; gap: 22px; }
+.checks li { display: flex; align-items: center; gap: 20px; font-size: 32px; font-weight: 600; }
+.chk { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+.chk svg { width: 26px; height: 26px; }
+
+/* ── 8 차량 ── */
+.s8 { background: #ebf4ff; }
+.info { position: absolute; right: 90px; top: 250px; width: 640px; background: #fff; border-radius: 26px; padding: 42px 44px; box-shadow: 0 8px 24px rgba(31, 60, 120, .1); list-style: none; display: grid; gap: 30px; }
+.info li { display: flex; align-items: center; gap: 20px; font-size: 31px; font-weight: 600; }
+
+@media print {
+  @page { size: 1600px 900px; margin: 0; }
+  html, body { background: #fff; padding: 0; }
+  .bar { display: none; }
+  .frame { max-width: none; width: 1600px; height: 900px; margin: 0; aspect-ratio: auto; break-after: page; }
+  .slide { transform: none !important; border-radius: 0; box-shadow: none; }
+  .ph { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <strong>갈현이룸태권도 상담 PPT · 초안 (9장)</strong>
+  <label><input type="checkbox" id="togglePh"> 이미지 자리표시 숨기기</label>
+  <button onclick="window.print()">PDF로 저장</button>
+</div>
+
+<!-- ───────────── 1. 표지 ───────────── -->
+<section class="frame"><div class="slide s1">
+  <img class="asset" style="inset:0;width:100%;height:100%;object-fit:cover" src="assets/A01_bg_brush.png" data-fallback="brush" alt="">
+  <div style="position:absolute;left:70px;top:48px;font-size:28px;font-weight:600;color:#30364a;letter-spacing:.04em">배우고 · 성장하고 · 이루다</div>
+  <img class="asset" style="left:40px;top:150px;width:990px;height:250px" src="assets/A02_logo_brush.png" data-fallback="logo" data-id="A02" data-name="붓글씨 로고 '갈현이룸태권도'" alt="갈현이룸태권도">
+  <div style="position:absolute;left:78px;top:418px;font:800 30px Montserrat;letter-spacing:.24em;color:#1b1f2c">GALHYEON IRUM TAEKWONDO</div>
+  <div style="position:absolute;left:96px;top:560px;font:60px/1.38 UtoHand;color:#23262f;transform:rotate(-3deg);transform-origin:left">아이의 오늘이<br>더 건강한 내일로 이어집니다.</div>
+  <img class="asset" style="right:120px;bottom:0;width:560px;height:780px" src="assets/C01_cover_kick.png" data-id="C01" data-name="표지 캐릭터 (남아 앞차기)" alt="">
+  <div class="pageno">1 / 9</div>
+</div></section>
+
+<!-- ───────────── 2. 교육 철학 ───────────── -->
+<section class="frame"><div class="slide s2">
+  <div class="head" style="left:0;right:0;top:66px;justify-content:center">
+    <div class="num" style="background:var(--red)">01</div><div class="title">교육 철학</div>
+  </div>
+  <p class="lead" style="position:absolute;left:0;right:0;top:200px;text-align:center;font-size:31px;color:#3a3f4c">“태권도를 통해 아이의 몸과 마음이 함께 성장하는<br>건강하고 바른 인재를 키웁니다.”</p>
+  <div class="phil">
+    <div><div class="ic"><img class="asset" style="inset:0;width:100%;height:100%" src="assets/I01_body.png" data-id="I01" data-name="빨강 원 · 덤벨"></div><h3>건강한 신체</h3><p>기초 체력과<br>운동 능력 향상</p></div>
+    <div><div class="ic"><img class="asset" style="inset:0;width:100%;height:100%" src="assets/I02_mind.png" data-id="I02" data-name="파랑 원 · 하트"></div><h3>바른 인성</h3><p>예의, 인내, 질서<br>배려 등 올바른<br>가치관 형성</p></div>
+    <div><div class="ic"><img class="asset" style="inset:0;width:100%;height:100%" src="assets/I03_confidence.png" data-id="I03" data-name="노랑 원 · 막대그래프"></div><h3>자신감</h3><p>도전하는 마음과<br>성취 경험</p></div>
+    <div><div class="ic"><img class="asset" style="inset:0;width:100%;height:100%" src="assets/I04_social.png" data-id="I04" data-name="초록 원 · 사람들"></div><h3>사회성</h3><p>함께 배우며<br>더불어 성장</p></div>
+  </div>
+  <div class="pageno">2 / 9</div>
+</div></section>
+
+<!-- ───────────── 3. 유치부 ───────────── -->
+<section class="frame"><div class="slide s3" style="background:#fff0f2">
+  <div class="head" style="left:70px;top:58px"><div class="num" style="background:var(--red)">02</div><div class="title">유치부 프로그램</div></div>
+  <div style="position:absolute;right:70px;top:46px;background:#ffd6dc;color:#e0303f;border-radius:40px;padding:20px 36px;font-size:27px;font-weight:700;line-height:1.35;text-align:center">신나는 신체 활동으로<br>즐겁게 배우는 태권도!</div>
+  <div class="cards" style="left:50px;right:50px;top:200px;bottom:58px;grid-template-columns:repeat(5,1fr)">
+    <div class="card c-pink"><div class="no">01</div><h3>체조</h3><p>앞구르기, 옆돌기<br>기초 신체활동</p><div class="pic"><img class="asset" src="assets/C02_kinder_tumble.png" data-id="C02" data-name="앞구르기 (매트)"></div></div>
+    <div class="card c-yel"><div class="no">02</div><h3>점핑운동</h3><p>뜀틀, 멀리뛰기,<br>점프 매트 치기,<br>종심잡기 등</p><div class="pic"><img class="asset" src="assets/C03_kinder_jump.png" data-id="C03" data-name="뜀틀 점프"></div></div>
+    <div class="card c-blue"><div class="no">03</div><h3>음악줄넘기</h3><p>&nbsp;</p><div class="pic" style="height:64%"><img class="asset" src="assets/C04_kinder_rope.png" data-id="C04" data-name="여아 음악줄넘기"></div></div>
+    <div class="card c-grn"><div class="no">04</div><h3>태권도</h3><p>기본동작,<br>기본발차기, 품새</p><div class="pic"><img class="asset" src="assets/C05_kinder_kick.png" data-id="C05" data-name="여아 옆차기"></div></div>
+    <div class="card c-pur"><div class="no">05</div><h3>인성교육</h3><p>예의, 예절, 배려,<br>양보, 인내, 질서 등</p><div class="pic"><img class="asset" src="assets/C06_kinder_bow.png" data-id="C06" data-name="마주 보고 인사하는 두 아이"></div></div>
+  </div>
+  <div class="pageno">3 / 9</div>
+</div></section>
+
+<!-- ───────────── 4. 초등부 ───────────── -->
+<section class="frame"><div class="slide s4" style="background:#edf5ff">
+  <div class="head" style="left:70px;top:58px"><div class="num" style="background:var(--blue)">03</div><div class="title">초등부 프로그램</div></div>
+  <p class="lead" style="position:absolute;left:770px;top:66px;color:#3a3f4c">체계적인 수련을 통해<br>더 높이, 더 멀리 성장합니다!</p>
+  <div class="cards" style="left:60px;right:60px;top:200px;bottom:58px;grid-template-columns:repeat(4,1fr);gap:22px">
+    <div class="card c-blue"><div class="no">01</div><h3>체조</h3><p>앞구르기, 회전낙법,<br>물구나무서기,<br>핸드스프링 등</p><div class="pic" style="height:46%"><img class="asset" src="assets/C07_elem_cartwheel.png" data-id="C07" data-name="옆돌기 / 핸드스프링"></div></div>
+    <div class="card c-yel"><div class="no">02</div><h3>체력훈련</h3><p>달리기, 스트레칭,<br>기본근력운동,<br>성장판 자극을 주는<br>점핑운동</p><div class="pic" style="height:42%"><img class="asset" src="assets/C08_elem_run.png" data-id="C08" data-name="콘 사이 달리기"></div></div>
+    <div class="card c-pink"><div class="no">03</div><h3>음악 줄넘기</h3><p>&nbsp;</p><div class="pic" style="height:62%"><img class="asset" src="assets/C09_elem_rope.png" data-id="C09" data-name="여아 음악줄넘기 (초등)"></div></div>
+    <div class="card c-grn"><div class="no">04</div><h3>태권도</h3><p>품새, 발차기<br>(기본발차기, 시범발차기),<br>겨루기</p><div class="pic" style="height:46%"><img class="asset" src="assets/C10_elem_kick.png" data-id="C10" data-name="남아 높이 차기"></div></div>
+  </div>
+  <div class="pageno">4 / 9</div>
+</div></section>
+
+<!-- ───────────── 5. 인성교육 ───────────── -->
+<section class="frame"><div class="slide s5">
+  <div class="head" style="left:300px;top:58px"><div class="num" style="background:var(--orange)">04</div><div class="title">인성교육</div></div>
+  <p class="lead" style="position:absolute;left:760px;top:66px;color:#3a3f4c">태권도를 통해 올바른 마음과<br>행동을 배우고 실천합니다.</p>
+  <div class="virtues">
+    <div class="virtue" style="background:#ffdfe2"><div class="ic"><img class="asset" src="assets/I05_courtesy.png" data-id="I05" data-name="악수+하트"></div><h3>예의</h3><p>상대를 존중하는<br>바른 마음</p></div>
+    <div class="virtue" style="background:#dceeff"><div class="ic"><img class="asset" src="assets/I06_care.png" data-id="I06" data-name="새싹"></div><h3>배려</h3><p>함께하는<br>따뜻한 마음</p></div>
+    <div class="virtue" style="background:#fff0c4"><div class="ic"><img class="asset" src="assets/I07_yield.png" data-id="I07" data-name="빨간 하트"></div><h3>양보</h3><p>더불어 살아가는<br>마음가짐</p></div>
+    <div class="virtue" style="background:#dcf3d8"><div class="ic"><img class="asset" src="assets/I08_patience.png" data-id="I08" data-name="산 정상 깃발"></div><h3>인내</h3><p>끝까지 해내는<br>강한 마음</p></div>
+    <div class="virtue" style="background:#e6e1ff"><div class="ic"><img class="asset" src="assets/I09_order.png" data-id="I09" data-name="사람 무리"></div><h3>질서</h3><p>규칙을 지키는<br>바른 태도</p></div>
+    <div class="virtue" style="background:#ffe6cf"><div class="ic"><img class="asset" src="assets/I10_star.png" data-id="I10" data-name="노란 별"></div><h3>자신감</h3><p>도전하고 성장하는<br>긍정적인 마음</p></div>
+  </div>
+  <div class="pageno">5 / 9</div>
+</div></section>
+
+<!-- ───────────── 6. 시간표 ───────────── -->
+<section class="frame"><div class="slide s6">
+  <div class="head" style="left:110px;top:58px"><div class="num" style="background:var(--blue)">05</div><div class="title">시간표</div>
+    <div style="position:relative;width:96px;height:96px"><img class="asset" style="inset:0;width:100%;height:100%" src="assets/I11_clock.png" data-id="I11" data-name="자명종"></div></div>
+  <table class="tt">
+    <tr><th>구분</th><th>수업 시간</th></tr>
+    <tr><td>1부</td><td>1:10 - 2:00</td></tr>
+    <tr><td>2부</td><td>2:10 - 3:00</td></tr>
+    <tr><td>3부</td><td>3:30 - 4:20</td></tr>
+    <tr><td>4부</td><td>4:30 - 5:20</td></tr>
+    <tr><td>5부</td><td>7:00 - 7:50</td></tr>
+    <tr><td>6부</td><td>8:00 - 8:50 <small>(성인부)</small></td></tr>
+  </table>
+  <img class="asset" style="right:120px;bottom:0;width:560px;height:800px" src="assets/C11_timetable_cheer.png" data-id="C11" data-name="주먹 쥐고 환호하는 남아" alt="">
+  <div class="pageno">6 / 9</div>
+</div></section>
+
+<!-- ───────────── 7. 원비 ───────────── -->
+<section class="frame"><div class="slide s7">
+  <div class="head" style="left:110px;top:58px"><div class="num" style="background:var(--orange)">06</div><div class="title">원비 안내</div>
+    <div style="position:relative;width:100px;height:100px"><img class="asset" style="inset:0;width:100%;height:100%" src="assets/I12_wallet.png" data-id="I12" data-name="지갑+동전"></div>
+    <div style="position:relative;width:80px;height:80px;margin-top:40px"><img class="asset" style="inset:0;width:100%;height:100%" src="assets/D01_sparkle.png" data-id="D01" data-name="반짝이"></div></div>
+  <div class="prices">
+    <div class="price" style="background:#ffdfe3"><div class="k">주 5회</div><div class="v" style="color:#e5352f">21<small>만원</small></div></div>
+    <div class="price" style="background:#dbeaff"><div class="k">주 3회</div><div class="v" style="color:#1f4fb8">19<small>만원</small></div></div>
+    <div class="price" style="background:#dcf2d8"><div class="k">주 2회</div><div class="v" style="color:#25883f">18<small>만원</small></div></div>
+  </div>
+  <ul class="checks">
+    <li><span class="chk" style="background:var(--yellow)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>체계적인 프로그램으로 높은 교육 효과</li>
+    <li><span class="chk" style="background:var(--yellow)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>주 5회 수련으로 더 큰 성장 효과</li>
+    <li><span class="chk" style="background:var(--yellow)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>형제 · 자매 등록 시 추가 할인 혜택 <span style="color:var(--ink-2);font-weight:500">(별도 문의)</span></li>
+  </ul>
+  <div class="pageno">7 / 9</div>
+</div></section>
+
+<!-- ───────────── 8. 차량 ───────────── -->
+<section class="frame"><div class="slide s8">
+  <div class="head" style="left:110px;top:58px"><div class="num" style="background:var(--blue)">07</div><div class="title">무료 차량 운행</div></div>
+  <img class="asset" style="left:40px;top:200px;width:820px;height:660px" src="assets/C12_bus.png" data-id="C12" data-name="노란 학원버스 + 창문 아이들" alt="">
+  <ul class="info">
+    <li><span class="chk" style="background:var(--green)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>안전한 등 · 하원 차량 운행</li>
+    <li><span class="chk" style="background:var(--green)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>주요 아파트 및 학교 주변 운행</li>
+    <li><span class="chk" style="background:var(--green)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>전문 기사님 동행</li>
+    <li><span class="chk" style="background:var(--green)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>노선은 상담 시 안내드립니다.</li>
+  </ul>
+  <div class="pageno">8 / 9</div>
+</div></section>
+
+<!-- ───────────── 9. 마무리 ───────────── -->
+<section class="frame"><div class="slide s9">
+  <img class="asset" style="inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)" src="assets/A01_bg_brush.png" data-fallback="brush" alt="">
+  <img class="asset" style="left:60px;top:50px;width:820px;height:400px" src="assets/A03_slogan_brush.png" data-fallback="slogan" data-id="A03" data-name="붓글씨 '배우고 성장하고 이루다'" alt="배우고 성장하고 이루다">
+  <p style="position:absolute;left:110px;top:520px;font-size:36px;line-height:1.55;font-weight:600;color:#2a2e3a">갈현이룸태권도는<br>아이의 가능성을 믿고,<br>함께 성장하는 든든한 동반자가<br>되겠습니다.</p>
+  <img class="asset" style="right:110px;bottom:0;width:600px;height:830px" src="assets/C13_ending_fist.png" data-id="C13" data-name="주먹 쥔 자신감 포즈 남아" alt="">
+  <div class="pageno">9 / 9</div>
+</div></section>
+
+<script>
+// 1600×900 슬라이드를 화면 폭에 맞춰 축소
+function fit() {
+  document.querySelectorAll('.frame').forEach(f => {
+    f.querySelector('.slide').style.transform = 'scale(' + (f.clientWidth / 1600) + ')';
+  });
+}
+addEventListener('resize', fit); fit();
+
+// 이미지가 아직 없으면 자리표시(또는 대체 디자인)로 바꿔 보여준다
+const BRUSH = '<div class="brush-fallback">' +
+  '<i style="right:-260px;top:-10px;width:900px;height:80px;background:#1b2a5e;transform:rotate(-32deg)"></i>' +
+  '<i style="right:-300px;top:95px;width:900px;height:42px;background:#e5352f;transform:rotate(-32deg)"></i>' +
+  '<i style="right:-260px;top:170px;width:700px;height:18px;background:#1b2a5e;opacity:.85;transform:rotate(-32deg)"></i>' +
+  '<i style="left:-380px;bottom:-90px;width:700px;height:64px;background:#e5352f;transform:rotate(-32deg)"></i>' +
+  '<i style="left:-380px;bottom:-180px;width:760px;height:90px;background:#1b2a5e;transform:rotate(-32deg)"></i></div>';
+
+function fallback(img) {
+  const kind = img.dataset.fallback;
+  let el;
+  if (kind === 'brush') {
+    img.insertAdjacentHTML('afterend', BRUSH); img.remove(); return;
+  }
+  el = document.createElement('div');
+  el.className = 'ph';
+  el.style.cssText = img.getAttribute('style') || '';
+  if (kind === 'logo') {
+    el.innerHTML = '<div style="font:118px/1 Jalnan;color:#16181f;transform:rotate(-4deg);letter-spacing:-.03em;white-space:nowrap">갈현이룸태권도<span style="color:#e5352f;font-size:90px;vertical-align:top">★</span></div><code>A02 붓글씨 로고 이미지 자리</code>';
+  } else if (kind === 'slogan') {
+    el.innerHTML = '<div style="font:110px/1.15 Jalnan;color:#16181f;transform:rotate(-6deg);text-align:left">배우고<br>&nbsp;성장하고<span style="color:#e5352f">★</span><br>&nbsp;&nbsp;&nbsp;이루다</div><code>A03 붓글씨 문구 이미지 자리</code>';
+  } else {
+    const file = (img.getAttribute('src') || '').replace('assets/', '');
+    el.innerHTML = '<b>' + (img.dataset.id || '') + '</b><span>' + (img.dataset.name || '') + '</span><code>' + file + '</code>';
+  }
+  img.replaceWith(el);
+}
+document.querySelectorAll('img.asset').forEach(img => {
+  if (img.complete && img.naturalWidth === 0) fallback(img);
+  else img.addEventListener('error', () => fallback(img), { once: true });
+});
+
+document.getElementById('togglePh').addEventListener('change', e => document.body.classList.toggle('hide-ph', e.target.checked));
+</script>
+</body>
+</html>
