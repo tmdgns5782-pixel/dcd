@@ -4,6 +4,7 @@
 실행: python3 build/build.py   (fonttools, brotli 필요)
 """
 import base64
+import functools
 import html
 import io
 import os
@@ -12,7 +13,9 @@ import re
 from fontTools import subset
 from fontTools.ttLib import TTFont
 
-from brush import band, star, swoosh
+from PIL import Image
+
+from brush import band, swoosh
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -22,7 +25,6 @@ FONTS = os.path.join(ROOT, "fonts")
 FONT_FILES = {
     "Recipekorea": ("Recipekorea.woff", True),
     "Pretendard": ("PretendardVariable.woff2", True),
-    "Manse": ("Manse.woff", False),
     "Sukyung": ("OnglyphSukyung.woff", False),
     "Montserrat": ("Montserrat-800.woff2", False),
 }
@@ -76,6 +78,22 @@ def brush_ending():
     ])
 
 
+@functools.lru_cache(maxsize=None)
+def img_data_uri(name, max_side=1100):
+    """GPT 이미지: 투명 여백을 잘라내고 줄여서 WebP data URI로 넣는다 (assets/ 또는 reference/)."""
+    path = os.path.join(ROOT, "assets", name)
+    if not os.path.exists(path):
+        path = os.path.join(ROOT, "reference", name)
+    im = Image.open(path).convert("RGBA")
+    bbox = im.getchannel("A").point(lambda a: 255 if a > 60 else 0).getbbox()
+    if bbox:
+        im = im.crop(bbox)
+    im.thumbnail((max_side, max_side), Image.LANCZOS)
+    buf = io.BytesIO()
+    im.save(buf, "WEBP", quality=90, method=4)
+    return "data:image/webp;base64," + base64.b64encode(buf.getvalue()).decode()
+
+
 def build():
     src = open(os.path.join(HERE, "deck.src.html"), encoding="utf-8").read()
 
@@ -85,14 +103,13 @@ def build():
         # 1장 로고 위아래 빨간 붓 스윕 + 별
         "LOGO_SWOOSH": swoosh((470, 232), (720, 200), (600, 208), 15, "#e3312d", 31, 5)
                        + swoosh((900, 470), (1180, 405), (1050, 450), 13, "#e3312d", 32, 5),
-        "LOGO_STAR": star(1300, 236, 46, "#e5352f", rot=12),
         # 9장 문구 아래 빨간 붓 스윕 + 별
         "END_SWOOSH": swoosh((150, 478), (320, 420), (230, 440), 12, "#e3312d", 41, 4)
                       + swoosh((540, 572), (890, 462), (730, 500), 17, "#e3312d", 42, 6),
-        "END_STAR": star(846, 212, 58, "#e5352f", rot=8),
     }
     for k, v in parts.items():
         src = src.replace("{{" + k + "}}", v)
+    src = re.sub(r"\{\{IMG:([^}]+)\}\}", lambda m: img_data_uri(m.group(1)), src)
 
     # 화면에 보이는 글자 전부(+ 숫자·문장부호) 수집 → 폰트 서브셋
     visible = html.unescape(re.sub(r"<[^>]+>", " ", re.sub(r"<(script|style)[\s\S]*?</\1>", " ", src)))

@@ -41,7 +41,11 @@ svg.fill { position: absolute; inset: 0; width: 100%; height: 100%; }
 .ph code { font: 600 14px ui-monospace, monospace; opacity: .8; }
 body.clean .ph { border-color: transparent; }
 body.clean .ph > * { visibility: hidden; }
-img.art { position: absolute; object-fit: contain; }
+img.art { position: absolute; object-fit: contain; object-position: center bottom; }
+.card img.art { left: 10px; right: 10px; bottom: 6px; width: calc(100% - 20px); }
+.virtue .disc img { position: absolute; left: 50%; top: 22px; width: 138px; height: 138px; transform: translateX(-50%); object-fit: contain; }
+.phil img { width: 252px; height: 252px; display: block; margin: 0 auto; object-fit: contain; }
+.chk-row img, .info .row img { width: 74px; height: 74px; flex: none; object-fit: contain; }
 
 /* 제목 */
 .badge { position: absolute; width: 148px; height: 148px; border-radius: 50%; display: grid; place-items: center;
@@ -218,7 +222,6 @@ img.art { position: absolute; object-fit: contain; }
 
 <div class="bar">
   <strong>갈현이룸태권도 상담 PPT · 초안 (9장)</strong>
-  <label><input type="checkbox" id="clean"> 캐릭터 자리 표시 숨기기</label>
   <button onclick="window.print()">PDF로 저장</button>
 </div>
 
@@ -229,11 +232,10 @@ img.art { position: absolute; object-fit: contain; }
   </div>
   <div class="abs" style="left:116px;top:72px;font:500 54px Pretendard;color:#262a35;letter-spacing:-.02em">배우고 · 성장하고 · 이루다</div>
   <svg class="fill" viewBox="0 0 1600 900">{{LOGO_SWOOSH}}</svg>
-  <div class="abs" style="left:70px;top:228px;font:400 226px/1 Manse;color:#121521;letter-spacing:-.04em;white-space:nowrap;transform:rotate(-4deg) skewX(-8deg);transform-origin:left bottom;-webkit-text-stroke:7px #121521">갈현이룸태권도</div>
-  <svg class="fill" viewBox="0 0 1600 900">{{LOGO_STAR}}</svg>
-  <div class="abs" style="left:268px;top:502px;font:800 33px Montserrat;color:#151823;letter-spacing:.2em">GALHYEON IRUM TAEKWONDO</div>
-  <div class="abs" style="left:150px;top:590px;font:400 90px/1.2 Sukyung;color:#1b1e28;letter-spacing:.03em;-webkit-text-stroke:1px #1b1e28;transform:rotate(-2.5deg);transform-origin:left top;white-space:nowrap">아이의 오늘이<br>더 건강한 내일로 이어집니다.</div>
-  <div class="ph" data-art="C01_cover_kick.png" style="left:1090px;top:330px;width:470px;height:560px"><b>C01</b><span>표지 캐릭터 · 앞차기</span><code>C01_cover_kick.png</code></div>
+  <img class="art" alt="갈현이룸태권도" src="{{IMG:A02_logo_brush.png}}" style="left:60px;top:150px;width:1150px;height:375px;object-position:left center">
+  <div class="abs" style="left:268px;top:536px;font:800 33px Montserrat;color:#151823;letter-spacing:.2em">GALHYEON IRUM TAEKWONDO</div>
+  <div class="abs" style="left:150px;top:608px;font:400 88px/1.2 Sukyung;color:#1b1e28;letter-spacing:.03em;-webkit-text-stroke:1px #1b1e28;transform:rotate(-2.5deg);transform-origin:left top;white-space:nowrap">아이의 오늘이<br>더 건강한 내일로 이어집니다.</div>
+  <img class="art" src="{{IMG:C01_cover_kick.png}}" style="left:1060px;top:300px;width:500px;height:584px">
   <div class="pageno">1 / 9</div>
 </div></section>
 
@@ -243,10 +245,10 @@ img.art { position: absolute; object-fit: contain; }
   <div class="badge b-red" style="left:134px;top:36px">01</div>
   <div class="title" style="left:330px;top:60px">교육 철학</div>
   <div class="lead" style="left:0;right:0;top:188px;text-align:center;font-size:47px;line-height:1.4">“태권도를 통해 아이의 몸과 마음이 함께 성장하는<br>건강하고 바른 인재를 키웁니다.”</div>
-  <div class="phil" style="left:71px;top:338px"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="49" fill="url(#gcRed)"/><use href="#ic-dumbbell" x="20" y="20" width="60" height="60"/></svg><h3>건강한 신체</h3><p>기초 체력과<br>운동 능력 향상</p></div>
-  <div class="phil" style="left:444px;top:328px"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="49" fill="url(#gcBlue)"/><use href="#ic-heart" x="21" y="21" width="58" height="58"/></svg><h3>바른 인성</h3><p>예의, 인내, 질서<br>배려 등 올바른<br>가치관 형성</p></div>
-  <div class="phil" style="left:824px;top:328px"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="49" fill="url(#gcYel)"/><use href="#ic-bars" x="23" y="21" width="54" height="54"/></svg><h3>자신감</h3><p>도전하는 마음과<br>성취 경험</p></div>
-  <div class="phil" style="left:1197px;top:328px"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="49" fill="url(#gcGrn)"/><use href="#ic-people" x="20" y="20" width="60" height="60"/></svg><h3>사회성</h3><p>함께 배우며<br>더불어 성장</p></div>
+  <div class="phil" style="left:71px;top:338px"><img alt="" src="{{IMG:I01_body.png}}"><h3>건강한 신체</h3><p>기초 체력과<br>운동 능력 향상</p></div>
+  <div class="phil" style="left:444px;top:328px"><img alt="" src="{{IMG:I02_mind.png}}"><h3>바른 인성</h3><p>예의, 인내, 질서<br>배려 등 올바른<br>가치관 형성</p></div>
+  <div class="phil" style="left:824px;top:328px"><img alt="" src="{{IMG:I03_confidence.png}}"><h3>자신감</h3><p>도전하는 마음과<br>성취 경험</p></div>
+  <div class="phil" style="left:1197px;top:328px"><img alt="" src="{{IMG:I04_social.png}}"><h3>사회성</h3><p>함께 배우며<br>더불어 성장</p></div>
   <div class="pageno">2 / 9</div>
 </div></section>
 
@@ -258,15 +260,15 @@ img.art { position: absolute; object-fit: contain; }
   <div class="abs" style="left:990px;top:46px;width:566px;height:150px;border-radius:44px;background:linear-gradient(180deg,#fcd3da,#fbd9df);display:grid;place-items:center;text-align:center;font:500 44px/1.3 Pretendard;color:#e2313f;letter-spacing:-.03em">신나는 신체 활동으로<br>즐겁게 배우는 태권도!</div>
   <svg class="abs" style="left:1250px;top:190px" width="44" height="30" viewBox="0 0 44 30"><path d="M0 0H44L24 28Z" fill="#fbd9df"/></svg>
   <div class="card k-pink" style="left:48px;top:244px;width:284px;height:622px"><div class="no n-red">01</div><h3>체조</h3><p>앞구르기, 옆돌기<br>기초 신체활동</p>
-    <div class="ph" data-art="C02_kinder_tumble.png" style="top:330px"><b>C02</b><span>앞구르기 (매트)</span></div></div>
+    <img class="art" alt="" src="{{IMG:C02_kinder_tumble.png}}" style="height:262px"></div>
   <div class="card k-yel" style="left:349px;top:244px;width:284px;height:622px"><div class="no n-org">02</div><h3>점핑운동</h3><p>뜀틀, 멀리뛰기,<br>점프 매트 치기,<br>중심잡기 등</p>
-    <div class="ph" data-art="C03_kinder_jump.png" style="top:376px"><b>C03</b><span>뜀틀 점프</span></div></div>
+    <img class="art" alt="" src="{{IMG:C03_kinder_jump.png}}" style="height:290px"></div>
   <div class="card k-blue" style="left:650px;top:244px;width:284px;height:622px"><div class="no n-blu">03</div><h3>음악줄넘기</h3>
-    <div class="ph" data-art="C04_kinder_rope.png" style="top:200px"><b>C04</b><span>여아 음악줄넘기</span></div></div>
+    <img class="art" alt="" src="{{IMG:C04_kinder_rope.png}}" style="height:400px"></div>
   <div class="card k-grn" style="left:951px;top:244px;width:296px;height:622px"><div class="no n-grn">04</div><h3>태권도</h3><p>기본동작,<br>기본발차기, 품새</p>
-    <div class="ph" data-art="C05_kinder_kick.png" style="top:330px"><b>C05</b><span>옆차기</span></div></div>
+    <img class="art" alt="" src="{{IMG:C05_kinder_kick.png}}" style="height:300px"></div>
   <div class="card k-pur" style="left:1264px;top:244px;width:290px;height:622px"><div class="no n-pur">05</div><h3>인성교육</h3><p>예의, 예절, 배려,<br>양보, 인내, 질서 등</p>
-    <div class="ph" data-art="C06_kinder_bow.png" style="top:330px"><b>C06</b><span>마주 보고 인사</span></div></div>
+    <img class="art" alt="" src="{{IMG:C06_kinder_bow.png}}" style="height:290px"></div>
   <div class="pageno">3 / 9</div>
 </div></section>
 
@@ -277,13 +279,13 @@ img.art { position: absolute; object-fit: contain; }
   <div class="title" style="left:252px;top:66px">초등부 프로그램</div>
   <div class="lead" style="left:1010px;top:62px;font-size:40px">체계적인 수련을 통해<br>더 높이, 더 멀리 성장합니다!</div>
   <div class="card k-blue" style="left:56px;top:212px;width:362px;height:652px"><div class="no n-blu">01</div><h3>체조</h3><p>앞구르기, 회전낙법,<br>물구나무서기,<br>핸드스프링 등</p>
-    <div class="ph" data-art="C07_elem_cartwheel.png" style="top:376px"><b>C07</b><span>옆돌기</span></div></div>
+    <img class="art" alt="" src="{{IMG:C07_elem_cartwheel.png}}" style="height:270px"></div>
   <div class="card k-yel" style="left:440px;top:212px;width:362px;height:652px"><div class="no n-org">02</div><h3>체력훈련</h3><p>달리기, 스트레칭,<br>기본근력운동,<br>성장판 자극을 주는<br>점핑운동</p>
-    <div class="ph" data-art="C08_elem_run.png" style="top:420px"><b>C08</b><span>콘 사이 달리기</span></div></div>
+    <img class="art" alt="" src="{{IMG:C08_elem_run.png}}" style="height:230px"></div>
   <div class="card k-pink" style="left:824px;top:212px;width:350px;height:652px"><div class="no n-red">03</div><h3>음악 줄넘기</h3>
-    <div class="ph" data-art="C09_elem_rope.png" style="top:200px"><b>C09</b><span>여아 음악줄넘기</span></div></div>
+    <img class="art" alt="" src="{{IMG:C09_elem_rope.png}}" style="height:430px"></div>
   <div class="card k-grn" style="left:1196px;top:212px;width:350px;height:652px"><div class="no n-grn">04</div><h3>태권도</h3><p>품새, 발차기<br>(기본발차기, 시범발차기),<br>겨루기</p>
-    <div class="ph" data-art="C10_elem_kick.png" style="top:376px"><b>C10</b><span>높이 차기</span></div></div>
+    <img class="art" alt="" src="{{IMG:C10_elem_kick.png}}" style="height:290px"></div>
   <div class="pageno">4 / 9</div>
 </div></section>
 
@@ -293,12 +295,12 @@ img.art { position: absolute; object-fit: contain; }
   <div class="badge b-orange" style="left:140px;top:28px">04</div>
   <div class="title" style="left:380px;top:50px">인성교육</div>
   <div class="lead" style="left:820px;top:42px;font-size:44px">태권도를 통해 올바른 마음과<br>행동을 배우고 실천합니다.</div>
-  <div class="virtue" style="left:158px;top:184px"><div class="disc" style="background:linear-gradient(180deg,#f9c3cb 0%,#fcdcdf 60%,rgba(253,240,236,0) 100%)"><svg viewBox="0 0 100 100"><use href="#ic-handheart"/></svg><h3>예의</h3></div><p>상대를 존중하는<br>바른 마음</p></div>
-  <div class="virtue" style="left:601px;top:184px"><div class="disc" style="background:linear-gradient(180deg,#bfe0f8 0%,#d9ecf9 60%,rgba(240,246,246,0) 100%)"><svg viewBox="0 0 100 100"><use href="#ic-sprout"/></svg><h3>배려</h3></div><p>함께하는<br>따뜻한 마음</p></div>
-  <div class="virtue" style="left:1044px;top:184px"><div class="disc" style="background:linear-gradient(180deg,#ffe08e 0%,#ffecbb 60%,rgba(253,244,226,0) 100%)"><svg viewBox="0 0 100 100"><use href="#ic-heart-red"/></svg><h3>양보</h3></div><p>더불어 살아가는<br>마음가짐</p></div>
-  <div class="virtue" style="left:158px;top:530px"><div class="disc" style="background:linear-gradient(180deg,#c6edc2 0%,#dcf3d6 60%,rgba(244,246,232,0) 100%)"><svg viewBox="0 0 100 100"><use href="#ic-summit"/></svg><h3>인내</h3></div><p>끝까지 해내는<br>강한 마음</p></div>
-  <div class="virtue" style="left:601px;top:530px"><div class="disc" style="background:linear-gradient(180deg,#d6cdf6 0%,#e5dff8 60%,rgba(246,242,240,0) 100%)"><svg viewBox="0 0 24 24"><use href="#ic-group"/></svg><h3>질서</h3></div><p>규칙을 지키는<br>바른 태도</p></div>
-  <div class="virtue" style="left:1044px;top:530px"><div class="disc" style="background:linear-gradient(180deg,#ffd9a4 0%,#ffe6c4 60%,rgba(253,244,226,0) 100%)"><svg viewBox="0 0 100 100"><use href="#ic-star"/></svg><h3>자신감</h3></div><p>도전하고 성장하는<br>긍정적인 마음</p></div>
+  <div class="virtue" style="left:158px;top:184px"><div class="disc" style="background:linear-gradient(180deg,#f9c3cb 0%,#fcdcdf 60%,rgba(253,240,236,0) 100%)"><img alt="" src="{{IMG:I05_courtesy.png}}"><h3>예의</h3></div><p>상대를 존중하는<br>바른 마음</p></div>
+  <div class="virtue" style="left:601px;top:184px"><div class="disc" style="background:linear-gradient(180deg,#bfe0f8 0%,#d9ecf9 60%,rgba(240,246,246,0) 100%)"><img alt="" src="{{IMG:I06_care.png}}"><h3>배려</h3></div><p>함께하는<br>따뜻한 마음</p></div>
+  <div class="virtue" style="left:1044px;top:184px"><div class="disc" style="background:linear-gradient(180deg,#ffe08e 0%,#ffecbb 60%,rgba(253,244,226,0) 100%)"><img alt="" src="{{IMG:I07_yield.png}}"><h3>양보</h3></div><p>더불어 살아가는<br>마음가짐</p></div>
+  <div class="virtue" style="left:158px;top:530px"><div class="disc" style="background:linear-gradient(180deg,#c6edc2 0%,#dcf3d6 60%,rgba(244,246,232,0) 100%)"><img alt="" src="{{IMG:I08_patience.png}}"><h3>인내</h3></div><p>끝까지 해내는<br>강한 마음</p></div>
+  <div class="virtue" style="left:601px;top:530px"><div class="disc" style="background:linear-gradient(180deg,#d6cdf6 0%,#e5dff8 60%,rgba(246,242,240,0) 100%)"><img alt="" src="{{IMG:I09_order.png}}"><h3>질서</h3></div><p>규칙을 지키는<br>바른 태도</p></div>
+  <div class="virtue" style="left:1044px;top:530px"><div class="disc" style="background:linear-gradient(180deg,#ffd9a4 0%,#ffe6c4 60%,rgba(253,244,226,0) 100%)"><img alt="" src="{{IMG:I10_star.png}}"><h3>자신감</h3></div><p>도전하고 성장하는<br>긍정적인 마음</p></div>
   <div class="pageno">5 / 9</div>
 </div></section>
 
@@ -307,7 +309,7 @@ img.art { position: absolute; object-fit: contain; }
   <div class="panel" style="background:linear-gradient(180deg,#e9f3fd,#e4effc)"></div>
   <div class="badge b-blue" style="left:84px;top:40px">05</div>
   <div class="title" style="left:300px;top:64px">시간표</div>
-  <svg class="abs" style="left:690px;top:30px" width="172" height="172" viewBox="0 0 100 100"><use href="#ic-clock"/></svg>
+  <img class="art" alt="" src="{{IMG:I11_clock.png}}" style="left:690px;top:34px;width:160px;height:160px;object-position:center">
   <table class="tt">
     <tr><th>구분</th><th>수업 시간</th></tr>
     <tr><td>1부</td><td>1:10 - 2:00</td></tr>
@@ -317,8 +319,8 @@ img.art { position: absolute; object-fit: contain; }
     <tr><td>5부</td><td>7:00 - 7:50</td></tr>
     <tr><td>6부</td><td>8:00 - 8:50 (성인부)</td></tr>
   </table>
-  <svg class="abs" style="left:1170px;top:126px" width="230" height="110" viewBox="0 0 230 110"><g stroke="#e8352e" stroke-width="15" stroke-linecap="round"><path d="M22 52L48 96"/><path d="M118 16L108 82"/><path d="M206 44L170 92"/></g></svg>
-  <div class="ph" data-art="C11_timetable_cheer.png" style="left:1060px;top:210px;width:500px;height:672px"><b>C11</b><span>주먹 쥐고 환호</span><code>C11_timetable_cheer.png</code></div>
+  <img class="art" alt="" src="{{IMG:D05_action_lines.png}}" style="left:1200px;top:118px;width:220px;height:110px;object-position:center">
+  <img class="art" alt="" src="{{IMG:C11_timetable_cheer.png}}" style="left:1060px;top:206px;width:500px;height:676px">
   <div class="pageno">6 / 9</div>
 </div></section>
 
@@ -327,15 +329,14 @@ img.art { position: absolute; object-fit: contain; }
   <div class="panel" style="background:linear-gradient(180deg,#fdf5e1,#fcf0d6)"></div>
   <div class="badge b-redor" style="left:130px;top:42px">06</div>
   <div class="title" style="left:350px;top:64px">원비 안내</div>
-  <svg class="abs" style="left:858px;top:56px" width="138" height="138" viewBox="0 0 100 100"><use href="#ic-wallet"/></svg>
-  <svg class="abs" style="left:1106px;top:76px" width="92" height="92" viewBox="0 0 100 100"><use href="#ic-sparkle"/></svg>
-  <svg class="abs" style="left:1050px;top:156px" width="56" height="56" viewBox="0 0 100 100"><use href="#ic-sparkle"/></svg>
+  <img class="art" alt="" src="{{IMG:I12_wallet.png}}" style="left:860px;top:58px;width:136px;height:136px;object-position:center">
+  <img class="art" alt="" src="{{IMG:D01_sparkle.png}}" style="left:1040px;top:66px;width:150px;height:150px;object-position:center">
   <div class="price" style="left:142px;background:linear-gradient(135deg,#fbc8d0,#fde2e2)"><div class="k" style="color:#6f1515">주 5회</div><div class="v" style="color:#6f1515">21<small>만원</small></div></div>
   <div class="price" style="left:596px;background:linear-gradient(135deg,#c9defb,#e1edfd)"><div class="k" style="color:#13286a">주 3회</div><div class="v" style="color:#13286a">19<small>만원</small></div></div>
   <div class="price" style="left:1052px;background:linear-gradient(135deg,#d3efc5,#eaf7cc)"><div class="k" style="color:#6a1a12">주 2회</div><div class="v" style="color:#6a1a12">18<small>만원</small></div></div>
-  <div class="chk-row" style="top:528px"><svg viewBox="0 0 100 100"><use href="#ic-chk-yel"/></svg>체계적인 프로그램으로 높은 교육 효과</div>
-  <div class="chk-row" style="top:622px"><svg viewBox="0 0 100 100"><use href="#ic-chk-yel"/></svg>주 5회 수련으로 더 큰 성장 효과</div>
-  <div class="chk-row" style="top:716px"><svg viewBox="0 0 100 100"><use href="#ic-chk-yel"/></svg>형제 · 자매 등록 시 추가 할인 혜택 (별도 문의)</div>
+  <div class="chk-row" style="top:528px"><img alt="" src="{{IMG:D06_check_yellow.png}}">체계적인 프로그램으로 높은 교육 효과</div>
+  <div class="chk-row" style="top:622px"><img alt="" src="{{IMG:D06_check_yellow.png}}">주 5회 수련으로 더 큰 성장 효과</div>
+  <div class="chk-row" style="top:716px"><img alt="" src="{{IMG:D06_check_yellow.png}}">형제 · 자매 등록 시 추가 할인 혜택 (별도 문의)</div>
   <div class="pageno">7 / 9</div>
 </div></section>
 
@@ -348,19 +349,18 @@ img.art { position: absolute; object-fit: contain; }
       <use href="#ic-cloud" x="28" y="262" width="140" height="62"/>
       <path d="M0 742C300 726 700 716 1000 714C1260 712 1440 704 1580 690V880H0Z" fill="#dcdee3"/>
       <path d="M0 742C140 738 220 736 320 735L300 750L0 760Z" fill="#e9c9a2"/>
-      <use href="#ic-tree" x="6" y="384" width="140" height="360"/>
-      <use href="#ic-bush" x="0" y="680" width="150" height="62"/>
       <use href="#ic-bush" x="1352" y="626" width="228" height="94"/>
     </svg>
   </div>
   <div class="badge b-green" style="left:84px;top:46px">07</div>
   <div class="title" style="left:306px;top:68px">무료 차량 운행</div>
-  <div class="ph" data-art="C12_bus.png" style="left:104px;top:250px;width:730px;height:540px"><b>C12</b><span>노란 학원버스 + 창문 아이들</span><code>C12_bus.png</code></div>
+  <img class="art" alt="" src="{{IMG:C12_bus_blank.png}}" style="left:30px;top:268px;width:840px;height:560px">
+  <div class="abs" style="left:129px;top:604px;width:446px;height:56px;display:grid;place-items:center;font:400 44px/1 Recipekorea;color:#fff;letter-spacing:.06em;padding-top:4px">갈현이룸태권도</div>
   <div class="info">
-    <div class="row" style="top:44px"><svg viewBox="0 0 100 100"><use href="#ic-chk-grn"/></svg>안전한 등 · 하원 차량 운행</div>
-    <div class="row" style="top:146px"><svg viewBox="0 0 100 100"><use href="#ic-chk-grn"/></svg>주요 아파트 및 학교 주변 운행</div>
-    <div class="row" style="top:248px"><svg viewBox="0 0 100 100"><use href="#ic-chk-grn"/></svg>전문 기사님 동행</div>
-    <div class="row" style="top:350px"><svg viewBox="0 0 100 100"><use href="#ic-chk-grn"/></svg>노선은 상담 시 안내드립니다.</div>
+    <div class="row" style="top:44px"><img alt="" src="{{IMG:D07_check_green.png}}">안전한 등 · 하원 차량 운행</div>
+    <div class="row" style="top:146px"><img alt="" src="{{IMG:D07_check_green.png}}">주요 아파트 및 학교 주변 운행</div>
+    <div class="row" style="top:248px"><img alt="" src="{{IMG:D07_check_green.png}}">전문 기사님 동행</div>
+    <div class="row" style="top:350px"><img alt="" src="{{IMG:D07_check_green.png}}">노선은 상담 시 안내드립니다.</div>
   </div>
   <div class="pageno">8 / 9</div>
 </div></section>
@@ -370,12 +370,10 @@ img.art { position: absolute; object-fit: contain; }
   <div class="panel" style="background:#fff">
     <svg class="fill" viewBox="0 0 1580 880" preserveAspectRatio="none"><g transform="translate(-10 -10)">{{BRUSH_ENDING}}</g></svg>
   </div>
-  <svg class="fill" viewBox="0 0 1600 900">{{END_SWOOSH}}{{END_STAR}}</svg>
-  <div class="abs" style="left:150px;top:60px;font:400 182px/1 Manse;color:#14161d;white-space:nowrap;transform:rotate(-8deg) skewX(-6deg);transform-origin:left top;-webkit-text-stroke:1.5px #14161d">배우고</div>
-  <div class="abs" style="left:236px;top:212px;font:400 182px/1 Manse;color:#14161d;white-space:nowrap;transform:rotate(-8deg) skewX(-6deg);transform-origin:left top;-webkit-text-stroke:1.5px #14161d">성장하고</div>
-  <div class="abs" style="left:420px;top:340px;font:400 206px/1 Manse;color:#14161d;white-space:nowrap;transform:rotate(-8deg) skewX(-6deg);transform-origin:left top;-webkit-text-stroke:1.5px #14161d">이루다</div>
+  <svg class="fill" viewBox="0 0 1600 900">{{END_SWOOSH}}</svg>
+  <img class="art" alt="배우고 성장하고 이루다" src="{{IMG:A03_slogan_brush.png}}" style="left:110px;top:40px;width:780px;height:470px;object-position:left top">
   <div class="abs" style="left:120px;top:548px;font:500 50px/1.5 Pretendard;color:#22252f;letter-spacing:-.03em;white-space:nowrap">갈현이룸태권도는<br>아이의 가능성을 믿고,<br>함께 성장하는 든든한 동반자가<br>되겠습니다.</div>
-  <div class="ph" data-art="C13_ending_fist.png" style="left:880px;top:110px;width:560px;height:780px"><b>C13</b><span>파이팅 포즈</span><code>C13_ending_fist.png</code></div>
+  <img class="art" alt="" src="{{IMG:C13_ending_fist.png}}" style="left:880px;top:120px;width:560px;height:766px">
   <div class="pageno">9 / 9</div>
 </div></section>
 
@@ -387,14 +385,6 @@ function fit() {
 }
 addEventListener('resize', fit); fit();
 
-// assets/ 폴더에 GPT 이미지가 있으면 자리표시 대신 넣는다
-document.querySelectorAll('.ph[data-art]').forEach(ph => {
-  const img = new Image();
-  img.className = 'art';
-  img.onload = () => { img.style.cssText = ph.getAttribute('style') || ''; img.style.left = img.style.left || '16px'; ph.replaceWith(img); };
-  img.src = 'assets/' + ph.dataset.art;
-});
-document.getElementById('clean').addEventListener('change', e => document.body.classList.toggle('clean', e.target.checked));
 </script>
 </body>
 </html>
