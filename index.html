@@ -369,6 +369,20 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
 .drow .dv.holi { color: var(--holi); }
 .dnone { padding: 12px 0; font-size: 14px; color: var(--text-2); }
 
+/* ───────── 주 이동 ───────── */
+.weeknav { position: relative; display: flex; align-items: center; gap: 2px; margin-left: -8px; }
+.wn {
+  width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: var(--accent);
+  transition: background-color .15s ease, transform .12s ease-out;
+}
+.wn:active { transform: scale(.88); background: var(--accent-soft); }
+.wlabel { padding: 3px 8px; border-radius: 8px; transition: background-color .15s ease; }
+.wlabel:active { background: rgba(120, 120, 128, .16); }
+@media (hover: hover) { .wn:hover { background: var(--accent-tint); } .wlabel:hover { background: rgba(120, 120, 128, .1); } }
+#weekPick { position: absolute; left: 40px; bottom: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.thisweek { margin-left: 8px; padding: 4px 11px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--accent); background: var(--accent-soft); }
+.thisweek:active { transform: scale(.95); }
+
 /* ───────── 편집 ───────── */
 .hero-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .pill.alt { background: rgba(120, 120, 128, .12); color: var(--text); }
@@ -514,7 +528,7 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
   }
   html, body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .num { font-variant-numeric: normal; } /* PDF에서 숫자도 복사·검색되도록 */
-  .nav, .hero-actions, .mobile, .editbar, .toast, dialog, .slot { display: none !important; }
+  .wn, .thisweek, .nav, .hero-actions, .mobile, .editbar, .toast, dialog, .slot { display: none !important; }
   .desktop { display: block !important; }
   .page { max-width: none; padding: 0; }
   .hero { padding: 0 2px 12px; }
@@ -549,7 +563,13 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
 <main class="page">
   <header class="hero">
     <div>
-      <p class="eyebrow" id="weekLabel"></p>
+      <div class="weeknav">
+        <button class="wn" id="prevWeek" aria-label="이전 주"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <button class="wlabel eyebrow" id="weekLabel" aria-label="주 선택"></button>
+        <input type="date" id="weekPick" tabindex="-1" aria-hidden="true">
+        <button class="wn" id="nextWeek" aria-label="다음 주"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+        <button class="thisweek" id="thisWeek" hidden>이번 주</button>
+      </div>
       <h1>주간 시간표</h1>
       <div class="notice" id="notice"></div>
     </div>
@@ -1132,6 +1152,24 @@ document.addEventListener('click', (e) => {
   if (s) openEditor(null, { day: +s.dataset.day, p: +s.dataset.p });
 });
 
+/* ── 주 이동: 화살표 · 날짜 선택 · 이번 주 ── */
+function setWeek(date) {
+  const m = mondayOf(date);
+  if (m === data.weekStart) return;
+  data.weekStart = m; saveAll(); applyData();
+  cur = Math.max(0, todayIdx());
+  render();
+}
+const shiftWeek = (n) => { const d = parseISO(data.weekStart); d.setDate(d.getDate() + 7 * n); setWeek(iso(d)); };
+$('#prevWeek').addEventListener('click', () => shiftWeek(-1));
+$('#nextWeek').addEventListener('click', () => shiftWeek(1));
+$('#thisWeek').addEventListener('click', () => setWeek(iso(getNow())));
+$('#weekLabel').addEventListener('click', () => {
+  const p = $('#weekPick'); p.value = data.weekStart;
+  try { p.showPicker(); } catch (e) { p.focus(); p.click(); }
+});
+$('#weekPick').addEventListener('change', (e) => { if (isDate(e.target.value)) setWeek(e.target.value); });
+
 /* ── 공휴일 지정 ── */
 function buildSettings() {
   $('#setcard').innerHTML = `
@@ -1173,6 +1211,7 @@ settings.addEventListener('click', (e) => {
 /* ── 공통 ── */
 function updateTop() {
   $('#weekLabel').textContent = `${DAYS[0].m}월 ${DAYS[0].n}일 – ${DAYS[4].m}월 ${DAYS[4].n}일`;
+  $('#thisWeek').hidden = mondayOf(iso(getNow())) === data.weekStart;
   $('#navRange').textContent = `${DAYS[0].md} – ${DAYS[4].md}`;
   const ev = idx(isEve), ho = idx(isHoli), lines = [];
   if (ev.length) lines.push(`<p class="nl"><i class="o"></i><span>${dayNames(ev)}은 공휴일 전날이라 <b class="num">${EVE[0][0]} 시작 · ${EVE[PERIODS - 1][1]} 종료</b>예요.</span></p>`);
