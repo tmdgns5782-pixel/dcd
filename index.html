@@ -4,47 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<title>주간 시간표 9/28–10/2</title>
+<title>주간 시간표</title>
 <style>
-:root {
-  --bg: #f5f5f7;
-  --surface: #ffffff;
-  --text: #1d1d1f;
-  --text-2: #6e6e73;
-  --line: rgba(0, 0, 0, .08);
-  --accent: #0071e3;
-  --warn: #b64400;
-  --warn-bg: rgba(255, 149, 0, .16);
-  --glass: rgba(245, 245, 247, .72);
-  --shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 10px 28px rgba(0, 0, 0, .06);
-  --shadow-up: 0 2px 4px rgba(0, 0, 0, .06), 0 16px 36px rgba(0, 0, 0, .12);
-  --ease: cubic-bezier(.2, .8, .2, 1);
-  /* subject tint (hue set per block) */
-  --bs: 90%; --bl: 95%;
-  --fg-s: 70%; --fg-l: 27%;
-  --dot-s: 78%; --dot-l: 52%;
-  --radius: 24px;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #000000;
-    --surface: #1c1c1e;
-    --text: #f5f5f7;
-    --text-2: #a1a1a6;
-    --line: rgba(255, 255, 255, .12);
-    --accent: #2997ff;
-    --warn: #ffb457;
-    --warn-bg: rgba(255, 159, 10, .2);
-    --glass: rgba(0, 0, 0, .68);
-    --shadow: 0 1px 2px rgba(0, 0, 0, .4);
-    --shadow-up: 0 16px 40px rgba(0, 0, 0, .6);
-    --bs: 42%; --bl: 19%;
-    --fg-s: 85%; --fg-l: 90%;
-    --dot-s: 80%; --dot-l: 62%;
-  }
-}
-
-/* Pretendard Variable — 저장소에 포함된 파일을 우선 사용, 실패 시 CDN */
+/* Pretendard Variable — 저장소에 포함된 파일 우선, 실패 시 CDN */
 @font-face {
   font-family: "Pretendard Variable";
   font-weight: 45 920;
@@ -55,8 +17,45 @@
        url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/woff2/PretendardVariable.woff2") format("woff2-variations");
 }
 
+/* 색은 둘뿐: 파랑(오늘·진행 중) / 주황(공휴일 전). 나머지는 모두 흑백 위계로 만든다. */
+:root {
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --text: #1d1d1f;
+  --text-2: #6e6e73;
+  --text-3: #8e8e93;
+  --line: rgba(60, 60, 67, .14);
+  --accent: #0071e3;
+  --warn: #c24100;
+  --warn-bg: rgba(255, 149, 0, .14);
+  --glass: rgba(245, 245, 247, .74);
+  --card-shadow: 0 0 0 .5px rgba(0, 0, 0, .06), 0 1px 3px rgba(0, 0, 0, .05), 0 12px 32px rgba(0, 0, 0, .04);
+  --lift-shadow: 0 0 0 .5px rgba(0, 0, 0, .06), 0 2px 6px rgba(0, 0, 0, .06), 0 20px 44px rgba(0, 0, 0, .1);
+  --ease: cubic-bezier(.2, .8, .2, 1);           /* 임계 감쇠: 기본 스프링 */
+  --ease-spring: cubic-bezier(.3, 1.25, .45, 1);  /* 관성이 있는 동작에만 약간의 오버슛 */
+  --cols: repeat(5, minmax(0, 1fr));
+  --gap: 12px;
+  --row: 132px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --surface: #1c1c1e;
+    --text: #f5f5f7;
+    --text-2: #a1a1a6;
+    --text-3: #8e8e93;
+    --line: rgba(235, 235, 245, .16);
+    --accent: #2997ff;
+    --warn: #ffb04f;
+    --warn-bg: rgba(255, 159, 10, .18);
+    --glass: rgba(28, 28, 30, .74);
+    --card-shadow: 0 0 0 .5px rgba(255, 255, 255, .08);
+    --lift-shadow: 0 0 0 .5px rgba(255, 255, 255, .1), 0 20px 44px rgba(0, 0, 0, .6);
+  }
+}
+
 * { box-sizing: border-box; margin: 0; -webkit-tap-highlight-color: transparent; }
-html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+html { -webkit-text-size-adjust: 100%; }
 body {
   background: var(--bg);
   color: var(--text);
@@ -64,402 +63,299 @@ body {
   font-size: 16px;
   line-height: 1.5;
   letter-spacing: -.011em;
-  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  padding-bottom: env(safe-area-inset-bottom);
+  text-rendering: optimizeLegibility;
   min-height: 100vh;
+  padding-bottom: env(safe-area-inset-bottom);
 }
-/* 은은한 앰비언트 배경 — 머티리얼이 비춰볼 대상 */
-body::before {
-  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
-  background:
-    radial-gradient(60% 50% at 12% -5%, hsl(212 100% 70% / .22), transparent 70%),
-    radial-gradient(50% 45% at 95% 5%, hsl(280 90% 75% / .16), transparent 70%),
-    radial-gradient(55% 40% at 70% 105%, hsl(160 80% 65% / .14), transparent 70%);
-}
-@media (prefers-color-scheme: dark) {
-  body::before {
-    background:
-      radial-gradient(60% 50% at 12% -5%, hsl(212 100% 55% / .28), transparent 70%),
-      radial-gradient(50% 45% at 95% 5%, hsl(280 90% 60% / .22), transparent 70%),
-      radial-gradient(55% 40% at 70% 105%, hsl(160 80% 45% / .16), transparent 70%);
-  }
-}
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; text-align: inherit; }
+.num { font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
 
-/* ───────── Nav (스크롤하면 나타나는 작은 제목) ───────── */
+/* ───────── 상단 바: 스크롤하면 작은 제목으로 ───────── */
 .nav {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+  position: fixed; inset: 0 0 auto 0; z-index: 30;
   height: calc(52px + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top);
-  display: flex; align-items: center; justify-content: center;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
   font-size: 16px; font-weight: 650; letter-spacing: -.02em;
   background: var(--glass);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   backdrop-filter: blur(24px) saturate(180%);
   box-shadow: 0 .5px 0 var(--line);
-  opacity: 0; transform: translateY(-8px); pointer-events: none;
-  transition: opacity .35s var(--ease), transform .35s var(--ease);
+  opacity: 0; transform: translateY(-6px); pointer-events: none;
+  transition: opacity .3s var(--ease), transform .3s var(--ease);
 }
 .nav.on { opacity: 1; transform: none; }
-.nav small { margin-left: 8px; font-size: 13px; font-weight: 500; color: var(--text-2); }
-button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
-.num { font-variant-numeric: tabular-nums; }
+.nav small { font-size: 13px; font-weight: 500; color: var(--text-2); }
 
-/* ───────── Page ───────── */
-.page { max-width: 1280px; margin: 0 auto; padding: 0 20px 56px; }
-
-.hero { padding: 56px 4px 28px; }
-.eyebrow {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-size: 14px; font-weight: 600; letter-spacing: .01em;
-  color: var(--accent);
+/* ───────── 페이지 ───────── */
+.page { max-width: 1240px; margin: 0 auto; padding: 0 20px 64px; }
+.hero { padding: 52px 2px 22px; }
+.hero-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.eyebrow { font-size: 15px; font-weight: 600; color: var(--text-2); }
+.textbtn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 15px; font-weight: 600; color: var(--accent);
+  padding: 6px 4px; transition: opacity .12s ease-out, transform .12s ease-out;
 }
+.textbtn:active { opacity: .45; transform: scale(.96); }
 .hero h1 {
-  margin-top: 10px;
-  font-size: clamp(2.25rem, 6vw, 4rem);
-  line-height: 1.05;
-  letter-spacing: -.03em;
-  font-weight: 800;
-}
-.hero p {
-  margin-top: 14px;
-  font-size: clamp(1rem, 1.6vw, 1.2rem);
-  color: var(--text-2);
-  letter-spacing: -.01em;
+  margin-top: 2px;
+  font-size: clamp(2.5rem, 6vw, 3.5rem);
+  line-height: 1.08;
+  font-weight: 700;
+  letter-spacing: -.035em;
 }
 .notice {
-  margin-top: 22px;
-  display: inline-flex; align-items: flex-start; gap: 10px;
-  padding: 12px 16px;
-  border-radius: 16px;
-  background: var(--warn-bg);
-  color: var(--warn);
-  font-size: 14.5px; font-weight: 600; letter-spacing: -.01em; line-height: 1.45;
+  margin-top: 14px;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 14px 7px 12px; border-radius: 999px;
+  background: var(--warn-bg); color: var(--warn);
+  font-size: 14px; font-weight: 600; letter-spacing: -.01em; line-height: 1.4;
 }
-.notice svg { flex: none; margin-top: 2px; }
+.notice[hidden] { display: none; }
+.notice svg { flex: none; }
 
-/* ───────── Desktop board ───────── */
-.board {
-  display: grid;
-  grid-template-columns: 112px repeat(5, minmax(0, 1fr));
-  grid-template-rows: auto repeat(7, 128px);
-  gap: 10px;
-}
-.dayhead {
-  position: sticky; top: 62px; z-index: 5;
-  padding: 14px 16px;
-  border-radius: 20px;
+/* ───────── 요일 헤더 (데스크톱) ───────── */
+.heads {
+  position: sticky; top: 52px; z-index: 10;
+  margin: 0 -20px; padding: 12px 20px 12px;
+  display: grid; grid-template-columns: var(--cols); gap: var(--gap);
   background: var(--glass);
-  -webkit-backdrop-filter: blur(22px) saturate(180%);
-  backdrop-filter: blur(22px) saturate(180%);
-  box-shadow: inset 0 0 0 1px var(--line);
-  display: flex; flex-direction: column; gap: 2px;
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 .5px 0 var(--line);
 }
-.dayhead .dow { font-size: 22px; font-weight: 750; letter-spacing: -.03em; line-height: 1.15; display: flex; align-items: baseline; gap: 8px; }
-.dayhead .md { font-size: 14px; color: var(--text-2); font-weight: 500; letter-spacing: 0; }
-.dayhead .span { margin-top: 4px; font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
-.dayhead.adj {
-  background: var(--warn-bg);
-  box-shadow: inset 0 0 0 1.5px var(--warn);
+.dh { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 0 6px; min-width: 0; }
+.dh .dow { font-size: 13px; font-weight: 600; color: var(--text-2); display: flex; gap: 6px; align-items: baseline; }
+.dh .dow em { font-style: normal; font-weight: 500; color: var(--text-3); }
+.dh .dn {
+  min-width: 36px; height: 36px; padding: 0 2px; border-radius: 18px;
+  display: grid; place-items: center; margin-left: -4px;
+  font-size: 26px; font-weight: 650; letter-spacing: -.03em; line-height: 1;
 }
-.dayhead.adj .span { font-size: 17px; color: var(--warn); }
-.dayhead .tag {
-  align-self: flex-start; margin-top: 6px;
-  font-size: 12px; font-weight: 700; letter-spacing: 0;
-  padding: 3px 9px; border-radius: 999px;
-  background: var(--warn); color: var(--surface);
+.dh .rng { margin-top: 3px; font-size: 14px; font-weight: 600; color: var(--text-2); }
+.dh.today .dow { color: var(--accent); }
+.dh.today .dn { background: var(--accent); color: #fff; padding: 0 10px; }
+.dh.eve .rng { color: var(--warn); font-weight: 700; }
+.evetag {
+  margin-top: 5px; font-size: 11.5px; font-weight: 700; letter-spacing: 0;
+  padding: 2px 8px; border-radius: 999px; background: var(--warn-bg); color: var(--warn);
 }
-.dayhead.today { background: var(--accent); box-shadow: none; }
-.dayhead.today .dow, .dayhead.today .md { color: #fff; }
-.dayhead.today .md { opacity: .85; }
-.dayhead.today .span { color: #fff; }
-.dayhead.today .tag { background: rgba(255, 255, 255, .22); color: #fff; }
 
-.timecell {
-  align-self: stretch;
-  padding: 12px 6px 12px 4px;
-  display: flex; flex-direction: column; justify-content: center; gap: 1px;
+/* ───────── 시간표 보드 (데스크톱) ───────── */
+.board {
+  margin-top: var(--gap);
+  display: grid; grid-template-columns: var(--cols);
+  grid-template-rows: repeat(7, var(--row));
+  gap: var(--gap);
 }
-.timecell b { font-size: 15px; font-weight: 700; letter-spacing: -.02em; }
-.timecell .t { font-size: 12.5px; color: var(--text-2); font-weight: 500; }
-.timecell .f { font-size: 12px; color: var(--warn); font-weight: 600; }
 
-/* ───────── Block (shared) ───────── */
+/* ───────── 수업 카드: 교시마다 한 줄씩 (교시 · 시간) ───────── */
 .blk {
-  --h: 210;
-  position: relative;
-  text-align: left;
-  border-radius: var(--radius);
-  padding: 18px 18px 16px 28px;
-  background: hsl(var(--h) var(--bs) var(--bl));
-  color: hsl(var(--h) var(--fg-s) var(--fg-l));
-  display: flex; flex-direction: column; justify-content: space-between; gap: 14px;
-  min-width: 0;
-  box-shadow: inset 0 0 0 1px hsl(var(--h) 70% 50% / .1), 0 1px 2px rgba(0, 0, 0, .04), 0 8px 24px hsl(var(--h) 60% 40% / .08);
-  transition: transform .35s var(--ease), box-shadow .35s var(--ease);
-  animation: rise .6s var(--ease) both;
-  animation-delay: calc(var(--i, 0) * 45ms);
+  position: relative; min-width: 0;
+  border-radius: 22px;
+  background: var(--surface);
+  box-shadow: var(--card-shadow);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  transition: transform .4s var(--ease), box-shadow .4s var(--ease);
+  animation: rise .55s var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 35ms);
   touch-action: manipulation;
 }
-/* 애플 캘린더식 좌측 액센트 바 */
-.blk::before {
-  content: ""; position: absolute; left: 12px; top: 16px; bottom: 16px; width: 4px;
-  border-radius: 4px; background: hsl(var(--h) var(--dot-s) var(--dot-l));
-}
 @supports (corner-shape: squircle) {
-  .blk, .card, .dayhead { corner-shape: squircle; }
-  .blk { border-radius: 38px; }
-  .card { border-radius: 44px; }
-  .dayhead { border-radius: 30px; }
+  .blk, .group, .card { corner-shape: squircle; }
+  .blk { border-radius: 34px; } .group { border-radius: 36px; } .card { border-radius: 48px; }
 }
-.blk.muted { --bs: 7%; --fg-s: 10%; }
-.blk.muted::before { background: hsl(240 6% 60% / .55); }
-.board .blk.one { gap: 8px; }
-.board .blk.one .per { display: none; }
-.blk .per { font-size: 12.5px; font-weight: 600; opacity: .7; letter-spacing: 0; }
-.blk .sub {
-  font-size: clamp(1.25rem, 1.9vw, 1.7rem);
-  line-height: 1.15;
-  letter-spacing: -.035em;
-  font-weight: 760;
-  margin-top: 4px;
-  word-break: keep-all;
-}
-.blk .prof { margin-top: 5px; font-size: 14px; font-weight: 500; opacity: .82; letter-spacing: -.01em; word-break: keep-all; }
-.blk .foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
-.blk .time {
-  font-size: 14px; font-weight: 650; letter-spacing: -.005em;
-  font-variant-numeric: tabular-nums;
-}
-.chip {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 12.5px; font-weight: 700; letter-spacing: 0;
-  padding: 3px 10px; border-radius: 999px;
-  background: hsl(var(--h) var(--dot-s) var(--dot-l) / .2);
-}
-.chip::before {
-  content: ""; width: 6px; height: 6px; border-radius: 50%;
-  background: hsl(var(--h) var(--dot-s) var(--dot-l));
-}
-.blk.live { box-shadow: 0 0 0 3px var(--accent), var(--shadow-up); }
-.live-badge {
-  position: absolute; top: 14px; right: 14px;
-  display: none; align-items: center; gap: 6px;
-  font-size: 11.5px; font-weight: 700;
-  padding: 3px 9px; border-radius: 999px;
-  background: var(--accent); color: #fff;
-}
-.live-badge::before {
-  content: ""; width: 6px; height: 6px; border-radius: 50%; background: #fff;
-  animation: pulse 1.6s ease-in-out infinite;
-}
-.blk.live .live-badge { display: inline-flex; }
+.blk.muted { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+.blk.muted .sub { color: var(--text-2); }
 
-/* press = instant feedback (on pointer-down, not release) */
+.sec { flex: 1 1 0; padding: 14px 18px 12px; min-height: 0; display: flex; flex-direction: column; }
+.sec + .sec { border-top: .5px solid var(--line); }
+.pt { display: flex; align-items: baseline; gap: 8px; font-size: 13px; line-height: 1.3; white-space: nowrap; }
+.pt .pn { font-weight: 600; color: var(--text-3); }
+.pt .tm { font-size: 14px; font-weight: 650; letter-spacing: -.01em; color: var(--text); }
+.eve .pt .tm { color: var(--warn); }
+.pt .room { margin-left: auto; font-size: 13px; font-weight: 600; color: var(--text-2); }
+.sub { margin-top: 10px; font-size: 23px; font-weight: 700; line-height: 1.15; letter-spacing: -.035em; word-break: keep-all; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.prof { margin-top: 4px; font-size: 14px; color: var(--text-2); word-break: keep-all; }
+.live-badge {
+  display: none; align-items: center; gap: 5px;
+  font-size: 11.5px; font-weight: 700; letter-spacing: 0; color: var(--accent);
+  padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.live-badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 1.6s ease-in-out infinite; }
+.live .live-badge { display: inline-flex; }
+.blk.live { box-shadow: 0 0 0 2px var(--accent), var(--lift-shadow); }
+
 .blk:active { transform: scale(.975); transition-duration: .12s; }
 @media (hover: hover) {
-  .blk:hover { transform: translateY(-2px); box-shadow: var(--shadow-up); }
+  .blk:hover { transform: translateY(-2px); box-shadow: var(--lift-shadow); }
+  .blk.live:hover { box-shadow: 0 0 0 2px var(--accent), var(--lift-shadow); }
   .blk:active { transform: scale(.975); }
 }
-.blk:focus-visible, .seg button:focus-visible, .close:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes pulse { 50% { opacity: .3; } }
 
-@keyframes rise { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
-@keyframes pulse { 50% { opacity: .25; } }
-
-/* ───────── Mobile agenda ───────── */
+/* ───────── 모바일 ───────── */
 .mobile { display: none; }
 .seg {
-  position: sticky; top: 60px; z-index: 6;
-  margin-top: 4px;
+  position: sticky; top: 8px; z-index: 12;
   display: grid; grid-template-columns: repeat(5, 1fr);
-  padding: 4px; border-radius: 18px;
+  padding: 4px; border-radius: 22px;
   background: var(--glass);
-  -webkit-backdrop-filter: blur(22px) saturate(180%);
-  backdrop-filter: blur(22px) saturate(180%);
-  box-shadow: inset 0 0 0 1px var(--line), var(--shadow);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 0 0 .5px var(--line), 0 6px 20px rgba(0, 0, 0, .06);
 }
 .seg .thumb {
   position: absolute; top: 4px; bottom: 4px; left: 4px;
-  width: calc((100% - 8px) / 5);
-  border-radius: 14px;
+  width: calc((100% - 8px) / 5); border-radius: 18px;
   background: var(--surface);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, .15), 0 4px 12px rgba(0, 0, 0, .08);
+  box-shadow: 0 0 0 .5px rgba(0, 0, 0, .06), 0 2px 8px rgba(0, 0, 0, .12);
   transform: translateX(calc(var(--idx, 0) * 100%));
-  transition: transform .45s var(--ease);
+  transition: transform .5s var(--ease-spring);
 }
 .seg button {
-  position: relative; z-index: 1;
-  padding: 8px 0 7px;
-  display: flex; flex-direction: column; align-items: center; line-height: 1.2;
-  border-radius: 14px;
+  position: relative; z-index: 1; padding: 8px 0 7px; text-align: center;
+  display: flex; flex-direction: column; align-items: center; line-height: 1.15;
   transition: transform .12s ease-out;
 }
-.seg button:active { transform: scale(.94); }
-.seg .d { font-size: 16px; font-weight: 700; letter-spacing: -.02em; }
-.seg .m { font-size: 11.5px; color: var(--text-2); font-weight: 500; }
-.seg button[aria-selected="true"] .m { color: var(--text); }
-.seg button.today .d::after {
-  content: ""; display: block; width: 5px; height: 5px; margin: 2px auto 0;
-  border-radius: 50%; background: var(--accent);
-}
+.seg button:active { transform: scale(.93); }
+.seg .d { font-size: 12.5px; font-weight: 600; color: var(--text-2); }
+.seg .m { font-size: 22px; font-weight: 650; letter-spacing: -.03em; margin-top: 2px; }
+.seg .dots { height: 6px; margin-top: 3px; display: flex; gap: 3px; }
+.seg .dots i { width: 5px; height: 5px; border-radius: 50%; }
+.seg .dots .t { background: var(--accent); }
+.seg .dots .e { background: #ff9500; }
+.seg button.today .d { color: var(--accent); }
 
 .panel { margin-top: 18px; display: none; }
 .panel.on { display: block; animation: slide .5s var(--ease) both; }
-@keyframes slide { from { opacity: 0; transform: translateX(calc(var(--dir, 1) * 28px)); } to { opacity: 1; transform: none; } }
-.panel .adj {
+@keyframes slide { from { opacity: 0; transform: translateX(calc(var(--dir, 1) * 24px)); } to { opacity: 1; transform: none; } }
+.banner {
   margin-bottom: 12px; padding: 14px 18px; border-radius: 20px;
   background: var(--warn-bg); color: var(--warn);
-  box-shadow: inset 0 0 0 1.5px var(--warn);
-  display: flex; flex-direction: column; gap: 2px;
+  display: flex; flex-direction: column; gap: 1px;
 }
-.panel .adj small { font-size: 13px; font-weight: 600; opacity: .85; }
-.panel .adj b { font-size: 22px; font-weight: 780; letter-spacing: -.03em; }
-.agenda { display: grid; gap: 10px; }
-.row { display: grid; grid-template-columns: 54px 1fr; gap: 12px; align-items: stretch; }
-.row .when {
-  padding-top: 16px; text-align: right;
-  display: flex; flex-direction: column; gap: 2px;
-  font-variant-numeric: tabular-nums;
-}
-.row .when b { font-size: 16px; font-weight: 700; letter-spacing: -.02em; line-height: 1.2; }
-.row .when span { font-size: 13px; color: var(--text-2); font-weight: 500; line-height: 1.2; }
-.row .blk { min-height: 92px; }
-.row .blk .sub { font-size: 1.45rem; }
+.banner small { font-size: 13px; font-weight: 600; opacity: .85; }
+.banner b { font-size: 22px; font-weight: 700; letter-spacing: -.03em; }
 
-/* ───────── Sheet ───────── */
+/* 인셋 그룹 리스트: 수업 하나 = 카드 하나, 안에 교시별 줄 */
+.stack { display: grid; gap: 12px; }
+.item {
+  width: 100%; display: block; position: relative;
+  background: var(--surface); border-radius: 24px; box-shadow: var(--card-shadow); overflow: hidden;
+  transition: transform .12s ease-out;
+  animation: rise .5s var(--ease) both; animation-delay: calc(var(--i, 0) * 40ms);
+}
+.item:active { transform: scale(.98); }
+.item.muted { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+.item.muted .sub { color: var(--text-2); }
+.item.live { box-shadow: 0 0 0 2px var(--accent), var(--lift-shadow); }
+.item .sec { padding: 14px 18px 13px; }
+.item .sub { margin-top: 8px; font-size: 22px; }
+.item .pt { font-size: 14px; }
+.item .pt .tm { font-size: 16px; }
+
+/* ───────── 시트 (상세 / 설정) ───────── */
 dialog.sheet {
   border: 0; padding: 0; background: transparent; color: var(--text);
-  width: min(440px, calc(100% - 24px)); max-width: none;
-  margin: auto;
-  overflow: visible;
+  width: min(440px, calc(100% - 24px)); max-width: none; margin: auto; overflow: visible;
 }
-dialog.sheet::backdrop {
-  background: rgba(0, 0, 0, .35);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-}
+dialog.sheet::backdrop { background: rgba(0, 0, 0, .32); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 dialog.sheet[open] { animation: sheet .5s var(--ease) both; }
-dialog.sheet[open]::backdrop { animation: fade .35s ease both; }
-@keyframes sheet { from { opacity: 0; transform: translateY(32px) scale(.97); } to { opacity: 1; transform: none; } }
+dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
+@keyframes sheet { from { opacity: 0; transform: translateY(40px) scale(.98); } to { opacity: 1; transform: none; } }
 @keyframes fade { from { opacity: 0; } }
-.card {
-  --h: 210;
-  border-radius: 28px; overflow: hidden;
-  background: var(--surface);
-  box-shadow: var(--shadow-up);
-}
-.card .top {
-  padding: 28px 26px 22px;
-  background: hsl(var(--h) var(--bs) var(--bl));
-  color: hsl(var(--h) var(--fg-s) var(--fg-l));
-}
-.card.muted .top { --bs: 7%; --fg-s: 10%; }
-.card .top small { font-size: 13px; font-weight: 600; opacity: .7; }
-.card .top h2 { margin-top: 4px; font-size: 2.1rem; line-height: 1.08; letter-spacing: -.035em; font-weight: 700; word-break: keep-all; }
-.card dl { padding: 8px 26px 6px; }
-.card .r { display: flex; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 15.5px; }
-.card .r:last-child { border-bottom: 0; }
-.card dt { color: var(--text-2); font-weight: 500; }
-.card dd { font-weight: 600; text-align: right; letter-spacing: -.01em; }
+.card { border-radius: 32px; background: var(--surface); box-shadow: var(--lift-shadow); overflow: hidden; }
+.grab { display: none; width: 36px; height: 5px; border-radius: 3px; background: var(--line); margin: 8px auto 0; }
+.card .top { padding: 22px 26px 8px; }
+.card .top .cap { font-size: 13px; font-weight: 600; color: var(--text-3); }
+.card .top h2 { margin-top: 4px; font-size: 2rem; line-height: 1.1; font-weight: 700; letter-spacing: -.035em; word-break: keep-all; }
+.card dl { padding: 8px 26px 4px; }
+.card .r { display: flex; justify-content: space-between; gap: 16px; padding: 13px 0; border-top: .5px solid var(--line); font-size: 15.5px; }
+.card .r:first-child { border-top: 0; }
+.card dt { color: var(--text-2); }
+.card dd { font-weight: 600; text-align: right; }
 .card dd.warn { color: var(--warn); }
+.card dd.pl { font-weight: 500; line-height: 1.75; }
+.card dd.pl b { font-weight: 600; color: var(--text-3); margin-right: 10px; }
+.card .hint { padding: 4px 26px 6px; font-size: 14.5px; color: var(--text-2); }
+.card .hint b { color: var(--warn); font-weight: 650; }
 .close {
-  display: block; width: calc(100% - 52px); margin: 8px 26px 26px;
-  padding: 14px; border-radius: 16px;
-  background: var(--accent); color: #fff; font-weight: 700; font-size: 16px;
-  transition: transform .12s ease-out;
+  display: block; width: calc(100% - 52px); margin: 10px 26px 26px; padding: 14px;
+  border-radius: 16px; text-align: center;
+  background: var(--accent); color: #fff; font-weight: 650; font-size: 16px;
+  transition: transform .12s ease-out, opacity .12s;
 }
-.close:active { transform: scale(.97); }
-
-/* ───────── 공휴일 설정 ───────── */
-.actions { margin-top: 22px; }
-.pill {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 10px 16px; border-radius: 999px;
-  font-size: 14.5px; font-weight: 650; letter-spacing: -.01em;
-  background: var(--surface); color: var(--accent);
-  box-shadow: inset 0 0 0 1px var(--line), var(--shadow);
-  transition: transform .12s ease-out;
-}
-.pill:active { transform: scale(.96); }
-.notice[hidden] { display: none; }
-.notice { margin-top: 12px; }
-.card.plain .top { background: var(--warn-bg); color: var(--warn); }
-.card .hint { padding: 18px 26px 0; font-size: 14.5px; color: var(--text-2); line-height: 1.5; }
-.card .hint b { color: var(--warn); }
-.slist { padding: 6px 26px 4px; }
-.srow { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); }
-.srow:last-child { border-bottom: 0; }
-.srow b { font-size: 16.5px; font-weight: 650; letter-spacing: -.02em; }
-.srow b .num { font-weight: 500; color: var(--text-2); margin-left: 4px; }
+.close:active { transform: scale(.97); opacity: .85; }
+.slist { padding: 4px 26px 0; }
+.srow { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-top: .5px solid var(--line); }
+.srow:first-child { border-top: 0; }
+.srow b { font-size: 16.5px; font-weight: 600; letter-spacing: -.02em; }
+.srow b .num { font-weight: 500; color: var(--text-3); margin-left: 4px; }
 .srow small { display: block; font-size: 13px; color: var(--text-2); }
-.sw {
-  position: relative; flex: none; width: 51px; height: 31px; border-radius: 999px;
-  background: rgba(120, 120, 128, .32);
-  transition: background .3s var(--ease);
-}
-.sw i {
-  position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%;
-  background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, .28);
-  transition: transform .35s var(--ease), width .2s var(--ease);
-}
+.sw { position: relative; flex: none; width: 51px; height: 31px; border-radius: 999px; background: rgba(120, 120, 128, .32); transition: background .3s var(--ease); }
+.sw i { position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, .28); transition: transform .4s var(--ease-spring), width .2s var(--ease); }
 .sw:active i { width: 33px; }
 .sw[aria-checked="true"] { background: #34c759; }
 .sw[aria-checked="true"] i { transform: translateX(20px); }
 .sw[aria-checked="true"]:active i { transform: translateX(14px); }
-.sw:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
-/* ───────── Responsive ───────── */
+/* ───────── 반응형 ───────── */
 @media (max-width: 860px) {
   .page { padding: 0 16px 48px; }
-  .hero { padding: 36px 2px 20px; }
-  .board { display: none; }
+  .hero { padding: 36px 2px 16px; }
+  .heads, .board { display: none; }
   .mobile { display: block; }
-  dialog.sheet { margin: auto auto 12px; }
+  dialog.sheet { margin: auto auto 10px; }
+  .card { touch-action: none; }
+  .grab { display: block; }
 }
-@media (min-width: 861px) and (max-width: 1100px) {
-  .board { grid-template-columns: 88px repeat(5, minmax(0, 1fr)); gap: 8px; }
-  .blk { padding: 14px 13px; }
-  .dayhead { padding: 12px; }
-  .timecell .t, .timecell .f { font-size: 11.5px; }
+@media (min-width: 861px) and (max-width: 1060px) {
+  :root { --gap: 8px; }
+  .sec { padding: 12px 13px 10px; }
+  .sub { font-size: 19px; }
+  .pt .room { display: none; }
 }
 
-/* ───────── Accessibility ───────── */
+/* ───────── 접근성 ───────── */
 @media (prefers-reduced-motion: reduce) {
-  .blk, .panel.on, dialog.sheet[open], dialog.sheet[open]::backdrop { animation: none; }
-  .blk, .seg .thumb { transition: opacity .2s ease; }
+  .blk, .item, .panel.on, dialog.sheet[open], dialog.sheet[open]::backdrop { animation: none; }
   .blk:hover { transform: none; }
+  .seg .thumb, .sw i { transition: opacity .2s; }
   .live-badge::before { animation: none; }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .dayhead, .seg { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .heads, .seg, .nav { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 @media (prefers-contrast: more) {
-  .blk { box-shadow: inset 0 0 0 2px currentColor; }
+  .blk, .item { box-shadow: 0 0 0 1.5px currentColor; }
 }
 </style>
 </head>
 <body>
-<div class="nav" id="nav" aria-hidden="true">이번 주 시간표<small>9/28 – 10/2</small></div>
+<div class="nav" id="nav" aria-hidden="true">시간표<small id="navRange"></small></div>
 
 <main class="page">
   <header class="hero">
-    <div class="eyebrow">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="4"/><path d="M8 2.5v4M16 2.5v4M3 10h18"/></svg>
-      <span>9월 28일 – 10월 2일</span>
-    </div>
-    <h1>이번 주 시간표</h1>
-    <p>교시별 시작·종료 시간과 강의실을 한눈에 확인하세요.</p>
-    <div class="actions">
-      <button class="pill" id="openSettings">
+    <div class="hero-top">
+      <span class="eyebrow" id="weekLabel"></span>
+      <button class="textbtn" id="openSettings">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="4"/><path d="M8 2.5v4M16 2.5v4M3 10h18M9 15l2 2 4-4"/></svg>
         공휴일 설정
       </button>
     </div>
+    <h1>시간표</h1>
     <div class="notice" id="notice">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.5l3.5 2"/></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.5l3.5 2"/></svg>
       <span id="noticeText"></span>
     </div>
   </header>
 
+  <div class="heads" id="heads"></div>
   <section class="board" id="board" aria-label="주간 시간표"></section>
 
   <section class="mobile" id="mobile" aria-label="요일별 시간표">
@@ -468,28 +364,19 @@ dialog.sheet[open]::backdrop { animation: fade .35s ease both; }
   </section>
 </main>
 
-<dialog class="sheet" id="sheet" aria-label="수업 상세">
-  <div class="card" id="card"></div>
-</dialog>
-
-<dialog class="sheet" id="settings" aria-label="공휴일 설정">
-  <div class="card plain" id="setcard"></div>
-</dialog>
+<dialog class="sheet" id="sheet" aria-label="수업 상세"><div class="card" id="card"></div></dialog>
+<dialog class="sheet" id="settings" aria-label="공휴일 설정"><div class="card" id="setcard"></div></dialog>
 
 <script>
-const DAYS = [
-  { dow: '월', md: '9/28', date: '2026-09-28' },
-  { dow: '화', md: '9/29', date: '2026-09-29' },
-  { dow: '수', md: '9/30', date: '2026-09-30' },
-  { dow: '목', md: '10/1', date: '2026-10-01' },
-  { dow: '금', md: '10/2', date: '2026-10-02' },
-];
+const DAYS = ['2026-09-28', '2026-09-29', '2026-09-30', '2026-10-01', '2026-10-02'].map((date, i) => {
+  const [, m, n] = date.split('-').map(Number);
+  return { dow: '월화수목금'[i], date, m, n, md: `${m}/${n}` };
+});
+
 // 평소 시간표 / 공휴일 전 시간표 (공휴일 전날로 지정한 요일에 적용)
 const NORMAL = [['09:00','09:50'],['10:00','10:50'],['11:00','11:50'],['14:00','14:50'],['15:00','15:50'],['16:00','16:50'],['17:00','17:50']];
-const EVE = [['08:00','08:50'],['09:00','09:50'],['10:00','10:50'],['11:00','11:50'],['13:00','13:50'],['14:00','14:50'],['15:00','15:50']];
+const EVE    = [['08:00','08:50'],['09:00','09:50'],['10:00','10:50'],['11:00','11:50'],['13:00','13:50'],['14:00','14:50'],['15:00','15:50']];
 
-// 과목별 색상 (hue). muted = 자습/미정 같은 비강의 블록
-const HUE = { '민생': 212, '죄종별': 268, '체포술': 12, '사격': 36, '112초동': 190, '관계성': 330, '민감': 148, '풍속': 92, '팀빌딩': 52, '자기주도학습': 240 };
 const MUTED = new Set(['자기주도학습']);
 
 // [요일, 시작교시, 끝교시, 과목, 교수(들), 강의실]
@@ -515,7 +402,7 @@ const RAW = [
 const KEY = 'timetable.holidayEve.v1';
 const loadEve = () => {
   try { const v = JSON.parse(localStorage.getItem(KEY)); if (Array.isArray(v)) return new Set(v); } catch (e) {}
-  return new Set([4]); // 기본값: 금요일
+  return new Set([4]);
 };
 const saveEve = () => { try { localStorage.setItem(KEY, JSON.stringify([...eve])); } catch (e) {} };
 let eve = loadEve();
@@ -526,19 +413,28 @@ let BLOCKS = [];
 function computeBlocks() {
   BLOCKS = RAW.map(([day, from, to, subject, profs, room]) => {
     const slots = slotsFor(day);
+    const periods = [];
+    for (let p = from; p <= to; p++) periods.push({ p, s: slots[p - 1][0], e: slots[p - 1][1] });
     return {
-      day, from, to, subject, room,
+      day, from, to, subject, room, periods,
       prof: profs.length ? profs.join(' · ') + ' 교수님' : '',
       start: slots[from - 1][0], end: slots[to - 1][1],
-      hue: HUE[subject], muted: MUTED.has(subject),
-      per: from === to ? `${from}교시` : `${from}–${to}교시`,
+      muted: MUTED.has(subject),
     };
   });
 }
 
 const $ = (s) => document.querySelector(s);
 const roomLabel = (r) => (r === '미정' ? '장소 미정' : r);
-const roomChip = (b) => `<span class="chip">${roomLabel(b.room)}</span>`;
+
+/* 교시 한 줄: "1교시  09:00 – 09:50" (첫 줄에만 과목·교수님, 강의실은 오른쪽) */
+function sectionsHTML(b) {
+  return b.periods.map((x, k) => `
+    <div class="sec">
+      <div class="pt num"><span class="pn">${x.p}교시</span><span class="tm">${x.s} – ${x.e}</span>${k === 0 ? `<span class="room">${b.room}</span>` : ''}</div>
+      ${k === 0 ? `<div class="sub">${b.subject}<span class="live-badge">진행 중</span></div>${b.prof ? `<div class="prof">${b.prof}</div>` : ''}` : ''}
+    </div>`).join('');
+}
 
 /* ── now (테스트: ?now=2026-09-29T10:30) ── */
 const nowParam = new URLSearchParams(location.search).get('now');
@@ -551,66 +447,43 @@ const todayIdx = () => {
   return DAYS.findIndex((x) => x.date === key);
 };
 
-/* ── Desktop board ── */
-function buildBoard() {
+/* ── 데스크톱 ── */
+function buildHeads() {
   const t = todayIdx();
-  let html = `<div></div>` + DAYS.map((d, i) => `
-    <div class="dayhead${i === t ? ' today' : ''}${eve.has(i) ? ' adj' : ''}" style="grid-column:${i + 2};grid-row:1">
-      <span class="dow">${d.dow}<span class="md num">${d.md}</span></span>
-      <span class="span num">${dayRange(i)}</span>
-      ${eve.has(i) ? '<span class="tag">공휴일 전 · 시간 조정</span>' : ''}
+  $('#heads').innerHTML = DAYS.map((d, i) => `
+    <div class="dh${i === t ? ' today' : ''}${eve.has(i) ? ' eve' : ''}">
+      <span class="dow">${d.dow}${i === 0 || d.m !== DAYS[i - 1].m ? `<em>${d.m}월</em>` : ''}</span>
+      <span class="dn num">${d.n}</span>
+      <span class="rng num">${dayRange(i)}</span>
+      ${eve.has(i) ? '<span class="evetag">공휴일 전</span>' : ''}
     </div>`).join('');
-
-  NORMAL.forEach((s, i) => {
-    html += `<div class="timecell" style="grid-column:1;grid-row:${i + 2}"><b>${i + 1}교시</b></div>`;
-  });
-
-  BLOCKS.forEach((b, n) => {
-    html += `<button class="blk${b.muted ? ' muted' : ''}${b.from === b.to ? ' one' : ''}" data-i="${n}"
-      style="--h:${b.hue};--i:${n};grid-column:${b.day + 2};grid-row:${b.from + 1} / ${b.to + 2}"
-      aria-label="${b.subject} ${b.start}부터 ${b.end}까지 ${b.room}">
-      <span class="live-badge">진행 중</span>
-      <div>
-        <div class="per">${b.per}</div>
-        <div class="sub">${b.subject}</div>
-        ${b.prof ? `<div class="prof">${b.prof}</div>` : ''}
-      </div>
-      <div class="foot"><span class="time">${b.start} – ${b.end}</span>${roomChip(b)}</div>
-    </button>`;
-  });
-  $('#board').innerHTML = html;
+}
+function buildBoard() {
+  $('#board').innerHTML = BLOCKS.map((b, n) => `
+    <button class="blk${b.muted ? ' muted' : ''}${eve.has(b.day) ? ' eve' : ''}" data-i="${n}"
+      style="--i:${n};grid-column:${b.day + 1};grid-row:${b.from} / ${b.to + 1}"
+      aria-label="${b.subject}, ${b.start}부터 ${b.end}까지, ${b.room}">${sectionsHTML(b)}</button>`).join('');
 }
 
-/* ── Mobile agenda ── */
+/* ── 모바일 ── */
 let cur = Math.max(0, todayIdx()), prev = cur;
 function buildMobile() {
   const t = todayIdx();
   $('#seg').querySelectorAll('button').forEach((b) => b.remove());
   $('#seg').insertAdjacentHTML('beforeend', DAYS.map((d, i) => `
-    <button role="tab" data-d="${i}" class="${i === t ? 'today' : ''}" aria-selected="false">
-      <span class="d">${d.dow}</span><span class="m num">${d.md}</span>
+    <button role="tab" data-d="${i}" class="${i === t ? 'today' : ''}" aria-selected="false" aria-label="${d.dow}요일 ${d.md}">
+      <span class="d">${d.dow}</span><span class="m num">${d.n}</span>
+      <span class="dots">${i === t ? '<i class="t"></i>' : ''}${eve.has(i) ? '<i class="e"></i>' : ''}</span>
     </button>`).join(''));
 
   $('#panels').innerHTML = DAYS.map((d, i) => `
     <div class="panel" data-p="${i}" role="tabpanel">
-      ${eve.has(i) ? `<div class="adj"><small>공휴일 전 · 시간 조정</small><b class="num">${EVE[0][0]} 시작 · ${EVE[6][1]} 종료</b></div>` : ''}
-      <div class="agenda">
+      ${eve.has(i) ? `<div class="banner"><small>${d.dow}요일 ${d.md} · 공휴일 전</small><b class="num">${EVE[0][0]} 시작 · ${EVE[6][1]} 종료</b></div>` : ''}
+      <div class="stack">
         ${BLOCKS.map((b, n) => b.day !== i ? '' : `
-          <div class="row">
-            <div class="when num"><b>${b.start}</b><span>${b.end}</span></div>
-            <button class="blk${b.muted ? ' muted' : ''}" data-i="${n}" style="--h:${b.hue};--i:${n % 3}">
-              <span class="live-badge">진행 중</span>
-              <div>
-                <div class="per">${b.per}</div>
-                <div class="sub">${b.subject}</div>
-                ${b.prof ? `<div class="prof">${b.prof}</div>` : ''}
-              </div>
-              <div class="foot">${roomChip(b)}</div>
-            </button>
-          </div>`).join('')}
+          <button class="item${b.muted ? ' muted' : ''}${eve.has(i) ? ' eve' : ''}" data-i="${n}" style="--i:${n % 3}">${sectionsHTML(b)}</button>`).join('')}
       </div>
     </div>`).join('');
-
   select(cur, true);
 }
 function select(i, first) {
@@ -624,9 +497,7 @@ function select(i, first) {
     if (on && !first) { p.style.animation = 'none'; void p.offsetWidth; p.style.animation = ''; }
   });
 }
-$('#seg').addEventListener('click', (e) => {
-  const b = e.target.closest('button'); if (b) select(+b.dataset.d);
-});
+$('#seg').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) select(+b.dataset.d); });
 let sx = null, sy = null;
 $('#panels').addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
 $('#panels').addEventListener('touchend', (e) => {
@@ -635,17 +506,62 @@ $('#panels').addEventListener('touchend', (e) => {
   if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) select(Math.min(4, Math.max(0, cur + (dx < 0 ? 1 : -1))));
   sx = null;
 }, { passive: true });
+document.addEventListener('touchstart', () => {}, { passive: true }); // iOS: 터치 즉시 :active 반응
 
-/* ── Detail sheet ── */
-const sheet = $('#sheet');
+/* ── 시트: 아래로 끌어서 닫기 (1:1 추적 · 속도 투영 · 고무줄 저항) ── */
+function makeSheet(dlg, card) {
+  const mobile = () => matchMedia('(max-width: 860px)').matches;
+  const rubber = (o, dim = 320, c = .55) => (o * dim * c) / (dim + c * Math.abs(o));
+  const project = (v, d = .998) => (v / 1000) * d / (1 - d); // Apple의 감속 투영식
+  let drag = null;
+
+  card.addEventListener('pointerdown', (e) => {
+    if (!mobile() || e.target.closest('button')) return;
+    card.getAnimations().forEach((a) => a.cancel()); // 이동 중에도 붙잡을 수 있다
+    card.setPointerCapture(e.pointerId);
+    drag = { y0: e.clientY, y: 0, pts: [{ y: e.clientY, t: e.timeStamp }] };
+  });
+  card.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    const dy = e.clientY - drag.y0;
+    drag.pts.push({ y: e.clientY, t: e.timeStamp }); if (drag.pts.length > 6) drag.pts.shift();
+    drag.y = dy > 0 ? dy : rubber(dy);
+    card.style.transform = `translateY(${drag.y}px)`;
+  });
+  const end = () => {
+    if (!drag) return;
+    const a = drag.pts[0], z = drag.pts[drag.pts.length - 1];
+    const v = ((z.y - a.y) / Math.max(1, z.t - a.t)) * 1000;
+    const y = drag.y, h = card.offsetHeight;
+    const projected = Math.max(0, y) + project(v);
+    drag = null;
+    const from = `translateY(${y}px)`;
+    if (projected > h * .45) {
+      card.animate([{ transform: from }, { transform: `translateY(${h + 80}px)` }], { duration: 280, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' })
+        .finished.then(() => dlg.close()).catch(() => {});
+    } else {
+      card.style.transform = '';
+      card.animate([{ transform: from }, { transform: 'none' }], { duration: 450, easing: 'cubic-bezier(.3,1.2,.4,1)' });
+    }
+  };
+  card.addEventListener('pointerup', end);
+  card.addEventListener('pointercancel', end);
+  dlg.addEventListener('close', () => { card.getAnimations().forEach((a) => a.cancel()); card.style.transform = ''; });
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+}
+const sheet = $('#sheet'), settings = $('#settings');
+makeSheet(sheet, $('#card'));
+makeSheet(settings, $('#setcard'));
+
+/* ── 수업 상세 ── */
 function openSheet(n) {
   const b = BLOCKS[n], d = DAYS[b.day];
-  $('#card').className = 'card' + (b.muted ? ' muted' : '');
-  $('#card').style.setProperty('--h', b.hue);
   $('#card').innerHTML = `
-    <div class="top"><small>${d.dow}요일 · ${d.md} · ${b.per}</small><h2>${b.subject}</h2></div>
+    <div class="grab"></div>
+    <div class="top"><div class="cap">${d.dow}요일 · ${d.md}</div><h2>${b.subject}</h2></div>
     <dl>
       <div class="r"><dt>시간</dt><dd class="num">${b.start} – ${b.end}</dd></div>
+      ${b.periods.length > 1 ? `<div class="r"><dt>교시별</dt><dd class="pl num">${b.periods.map((x) => `<div><b>${x.p}교시</b>${x.s} – ${x.e}</div>`).join('')}</dd></div>` : ''}
       ${b.prof ? `<div class="r"><dt>교수님</dt><dd>${b.prof.replace(' 교수님', '')}</dd></div>` : ''}
       <div class="r"><dt>강의실</dt><dd>${roomLabel(b.room)}</dd></div>
       ${eve.has(b.day) ? '<div class="r"><dt>안내</dt><dd class="warn">공휴일 전 조정 시간</dd></div>' : ''}
@@ -654,36 +570,13 @@ function openSheet(n) {
   $('#closeBtn').onclick = () => sheet.close();
   sheet.showModal();
 }
-document.addEventListener('click', (e) => {
-  const b = e.target.closest('.blk'); if (b) openSheet(+b.dataset.i);
-});
-sheet.addEventListener('click', (e) => { if (e.target === sheet) sheet.close(); });
+document.addEventListener('click', (e) => { const b = e.target.closest('.blk, .item'); if (b) openSheet(+b.dataset.i); });
 
-/* ── Live state ── */
-function tick() {
-  const now = getNow();
-  document.querySelectorAll('.blk').forEach((el) => el.classList.toggle('live', isLive(BLOCKS[+el.dataset.i], now)));
-}
-
-new IntersectionObserver(([e]) => $('#nav').classList.toggle('on', !e.isIntersecting), { rootMargin: '-40px 0px 0px 0px' })
-  .observe(document.querySelector('.hero h1'));
-
-function updateNotice() {
-  const el = $('#notice'), days = [...eve].sort();
-  el.hidden = !days.length;
-  if (!days.length) return;
-  const label = days.map((i) => DAYS[i].dow).join('·') + '요일' + (days.length === 1 ? ` (${DAYS[days[0]].md})` : '');
-  $('#noticeText').innerHTML = `${label}은 공휴일 전날 — <b>${EVE[0][0]} 시작 · ${EVE[6][1]} 종료</b>로 앞당겨 진행돼요.`;
-}
-function render() {
-  computeBlocks(); buildBoard(); buildMobile(); updateNotice(); tick();
-}
-
-/* ── 공휴일 설정 시트 ── */
-const settings = $('#settings');
+/* ── 공휴일 설정 ── */
 function buildSettings() {
   $('#setcard').innerHTML = `
-    <div class="top"><small>시간 조정</small><h2>공휴일 설정</h2></div>
+    <div class="grab"></div>
+    <div class="top"><h2>공휴일 설정</h2></div>
     <p class="hint">공휴일 전날로 켠 요일은 <b>${EVE[0][0]} 시작 · ${EVE[6][1]} 종료</b> 시간표로 바뀌어요.</p>
     <div class="slist">${DAYS.map((d, i) => `
       <div class="srow">
@@ -701,12 +594,29 @@ function syncSettings() {
 }
 $('#openSettings').addEventListener('click', () => { buildSettings(); settings.showModal(); });
 settings.addEventListener('click', (e) => {
-  if (e.target === settings) return settings.close();
   const sw = e.target.closest('.sw'); if (!sw) return;
   const i = +sw.dataset.d;
   eve.has(i) ? eve.delete(i) : eve.add(i);
   saveEve(); syncSettings(); render();
 });
+
+/* ── 공통 ── */
+function updateTop() {
+  $('#weekLabel').textContent = `${DAYS[0].m}월 ${DAYS[0].n}일 – ${DAYS[4].m}월 ${DAYS[4].n}일`;
+  $('#navRange').textContent = `${DAYS[0].md} – ${DAYS[4].md}`;
+  const days = [...eve].sort(), el = $('#notice');
+  el.hidden = !days.length;
+  if (!days.length) return;
+  $('#noticeText').innerHTML = `${days.map((i) => DAYS[i].dow).join('·')}요일 공휴일 전 · <b>${EVE[0][0]} 시작 – ${EVE[6][1]} 종료</b>`;
+}
+function tick() {
+  const now = getNow();
+  document.querySelectorAll('.blk, .item').forEach((el) => el.classList.toggle('live', isLive(BLOCKS[+el.dataset.i], now)));
+}
+function render() { computeBlocks(); buildHeads(); buildBoard(); buildMobile(); updateTop(); tick(); }
+
+new IntersectionObserver(([e]) => $('#nav').classList.toggle('on', !e.isIntersecting), { rootMargin: '-40px 0px 0px 0px' })
+  .observe(document.querySelector('.hero h1'));
 
 render();
 setInterval(tick, 30000);
