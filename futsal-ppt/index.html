@@ -1,0 +1,1673 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>풋살 심판 교육 PPT 시안</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;0,800;1,700;1,800&display=swap">
+<style>
+/* Pretendard Variable — 배포 시 같은 폴더의 fonts/, 저장소에서는 ../fonts/ */
+@font-face {
+  font-family: "Pretendard Variable";
+  font-weight: 45 920;
+  font-style: normal;
+  font-display: swap;
+  src: local("Pretendard Variable"),
+       url("fonts/PretendardVariable.woff2") format("woff2"),
+       url("../fonts/PretendardVariable.woff2") format("woff2");
+}
+
+/* 레이아웃: 상단 바 → ① 구성안(시간 막대·표) → ② 16:9 슬라이드 시안(1열, 누르면 발표 모드) → ③ GPT 프롬프트 → ④ PPT 제작 가이드.
+   슬라이드 내부는 1920×1080 설계값을 --u(=100cqw/1920)로 환산해 어떤 폭에서도 같은 비율로 줄어든다. */
+:root {
+  --bg: #EDF0F4;
+  --surface: #FFFFFF;
+  --surface-2: #F6F8FB;
+  --fg: #0C1A2C;
+  --fg-2: #46566B;
+  --fg-3: #6A788B;
+  --line: #D6DDE6;
+  --accent: #1E5BD8;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #E2EBFB;
+  --hi: #FFD23F;
+  --hi-ink: #1F1800;
+  --warn: #B8323A;
+  --warn-soft: #FBE6E7;
+  --shadow: 0 1px 2px rgba(12, 26, 44, .06), 0 10px 28px rgba(12, 26, 44, .08);
+  --tb-0: color-mix(in srgb, var(--fg-3) 28%, var(--surface));
+  --tb-1: color-mix(in srgb, var(--accent) 24%, var(--surface));
+  --tb-2: color-mix(in srgb, var(--accent) 42%, var(--surface));
+  --tb-3: var(--accent);
+  --tb-4: color-mix(in srgb, var(--fg-3) 45%, var(--surface));
+
+  /* 발표 모드 무대: 테마와 무관하게 항상 어둡게 */
+  --stage: #05080D;
+  --stage-2: #0D141E;
+  --stage-3: #182334;
+  --stage-fg: #E8EDF4;
+  --stage-fg-2: #9AA8BA;
+  --stage-warn: #FF8A8F;
+
+  --font-ko: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+  --font-num: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", "Pretendard Variable", sans-serif;
+
+  /* 슬라이드 팔레트: PPT 디자인 자체이므로 테마와 상관없이 고정 */
+  --s-navy: #0B1A2E;
+  --s-navy-2: #132A4B;
+  --s-navy-3: #20406E;
+  --s-paper: #F3F5F8;
+  --s-white: #FFFFFF;
+  --s-ink: #0B1A2E;
+  --s-ink-2: #46566B;
+  --s-ink-3: #6F7C90;
+  --s-line: #D9E0E9;
+  --s-blue: #1E5BD8;
+  --s-blue-deep: #17469F;
+  --s-blue-soft: #E4ECFB;
+  --s-yellow: #FFD23F;
+  --s-red: #E5484D;
+  --s-on-dark: #C3CEDD;
+  --s-on-dark-2: #8FA0B8;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #08101A;
+    --surface: #0F1A28;
+    --surface-2: #0C1622;
+    --fg: #E5EBF2;
+    --fg-2: #A6B2C1;
+    --fg-3: #7F8C9D;
+    --line: #213045;
+    --accent: #6F9DFF;
+    --accent-ink: #07101D;
+    --accent-soft: #15284A;
+    --hi: #FFD23F;
+    --hi-ink: #1F1800;
+    --warn: #FF8A8F;
+    --warn-soft: #3A1619;
+    --shadow: 0 0 0 1px rgba(255, 255, 255, .04), 0 12px 32px rgba(0, 0, 0, .5);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #08101A;
+  --surface: #0F1A28;
+  --surface-2: #0C1622;
+  --fg: #E5EBF2;
+  --fg-2: #A6B2C1;
+  --fg-3: #7F8C9D;
+  --line: #213045;
+  --accent: #6F9DFF;
+  --accent-ink: #07101D;
+  --accent-soft: #15284A;
+  --hi: #FFD23F;
+  --hi-ink: #1F1800;
+  --warn: #FF8A8F;
+  --warn-soft: #3A1619;
+  --shadow: 0 0 0 1px rgba(255, 255, 255, .04), 0 12px 32px rgba(0, 0, 0, .5);
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 76px; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-ko);
+  font-size: 16px;
+  line-height: 1.65;
+  letter-spacing: -0.012em;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4, p, ul, ol, dl, dd, figure { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+a { color: var(--accent); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+.sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* ───── 상단 바 ───── */
+.bar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  background: color-mix(in srgb, var(--bg) 84%, transparent);
+  -webkit-backdrop-filter: saturate(1.4) blur(14px);
+  backdrop-filter: saturate(1.4) blur(14px);
+  border-bottom: 1px solid var(--line);
+}
+.bar-in {
+  max-width: 1160px; margin: 0 auto; padding-inline: clamp(16px, 4vw, 32px);
+  height: 60px; display: flex; align-items: center; gap: 14px;
+}
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 15px; white-space: nowrap; }
+.brand svg { width: 30px; height: 16px; color: var(--accent); flex: none; }
+.nav { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; flex: 1; min-width: 0; }
+.nav::-webkit-scrollbar { display: none; }
+.nav a {
+  padding: 7px 12px; border-radius: 999px; color: var(--fg-2); text-decoration: none;
+  font-size: 14px; font-weight: 600; white-space: nowrap;
+}
+.nav a:hover { color: var(--fg); background: var(--surface); }
+.btn-present {
+  display: inline-flex; align-items: center; gap: 8px; flex: none;
+  padding: 9px 15px; border-radius: 999px; background: var(--fg); color: var(--bg);
+  font-size: 14px; font-weight: 700; white-space: nowrap;
+}
+.btn-present svg { width: 12px; height: 12px; }
+@media (max-width: 640px) { .brand span { display: none; } }
+
+/* ───── 공통 섹션 ───── */
+.wrap { max-width: 1160px; margin: 0 auto; padding-inline: clamp(16px, 4vw, 32px); padding-block: 0 120px; }
+.intro { padding-block: 56px 28px; display: grid; gap: 18px; }
+.intro h1 { font-size: clamp(30px, 5vw, 46px); line-height: 1.18; font-weight: 800; letter-spacing: -0.035em; text-wrap: balance; }
+.intro p { color: var(--fg-2); font-size: 17px; max-width: 64ch; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; }
+.meta span {
+  display: inline-flex; align-items: baseline; gap: 6px;
+  padding: 6px 13px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line);
+  font-size: 14px; font-weight: 600; color: var(--fg-2);
+}
+.meta b { color: var(--fg); font-family: var(--font-num); font-size: 17px; font-weight: 700; letter-spacing: .02em; }
+
+.sec { padding-block: 52px 8px; display: grid; gap: 22px; }
+.sec-head { display: grid; gap: 6px; }
+.sec-head .k { font-family: var(--font-num); font-weight: 700; font-size: 15px; letter-spacing: .16em; color: var(--accent); }
+.sec-head h2 { font-size: clamp(24px, 3.4vw, 32px); line-height: 1.25; font-weight: 800; letter-spacing: -0.03em; text-wrap: balance; }
+.sec-head p { color: var(--fg-2); max-width: 68ch; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: clamp(18px, 3vw, 28px); min-width: 0; }
+.panel h3 { font-size: 17px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 14px; }
+
+/* ───── ① 시간 막대 ───── */
+.tb { display: grid; gap: 10px; }
+.tb-track { display: flex; gap: 3px; height: 46px; }
+.tb-seg {
+  flex: var(--sec) 1 0; min-width: 0; background: var(--c); border-radius: 8px;
+  display: flex; align-items: center; padding-inline: 10px; overflow: hidden;
+  font-size: 13px; font-weight: 700; color: var(--fg); white-space: nowrap;
+}
+.tb-seg.core { color: var(--accent-ink); }
+.tb-ticks { position: relative; height: 18px; font-family: var(--font-num); font-size: 13px; font-weight: 600; color: var(--fg-3); }
+.tb-ticks span { position: absolute; left: calc(var(--i) / 8 * 100%); transform: translateX(-50%); }
+.tb-ticks span:first-child { transform: none; }
+.tb-ticks span:last-child { transform: translateX(-100%); }
+.tb-legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-top: 8px; }
+.tb-legend li {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 10px; align-items: baseline;
+  padding: 12px 14px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line);
+}
+.tb-legend i { width: 10px; height: 10px; border-radius: 3px; background: var(--c); align-self: center; }
+.tb-legend b { font-size: 14.5px; font-weight: 800; }
+.tb-legend em { font-style: normal; font-family: var(--font-num); font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tb-legend small { grid-column: 2 / -1; font-size: 13px; color: var(--fg-3); }
+
+/* ───── ① 구성표 ───── */
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.tbl { width: 100%; min-width: 780px; border-collapse: collapse; font-size: 14.5px; }
+.tbl th, .tbl td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tbl thead th { font-size: 12.5px; font-weight: 700; color: var(--fg-3); letter-spacing: .03em; background: var(--surface-2); white-space: nowrap; }
+.tbl tbody tr:last-child td { border-bottom: 0; }
+.tbl td.n, .tbl td.t { font-family: var(--font-num); font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tbl td.n { color: var(--fg-3); }
+.tbl td.t b { color: var(--fg); font-weight: 700; }
+.tbl td.t span { color: var(--fg-3); font-size: 14px; margin-left: 4px; }
+.tbl td.ch { white-space: nowrap; font-weight: 700; color: var(--fg-2); }
+.tbl td.ttl { font-weight: 700; min-width: 170px; }
+.tbl td.lay { color: var(--fg-2); }
+.tbl tr.core td { background: color-mix(in srgb, var(--accent) 6%, var(--surface)); }
+.tbl tfoot td { font-weight: 800; background: var(--surface-2); border-top: 1px solid var(--line); border-bottom: 0; }
+.tag {
+  display: inline-block; padding: 1px 8px; border-radius: 6px; margin-left: 6px; vertical-align: 1px;
+  font-size: 12px; font-weight: 800; letter-spacing: 0; white-space: nowrap;
+  background: var(--hi); color: var(--hi-ink);
+}
+.tag.warn { background: var(--warn-soft); color: var(--warn); }
+.tag.blue { background: var(--accent-soft); color: var(--accent); }
+
+/* ───── ② 슬라이드 목록 ───── */
+.deck { display: grid; gap: 44px; }
+.shot { display: grid; gap: 14px; min-width: 0; }
+.shot .slide { border-radius: 12px; box-shadow: var(--shadow); cursor: zoom-in; }
+.shot .slide:focus-visible { outline-offset: 4px; border-radius: 12px; }
+.shot-cap { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+.shot-cap h3 { font-size: 17px; font-weight: 800; letter-spacing: -0.02em; flex: 1; min-width: 0; }
+.shot-cap h3 .no { font-family: var(--font-num); font-size: 18px; font-weight: 700; color: var(--fg-3); margin-right: 8px; }
+.shot-cap .time { font-family: var(--font-num); font-size: 17px; font-weight: 600; color: var(--fg-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.shot-cap .time b { color: var(--fg); font-weight: 700; }
+.script {
+  font-size: 15px; line-height: 1.75; color: var(--fg-2);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;
+}
+.script strong { display: block; font-size: 12.5px; letter-spacing: .04em; color: var(--fg-3); margin-bottom: 2px; }
+.script .flag { display: block; margin-top: 8px; font-size: 13.5px; color: var(--warn); font-weight: 600; }
+.script a { font-weight: 700; }
+</style>
+<style>
+/* ───── ③ GPT 프롬프트 ───── */
+.how { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 12px; counter-reset: how; }
+.how li { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; font-size: 14.5px; color: var(--fg-2); }
+.how li::before {
+  counter-increment: how; content: counter(how);
+  display: block; font-family: var(--font-num); font-weight: 800; font-style: italic; font-size: 28px; line-height: 1; color: var(--accent); margin-bottom: 10px;
+}
+.how li b { display: block; color: var(--fg); font-size: 15.5px; margin-bottom: 4px; }
+.pgrid { display: grid; gap: 18px; }
+.pcard { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; min-width: 0; scroll-margin-top: 80px; }
+.pcard.style { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.pcard-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+.pcard-head h3 { font-size: 16.5px; font-weight: 800; letter-spacing: -0.02em; flex: 1; min-width: 12em; }
+.pcard-head .badge {
+  font-family: var(--font-num); font-weight: 800; font-size: 15px; letter-spacing: .04em;
+  padding: 3px 10px; border-radius: 7px; background: var(--hi); color: var(--hi-ink); white-space: nowrap;
+}
+.pcard.style .badge { background: var(--accent); color: var(--accent-ink); }
+.pcard-head .spec { font-size: 13px; color: var(--fg-3); white-space: nowrap; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.copy {
+  padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2);
+  font-size: 13.5px; font-weight: 700; white-space: nowrap;
+}
+.copy:hover { border-color: var(--accent); color: var(--accent); }
+.copy.done { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.pcard-body { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); }
+.prompt {
+  margin: 0; padding: 18px 20px; font-family: var(--font-ko); font-size: 14.5px; line-height: 1.8;
+  white-space: pre-wrap; word-break: keep-all; overflow-wrap: anywhere;
+  background: var(--surface-2); color: var(--fg); min-width: 0;
+}
+.checks { padding: 18px 20px; display: grid; gap: 8px; align-content: start; font-size: 14px; color: var(--fg-2); border-left: 1px solid var(--line); }
+.checks h4 { font-size: 12.5px; letter-spacing: .04em; color: var(--fg-3); font-weight: 700; }
+.checks li { display: flex; gap: 9px; }
+.checks li::before { content: ""; flex: none; width: 15px; height: 15px; margin-top: 4px; border-radius: 4px; border: 1.5px solid var(--fg-3); }
+@media (max-width: 760px) {
+  .pcard-body { grid-template-columns: minmax(0, 1fr); }
+  .checks { border-left: 0; border-top: 1px solid var(--line); }
+}
+.fixes { display: flex; flex-wrap: wrap; gap: 8px; }
+.fix {
+  text-align: left; padding: 9px 14px; border-radius: 12px; border: 1px dashed var(--line); background: var(--surface);
+  font-size: 14px; color: var(--fg); max-width: 100%;
+}
+.fix:hover { border-color: var(--accent); border-style: solid; }
+.fix.done { border-color: var(--accent); border-style: solid; color: var(--accent); }
+.alt { font-size: 14.5px; color: var(--fg-2); }
+.alt code {
+  font-family: var(--font-ko); font-size: 14px; padding: 2px 8px; border-radius: 6px;
+  background: var(--surface-2); border: 1px solid var(--line); color: var(--fg);
+}
+
+/* ───── ④ 제작 가이드 ───── */
+.guide { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); gap: 16px; }
+.kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 9px 18px; font-size: 14.5px; }
+.kv dt { color: var(--fg-3); font-weight: 600; white-space: nowrap; }
+.kv dd { font-weight: 600; }
+.kv dd small { display: block; font-weight: 500; color: var(--fg-3); font-size: 13px; }
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+.sw { display: grid; gap: 6px; font-size: 13.5px; }
+.sw i { height: 52px; border-radius: 10px; background: var(--c); border: 1px solid var(--line); }
+.sw b { font-weight: 800; }
+.sw code { font-family: var(--font-num); font-size: 15px; font-weight: 600; letter-spacing: .03em; color: var(--fg-2); }
+.sw small { color: var(--fg-3); font-size: 12.5px; }
+.tips { display: grid; gap: 8px; font-size: 14.5px; color: var(--fg-2); }
+.tips li { padding-left: 16px; position: relative; }
+.tips li::before { content: ""; position: absolute; left: 0; top: 10px; width: 6px; height: 6px; border-radius: 2px; background: var(--accent); }
+.tips b { color: var(--fg); }
+
+/* ───── 발표 모드 ───── */
+.present { position: fixed; inset: 0; z-index: 100; background: var(--stage); color: var(--stage-fg); display: grid; grid-template-rows: minmax(0, 1fr) auto; }
+.present .stage { container-type: size; display: grid; place-items: center; min-height: 0; padding: 12px; }
+.present .stage .slide { width: min(100cqw, 100cqh * 16 / 9); box-shadow: none; border-radius: 0; cursor: default; }
+.pbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
+  padding: 10px clamp(12px, 3vw, 24px) calc(10px + env(safe-area-inset-bottom, 0px));
+  background: var(--stage-2); border-top: 1px solid var(--stage-3); font-size: 14px;
+}
+.pbar button { padding: 8px 13px; border-radius: 9px; background: var(--stage-3); color: var(--stage-fg); font-weight: 700; font-size: 14px; }
+.pbar button:hover { background: color-mix(in srgb, var(--stage-3) 70%, var(--stage-fg)); }
+.pbar .count, .pbar .clock { font-family: var(--font-num); font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.pbar .clock small { font-size: 15px; color: var(--stage-fg-2); font-weight: 600; margin-left: 6px; }
+.pbar .clock.over { color: var(--stage-warn); }
+.pbar .hint { color: var(--stage-fg-2); font-size: 13px; }
+.pbar .sp { flex: 1; }
+@media (max-width: 560px) { .pbar .hint { display: none; } }
+</style>
+<style>
+/* ═════ 슬라이드: 1920×1080 설계 단위 → calc(N * var(--u)) ═════ */
+.slide {
+  position: relative; width: 100%; max-width: 100%; aspect-ratio: 16 / 9;
+  container-type: inline-size; overflow: hidden;
+  background: var(--s-paper); color: var(--s-ink);
+  font-family: var(--font-ko); line-height: 1.35; letter-spacing: -0.02em; word-break: keep-all;
+}
+.s { --u: calc(100cqw / 1920); position: absolute; inset: 0; overflow: hidden; }
+.s.paper { background: var(--s-paper); color: var(--s-ink); }
+.s.dark { background: var(--s-navy); color: var(--s-white); }
+.s svg { overflow: visible; }
+.s .content { position: absolute; inset: calc(84 * var(--u)) calc(96 * var(--u)) calc(124 * var(--u)); display: flex; flex-direction: column; gap: calc(40 * var(--u)); }
+.s .chap { display: inline-flex; align-items: baseline; gap: calc(14 * var(--u)); font-size: calc(26 * var(--u)); font-weight: 700; color: var(--s-blue); letter-spacing: 0; }
+.s .chap b { font-family: var(--font-num); font-weight: 800; font-style: italic; font-size: calc(34 * var(--u)); }
+.s.dark .chap { color: var(--s-yellow); }
+.s .title { font-size: calc(72 * var(--u)); font-weight: 800; line-height: 1.15; letter-spacing: -0.04em; text-wrap: balance; }
+.s .eyebrow { font-family: var(--font-num); font-weight: 700; font-size: calc(28 * var(--u)); letter-spacing: .2em; color: var(--s-blue); }
+.s .head { display: flex; flex-direction: column; gap: calc(10 * var(--u)); }
+.s .pill { display: inline-block; font-size: calc(26 * var(--u)); font-weight: 700; padding: calc(8 * var(--u)) calc(22 * var(--u)); border-radius: 999px; background: var(--s-blue-soft); color: var(--s-blue); letter-spacing: 0; }
+.s mark { background: linear-gradient(transparent 60%, rgba(255, 210, 63, .8) 60%); color: inherit; padding-inline: calc(4 * var(--u)); }
+.s .foot { position: absolute; left: calc(96 * var(--u)); bottom: calc(44 * var(--u)); display: flex; align-items: baseline; gap: calc(16 * var(--u)); font-size: calc(24 * var(--u)); font-weight: 600; color: var(--s-ink-3); letter-spacing: 0; }
+.s .foot b { font-family: var(--font-num); font-size: calc(26 * var(--u)); font-weight: 700; color: var(--s-ink-2); letter-spacing: .04em; }
+.s.dark .foot { color: var(--s-on-dark-2); }
+.s.dark .foot b { color: var(--s-on-dark); }
+.s .ico { width: calc(72 * var(--u)); height: calc(72 * var(--u)); flex: none; }
+.court-bg { position: absolute; pointer-events: none; }
+.s .box { background: var(--s-white); border: calc(2 * var(--u)) solid var(--s-line); border-radius: calc(28 * var(--u)); padding: calc(48 * var(--u)); display: flex; flex-direction: column; gap: calc(32 * var(--u)); min-width: 0; }
+.s .box h3 { font-size: calc(40 * var(--u)); font-weight: 800; letter-spacing: -0.03em; }
+
+/* 01 표지 · 14 마무리 */
+.cover .cv-court { left: calc(250 * var(--u)); top: calc(-66 * var(--u)); width: calc(2400 * var(--u)); height: calc(1211 * var(--u)); color: rgba(255, 255, 255, .075); stroke-width: .7; }
+.cv-cards { position: absolute; left: calc(1300 * var(--u)); top: calc(250 * var(--u)); width: calc(520 * var(--u)); height: calc(560 * var(--u)); }
+.card { position: absolute; width: calc(290 * var(--u)); height: calc(410 * var(--u)); border-radius: calc(26 * var(--u)); box-shadow: 0 calc(30 * var(--u)) calc(70 * var(--u)) rgba(0, 0, 0, .4); }
+.card.red { left: calc(200 * var(--u)); top: 0; transform: rotate(12deg); background: linear-gradient(150deg, rgba(255, 255, 255, .22), rgba(255, 255, 255, 0) 45%), var(--s-red); }
+.card.yellow { left: calc(20 * var(--u)); top: calc(110 * var(--u)); transform: rotate(-9deg); background: linear-gradient(150deg, rgba(255, 255, 255, .35), rgba(255, 255, 255, 0) 45%), var(--s-yellow); }
+.cv-text { position: absolute; left: calc(120 * var(--u)); top: calc(232 * var(--u)); width: calc(1180 * var(--u)); display: flex; flex-direction: column; gap: calc(34 * var(--u)); }
+.cv-eyebrow { font-family: var(--font-num); font-weight: 700; font-size: calc(32 * var(--u)); letter-spacing: .22em; color: var(--s-yellow); }
+.cv-title { font-size: calc(168 * var(--u)); font-weight: 800; line-height: 1.06; letter-spacing: -0.045em; color: var(--s-white); }
+.cv-sub { font-size: calc(40 * var(--u)); font-weight: 500; color: var(--s-on-dark); letter-spacing: -0.02em; }
+.cv-by { position: absolute; left: calc(120 * var(--u)); bottom: calc(96 * var(--u)); display: flex; gap: calc(20 * var(--u)); font-size: calc(28 * var(--u)); font-weight: 600; color: var(--s-on-dark-2); letter-spacing: 0; }
+.cv-by i { font-style: normal; color: var(--s-navy-3); }
+.thanks .cv-court { left: calc(-1180 * var(--u)); top: calc(-66 * var(--u)); width: calc(2400 * var(--u)); height: calc(1211 * var(--u)); color: rgba(255, 255, 255, .075); stroke-width: .7; }
+.thanks .cv-cards { left: calc(1340 * var(--u)); top: calc(300 * var(--u)); transform: scale(.82); transform-origin: 0 0; }
+.thanks .cv-text { top: calc(330 * var(--u)); }
+
+/* 02 목차 */
+.toc-row { flex: 1; display: grid; grid-template-columns: 1fr 1fr 1.55fr 1fr; gap: calc(24 * var(--u)); min-height: 0; }
+.toc-row li { position: relative; background: var(--s-white); border: calc(2 * var(--u)) solid var(--s-line); border-radius: calc(28 * var(--u)); padding: calc(44 * var(--u)) calc(40 * var(--u)); display: flex; flex-direction: column; gap: calc(14 * var(--u)); min-width: 0; }
+.toc-no { font-family: var(--font-num); font-style: italic; font-weight: 800; font-size: calc(128 * var(--u)); line-height: .9; color: var(--s-blue); letter-spacing: 0; }
+.toc-row b { font-size: calc(48 * var(--u)); font-weight: 800; letter-spacing: -0.035em; margin-top: auto; }
+.toc-sub { font-size: calc(28 * var(--u)); font-weight: 500; line-height: 1.5; color: var(--s-ink-2); }
+.toc-row li.core { background: var(--s-navy); border-color: var(--s-navy); color: var(--s-white); }
+.toc-row li.core .toc-no { color: var(--s-yellow); }
+.toc-row li.core .toc-sub { color: var(--s-on-dark); }
+.toc-row em { position: absolute; top: calc(48 * var(--u)); right: calc(40 * var(--u)); font-style: normal; font-size: calc(24 * var(--u)); font-weight: 800; letter-spacing: 0; padding: calc(6 * var(--u)) calc(16 * var(--u)); border-radius: calc(10 * var(--u)); background: var(--s-yellow); color: var(--s-navy); }
+
+/* 03 교육계획 */
+.plan .blk { display: flex; flex-direction: column; gap: calc(22 * var(--u)); align-items: flex-start; }
+.plan .statement { font-size: calc(60 * var(--u)); font-weight: 700; line-height: 1.42; letter-spacing: -0.04em; max-width: calc(1560 * var(--u)); text-wrap: balance; }
+.plan .goals { margin-top: auto; }
+.goal-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(24 * var(--u)); width: 100%; }
+.goal-row li { background: var(--s-white); border: calc(2 * var(--u)) solid var(--s-line); border-radius: calc(24 * var(--u)); padding: calc(36 * var(--u)) calc(40 * var(--u)); display: grid; grid-template-columns: auto 1fr; align-items: center; gap: calc(22 * var(--u)) calc(24 * var(--u)); }
+.goal-row .ico { color: var(--s-blue); }
+.goal-row .g-no { justify-self: end; font-family: var(--font-num); font-weight: 800; font-style: italic; font-size: calc(44 * var(--u)); color: var(--s-ink-3); letter-spacing: 0; }
+.goal-row p { grid-column: 1 / -1; font-size: calc(34 * var(--u)); font-weight: 700; line-height: 1.4; letter-spacing: -0.03em; text-wrap: balance; }
+
+/* 04 교육준비 ① */
+.prep-row { flex: 1; display: grid; grid-template-columns: 1.15fr 1fr; gap: calc(32 * var(--u)); min-height: 0; }
+.prep-dl { display: flex; flex-direction: column; gap: calc(30 * var(--u)); }
+.prep-dl > div { display: grid; grid-template-columns: calc(140 * var(--u)) 1fr; gap: calc(24 * var(--u)); align-items: baseline; }
+.prep-dl dt { font-size: calc(26 * var(--u)); font-weight: 700; color: var(--s-blue); letter-spacing: 0; }
+.prep-dl dd { font-size: calc(32 * var(--u)); font-weight: 500; line-height: 1.45; }
+.chips { display: flex; flex-wrap: wrap; gap: calc(12 * var(--u)); }
+.chips li { display: inline-flex; align-items: center; gap: calc(10 * var(--u)); padding: calc(10 * var(--u)) calc(20 * var(--u)) calc(10 * var(--u)) calc(16 * var(--u)); border-radius: 999px; background: var(--s-paper); border: calc(2 * var(--u)) solid var(--s-line); font-size: calc(28 * var(--u)); font-weight: 600; }
+.chips svg { width: calc(34 * var(--u)); height: calc(34 * var(--u)); color: var(--s-blue); }
+.checklist { display: flex; flex-direction: column; gap: calc(28 * var(--u)); }
+.checklist li { display: flex; gap: calc(20 * var(--u)); align-items: flex-start; font-size: calc(32 * var(--u)); font-weight: 600; line-height: 1.45; }
+.checklist svg { flex: none; width: calc(44 * var(--u)); height: calc(44 * var(--u)); color: var(--s-blue); margin-top: calc(1 * var(--u)); }
+
+/* 05 응급상황 */
+.flow4 { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: calc(52 * var(--u)); min-height: 0; }
+.flow4 > li { position: relative; background: var(--s-white); border: calc(2 * var(--u)) solid var(--s-line); border-radius: calc(28 * var(--u)); padding: calc(44 * var(--u)) calc(38 * var(--u)); display: flex; flex-direction: column; gap: calc(16 * var(--u)); min-width: 0; }
+.flow4 > li + li::before { content: ""; position: absolute; left: calc(-40 * var(--u)); top: 50%; width: calc(24 * var(--u)); height: calc(24 * var(--u)); border-top: calc(5 * var(--u)) solid var(--s-ink-3); border-right: calc(5 * var(--u)) solid var(--s-ink-3); transform: translateY(-50%) rotate(45deg); }
+.flow4 .st { font-family: var(--font-num); font-weight: 700; font-size: calc(26 * var(--u)); letter-spacing: .14em; color: var(--s-ink-3); }
+.flow4 .ico { width: calc(96 * var(--u)); height: calc(96 * var(--u)); color: var(--s-blue); margin-block: calc(18 * var(--u)) calc(10 * var(--u)); }
+.flow4 b { margin-top: auto; font-size: calc(44 * var(--u)); font-weight: 800; letter-spacing: -0.035em; }
+.flow4 p { font-size: calc(30 * var(--u)); font-weight: 500; line-height: 1.45; color: var(--s-ink-2); }
+.flow4 .mini { display: flex; gap: calc(10 * var(--u)); margin-top: calc(6 * var(--u)); }
+.flow4 .mini li { padding: calc(8 * var(--u)) calc(16 * var(--u)); border-radius: calc(10 * var(--u)); background: var(--s-blue-soft); color: var(--s-blue); font-size: calc(28 * var(--u)); font-weight: 700; }
+.flow4 li.alert { background: var(--s-navy); border-color: var(--s-navy); color: var(--s-white); }
+.flow4 li.alert p { color: var(--s-on-dark); }
+.flow4 li.alert .st { color: var(--s-on-dark-2); }
+.n119 { font-family: var(--font-num); font-weight: 800; font-style: italic; font-size: calc(112 * var(--u)); line-height: 1; color: var(--s-red); margin-block: calc(10 * var(--u)) calc(4 * var(--u)); letter-spacing: .01em; }
+
+/* 06 실전교육 간지 */
+.divider .dv-court { left: calc(-300 * var(--u)); top: calc(-40 * var(--u)); width: calc(2520 * var(--u)); height: calc(1272 * var(--u)); color: rgba(255, 255, 255, .06); stroke-width: .7; }
+.dv-head { position: absolute; left: calc(120 * var(--u)); top: calc(150 * var(--u)); display: flex; align-items: center; gap: calc(60 * var(--u)); }
+.dv-no { font-family: var(--font-num); font-weight: 800; font-style: italic; font-size: calc(360 * var(--u)); line-height: .82; color: var(--s-yellow); letter-spacing: -0.02em; }
+.dv-en { font-family: var(--font-num); font-weight: 700; font-size: calc(30 * var(--u)); letter-spacing: .24em; color: var(--s-on-dark-2); }
+.dv-title { font-size: calc(132 * var(--u)); font-weight: 800; line-height: 1.1; letter-spacing: -0.05em; }
+.dv-sub { font-size: calc(38 * var(--u)); font-weight: 500; color: var(--s-on-dark); margin-top: calc(8 * var(--u)); }
+.track { position: absolute; left: calc(120 * var(--u)); right: calc(120 * var(--u)); top: calc(700 * var(--u)); display: grid; grid-template-columns: repeat(6, 1fr); }
+.track::before { content: ""; position: absolute; left: calc(16 * var(--u)); right: 0; top: calc(14 * var(--u)); height: calc(4 * var(--u)); background: linear-gradient(90deg, var(--s-yellow), rgba(255, 210, 63, .2)); }
+.track li { position: relative; padding-top: calc(62 * var(--u)); display: flex; flex-direction: column; gap: calc(10 * var(--u)); }
+.track li::before { content: ""; position: absolute; left: 0; top: 0; width: calc(32 * var(--u)); height: calc(32 * var(--u)); border-radius: 50%; background: var(--s-navy); border: calc(6 * var(--u)) solid var(--s-yellow); box-sizing: border-box; }
+.track span { font-family: var(--font-num); font-weight: 700; font-style: italic; font-size: calc(40 * var(--u)); line-height: 1; color: var(--s-yellow); letter-spacing: 0; }
+.track b { font-size: calc(36 * var(--u)); font-weight: 700; }
+
+/* 07–12 실전교육 단계 (좌 텍스트 · 우 1:1 이미지) */
+.step .st-l { position: absolute; left: calc(96 * var(--u)); top: calc(84 * var(--u)); width: calc(744 * var(--u)); bottom: calc(124 * var(--u)); display: flex; flex-direction: column; }
+.st-top { display: flex; align-items: center; justify-content: space-between; }
+.prog { display: flex; gap: calc(8 * var(--u)); }
+.prog i { width: calc(44 * var(--u)); height: calc(8 * var(--u)); border-radius: calc(4 * var(--u)); background: var(--s-line); }
+.prog i.done { background: #9DB6E8; }
+.prog i.on { background: var(--s-blue); }
+.st-no { font-family: var(--font-num); font-weight: 800; font-style: italic; font-size: calc(112 * var(--u)); line-height: 1; color: var(--s-blue); letter-spacing: 0; margin-top: calc(40 * var(--u)); }
+.st-title { font-size: calc(68 * var(--u)); font-weight: 800; line-height: 1.15; letter-spacing: -0.045em; margin-top: calc(10 * var(--u)); }
+.st-lead { font-size: calc(34 * var(--u)); font-weight: 600; line-height: 1.45; color: var(--s-ink-2); letter-spacing: -0.03em; margin-top: calc(16 * var(--u)); padding-bottom: calc(30 * var(--u)); border-bottom: calc(2 * var(--u)) solid var(--s-line); text-wrap: balance; }
+.st-list { display: flex; flex-direction: column; gap: calc(16 * var(--u)); margin-top: calc(30 * var(--u)); }
+.st-list li { position: relative; padding-left: calc(38 * var(--u)); font-size: calc(32 * var(--u)); font-weight: 500; line-height: 1.45; }
+.st-list li::before { content: ""; position: absolute; left: 0; top: calc(17 * var(--u)); width: calc(14 * var(--u)); height: calc(14 * var(--u)); border-radius: calc(3 * var(--u)); background: var(--s-blue); }
+.st-list b { font-weight: 800; }
+.st-extra { margin-top: auto; display: flex; flex-direction: column; gap: calc(14 * var(--u)); }
+.st-extra .lbl { font-size: calc(24 * var(--u)); font-weight: 700; color: var(--s-ink-3); letter-spacing: 0; }
+.st-img { position: absolute; left: calc(912 * var(--u)); top: calc(84 * var(--u)); width: calc(912 * var(--u)); height: calc(912 * var(--u)); border-radius: calc(28 * var(--u)); overflow: hidden; background: var(--s-navy); }
+.st-img > svg { display: block; width: 100%; height: 100%; overflow: hidden; }
+.ph-badge { position: absolute; left: calc(28 * var(--u)); top: calc(28 * var(--u)); padding: calc(10 * var(--u)) calc(18 * var(--u)); border-radius: calc(10 * var(--u)); background: var(--s-yellow); color: var(--s-navy); font-size: calc(24 * var(--u)); font-weight: 800; letter-spacing: 0; box-shadow: 0 calc(6 * var(--u)) calc(18 * var(--u)) rgba(0, 0, 0, .25); }
+
+.spec { background: var(--s-white); border: calc(2 * var(--u)) solid var(--s-line); border-radius: calc(20 * var(--u)); padding: calc(4 * var(--u)) calc(28 * var(--u)); }
+.spec > div { display: grid; grid-template-columns: calc(84 * var(--u)) 1fr; gap: calc(16 * var(--u)); padding-block: calc(13 * var(--u)); align-items: baseline; }
+.spec > div + div { border-top: calc(2 * var(--u)) solid var(--s-line); }
+.spec dt { font-size: calc(24 * var(--u)); font-weight: 700; color: var(--s-blue); letter-spacing: 0; }
+.spec dd { font-size: calc(28 * var(--u)); font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+
+.tiles4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: calc(12 * var(--u)); }
+.tiles4 li { background: var(--s-white); border: calc(2 * var(--u)) solid var(--s-line); border-radius: calc(18 * var(--u)); padding: calc(22 * var(--u)) calc(8 * var(--u)); display: flex; flex-direction: column; align-items: center; gap: calc(10 * var(--u)); font-size: calc(30 * var(--u)); font-weight: 700; }
+.tiles4 svg { width: calc(40 * var(--u)); height: calc(40 * var(--u)); color: var(--s-blue); }
+
+.seq { display: flex; align-items: center; gap: calc(44 * var(--u)); }
+.seq li { position: relative; padding: calc(14 * var(--u)) calc(22 * var(--u)); border-radius: 999px; background: var(--s-white); border: calc(2 * var(--u)) solid var(--s-line); font-size: calc(28 * var(--u)); font-weight: 700; white-space: nowrap; }
+.seq li + li::before { content: ""; position: absolute; left: calc(-30 * var(--u)); top: 50%; width: calc(14 * var(--u)); height: calc(14 * var(--u)); border-top: calc(4 * var(--u)) solid var(--s-ink-3); border-right: calc(4 * var(--u)) solid var(--s-ink-3); transform: translateY(-50%) rotate(45deg); }
+.seq li.on { background: var(--s-navy); border-color: var(--s-navy); color: var(--s-white); }
+
+.sig4 { display: grid; grid-template-columns: 1fr 1fr; gap: calc(16 * var(--u)); margin-top: calc(30 * var(--u)); }
+.sig4 > div { background: var(--s-white); border: calc(2 * var(--u)) solid var(--s-line); border-radius: calc(20 * var(--u)); padding: calc(24 * var(--u)) calc(26 * var(--u)); display: flex; flex-direction: column; gap: calc(8 * var(--u)); }
+.sig4 p { font-size: calc(24 * var(--u)); font-weight: 700; color: var(--s-blue); letter-spacing: 0; }
+.sig4 b { font-size: calc(30 * var(--u)); font-weight: 700; line-height: 1.4; letter-spacing: -0.03em; }
+
+.loop ol { display: grid; grid-template-columns: repeat(4, 1fr); gap: calc(36 * var(--u)); }
+.loop li { position: relative; text-align: center; padding: calc(18 * var(--u)) 0; border-radius: calc(16 * var(--u)); background: var(--s-white); border: calc(2 * var(--u)) solid var(--s-line); font-size: calc(28 * var(--u)); font-weight: 700; }
+.loop li + li::before { content: ""; position: absolute; left: calc(-26 * var(--u)); top: 50%; width: calc(14 * var(--u)); height: calc(14 * var(--u)); border-top: calc(4 * var(--u)) solid var(--s-ink-3); border-right: calc(4 * var(--u)) solid var(--s-ink-3); transform: translateY(-50%) rotate(45deg); }
+.loop li.key { background: var(--s-navy); border-color: var(--s-navy); color: var(--s-white); }
+.loop svg { display: block; width: 100%; height: calc(56 * var(--u)); color: var(--s-ink-3); }
+.loop .back { margin-top: calc(-6 * var(--u)); text-align: center; font-size: calc(24 * var(--u)); font-weight: 700; color: var(--s-blue); letter-spacing: 0; }
+
+.legend { display: grid; grid-template-columns: 1fr 1fr; gap: calc(14 * var(--u)) calc(24 * var(--u)); background: var(--s-white); border: calc(2 * var(--u)) solid var(--s-line); border-radius: calc(20 * var(--u)); padding: calc(24 * var(--u)) calc(28 * var(--u)); }
+.legend li { display: flex; align-items: center; gap: calc(14 * var(--u)); font-size: calc(28 * var(--u)); font-weight: 700; }
+.legend i { flex: none; width: calc(30 * var(--u)); height: calc(30 * var(--u)); border-radius: 50%; }
+.legend i.y { background: var(--s-yellow); border: calc(4 * var(--u)) solid var(--s-navy); }
+.legend i.w { background: var(--s-white); border: calc(4 * var(--u)) solid var(--s-navy); }
+.legend i.cone { border-radius: 0; background: conic-gradient(from -30deg at 50% 100%, rgba(255, 210, 63, .9) 0 60deg, transparent 60deg); }
+.legend i.arr { border-radius: 0; height: calc(6 * var(--u)); background: repeating-linear-gradient(90deg, var(--s-navy) 0 calc(6 * var(--u)), transparent calc(6 * var(--u)) calc(11 * var(--u))); }
+
+/* 13 결론 */
+.concl .title { color: var(--s-white); }
+.fx { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(28 * var(--u)); min-height: 0; }
+.fx li { background: var(--s-navy-2); border-radius: calc(28 * var(--u)); padding: calc(48 * var(--u)) calc(44 * var(--u)); display: flex; flex-direction: column; gap: calc(30 * var(--u)); min-width: 0; }
+.fx .ico { width: calc(88 * var(--u)); height: calc(88 * var(--u)); color: var(--s-yellow); }
+.fx b { margin-top: auto; font-size: calc(40 * var(--u)); font-weight: 700; line-height: 1.42; letter-spacing: -0.035em; text-wrap: balance; }
+.fx-close { display: flex; align-items: baseline; gap: calc(22 * var(--u)); font-size: calc(36 * var(--u)); font-weight: 700; color: var(--s-white); letter-spacing: -0.03em; }
+.fx-close span { font-size: calc(24 * var(--u)); font-weight: 800; padding: calc(6 * var(--u)) calc(16 * var(--u)); border-radius: calc(10 * var(--u)); background: var(--s-yellow); color: var(--s-navy); letter-spacing: 0; }
+</style>
+
+</head>
+<body>
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#22457A" stop-opacity=".95"/>
+      <stop offset="1" stop-color="#0B1A2E" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <!-- 풋살 코트 40×20m (1단위 = 0.1m): 반원형(D) 페널티 에어리어 6m, 페널티 마크 6m, 제2 페널티 마크 10m, 교체 구역 표시 -->
+  <symbol id="court" viewBox="-14 -8 428 216">
+    <g fill="none" stroke="currentColor">
+      <rect x="0" y="0" width="400" height="200"/>
+      <line x1="200" y1="0" x2="200" y2="200"/>
+      <circle cx="200" cy="100" r="30"/>
+      <path d="M0 24.2A60 60 0 0 1 60 84.2V115.8A60 60 0 0 1 0 175.8"/>
+      <path d="M400 24.2A60 60 0 0 0 340 84.2V115.8A60 60 0 0 0 400 175.8"/>
+      <rect x="-10" y="85" width="10" height="30"/>
+      <rect x="400" y="85" width="10" height="30"/>
+      <path d="M2.5 0A2.5 2.5 0 0 1 0 2.5M397.5 0A2.5 2.5 0 0 0 400 2.5M0 197.5A2.5 2.5 0 0 1 2.5 200M400 197.5A2.5 2.5 0 0 0 397.5 200"/>
+      <path d="M100 -4V4M150 -4V4M250 -4V4M300 -4V4"/>
+    </g>
+    <g fill="currentColor">
+      <circle cx="200" cy="100" r="1.6"/>
+      <circle cx="60" cy="100" r="1.4"/><circle cx="340" cy="100" r="1.4"/>
+      <circle cx="100" cy="100" r="1.4"/><circle cx="300" cy="100" r="1.4"/>
+    </g>
+  </symbol>
+  <symbol id="ball" viewBox="-50 -50 100 100">
+    <circle r="47" fill="#F4F6F9" stroke="#0B1A2E" stroke-width="3"/>
+    <path d="M0 -17L16.17 -5.25L9.99 13.75H-9.99L-16.17 -5.25Z" fill="#0B1A2E"/>
+    <path d="M0 -17V-45M16.17 -5.25L42.8 -13.9M9.99 13.75L26.45 36.4M-9.99 13.75L-26.45 36.4M-16.17 -5.25L-42.8 -13.9" stroke="#0B1A2E" stroke-width="3.2" fill="none"/>
+  </symbol>
+  <symbol id="chk" viewBox="-32 -32 64 64">
+    <circle r="30" fill="#FFD23F"/>
+    <path d="M-13 1L-4 10L13 -9" fill="none" stroke="#0B1A2E" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="cone" viewBox="-44 -92 88 104">
+    <ellipse cx="0" cy="2" rx="40" ry="10" fill="#C9A21C"/>
+    <path d="M-30 0L-7 -80Q0 -88 7 -80L30 0Z" fill="#FFD23F"/>
+    <path d="M-19 -38H19L22 -26H-22Z" fill="#F4F6F9"/>
+  </symbol>
+  <g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+    <symbol id="i-book" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19.5V5a2 2 0 0 1 2-2h12v15H7a2 2 0 0 0-2 2 2 2 0 0 0 2 2h12"/><path d="M9 7.5h6M9 11h4"/></g></symbol>
+    <symbol id="i-scale" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16M8 20h8M5 7h14"/><path d="M5 7l-2.8 6.5a2.8 2.8 0 0 0 5.6 0z"/><path d="M19 7l-2.8 6.5a2.8 2.8 0 0 0 5.6 0z"/></g></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.8l7.5 2.8v5.6c0 4.6-3.2 8.4-7.5 10-4.3-1.6-7.5-5.4-7.5-10V5.6z"/><path d="M8.6 12l2.4 2.4 4.4-4.8"/></g></symbol>
+    <symbol id="i-kit" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2.2"/><path d="M8.5 7V5.2c0-.7.5-1.2 1.2-1.2h4.6c.7 0 1.2.5 1.2 1.2V7"/><path d="M12 10.5v6M9 13.5h6"/></g></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8.3 2.5h7.4l5.3 5.3v7.4l-5.3 5.3H8.3L3 15.2V7.8z"/><path d="M8 12h8"/></g></symbol>
+    <symbol id="i-pulse" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12.5h4l2-5 3.5 10 2.5-6.5 1.5 1.5h5.5"/></g></symbol>
+    <symbol id="i-person" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6.5" r="3.5"/><path d="M5 21v-2a5.5 5.5 0 0 1 5.5-5.5h3A5.5 5.5 0 0 1 19 19v2"/><path d="M9.5 17.5l1.8 1.8 3.4-3.6"/></g></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M7.8 12.4l2.8 2.8 5.6-6"/></g></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5.5v13l10-6.5z"/></g></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8.5 5.5v13M15.5 5.5v13"/></g></symbol>
+    <symbol id="i-restart" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v4.5h-4.5"/></g></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4.5h11l-2.2 4 2.2 4H5"/></g></symbol>
+    <symbol id="i-shoe" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 16.5V9.8c0-.5.4-.8.9-.7l3 .7 1.6-2.2c.3-.4.8-.5 1.2-.2l2.3 1.6 1.2 2.4 6.3 1.6c1.5.4 2.5 1.7 2.5 3.2v.3z"/><path d="M2.5 19.5h19"/></g></symbol>
+    <symbol id="i-whistle" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 7H14.5A5.5 5.5 0 1 1 9.09 11.5H2.5Z"/><circle cx="14.5" cy="12.5" r="1.7"/><path d="M11 7v2.2"/></g></symbol>
+    <symbol id="i-cards" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="9" height="13" rx="1.5" transform="rotate(-10 8.5 10.5)"/><rect x="11" y="6" width="9" height="13" rx="1.5" transform="rotate(10 15.5 12.5)"/></g></symbol>
+    <symbol id="i-coin" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.8"/></g></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1.2-4.4L15.6 5.2a2 2 0 0 1 2.8 0l.4.4a2 2 0 0 1 0 2.8L8.4 18.8z"/><path d="M14 7l3 3"/></g></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v18M12.5 8h3.5M12.5 12h3.5"/></g></symbol>
+  </g>
+</svg>
+
+<header class="bar">
+  <div class="bar-in">
+    <div class="brand"><svg viewBox="0 0 30 16" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1" y="1" width="28" height="14" rx="1.5"/><path d="M15 1v14"/><circle cx="15" cy="8" r="3"/></g></svg><span>풋살 심판 교육 PPT</span></div>
+    <nav class="nav" aria-label="섹션">
+      <a href="#plan">구성안</a>
+      <a href="#slides">슬라이드 시안</a>
+      <a href="#prompts">GPT 이미지 프롬프트</a>
+      <a href="#guide">PPT 제작 가이드</a>
+    </nav>
+    <button class="btn-present" type="button" data-present="0"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1.2v9.6L10.5 6z" fill="currentColor"/></svg>발표 모드</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="intro">
+    <h1>풋살 심판 교육 PPT 시안</h1>
+    <p>8분 발표 기준 14장 구성입니다. 3장 실전교육의 6개 슬라이드에는 GPT로 만든 이미지가 들어갈 자리를 노란 배지로 표시했고, 그 이미지를 뽑는 프롬프트는 아래에서 바로 복사할 수 있습니다.</p>
+    <div class="meta">
+      <span><b>8:00</b>발표 시간</span>
+      <span><b>16:9</b>와이드 · 14장</span>
+      <span><b>6</b>GPT 이미지</span>
+      <span><b>4:30</b>실전교육 비중 56%</span>
+    </div>
+  </section>
+
+  <section class="sec" id="plan">
+    <div class="sec-head">
+      <p class="k">STEP 1</p>
+      <h2>구성안 (와꾸)</h2>
+      <p>총 8분 중 4분 30초를 3장 실전교육에 배정했습니다. 도입·계획·준비는 짧게 넘기고, 이미지가 들어가는 실전교육에서 시간을 씁니다.</p>
+    </div>
+
+    <div class="panel tb">
+      <div class="tb-track" role="img" aria-label="시간 배분: 도입 30초, 교육계획 50초, 교육준비 1분 15초, 실전교육 4분 30초, 결론·마무리 55초">
+        <div class="tb-seg" style="--sec:30; --c:var(--tb-0)">도입</div>
+        <div class="tb-seg" style="--sec:50; --c:var(--tb-1)">1</div>
+        <div class="tb-seg" style="--sec:75; --c:var(--tb-2)">2 교육준비</div>
+        <div class="tb-seg core" style="--sec:270; --c:var(--tb-3)">3 실전교육 · 4:30</div>
+        <div class="tb-seg" style="--sec:55; --c:var(--tb-4)">4 결론</div>
+      </div>
+      <div class="tb-ticks num" aria-hidden="true">
+        <span style="--i:0">0</span><span style="--i:1">1</span><span style="--i:2">2</span><span style="--i:3">3</span><span style="--i:4">4</span><span style="--i:5">5</span><span style="--i:6">6</span><span style="--i:7">7</span><span style="--i:8">8분</span>
+      </div>
+      <ul class="tb-legend">
+        <li style="--c:var(--tb-0)"><i></i><b>도입</b><em>0:30</em><small>표지 · 목차 (2장)</small></li>
+        <li style="--c:var(--tb-1)"><i></i><b>1. 교육계획</b><em>0:50</em><small>목적 · 목표 (1장)</small></li>
+        <li style="--c:var(--tb-2)"><i></i><b>2. 교육준비</b><em>1:15</em><small>준비물 · 안전 · 응급 (2장)</small></li>
+        <li style="--c:var(--tb-3)"><i></i><b>3. 실전교육</b><em>4:30</em><small>간지 + 6단계 (7장)</small></li>
+        <li style="--c:var(--tb-4)"><i></i><b>4. 결론 · 마무리</b><em>0:55</em><small>기대효과 · 인사 (2장)</small></li>
+      </ul>
+    </div>
+
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead>
+          <tr><th>No.</th><th>구분</th><th>슬라이드</th><th>화면 구성</th><th>시간 <span>누적</span></th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="n">01</td><td class="ch">도입</td><td class="ttl">표지</td><td class="lay">네이비 배경에 풋살 코트 라인, 제목 2줄, 옐로·레드 카드 그래픽, 발표자</td><td class="t"><b>0:15</b><span>0:15</span></td></tr>
+          <tr><td class="n">02</td><td class="ch">도입</td><td class="ttl">목차</td><td class="lay">챕터 카드 4개. 03 실전교육 카드만 넓게, 네이비로 강조</td><td class="t"><b>0:15</b><span>0:30</span></td></tr>
+          <tr><td class="n">03</td><td class="ch">1. 교육계획</td><td class="ttl">교육목적 · 교육목표</td><td class="lay">목적은 큰 문장 + 핵심어 형광펜, 목표 3개는 아이콘 카드</td><td class="t"><b>0:50</b><span>1:20</span></td></tr>
+          <tr><td class="n">04</td><td class="ch">2. 교육준비</td><td class="ttl">교육장·준비물과 안전점검</td><td class="lay">2단 카드. 왼쪽 준비물(용품 아이콘 칩 6개), 오른쪽 안전점검 체크리스트 4개</td><td class="t"><b>0:45</b><span>2:05</span></td></tr>
+          <tr><td class="n">05</td><td class="ch">2. 교육준비</td><td class="ttl">응급상황 대응 체계</td><td class="lay">4단계 흐름도: 사전 확보 → 즉시 중단 → 상태 확인 → 119 신고·이송</td><td class="t"><b>0:30</b><span>2:35</span></td></tr>
+          <tr class="core"><td class="n">06</td><td class="ch">3. 실전교육</td><td class="ttl">간지</td><td class="lay">큰 03 번호 + 6단계 진행 트랙 (네이비)</td><td class="t"><b>0:20</b><span>2:55</span></td></tr>
+          <tr class="core"><td class="n">07</td><td class="ch">3. 실전교육</td><td class="ttl">3-1 피치 및 볼 상태 확인<span class="tag">이미지 ①</span></td><td class="lay">좌 텍스트 · 우 1:1 이미지. 하단에 코트·골대·공 규격표</td><td class="t"><b>0:35</b><span>3:30</span></td></tr>
+          <tr class="core"><td class="n">08</td><td class="ch">3. 실전교육</td><td class="ttl">3-2 휘슬교육<span class="tag">이미지 ②</span></td><td class="lay">좌 텍스트 · 우 이미지. 하단에 시작·중단·재개·종료 4칸</td><td class="t"><b>0:40</b><span>4:10</span></td></tr>
+          <tr class="core"><td class="n">09</td><td class="ch">3. 실전교육</td><td class="ttl">3-3 워밍업<span class="tag">이미지 ③</span></td><td class="lay">좌 텍스트 · 우 이미지. 하단에 워밍업 순서 칩</td><td class="t"><b>0:30</b><span>4:40</span></td></tr>
+          <tr class="core"><td class="n">10</td><td class="ch">3. 실전교육</td><td class="ttl">3-4 시그널 교육<span class="tag">이미지 ④</span></td><td class="lay">좌 텍스트 · 우 수신호 4종 이미지. 시그널을 4묶음으로 정리</td><td class="t"><b>1:00</b><span>5:40</span></td></tr>
+          <tr class="core"><td class="n">11</td><td class="ch">3. 실전교육</td><td class="ttl">3-5 상황별 시그널 게임<span class="tag">이미지 ⑤</span></td><td class="lay">좌 텍스트 · 우 이미지. 상황 제시 → 판정 → 휘슬 → 시그널 흐름 + 피드백</td><td class="t"><b>0:40</b><span>6:20</span></td></tr>
+          <tr class="core"><td class="n">12</td><td class="ch">3. 실전교육</td><td class="ttl">3-6 위치선정<span class="tag">이미지 ⑥</span></td><td class="lay">좌 텍스트 · 우 탑뷰 배치도. 주심·2주심·시야 범례</td><td class="t"><b>0:45</b><span>7:05</span></td></tr>
+          <tr><td class="n">13</td><td class="ch">4. 결론요약</td><td class="ttl">교육 후 기대효과<span class="tag warn">원문 확인</span></td><td class="lay">네이비 배경, 기대효과 카드 3개 + 교육목적 한 줄로 마무리</td><td class="t"><b>0:45</b><span>7:50</span></td></tr>
+          <tr><td class="n">14</td><td class="ch">마무리</td><td class="ttl">감사합니다</td><td class="lay">표지와 같은 톤, 질의응답</td><td class="t"><b>0:10</b><span>8:00</span></td></tr>
+        </tbody>
+        <tfoot>
+          <tr><td colspan="4">합계 14장</td><td class="t"><b>8:00</b></td></tr>
+        </tfoot>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec" id="slides">
+    <div class="sec-head">
+      <p class="k">STEP 2</p>
+      <h2>슬라이드 시안</h2>
+      <p>슬라이드를 누르면 발표 모드로 크게 보면서 시간을 잴 수 있습니다. 노란 배지가 붙은 오른쪽 그림은 GPT 이미지로 바꿀 자리이고, 지금 그림은 구도를 보여주는 임시 그림입니다.</p>
+    </div>
+
+    <div class="deck">
+
+      <figure class="shot" id="s01">
+        <div class="slide" tabindex="0" role="button" aria-label="01 표지 크게 보기" data-sec="15" data-end="15">
+          <div class="s dark cover">
+            <svg class="court-bg cv-court" aria-hidden="true"><use href="#court" width="100%" height="100%"/></svg>
+            <div class="cv-cards" aria-hidden="true"><i class="card red"></i><i class="card yellow"></i></div>
+            <div class="cv-text">
+              <p class="cv-eyebrow">FUTSAL REFEREE TRAINING PLAN</p>
+              <p class="cv-title">풋살 심판<br>교육 계획</p>
+              <p class="cv-sub">정확한 규칙 이해 · 일관된 판정 · 안전한 경기 운영</p>
+            </div>
+            <p class="cv-by">발표자 [이름]<i>|</i>2026. 10.</p>
+          </div>
+        </div>
+        <figcaption class="shot-cap">
+          <h3><span class="no">01</span>표지</h3>
+          <span class="time"><b>0:15</b> · 누적 0:15</span>
+          <p class="script"><strong>발표 멘트</strong>안녕하세요, 풋살 심판 교육 계획 발표를 맡은 [이름]입니다. 이번 교육은 정확한 규칙 이해와 일관된 판정, 그리고 안전한 경기 운영을 목표로 구성했습니다.</p>
+        </figcaption>
+      </figure>
+
+      <figure class="shot" id="s02">
+        <div class="slide" tabindex="0" role="button" aria-label="02 목차 크게 보기" data-sec="15" data-end="30">
+          <div class="s paper toc">
+            <div class="content">
+              <div class="head"><p class="eyebrow">CONTENTS</p><p class="title">목차</p></div>
+              <ol class="toc-row">
+                <li><span class="toc-no">01</span><b>교육계획</b><span class="toc-sub">교육목적 · 교육목표</span></li>
+                <li><span class="toc-no">02</span><b>교육준비</b><span class="toc-sub">교육장 및 준비물 · 안전점검 · 응급상황 대응</span></li>
+                <li class="core"><span class="toc-no">03</span><em>핵심</em><b>실전교육</b><span class="toc-sub">피치·볼 점검 · 휘슬 · 워밍업<br>시그널 · 시그널 게임 · 위치선정</span></li>
+                <li><span class="toc-no">04</span><b>결론요약</b><span class="toc-sub">교육 후 기대효과</span></li>
+              </ol>
+            </div>
+            <div class="foot"><b>02</b>풋살 심판 교육 계획</div>
+          </div>
+        </div>
+        <figcaption class="shot-cap">
+          <h3><span class="no">02</span>목차</h3>
+          <span class="time"><b>0:15</b> · 누적 0:30</span>
+          <p class="script"><strong>발표 멘트</strong>발표는 교육계획, 교육준비, 실전교육, 결론요약 네 부분으로 진행하며, 그중 실전교육을 중심으로 자세히 말씀드리겠습니다.</p>
+        </figcaption>
+      </figure>
+
+      <figure class="shot" id="s03">
+        <div class="slide" tabindex="0" role="button" aria-label="03 교육계획 크게 보기" data-sec="50" data-end="80">
+          <div class="s paper plan">
+            <div class="content">
+              <p class="chap"><b>01</b>교육계획</p>
+              <div class="blk">
+                <span class="pill">교육목적</span>
+                <p class="statement">풋살 경기규칙의 <mark>정확한 이해</mark>를 바탕으로 <mark>공정하고 일관성 있는 판정</mark> 및 <mark>안전한 경기 운영</mark> 능력을 함양한다.</p>
+              </div>
+              <div class="blk goals">
+                <span class="pill">교육목표</span>
+                <ol class="goal-row">
+                  <li><svg class="ico" aria-hidden="true"><use href="#i-book"/></svg><span class="g-no">1</span><p>경기규칙 및 심판 역할 이해</p></li>
+                  <li><svg class="ico" aria-hidden="true"><use href="#i-scale"/></svg><span class="g-no">2</span><p>상황별 정확하고 일관성 있는 판정 능력 향상</p></li>
+                  <li><svg class="ico" aria-hidden="true"><use href="#i-shield"/></svg><span class="g-no">3</span><p>경기 중 발생하는 다양한 상황에 대한 대처 능력 강화</p></li>
+                </ol>
+              </div>
+            </div>
+            <div class="foot"><b>03</b>풋살 심판 교육 계획</div>
+          </div>
+        </div>
+        <figcaption class="shot-cap">
+          <h3><span class="no">03</span>교육계획 · 교육목적과 교육목표</h3>
+          <span class="time"><b>0:50</b> · 누적 1:20</span>
+          <p class="script"><strong>발표 멘트</strong>먼저 교육계획입니다. 이번 교육의 목적은 풋살 경기규칙의 정확한 이해를 바탕으로 공정하고 일관성 있는 판정과 안전한 경기 운영 능력을 함양하는 것입니다. 이를 위해 세 가지 목표를 세웠습니다. 첫째, 경기규칙과 심판의 역할을 이해합니다. 둘째, 상황별로 정확하고 일관성 있게 판정하는 능력을 키웁니다. 셋째, 경기 중 발생하는 다양한 상황에 대처하는 능력을 강화합니다.</p>
+        </figcaption>
+      </figure>
+
+      <figure class="shot" id="s04">
+        <div class="slide" tabindex="0" role="button" aria-label="04 교육준비 크게 보기" data-sec="45" data-end="125">
+          <div class="s paper prep">
+            <div class="content">
+              <p class="chap"><b>02</b>교육준비</p>
+              <p class="title">교육장·준비물과 안전점검</p>
+              <div class="prep-row">
+                <div class="box">
+                  <h3>교육장 및 준비물</h3>
+                  <dl class="prep-dl">
+                    <div><dt>교육 공간</dt><dd>교육 인원 및 교육 내용에 적합한 공간 체크</dd></div>
+                    <div><dt>교육용품</dt><dd>
+                      <ul class="chips">
+                        <li><svg aria-hidden="true"><use href="#i-shoe"/></svg>풋살화</li>
+                        <li><svg aria-hidden="true"><use href="#i-whistle"/></svg>휘슬</li>
+                        <li><svg aria-hidden="true"><use href="#i-cards"/></svg>카드세트</li>
+                        <li><svg aria-hidden="true"><use href="#i-coin"/></svg>코인</li>
+                        <li><svg aria-hidden="true"><use href="#i-pen"/></svg>펜</li>
+                        <li><svg aria-hidden="true"><use href="#i-note"/></svg>수첩</li>
+                      </ul>
+                    </dd></div>
+                    <div><dt>교육자료</dt><dd>경기규칙 자료 및 상황별 실습 시나리오 준비</dd></div>
+                  </dl>
+                </div>
+                <div class="box">
+                  <h3>안전점검</h3>
+                  <ul class="checklist">
+                    <li><svg aria-hidden="true"><use href="#i-check"/></svg>코트 바닥 및 주변 장애물 확인</li>
+                    <li><svg aria-hidden="true"><use href="#i-check"/></svg>골대 및 시설물 상태 점검</li>
+                    <li><svg aria-hidden="true"><use href="#i-check"/></svg>교육생의 복장 및 신발 착용 상태 확인</li>
+                    <li><svg aria-hidden="true"><use href="#i-check"/></svg>교육 전 준비운동 및 안전수칙 안내</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="foot"><b>04</b>풋살 심판 교육 계획</div>
+          </div>
+        </div>
+        <figcaption class="shot-cap">
+          <h3><span class="no">04</span>교육준비 · 교육장·준비물과 안전점검</h3>
+          <span class="time"><b>0:45</b> · 누적 2:05</span>
+          <p class="script"><strong>발표 멘트</strong>다음은 교육준비입니다. 교육 인원과 내용에 맞는 공간을 확인하고, 풋살화·휘슬·카드세트·코인·펜·수첩 같은 교육용품과 경기규칙 자료, 상황별 실습 시나리오를 준비합니다. 안전점검으로는 코트 바닥과 주변 장애물, 골대와 시설물 상태, 교육생의 복장과 신발을 확인하고, 교육 전 준비운동과 안전수칙을 안내합니다.</p>
+        </figcaption>
+      </figure>
+
+      <figure class="shot" id="s05">
+        <div class="slide" tabindex="0" role="button" aria-label="05 응급상황 대응 크게 보기" data-sec="30" data-end="155">
+          <div class="s paper emerg">
+            <div class="content">
+              <p class="chap"><b>02</b>교육준비</p>
+              <p class="title">응급상황 대응 체계</p>
+              <ol class="flow4">
+                <li><span class="st">STEP 1</span><svg class="ico" aria-hidden="true"><use href="#i-kit"/></svg><b>사전 확보</b><p>구급함 및 응급처치 물품 사전 확보</p></li>
+                <li><span class="st">STEP 2</span><svg class="ico" aria-hidden="true"><use href="#i-stop"/></svg><b>즉시 중단</b><p>부상 발생 시 즉시 교육 중단</p></li>
+                <li><span class="st">STEP 3</span><svg class="ico" aria-hidden="true"><use href="#i-pulse"/></svg><b>상태 확인</b><p>응급처치 후 환자 상태 확인</p><ul class="mini"><li>의식</li><li>호흡</li><li>출혈</li></ul></li>
+                <li class="alert"><span class="st">STEP 4</span><span class="n119">119</span><b>신고 · 이송</b><p>부상 정도에 따라 119 신고 및 병원 이송</p></li>
+              </ol>
+            </div>
+            <div class="foot"><b>05</b>풋살 심판 교육 계획</div>
+          </div>
+        </div>
+        <figcaption class="shot-cap">
+          <h3><span class="no">05</span>교육준비 · 응급상황 대응 체계</h3>
+          <span class="time"><b>0:30</b> · 누적 2:35</span>
+          <p class="script"><strong>발표 멘트</strong>응급상황에 대비해 구급함과 응급처치 물품을 미리 확보합니다. 부상이 발생하면 즉시 교육을 중단하고, 응급처치 후 의식·호흡·출혈을 확인합니다. 부상 정도에 따라 119 신고와 병원 이송까지 이어지는 체계를 마련해 두겠습니다.</p>
+        </figcaption>
+      </figure>
+
+      <figure class="shot" id="s06">
+        <div class="slide" tabindex="0" role="button" aria-label="06 실전교육 간지 크게 보기" data-sec="20" data-end="175">
+          <div class="s dark divider">
+            <svg class="court-bg dv-court" aria-hidden="true"><use href="#court" width="100%" height="100%"/></svg>
+            <div class="dv-head">
+              <span class="dv-no">03</span>
+              <div>
+                <p class="dv-en">PRACTICAL TRAINING</p>
+                <p class="dv-title">실전교육</p>
+                <p class="dv-sub">경기 전 점검부터 실전 판정까지, 6단계로 익힌다</p>
+              </div>
+            </div>
+            <ol class="track">
+              <li><span>3-1</span><b>피치·볼 점검</b></li>
+              <li><span>3-2</span><b>휘슬</b></li>
+              <li><span>3-3</span><b>워밍업</b></li>
+              <li><span>3-4</span><b>시그널</b></li>
+              <li><span>3-5</span><b>시그널 게임</b></li>
+              <li><span>3-6</span><b>위치선정</b></li>
+            </ol>
+            <div class="foot"><b>06</b>풋살 심판 교육 계획</div>
+          </div>
+        </div>
+        <figcaption class="shot-cap">
+          <h3><span class="no">06</span>실전교육 간지</h3>
+          <span class="time"><b>0:20</b> · 누적 2:55</span>
+          <p class="script"><strong>발표 멘트</strong>이제 이번 교육의 핵심인 실전교육입니다. 피치와 볼 점검부터 휘슬, 워밍업, 시그널, 상황별 시그널 게임, 위치선정까지 여섯 단계로 진행합니다.</p>
+        </figcaption>
+      </figure>
+
+      <figure class="shot" id="s07">
+        <div class="slide" tabindex="0" role="button" aria-label="07 피치 및 볼 상태 확인 크게 보기" data-sec="35" data-end="210">
+          <div class="s paper step">
+            <div class="st-l">
+              <div class="st-top"><p class="chap"><b>03</b>실전교육</p><span class="prog" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></span></div>
+              <p class="st-no">3-1</p>
+              <p class="st-title">피치 및 볼 상태 확인</p>
+              <p class="st-lead">경기 전 점검이 안전한 경기 운영의 출발점</p>
+              <ul class="st-list">
+                <li><b>경기장 규격</b> 및 라인 확인</li>
+                <li><b>골대 및 네트</b> 상태 점검</li>
+                <li><b>공의 압력</b> 및 규격 상태 확인</li>
+              </ul>
+              <div class="st-extra">
+                <p class="lbl">점검 기준 · 풋살 경기규칙</p>
+                <dl class="spec">
+                  <div><dt>코트</dt><dd>길이 25~42m × 폭 16~25m</dd></div>
+                  <div><dt>골대</dt><dd>폭 3m × 높이 2m</dd></div>
+                  <div><dt>공</dt><dd>4호 · 400~440g · 2m 낙하 시 50~65cm 바운드</dd></div>
+                </dl>
+              </div>
+            </div>
+            <figure class="st-img">
+              <svg viewBox="0 0 912 912" aria-hidden="true">
+                <rect width="912" height="912" fill="#0B1A2E"/>
+                <circle cx="456" cy="400" r="440" fill="url(#glow)"/>
+                <g transform="translate(456 392) scale(1 .56) rotate(-30) translate(-340 -172)">
+                  <rect width="680" height="343" rx="12" fill="#17469F"/>
+                  <rect x="22.2" y="12.7" width="635.5" height="317.8" fill="#1E5BD8"/>
+                  <use href="#court" width="680" height="343" style="color:#FFFFFF" stroke-width="1.3"/>
+                </g>
+                <g fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linejoin="round" stroke-linecap="round">
+                  <path d="M719 291V249L743 272V314"/>
+                  <path d="M719 249L733 245L757 268L743 272" stroke-opacity=".7"/>
+                  <path d="M733 245V285M757 268V308" stroke-opacity=".45" stroke-width="4"/>
+                </g>
+                <use href="#chk" x="425" y="300" width="62" height="62"/>
+                <use href="#chk" x="772" y="214" width="62" height="62"/>
+                <path d="M548 836C548 884 392 880 335 760" fill="none" stroke="#F4F6F9" stroke-opacity=".75" stroke-width="9" stroke-linecap="round"/>
+                <use href="#ball" x="148" y="560" width="232" height="232"/>
+                <g transform="translate(548 716)">
+                  <circle r="96" fill="#132A4B" stroke="#F4F6F9" stroke-width="9"/>
+                  <path d="M-62 30A68 68 0 1 1 62 30" fill="none" stroke="#20406E" stroke-width="16" stroke-linecap="round"/>
+                  <path d="M-30 -60A68 68 0 0 1 40 -55" fill="none" stroke="#FFD23F" stroke-width="16" stroke-linecap="round"/>
+                  <path d="M0 0L18 -62" stroke="#F4F6F9" stroke-width="9" stroke-linecap="round"/>
+                  <circle r="13" fill="#F4F6F9"/>
+                  <rect x="-15" y="92" width="30" height="34" rx="6" fill="#F4F6F9"/>
+                </g>
+                <use href="#chk" x="318" y="548" width="62" height="62"/>
+              </svg>
+              <figcaption class="ph-badge">GPT 이미지 ① 자리 · 1:1</figcaption>
+            </figure>
+            <div class="foot"><b>07</b>풋살 심판 교육 계획</div>
+          </div>
+        </div>
+        <figcaption class="shot-cap">
+          <h3><span class="no">07</span>3-1 피치 및 볼 상태 확인</h3>
+          <span class="time"><b>0:35</b> · 누적 3:30</span>
+          <p class="script"><strong>발표 멘트</strong>첫 번째는 피치 및 볼 상태 확인입니다. 경기장 규격과 라인을 확인하고 골대와 네트 상태를 점검합니다. 공은 압력과 규격이 기준에 맞는지 확인하는데, 2미터 높이에서 떨어뜨려 첫 바운드가 50~65센티미터면 정상입니다.<span class="flag">규격 수치는 풋살 경기규칙(제1조 경기장, 제2조 공) 기준으로 넣었습니다. 최신 규칙서와 한 번 대조해 주세요.</span><a href="#p1">→ 이미지 ① 프롬프트</a></p>
+        </figcaption>
+      </figure>
+
+      <figure class="shot" id="s08">
+        <div class="slide" tabindex="0" role="button" aria-label="08 휘슬교육 크게 보기" data-sec="40" data-end="250">
+          <div class="s paper step">
+            <div class="st-l">
+              <div class="st-top"><p class="chap"><b>03</b>실전교육</p><span class="prog" aria-hidden="true"><i class="done"></i><i class="on"></i><i></i><i></i><i></i><i></i></span></div>
+              <p class="st-no">3-2</p>
+              <p class="st-title">휘슬교육</p>
+              <p class="st-lead">휘슬의 강도와 길이로 상황을 전달한다</p>
+              <ul class="st-list">
+                <li>휘슬의 <b>기본 사용법</b> 및 소리 조절</li>
+                <li>상황에 따른 휘슬 <b>강도와 길이</b> 구분</li>
+                <li><b>시작·중단·재개·종료</b> 상황별 휘슬 사용</li>
+              </ul>
+              <div class="st-extra">
+                <p class="lbl">상황별 휘슬</p>
+                <ul class="tiles4">
+                  <li><svg aria-hidden="true"><use href="#i-play"/></svg>시작</li>
+                  <li><svg aria-hidden="true"><use href="#i-pause"/></svg>중단</li>
+                  <li><svg aria-hidden="true"><use href="#i-restart"/></svg>재개</li>
+                  <li><svg aria-hidden="true"><use href="#i-flag"/></svg>종료</li>
+                </ul>
+              </div>
+            </div>
+            <figure class="st-img">
+              <svg viewBox="0 0 912 912" aria-hidden="true">
+                <rect width="912" height="912" fill="#0B1A2E"/>
+                <circle cx="420" cy="520" r="420" fill="url(#glow)"/>
+                <circle cx="456" cy="456" r="330" fill="none" stroke="#FFFFFF" stroke-opacity=".06" stroke-width="4"/>
+                <path d="M456 0V912" stroke="#FFFFFF" stroke-opacity=".06" stroke-width="4"/>
+                <path d="M530 694C620 792 760 724 912 806" fill="none" stroke="#F4F6F9" stroke-opacity=".35" stroke-width="12" stroke-linecap="round"/>
+                <rect x="110" y="420" width="300" height="88" rx="22" fill="#FFD23F"/>
+                <circle cx="400" cy="560" r="140" fill="#FFD23F"/>
+                <rect x="356" y="408" width="56" height="40" rx="6" fill="#0B1A2E"/>
+                <circle cx="400" cy="560" r="64" fill="#E3B520"/>
+                <circle cx="400" cy="560" r="22" fill="#0B1A2E"/>
+                <circle cx="516" cy="676" r="26" fill="none" stroke="#FFD23F" stroke-width="12"/>
+                <g fill="none" stroke="#F4F6F9" stroke-linecap="round">
+                  <path d="M509.3 289.8A170 170 0 0 1 559.7 361.9" stroke-width="10"/>
+                  <path d="M525 203.5A250 250 0 0 1 644.5 368" stroke-width="18" stroke-opacity=".85"/>
+                  <path d="M523.6 114A330 330 0 0 1 728.2 385.5" stroke-width="28" stroke-opacity=".7"/>
+                </g>
+              </svg>
+              <figcaption class="ph-badge">GPT 이미지 ② 자리 · 1:1</figcaption>
+            </figure>
+            <div class="foot"><b>08</b>풋살 심판 교육 계획</div>
+          </div>
+        </div>
+        <figcaption class="shot-cap">
+          <h3><span class="no">08</span>3-2 휘슬교육</h3>
+          <span class="time"><b>0:40</b> · 누적 4:10</span>
+          <p class="script"><strong>발표 멘트</strong>두 번째는 휘슬교육입니다. 휘슬의 기본 사용법과 소리 조절을 익히고, 상황에 따라 휘슬의 강도와 길이를 구분합니다. 그리고 경기의 시작, 중단, 재개, 종료 상황별로 휘슬을 사용하는 방법을 반복해서 연습합니다.<a href="#p2">→ 이미지 ② 프롬프트</a></p>
+        </figcaption>
+      </figure>
+
+      <figure class="shot" id="s09">
+        <div class="slide" tabindex="0" role="button" aria-label="09 워밍업 크게 보기" data-sec="30" data-end="280">
+          <div class="s paper step">
+            <div class="st-l">
+              <div class="st-top"><p class="chap"><b>03</b>실전교육</p><span class="prog" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+              <p class="st-no">3-3</p>
+              <p class="st-title">워밍업</p>
+              <p class="st-lead">정확한 판정은 몸의 준비에서 시작된다</p>
+              <ul class="st-list">
+                <li>경기 전 가벼운 <b>러닝 및 스트레칭</b></li>
+                <li><b>방향 전환 및 순간 이동</b> 훈련</li>
+                <li>경기 중 움직임을 위한 <b>신체 준비</b></li>
+              </ul>
+              <div class="st-extra">
+                <p class="lbl">워밍업 순서</p>
+                <ol class="seq">
+                  <li>러닝</li>
+                  <li>스트레칭</li>
+                  <li>방향 전환</li>
+                  <li class="on">순간 이동</li>
+                </ol>
+              </div>
+            </div>
+            <figure class="st-img">
+              <svg viewBox="0 0 912 912" aria-hidden="true">
+                <rect width="912" height="912" fill="#0B1A2E"/>
+                <circle cx="456" cy="330" r="400" fill="url(#glow)"/>
+                <path d="M0 600L912 548V912H0Z" fill="#1E5BD8"/>
+                <path d="M0 668L912 616" stroke="#FFFFFF" stroke-opacity=".75" stroke-width="5"/>
+                <path d="M0 600L912 548" stroke="#17469F" stroke-width="10"/>
+                <path d="M318 778C392 778 404 664 470 662S560 774 622 760S694 640 752 646S842 752 872 714" fill="none" stroke="#F4F6F9" stroke-width="7" stroke-dasharray="2 20" stroke-linecap="round"/>
+                <path d="M850 704L878 708L866 734" fill="none" stroke="#F4F6F9" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+                <use href="#cone" x="408" y="616" width="88" height="104"/>
+                <use href="#cone" x="532" y="560" width="88" height="104"/>
+                <use href="#cone" x="660" y="626" width="88" height="104"/>
+                <use href="#cone" x="776" y="566" width="88" height="104"/>
+                <g stroke-linecap="round" stroke-linejoin="round" fill="none">
+                  <path d="M60 300H168M36 362H136M70 424H150" stroke="#F4F6F9" stroke-opacity=".35" stroke-width="12"/>
+                  <path d="M250 482L330 546L320 650" stroke="#F4F6F9" stroke-width="36"/>
+                  <path d="M245 482L186 570L102 588" stroke="#F4F6F9" stroke-width="36"/>
+                  <path d="M282 352L345 406L394 356" stroke="#F4F6F9" stroke-width="30"/>
+                  <path d="M276 352L216 402L182 456" stroke="#F4F6F9" stroke-width="30"/>
+                  <path d="M288 332L250 470" stroke="#FFD23F" stroke-width="66"/>
+                </g>
+                <circle cx="304" cy="268" r="40" fill="#F4F6F9"/>
+              </svg>
+              <figcaption class="ph-badge">GPT 이미지 ③ 자리 · 1:1</figcaption>
+            </figure>
+            <div class="foot"><b>09</b>풋살 심판 교육 계획</div>
+          </div>
+        </div>
+        <figcaption class="shot-cap">
+          <h3><span class="no">09</span>3-3 워밍업</h3>
+          <span class="time"><b>0:30</b> · 누적 4:40</span>
+          <p class="script"><strong>발표 멘트</strong>세 번째는 워밍업입니다. 가벼운 러닝과 스트레칭으로 몸을 풀고, 방향 전환과 순간 이동 훈련으로 경기 중 움직임에 필요한 신체를 준비합니다.<a href="#p3">→ 이미지 ③ 프롬프트</a></p>
+        </figcaption>
+      </figure>
+
+      <svg class="sprite" aria-hidden="true" focusable="false">
+        <defs>
+          <!-- 정면 심판 픽토그램(허리 = 0,0). 신호하는 팔은 장면마다 따로 그린다 -->
+          <g id="refbody">
+            <path d="M-18 26L-24 128M18 26L24 128" stroke="#F4F6F9" stroke-width="26" stroke-linecap="round"/>
+            <rect x="-40" y="-8" width="80" height="40" rx="12" fill="#050B14"/>
+            <path d="M-46 -98L-60 2" stroke="#F4F6F9" stroke-width="24" stroke-linecap="round"/>
+            <rect x="-40" y="-118" width="80" height="124" rx="24" fill="#FFD23F"/>
+            <circle cx="0" cy="-152" r="30" fill="#F4F6F9"/>
+          </g>
+        </defs>
+      </svg>
+
+      <figure class="shot" id="s10">
+        <div class="slide" tabindex="0" role="button" aria-label="10 시그널 교육 크게 보기" data-sec="60" data-end="340">
+          <div class="s paper step">
+            <div class="st-l">
+              <div class="st-top"><p class="chap"><b>03</b>실전교육</p><span class="prog" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="done"></i><i class="on"></i><i></i><i></i></span></div>
+              <p class="st-no">3-4</p>
+              <p class="st-title">시그널 교육</p>
+              <p class="st-lead">주요 경기규칙에 따른 수신호를 정확한 동작으로 숙지한다</p>
+              <div class="sig4">
+                <div><p>재개 시그널</p><b>킥인 · 코너킥 · 골클리어런스</b></div>
+                <div><p>프리킥</p><b>직접 · 간접 프리킥</b></div>
+                <div><p>파울 · 카드</p><b>파울 · 경고 · 퇴장 등 주요 시그널</b></div>
+                <div><p>진행 · 판정</p><b>경기 재개 및 판정 시그널</b></div>
+              </div>
+            </div>
+            <figure class="st-img">
+              <svg viewBox="0 0 912 912" aria-hidden="true">
+                <rect width="912" height="912" fill="#0B1A2E"/>
+                <circle cx="456" cy="456" r="470" fill="url(#glow)" opacity=".7"/>
+                <path d="M456 36V876M36 456H876" stroke="#FFFFFF" stroke-opacity=".12" stroke-width="3"/>
+                <g stroke-linecap="round" fill="none">
+                  <g transform="translate(228 284) scale(.75)">
+                    <circle cx="52" cy="-236" r="40" fill="#FFD23F" fill-opacity=".22"/>
+                    <use href="#refbody"/>
+                    <path d="M44 -100L52 -232" stroke="#F4F6F9" stroke-width="24"/>
+                  </g>
+                  <g transform="translate(616 284) scale(.75)">
+                    <circle cx="178" cy="-100" r="40" fill="#FFD23F" fill-opacity=".22"/>
+                    <use href="#refbody"/>
+                    <path d="M44 -100L178 -100" stroke="#F4F6F9" stroke-width="24"/>
+                    <path d="M210 -100H262M240 -122L264 -100L240 -78" stroke="#FFD23F" stroke-width="12" stroke-linejoin="round"/>
+                  </g>
+                  <g transform="translate(200 740) scale(.75)">
+                    <circle cx="150" cy="-12" r="40" fill="#FFD23F" fill-opacity=".22"/>
+                    <use href="#refbody"/>
+                    <path d="M44 -100L150 -12" stroke="#F4F6F9" stroke-width="24"/>
+                    <path d="M262 -16V64H182" stroke="#F4F6F9" stroke-opacity=".6" stroke-width="8"/>
+                    <path d="M262 36A28 28 0 0 0 234 64" stroke="#FFD23F" stroke-width="10"/>
+                  </g>
+                  <g transform="translate(684 740) scale(.75)">
+                    <use href="#refbody"/>
+                    <path d="M44 -100L80 -218" stroke="#F4F6F9" stroke-width="24"/>
+                    <rect x="58" y="-306" width="58" height="84" rx="8" fill="#FFD23F" transform="rotate(12 87 -264)"/>
+                  </g>
+                </g>
+                <g fill="#F4F6F9" fill-opacity=".9" font-size="30" font-weight="700" text-anchor="middle" letter-spacing="-0.5">
+                  <text x="228" y="430">간접 프리킥</text>
+                  <text x="684" y="430">직접 프리킥</text>
+                  <text x="228" y="886">코너킥</text>
+                  <text x="684" y="886">경고</text>
+                </g>
+              </svg>
+              <figcaption class="ph-badge">GPT 이미지 ④ 자리 · 1:1</figcaption>
+            </figure>
+            <div class="foot"><b>10</b>풋살 심판 교육 계획</div>
+          </div>
+        </div>
+        <figcaption class="shot-cap">
+          <h3><span class="no">10</span>3-4 시그널 교육</h3>
+          <span class="time"><b>1:00</b> · 누적 5:40</span>
+          <p class="script"><strong>발표 멘트</strong>네 번째는 시그널 교육입니다. 시그널은 판정을 선수와 관중 모두에게 알리는 심판의 언어입니다. 주요 경기규칙에 따른 수신호를 숙지하고, 킥인·코너킥·골클리어런스 같은 재개 시그널과 직접·간접 프리킥 시그널을 익힙니다. 또한 파울과 카드 상황 등 주요 시그널, 그리고 경기 재개와 판정 시그널까지 정확한 동작으로 반복 연습합니다. (시간이 남으면 간접 프리킥 시그널을 직접 시연)<span class="flag">이미지 속 칸 이름(간접 프리킥 등)은 GPT가 아니라 PPT 텍스트로 넣습니다.</span><a href="#p4">→ 이미지 ④ 프롬프트</a></p>
+        </figcaption>
+      </figure>
+
+      <figure class="shot" id="s11">
+        <div class="slide" tabindex="0" role="button" aria-label="11 상황별 시그널 게임 크게 보기" data-sec="40" data-end="380">
+          <div class="s paper step">
+            <div class="st-l">
+              <div class="st-top"><p class="chap"><b>03</b>실전교육</p><span class="prog" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="on"></i><i></i></span></div>
+              <p class="st-no">3-5</p>
+              <p class="st-title">상황별 시그널 게임</p>
+              <p class="st-lead">실제 경기 상황을 제시하고 직접 판정한다</p>
+              <ul class="st-list">
+                <li>실제 경기 상황 제시 후 <b>직접 판정</b> 훈련</li>
+                <li><b>판정 → 휘슬 → 시그널</b>까지 연결</li>
+                <li>교육생 간 <b>피드백</b> 진행</li>
+              </ul>
+              <div class="st-extra loop">
+                <ol>
+                  <li>상황 제시</li>
+                  <li class="key">판정</li>
+                  <li class="key">휘슬</li>
+                  <li class="key">시그널</li>
+                </ol>
+                <svg viewBox="0 0 744 56" preserveAspectRatio="none" aria-hidden="true"><path d="M651 4V28Q651 44 635 44H109Q93 44 93 28V10" fill="none" stroke="currentColor" stroke-width="4" stroke-dasharray="10 8"/><path d="M81 20L93 6L105 20" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <p class="back">교육생 간 피드백 → 다음 상황</p>
+              </div>
+            </div>
+            <figure class="st-img">
+              <svg viewBox="0 0 912 912" aria-hidden="true">
+                <rect width="912" height="912" fill="#0B1A2E"/>
+                <circle cx="456" cy="360" r="420" fill="url(#glow)"/>
+                <path d="M0 646H912V912H0Z" fill="#1E5BD8"/>
+                <path d="M0 646H912" stroke="#17469F" stroke-width="10"/>
+                <path d="M0 724H912" stroke="#FFFFFF" stroke-opacity=".6" stroke-width="5"/>
+                <g stroke-linecap="round" fill="none">
+                  <path d="M172 590L166 704M208 590L214 704" stroke="#2B4F8C" stroke-width="28"/>
+                  <path d="M152 462L136 572" stroke="#2B4F8C" stroke-width="24"/>
+                  <rect x="150" y="440" width="80" height="152" rx="24" fill="#2B4F8C"/>
+                  <path d="M190 450V580" stroke="#F4F6F9" stroke-opacity=".5" stroke-width="4"/>
+                  <path d="M228 462L262 342" stroke="#2B4F8C" stroke-width="24"/>
+                  <circle cx="190" cy="404" r="32" fill="#F4F6F9"/>
+                  <rect x="236" y="136" width="280" height="200" rx="20" fill="#F4F6F9"/>
+                  <circle cx="330" cy="200" r="16" fill="#0B1A2E"/>
+                  <path d="M330 218L322 264M322 264L368 280M322 264L306 302" stroke="#0B1A2E" stroke-width="16"/>
+                  <circle cx="444" cy="194" r="16" fill="#E5484D"/>
+                  <path d="M436 212L412 254M412 254L382 284M412 254L430 300" stroke="#E5484D" stroke-width="16"/>
+                  <path d="M372 236L380 252L397 250L386 263L394 279L377 272L364 285L364 267L349 259L366 253Z" fill="#FFD23F"/>
+                  <g transform="translate(470 600) scale(-.72 .72)">
+                    <use href="#refbody"/>
+                    <path d="M44 -100L178 -100" stroke="#F4F6F9" stroke-width="24"/>
+                  </g>
+                  <g transform="translate(640 600) scale(.72)">
+                    <use href="#refbody"/>
+                    <path d="M44 -100L52 -232" stroke="#F4F6F9" stroke-width="24"/>
+                  </g>
+                  <g transform="translate(810 600) scale(.72)">
+                    <use href="#refbody"/>
+                    <path d="M44 -100L80 -128L18 -146" stroke="#F4F6F9" stroke-width="24" stroke-linejoin="round"/>
+                    <rect x="-8" y="-158" width="30" height="14" rx="5" fill="#FFD23F"/>
+                    <path d="M48 -188A42 42 0 0 1 48 -122M70 -206A66 66 0 0 1 70 -106" stroke="#FFD23F" stroke-width="9"/>
+                  </g>
+                  <path d="M398 356H494Q508 356 508 370V408Q508 422 494 422H452L438 440L432 422H398Q384 422 384 408V370Q384 356 398 356Z" fill="#F4F6F9"/>
+                  <path d="M424 390L440 404L470 374" stroke="#1E5BD8" stroke-width="9" stroke-linejoin="round"/>
+                  <path d="M732 330H828Q842 330 842 344V382Q842 396 828 396H794L784 414L776 396H732Q718 396 718 382V344Q718 330 732 330Z" fill="#FFD23F"/>
+                  <path d="M758 364L774 378L804 348" stroke="#0B1A2E" stroke-width="9" stroke-linejoin="round"/>
+                </g>
+              </svg>
+              <figcaption class="ph-badge">GPT 이미지 ⑤ 자리 · 1:1</figcaption>
+            </figure>
+            <div class="foot"><b>11</b>풋살 심판 교육 계획</div>
+          </div>
+        </div>
+        <figcaption class="shot-cap">
+          <h3><span class="no">11</span>3-5 상황별 시그널 게임</h3>
+          <span class="time"><b>0:40</b> · 누적 6:20</span>
+          <p class="script"><strong>발표 멘트</strong>다섯 번째는 상황별 시그널 게임입니다. 실제 경기 상황을 제시하면 교육생이 직접 판정합니다. 이때 판정, 휘슬, 시그널까지 한 번에 연결하도록 훈련하고, 마지막에는 교육생 간 피드백으로 판정의 일관성을 맞춥니다.<a href="#p5">→ 이미지 ⑤ 프롬프트</a></p>
+        </figcaption>
+      </figure>
+
+      <figure class="shot" id="s12">
+        <div class="slide" tabindex="0" role="button" aria-label="12 위치선정 크게 보기" data-sec="45" data-end="425">
+          <div class="s paper step">
+            <div class="st-l">
+              <div class="st-top"><p class="chap"><b>03</b>실전교육</p><span class="prog" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="on"></i></span></div>
+              <p class="st-no">3-6</p>
+              <p class="st-title">위치선정</p>
+              <p class="st-lead">공을 두 심판 사이에 두고 사각지대를 줄인다</p>
+              <ul class="st-list">
+                <li>주심과 2주심의 <b>기본 위치</b> 이해</li>
+                <li>공의 이동에 따른 <b>시야 확보</b></li>
+                <li><b>사각지대 최소화</b>, 심판 간 협력 및 역할 분담</li>
+              </ul>
+              <div class="st-extra">
+                <ul class="legend">
+                  <li><i class="y"></i>주심</li>
+                  <li><i class="w"></i>2주심</li>
+                  <li><i class="cone"></i>시야 범위</li>
+                  <li><i class="arr"></i>터치라인 이동</li>
+                </ul>
+              </div>
+            </div>
+            <figure class="st-img">
+              <svg viewBox="0 0 912 912" aria-hidden="true">
+                <rect width="912" height="912" fill="#0B1A2E"/>
+                <g transform="translate(0 26)">
+                  <rect x="20" y="150" width="872" height="560" rx="24" fill="#17469F"/>
+                  <rect x="63.48" y="239.7" width="785.05" height="392.52" fill="#1E5BD8"/>
+                  <use href="#court" x="36" y="224" width="840" height="424" style="color:#FFFFFF" stroke-width="1.4"/>
+                  <path d="M357.9 662L493.8 350.3A340 340 0 0 1 644.8 479.6Z" fill="#FFD23F" fill-opacity=".26"/>
+                  <path d="M652.3 210L601.3 546.2A340 340 0 0 1 422 460.1Z" fill="#FFFFFF" fill-opacity=".2"/>
+                  <g stroke="#0B1A2E" stroke-width="3">
+                    <circle cx="106.7" cy="436" r="13" fill="#F4F6F9"/><circle cx="357.9" cy="328" r="13" fill="#F4F6F9"/><circle cx="465.8" cy="534.1" r="13" fill="#F4F6F9"/><circle cx="507" cy="467.4" r="13" fill="#F4F6F9"/><circle cx="652.3" cy="361.4" r="13" fill="#F4F6F9"/>
+                    <circle cx="805.4" cy="436" r="13" fill="#E5484D"/><circle cx="622.8" cy="485" r="13" fill="#E5484D"/><circle cx="711.1" cy="406.5" r="13" fill="#E5484D"/><circle cx="554.1" cy="553.7" r="13" fill="#E5484D"/><circle cx="436.4" cy="400.6" r="13" fill="#E5484D"/>
+                  </g>
+                  <use href="#ball" x="522.5" y="443.6" width="24" height="24"/>
+                  <g fill="none" stroke="#F4F6F9" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M270 696H446" stroke-dasharray="3 14"/>
+                    <path d="M282 684L266 696L282 708M434 684L450 696L434 708"/>
+                    <path d="M564 176H740" stroke-dasharray="3 14"/>
+                    <path d="M576 164L560 176L576 188M728 164L744 176L728 188"/>
+                  </g>
+                  <circle cx="357.9" cy="662" r="34" fill="none" stroke="#FFD23F" stroke-opacity=".45" stroke-width="5"/>
+                  <circle cx="357.9" cy="662" r="22" fill="#FFD23F" stroke="#0B1A2E" stroke-width="5"/>
+                  <circle cx="652.3" cy="210" r="34" fill="none" stroke="#FFFFFF" stroke-opacity=".45" stroke-width="5"/>
+                  <circle cx="652.3" cy="210" r="22" fill="#F4F6F9" stroke="#0B1A2E" stroke-width="5"/>
+                </g>
+              </svg>
+              <figcaption class="ph-badge">GPT 이미지 ⑥ 자리 · 1:1</figcaption>
+            </figure>
+            <div class="foot"><b>12</b>풋살 심판 교육 계획</div>
+          </div>
+        </div>
+        <figcaption class="shot-cap">
+          <h3><span class="no">12</span>3-6 위치선정</h3>
+          <span class="time"><b>0:45</b> · 누적 7:05</span>
+          <p class="script"><strong>발표 멘트</strong>마지막은 위치선정입니다. 주심과 2주심의 기본 위치를 이해하고, 공의 이동에 따라 시야를 확보하는 방법을 익힙니다. 두 심판이 협력하고 역할을 나눠 사각지대를 최소화하는 것이 핵심입니다.<span class="flag">배치도는 정확도가 중요해서, GPT 결과가 어색하면 이 시안 그림을 PPT 도형으로 따라 그리는 편이 낫습니다.</span><a href="#p6">→ 이미지 ⑥ 프롬프트</a></p>
+        </figcaption>
+      </figure>
+
+      <figure class="shot" id="s13">
+        <div class="slide" tabindex="0" role="button" aria-label="13 결론요약 크게 보기" data-sec="45" data-end="470">
+          <div class="s dark concl">
+            <div class="content">
+              <p class="chap"><b>04</b>결론요약</p>
+              <p class="title">교육 후 기대효과</p>
+              <ol class="fx">
+                <li><svg class="ico" aria-hidden="true"><use href="#i-scale"/></svg><b>규칙에 근거한 정확하고 일관된 판단 능력 향상</b></li>
+                <li><svg class="ico" aria-hidden="true"><use href="#i-person"/></svg><b>심판의 기본 자세와 역할 인식 확립</b></li>
+                <li><svg class="ico" aria-hidden="true"><use href="#i-shield"/></svg><b>다양한 상황 대처와 안전한 경기 운영 능력 강화</b></li>
+              </ol>
+              <p class="fx-close"><span>교육목적</span>공정하고 일관성 있는 판정, 안전한 경기 운영</p>
+            </div>
+            <div class="foot"><b>13</b>풋살 심판 교육 계획</div>
+          </div>
+        </div>
+        <figcaption class="shot-cap">
+          <h3><span class="no">13</span>결론요약 · 교육 후 기대효과</h3>
+          <span class="time"><b>0:45</b> · 누적 7:50</span>
+          <p class="script"><strong>발표 멘트</strong>교육을 마치면 교육생들은 규칙에 근거해 정확하고 일관된 판단을 내릴 수 있고, 심판의 기본 자세와 역할을 갖추게 됩니다. 나아가 다양한 상황에서도 안전하게 경기를 운영할 수 있어, 처음 말씀드린 교육목적인 공정하고 일관성 있는 판정과 안전한 경기 운영으로 이어질 것으로 기대합니다.<span class="flag">원문이 "심판의 기본"에서 끊겨 있어 2번 문구는 임시로 채웠고, 3번은 교육목표 3과 짝을 맞춘 제안입니다. 원래 문장으로 바꿔 주세요.</span></p>
+        </figcaption>
+      </figure>
+
+      <figure class="shot" id="s14">
+        <div class="slide" tabindex="0" role="button" aria-label="14 마무리 크게 보기" data-sec="10" data-end="480">
+          <div class="s dark cover thanks">
+            <svg class="court-bg cv-court" aria-hidden="true"><use href="#court" width="100%" height="100%"/></svg>
+            <div class="cv-cards" aria-hidden="true"><i class="card red"></i><i class="card yellow"></i></div>
+            <div class="cv-text">
+              <p class="cv-eyebrow">THANK YOU</p>
+              <p class="cv-title">감사합니다</p>
+              <p class="cv-sub">질의응답</p>
+            </div>
+            <p class="cv-by">풋살 심판 교육 계획<i>|</i>발표자 [이름]</p>
+          </div>
+        </div>
+        <figcaption class="shot-cap">
+          <h3><span class="no">14</span>마무리</h3>
+          <span class="time"><b>0:10</b> · 누적 8:00</span>
+          <p class="script"><strong>발표 멘트</strong>이상으로 풋살 심판 교육 계획 발표를 마치겠습니다. 감사합니다.</p>
+        </figcaption>
+      </figure>
+
+    </div>
+  </section>
+
+  <section class="sec" id="prompts">
+    <div class="sec-head">
+      <p class="k">STEP 3</p>
+      <h2>GPT 이미지 프롬프트</h2>
+      <p>ChatGPT에 그대로 붙여넣으면 됩니다. 6장이 한 세트처럼 보이도록 공통 스타일을 먼저 고정하고, 같은 대화창에서 이어서 만듭니다. 글자는 이미지에 넣지 않고 PPT에서 따로 얹습니다. 한글이 GPT 이미지 안에서 자주 깨지기 때문입니다.</p>
+    </div>
+
+    <ol class="how">
+      <li><b>새 대화에서 시작</b>공통 스타일과 이미지 ① 프롬프트를 함께 복사해 한 번에 붙여넣습니다.</li>
+      <li><b>같은 대화에서 이어가기</b>①이 마음에 들면 같은 대화창에 ②~⑥ 프롬프트를 하나씩 넣습니다. 스타일이 유지됩니다.</li>
+      <li><b>부분 수정</b>글자가 생기거나 동작이 어색하면 아래 수정 요청 문구로 그 부분만 고칩니다.</li>
+      <li><b>PPT에 넣기</b>정사각형으로 받아 오른쪽 이미지 프레임에 넣고 '자르기 → 채우기'로 맞춥니다.</li>
+    </ol>
+
+    <div class="pgrid">
+      <article class="pcard style" id="p0">
+        <div class="pcard-head">
+          <span class="badge">STYLE</span>
+          <h3>공통 스타일 (맨 처음 한 번)</h3>
+          <div class="btns"><button class="copy" type="button" data-copy="t0">복사</button><button class="copy" type="button" data-copy="t0,t1">스타일 + ① 함께 복사</button></div>
+        </div>
+        <pre class="prompt" id="t0">지금부터 '풋살 심판 교육' 발표 PPT에 들어갈 교육용 일러스트 6장을 만들 거야. 6장 모두 아래 스타일을 똑같이 지켜줘.
+
+· 스타일: 미니멀 플랫 벡터 일러스트, 깔끔한 기하학 형태, 외곽선 없음, 그림자와 그라데이션은 아주 은은하게
+· 색상: 배경 딥 네이비(#0B1A2E), 풋살 코트 블루(#1E5BD8), 코트 라인 화이트, 포인트 옐로(#FFD23F). 레드(#E5484D)는 꼭 필요한 곳에만 조금
+· 인물: 얼굴 이목구비 없는 단순한 캐릭터. 심판은 옐로 상의 + 블랙 하의 + 블랙 양말, 목에 휘슬
+· 구도: 정사각형 1:1, 주인공 요소는 가운데에 크게, 가장자리 10%는 여백
+· 금지: 이미지 안에 글자·숫자·로고·워터마크 넣지 않기. 괄호 안 설명은 동작의 의미일 뿐이니 그림에 쓰지 말 것</pre>
+      </article>
+
+      <article class="pcard" id="p1">
+        <div class="pcard-head">
+          <span class="badge">①</span>
+          <h3>3-1 피치 및 볼 상태 확인</h3>
+          <span class="spec">07번 슬라이드 · 1:1</span>
+          <div class="btns"><button class="copy" type="button" data-copy="t1">복사</button></div>
+        </div>
+        <div class="pcard-body">
+          <pre class="prompt" id="t1">[이미지 1/6 · 피치 및 볼 상태 확인] 위 공통 스타일로 그려줘.
+장면: 경기 시작 전, 심판이 코트와 공을 점검하는 모습.
+· 위에서 비스듬히 내려다본 아이소메트릭 시점의 실내 풋살 코트 (블루 바닥, 화이트 라인, 중앙선과 센터서클, 골대 앞 반원형 페널티 에어리어)
+· 오른쪽 골대 앞에서 심판 한 명이 골대 네트를 손으로 당겨 상태를 확인
+· 화면 왼쪽 아래 앞쪽에 풋살공 1개와 공기압 게이지를 크게 배치
+· 코트 라인, 골대, 공 근처에 옐로 체크 표시 아이콘을 하나씩 띄우기</pre>
+          <div class="checks"><h4>받고 나서 확인</h4><ul>
+            <li>페널티 에어리어가 축구장처럼 네모 박스가 아니라 반원형인지</li>
+            <li>공과 게이지가 앞쪽에 크게 보이는지</li>
+            <li>글자·숫자가 들어가지 않았는지</li>
+          </ul></div>
+        </div>
+      </article>
+
+      <article class="pcard" id="p2">
+        <div class="pcard-head">
+          <span class="badge">②</span>
+          <h3>3-2 휘슬교육</h3>
+          <span class="spec">08번 슬라이드 · 1:1</span>
+          <div class="btns"><button class="copy" type="button" data-copy="t2">복사</button></div>
+        </div>
+        <div class="pcard-body">
+          <pre class="prompt" id="t2">[이미지 2/6 · 휘슬교육] 앞 이미지와 같은 스타일 유지.
+장면: 휘슬 소리의 강도와 길이 구분을 보여주는 클로즈업.
+· 옆모습 심판 상반신. 휘슬을 입에 물고 한 손으로 휘슬 끈을 잡은 모습
+· 휘슬에서 퍼져 나가는 음파를 옐로 곡선 3개로 표현: 짧고 가는 것 / 중간 / 길고 굵은 것. 소리의 길이와 세기 차이가 한눈에 보이게
+· 배경은 네이비 단색에 아주 흐린 코트 라인</pre>
+          <div class="checks"><h4>받고 나서 확인</h4><ul>
+            <li>휘슬 모양(통 + 입에 무는 부분)이 자연스러운지</li>
+            <li>음파 3개의 길이·굵기 차이가 보이는지</li>
+            <li>얼굴은 단순하게, 손가락이 이상하지 않은지</li>
+          </ul></div>
+        </div>
+      </article>
+
+      <article class="pcard" id="p3">
+        <div class="pcard-head">
+          <span class="badge">③</span>
+          <h3>3-3 워밍업</h3>
+          <span class="spec">09번 슬라이드 · 1:1</span>
+          <div class="btns"><button class="copy" type="button" data-copy="t3">복사</button></div>
+        </div>
+        <div class="pcard-body">
+          <pre class="prompt" id="t3">[이미지 3/6 · 워밍업] 앞 이미지와 같은 스타일 유지.
+장면: 블루 코트 위에서 심판 3명이 경기 전에 몸을 푸는 모습.
+· 왼쪽: 가볍게 러닝 / 가운데: 옐로 콘 4개를 지그재그로 놓고 사이드 스텝으로 방향 전환 / 오른쪽: 다리 스트레칭
+· 움직임을 보여주는 짧은 모션 라인, 방향 전환 경로는 화이트 점선 화살표
+· 역동적이지만 깔끔하게, 세 사람 모두 같은 심판 복장</pre>
+          <div class="checks"><h4>받고 나서 확인</h4><ul>
+            <li>세 사람의 동작(러닝·방향 전환·스트레칭)이 서로 다른지</li>
+            <li>콘과 점선 경로가 지저분하지 않은지</li>
+            <li>①·②와 색감이 같은지</li>
+          </ul></div>
+        </div>
+      </article>
+
+      <article class="pcard" id="p4">
+        <div class="pcard-head">
+          <span class="badge">④</span>
+          <h3>3-4 시그널 교육</h3>
+          <span class="spec">10번 슬라이드 · 1:1</span>
+          <div class="btns"><button class="copy" type="button" data-copy="t4">복사</button></div>
+        </div>
+        <div class="pcard-body">
+          <pre class="prompt" id="t4">[이미지 4/6 · 시그널 교육] 앞 이미지와 같은 스타일 유지.
+장면: 심판 수신호 4가지를 보여주는 2×2 그리드. 같은 심판 캐릭터가 정면을 보고 서서 칸마다 다른 동작을 함.
+· 왼쪽 위: 한 팔을 머리 위로 곧게 들어 올림 (간접 프리킥)
+· 오른쪽 위: 한 팔을 어깨 높이로 수평하게 뻗어 방향을 가리킴 (직접 프리킥)
+· 왼쪽 아래: 한 팔을 비스듬히 아래로 뻗어 코너 쪽을 가리킴 (코너킥)
+· 오른쪽 아래: 옐로카드를 든 손을 머리 위로 높이 들어 보임 (경고)
+· 네 칸은 얇은 라인으로 나누고, 각 칸 아래쪽 20%는 비워 두기 (PPT에서 글자 넣을 자리)</pre>
+          <div class="checks"><h4>받고 나서 확인</h4><ul>
+            <li>팔 각도가 맞는지: 간접은 수직, 직접은 수평</li>
+            <li>네 칸의 인물이 같은 캐릭터인지</li>
+            <li>각 칸 아래에 빈 공간이 있는지</li>
+            <li>어색한 칸은 "왼쪽 위 칸만 다시"처럼 칸을 지정해 수정</li>
+          </ul></div>
+        </div>
+      </article>
+
+      <article class="pcard" id="p5">
+        <div class="pcard-head">
+          <span class="badge">⑤</span>
+          <h3>3-5 상황별 시그널 게임</h3>
+          <span class="spec">11번 슬라이드 · 1:1</span>
+          <div class="btns"><button class="copy" type="button" data-copy="t5">복사</button></div>
+        </div>
+        <div class="pcard-body">
+          <pre class="prompt" id="t5">[이미지 5/6 · 상황별 시그널 게임] 앞 이미지와 같은 스타일 유지.
+장면: 강사가 경기 상황을 제시하고 교육생이 바로 판정하는 실습.
+· 왼쪽: 네이비 트레이닝복을 입은 강사가 파울 장면 그림이 그려진 큰 카드를 들어 보임
+· 오른쪽: 옐로 상의 교육생 심판 3명이 나란히 서서 각각 휘슬 불기 / 팔을 위로 들기 / 팔을 옆으로 뻗기
+· 교육생들 머리 위에 작은 말풍선 아이콘(체크 표시)을 띄워 서로 피드백하는 느낌
+· 활기찬 분위기, 바닥은 블루 코트</pre>
+          <div class="checks"><h4>받고 나서 확인</h4><ul>
+            <li>카드 속 파울 그림이 단순하고 한눈에 읽히는지</li>
+            <li>교육생 3명의 동작이 서로 다른지</li>
+            <li>말풍선 안에 글자가 없는지</li>
+          </ul></div>
+        </div>
+      </article>
+
+      <article class="pcard" id="p6">
+        <div class="pcard-head">
+          <span class="badge">⑥</span>
+          <h3>3-6 위치선정</h3>
+          <span class="spec">12번 슬라이드 · 1:1</span>
+          <div class="btns"><button class="copy" type="button" data-copy="t6">복사</button></div>
+        </div>
+        <div class="pcard-body">
+          <pre class="prompt" id="t6">[이미지 6/6 · 위치선정] 앞 이미지와 같은 스타일 유지.
+장면: 위에서 수직으로 내려다본 풋살 코트 전술판 다이어그램(탑뷰).
+· 블루 코트, 화이트 라인 (중앙선, 센터서클, 양쪽 골대 앞 반원형 페널티 에어리어, 골대)
+· 공(화이트)은 코트 중앙에서 약간 오른쪽
+· 심판 2명은 동그란 마커: 옐로 마커는 아래쪽 터치라인 바깥 왼쪽, 화이트 마커는 위쪽 터치라인 바깥 오른쪽. 두 마커가 서로 대각선으로 마주 보게
+· 각 심판 마커에서 공 쪽으로 반투명 부채꼴(시야 범위)이 뻗어 나와 공 주변에서 겹치게
+· 각 심판 옆에 터치라인을 따라 움직이는 양방향 점선 화살표
+· 선수는 작은 원 마커로 팀당 5개씩 (화이트 팀 / 레드 팀)</pre>
+          <div class="checks"><h4>받고 나서 확인</h4><ul>
+            <li>두 심판이 서로 반대편 터치라인에, 대각선으로 있는지</li>
+            <li>공이 두 심판 사이에 있는지</li>
+            <li>마커 색이 PPT 범례와 같은지 (옐로 = 주심, 화이트 = 2주심)</li>
+            <li>선수 마커가 팀당 5개인지</li>
+          </ul></div>
+        </div>
+      </article>
+
+      <div class="panel">
+        <h3>수정 요청 문구 <small style="font-weight:500;color:var(--fg-3);font-size:14px">누르면 복사됩니다</small></h3>
+        <div class="fixes">
+          <button class="fix" type="button">이미지 안의 글자와 숫자를 모두 지워줘. 나머지는 그대로 유지해줘.</button>
+          <button class="fix" type="button">1번 이미지와 같은 스타일과 색감으로 다시 그려줘.</button>
+          <button class="fix" type="button">배경색을 더 어두운 네이비(#0B1A2E) 단색으로 맞춰줘.</button>
+          <button class="fix" type="button">정사각형(1:1) 비율로 다시 만들어줘.</button>
+          <button class="fix" type="button">왼쪽 위 칸 심판의 팔을 머리 위로 곧게 수직이 되게 고쳐줘. 다른 칸은 그대로.</button>
+          <button class="fix" type="button">인물을 더 단순하게, 얼굴 이목구비 없이 그려줘.</button>
+          <button class="fix" type="button">주요 요소를 가운데로 모으고 가장자리 여백을 더 넓혀줘.</button>
+        </div>
+      </div>
+
+      <p class="alt">더 입체적인 느낌을 원하면 공통 스타일의 첫 줄만 <code>스타일: 3D 아이소메트릭 미니어처, 무광 클레이 질감, 부드러운 스튜디오 조명</code>으로 바꾸세요. 색상·구도·글자 금지 규칙은 그대로 둡니다. 6장 모두 같은 스타일로 통일하는 것이 중요합니다.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="guide">
+    <div class="sec-head">
+      <p class="k">STEP 4</p>
+      <h2>PPT 제작 가이드</h2>
+      <p>시안을 파워포인트로 옮길 때 쓰는 값입니다. 시안은 1920×1080 기준이라 1px = 0.5pt로 환산했습니다.</p>
+    </div>
+
+    <div class="guide">
+      <div class="panel">
+        <h3>슬라이드 · 글꼴</h3>
+        <dl class="kv">
+          <dt>크기</dt><dd>와이드스크린 16:9<small>33.867 × 19.05 cm</small></dd>
+          <dt>한글</dt><dd>Pretendard<small>제목 ExtraBold 36pt · 본문 Medium 16pt · 캡션 12pt</small></dd>
+          <dt>숫자·영문</dt><dd>Barlow Condensed<small>ExtraBold Italic: 큰 번호(03, 3-1)와 영문 라벨</small></dd>
+          <dt>전환</dt><dd>전체 '페이드' 하나로 통일<small>이미지는 나타내기(페이드)만</small></dd>
+        </dl>
+      </div>
+
+      <div class="panel">
+        <h3>3장 템플릿 치수 (cm)</h3>
+        <dl class="kv">
+          <dt>텍스트 영역</dt><dd>왼쪽 1.69 · 위 1.48<small>너비 13.12</small></dd>
+          <dt>이미지 프레임</dt><dd>왼쪽 16.09 · 위 1.48<small>16.09 × 16.09 정사각형, 모서리 둥글게 0.49</small></dd>
+          <dt>단계 번호</dt><dd>3-1 ~ 3-6<small>Barlow Condensed 56pt, 코트 블루</small></dd>
+          <dt>진행 막대</dt><dd>오른쪽 위 6칸<small>현재 단계만 코트 블루로 채우기</small></dd>
+        </dl>
+      </div>
+
+      <div class="panel">
+        <h3>색상 6개</h3>
+        <div class="swatches">
+          <div class="sw" style="--c:#0B1A2E"><i></i><b>네이비</b><code>#0B1A2E</code><small>표지·간지·결론 배경</small></div>
+          <div class="sw" style="--c:#1E5BD8"><i></i><b>코트 블루</b><code>#1E5BD8</code><small>번호·포인트</small></div>
+          <div class="sw" style="--c:#FFD23F"><i></i><b>옐로</b><code>#FFD23F</code><small>강조·형광펜</small></div>
+          <div class="sw" style="--c:#E5484D"><i></i><b>레드</b><code>#E5484D</code><small>119·레드카드만</small></div>
+          <div class="sw" style="--c:#F3F5F8"><i></i><b>페이퍼</b><code>#F3F5F8</code><small>본문 배경</small></div>
+          <div class="sw" style="--c:#46566B"><i></i><b>그레이</b><code>#46566B</code><small>보조 문장</small></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>이미지 넣는 법</h3>
+        <ul class="tips">
+          <li>정사각형 <b>둥근 사각형 도형</b>을 먼저 그리고, 도형 서식 → 채우기 → <b>그림</b>으로 GPT 이미지를 넣으면 모서리까지 깔끔합니다.</li>
+          <li>이미지가 늘어나 보이면 그림 서식에서 <b>'자르기 → 채우기'</b>를 누릅니다.</li>
+          <li>④번 칸 이름(간접 프리킥 등)은 이미지 위에 <b>텍스트 상자</b>로 얹습니다.</li>
+          <li>⑥번 배치도가 부정확하면 시안 그림처럼 <b>원·부채꼴 도형</b>으로 직접 그려도 됩니다.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="present" id="present" hidden role="dialog" aria-modal="true" aria-label="발표 모드">
+  <div class="stage" id="stage"></div>
+  <div class="pbar">
+    <button type="button" data-act="prev" aria-label="이전 슬라이드">← 이전</button>
+    <button type="button" data-act="next" aria-label="다음 슬라이드">다음 →</button>
+    <span class="count num" id="pcount">01 / 14</span>
+    <span class="sp"></span>
+    <span class="clock num" id="pclock">0:00<small id="ptarget">목표 0:15</small></span>
+    <button type="button" data-act="reset">타이머 다시</button>
+    <span class="hint">← → 넘기기 · Esc 닫기</span>
+    <button type="button" data-act="close">닫기</button>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<style>
+[hidden] { display: none !important; }
+.shot-cap .script { flex: 1 1 100%; }
+.script a { display: inline-block; margin-top: 8px; text-decoration: none; }
+.script a:hover { text-decoration: underline; }
+.toast {
+  position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 120;
+  max-width: calc(100vw - 32px); padding: 11px 16px; border-radius: 12px;
+  background: var(--fg); color: var(--bg); font-size: 14px; font-weight: 600; box-shadow: var(--shadow);
+}
+body.presenting { overflow: hidden; }
+</style>
+
+<script>
+(() => {
+  const slides = [...document.querySelectorAll('.deck .slide')];
+  const pres = document.getElementById('present');
+  const stage = document.getElementById('stage');
+  const pcount = document.getElementById('pcount');
+  const pclock = document.getElementById('pclock');
+  const ptarget = document.getElementById('ptarget');
+  const toastEl = document.getElementById('toast');
+  let idx = 0, t0 = 0, timer = 0, toastTimer = 0, lastFocus = null, wentFull = false;
+
+  /* ── 복사 ── */
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toastEl.hidden = true; }, 2600);
+  }
+  function selectText(el) {
+    const r = document.createRange();
+    r.selectNodeContents(el);
+    const s = window.getSelection();
+    s.removeAllRanges();
+    s.addRange(r);
+  }
+  function copyText(text, fallbackEl) {
+    let p;
+    try { p = navigator.clipboard.writeText(text); } catch (e) { p = Promise.reject(e); }
+    return p.then(() => true, () => { if (fallbackEl) selectText(fallbackEl); return false; });
+  }
+  function flash(btn, label) {
+    if (!btn.dataset.label) btn.dataset.label = btn.textContent;
+    btn.textContent = label;
+    btn.classList.add('done');
+    clearTimeout(btn._t);
+    btn._t = setTimeout(() => { btn.textContent = btn.dataset.label; btn.classList.remove('done'); }, 1600);
+  }
+
+  /* ── 발표 모드 ── */
+  const fmt = (s) => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+  function tick() {
+    const el = (performance.now() - t0) / 1000;
+    const end = Number(slides[idx].dataset.end);
+    pclock.firstChild.nodeValue = fmt(el);
+    ptarget.textContent = '목표 ' + fmt(end);
+    pclock.classList.toggle('over', el > end + 5);
+  }
+  function show(i) {
+    idx = Math.max(0, Math.min(slides.length - 1, i));
+    const clone = slides[idx].cloneNode(true);
+    ['tabindex', 'role', 'aria-label'].forEach((a) => clone.removeAttribute(a));
+    stage.replaceChildren(clone);
+    pcount.textContent = String(idx + 1).padStart(2, '0') + ' / ' + slides.length;
+    tick();
+  }
+  function openPresent(i) {
+    lastFocus = document.activeElement;
+    pres.hidden = false;
+    document.body.classList.add('presenting');
+    t0 = performance.now();
+    show(i);
+    clearInterval(timer);
+    timer = setInterval(tick, 250);
+    pres.querySelector('[data-act="next"]').focus();
+    wentFull = false;
+    try {
+      const r = pres.requestFullscreen && pres.requestFullscreen();
+      if (r && r.then) r.then(() => { wentFull = true; }, () => {});
+    } catch (e) { /* 전체 화면을 지원하지 않으면 창 안에서만 보여준다 */ }
+  }
+  function closePresent() {
+    if (pres.hidden) return;
+    pres.hidden = true;
+    clearInterval(timer);
+    document.body.classList.remove('presenting');
+    try { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); } catch (e) {}
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement && wentFull) { wentFull = false; closePresent(); }
+  });
+
+  pres.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-act]');
+    if (b) {
+      const a = b.dataset.act;
+      if (a === 'prev') show(idx - 1);
+      else if (a === 'next') show(idx + 1);
+      else if (a === 'reset') { t0 = performance.now(); tick(); }
+      else if (a === 'close') closePresent();
+      return;
+    }
+    if (e.target.closest('#stage')) {
+      const r = stage.getBoundingClientRect();
+      show(e.clientX < r.left + r.width / 3 ? idx - 1 : idx + 1);
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    const c = e.target.closest('.copy');
+    if (c) {
+      const els = c.dataset.copy.split(',').map((id) => document.getElementById(id));
+      const text = els.map((el) => el.textContent.trim()).join('\n\n');
+      copyText(text, els[0]).then((ok) => {
+        flash(c, ok ? '복사됨' : '선택됨');
+        toast(ok ? '복사했어요. ChatGPT에 붙여넣으세요.' : '복사가 막혀 있어 텍스트를 선택해 두었어요. Ctrl+C(⌘C)로 복사하세요.');
+      });
+      return;
+    }
+    const f = e.target.closest('.fix');
+    if (f) {
+      copyText(f.textContent.trim(), f).then((ok) => {
+        f.classList.add('done');
+        setTimeout(() => f.classList.remove('done'), 1400);
+        toast(ok ? '수정 문구를 복사했어요.' : '문구를 선택해 두었어요. Ctrl+C(⌘C)로 복사하세요.');
+      });
+      return;
+    }
+    const p = e.target.closest('[data-present]');
+    if (p) { openPresent(Number(p.dataset.present)); return; }
+    const sl = e.target.closest('.deck .slide');
+    if (sl) openPresent(slides.indexOf(sl));
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (pres.hidden) {
+      if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.deck .slide')) {
+        e.preventDefault();
+        openPresent(slides.indexOf(e.target));
+      }
+      return;
+    }
+    if ((e.key === ' ' || e.key === 'Enter') && e.target.closest && e.target.closest('.pbar button')) return;
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); show(idx + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); show(idx - 1); }
+    else if (e.key === 'Home') { e.preventDefault(); show(0); }
+    else if (e.key === 'End') { e.preventDefault(); show(slides.length - 1); }
+    else if (e.key === 'Escape') closePresent();
+  });
+})();
+</script>
+
+</body>
+</html>
