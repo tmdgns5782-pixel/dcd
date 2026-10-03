@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
 <title>주간 시간표</title>
+<script>try { document.documentElement.dataset.mode = localStorage.getItem('timetable.mode') || 'light'; } catch (e) { document.documentElement.dataset.mode = 'light'; }</script>
 <style>
 /* Pretendard Variable — 저장소에 포함된 파일 우선, 실패 시 CDN */
 @font-face {
@@ -52,8 +53,9 @@
   --row: 80px;
   --gap: 6px;
 }
+/* 화면 모드: 라이트(기본) · 다크 · 자동(기기 설정) — html[data-mode] */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root[data-mode="auto"] {
     --bg: #000000;
     --surface: #1c1c1e;
     --tile: #2c2c2e;
@@ -71,8 +73,8 @@
     --warn: #ffb340;
     --warn-soft: rgba(255, 159, 10, .2);
     --warn-tint: rgba(255, 159, 10, .08);
-    --warn-tile: #3b2a14;
-    --warn-tile-hover: #4a341a;
+    --warn-tile: #2c2a27;
+    --warn-tile-hover: #36332f;
     --red: #ff453a;
     --holi: #ff6961;
     --holi-soft: rgba(255, 69, 58, .2);
@@ -80,7 +82,37 @@
     --glass: rgba(22, 22, 24, .76);
     --platter-shadow: 0 0 0 .5px rgba(255, 255, 255, .08);
     --sheet-shadow: 0 0 0 .5px rgba(255, 255, 255, .1), 0 30px 80px rgba(0, 0, 0, .6);
+    color-scheme: dark;
   }
+}
+:root[data-mode="dark"] {
+  --bg: #000000;
+  --surface: #1c1c1e;
+  --tile: #2c2c2e;
+  --tile-hover: #3a3a3c;
+  --lesson: #1e2d3e;
+  --lesson-hover: #253850;
+  --text: #f5f5f7;
+  --text-2: #aeaeb2;
+  --text-3: #8e8e93;
+  --line: rgba(235, 235, 245, .12);
+  --accent: #2997ff;
+  --accent-soft: rgba(41, 151, 255, .18);
+  --accent-tint: rgba(41, 151, 255, .08);
+  --orange: #ff9f0a;
+  --warn: #ffb340;
+  --warn-soft: rgba(255, 159, 10, .2);
+  --warn-tint: rgba(255, 159, 10, .08);
+  --warn-tile: #2c2a27;
+  --warn-tile-hover: #36332f;
+  --red: #ff453a;
+  --holi: #ff6961;
+  --holi-soft: rgba(255, 69, 58, .2);
+  --holi-tint: rgba(255, 69, 58, .07);
+  --glass: rgba(22, 22, 24, .76);
+  --platter-shadow: 0 0 0 .5px rgba(255, 255, 255, .08);
+  --sheet-shadow: 0 0 0 .5px rgba(255, 255, 255, .1), 0 30px 80px rgba(0, 0, 0, .6);
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; margin: 0; -webkit-tap-highlight-color: transparent; }
@@ -215,7 +247,8 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 }
 .rl b { font-size: 13px; font-weight: 700; }
 .rl span { font-size: 11.5px; font-weight: 500; opacity: .75; }
-.rl.hl { background: var(--warn-soft); }
+.rl.hl { background: var(--warn-tint); }
+.rl.hl b { text-decoration: underline; text-underline-offset: 3px; }
 
 /* 수업 칸: 과목 / 교수님 / 강의실 */
 .tile {
@@ -478,7 +511,8 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
 .toast button { padding: 4px 8px; color: #64d2ff; font-weight: 650; }
 .toast button[hidden] { display: none; }
 .editing .toast { bottom: calc(130px + env(safe-area-inset-bottom)); }
-@media (prefers-color-scheme: dark) { .toast { background: rgba(58, 58, 60, .95); } }
+@media (prefers-color-scheme: dark) { :root[data-mode="auto"] .toast { background: rgba(58, 58, 60, .95); } }
+:root[data-mode="dark"] .toast { background: rgba(58, 58, 60, .95); }
 
 /* ───────── 반응형 ───────── */
 @media (max-width: 1080px) {
@@ -626,6 +660,7 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 20h14"/></svg>
         <span>PDF 저장</span>
       </button>
+      <button class="pill alt" id="modeBtn"></button>
       <button class="pill alt" id="editToggle" aria-pressed="false">편집</button>
     </div>
   </header>
@@ -805,7 +840,7 @@ function buildBoard() {
   });
   for (let r = 1; r <= PERIODS; r++) h += `<div class="rowline" style="grid-row:${r}" aria-hidden="true"></div>`;
 
-  h += `<div class="ah">${map.some((m) => m.rail) ? '기본 시간' : ''}</div>`;
+  h += '<div class="ah"></div>';
   DAYS.forEach((d, i) => {
     const cls = [i === t && 'today', isEve(i) && 'eve', isHoli(i) && 'holi'].filter(Boolean).join(' ');
     h += `<div class="dh ${cls}" style="grid-column:${map[i].start} / ${map[i].col + 1}">
@@ -1294,6 +1329,24 @@ settings.addEventListener('click', (e) => {
   holidays.has(date) ? holidays.delete(date) : holidays.add(date);
   saveAll(); syncSettings(); render();
 });
+
+/* ── 화면 모드 ── */
+const MODES = { light: ['라이트', '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/>'],
+  dark: ['다크', '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/>'],
+  auto: ['자동', '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17a8.5 8.5 0 0 0 0-17Z" fill="currentColor"/>'] };
+function paintMode() {
+  const m = document.documentElement.dataset.mode in MODES ? document.documentElement.dataset.mode : 'light';
+  $('#modeBtn').innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${MODES[m][1]}</svg>${MODES[m][0]}`;
+  $('#modeBtn').setAttribute('aria-label', `화면 모드: ${MODES[m][0]} (눌러서 바꾸기)`);
+}
+$('#modeBtn').addEventListener('click', () => {
+  const order = ['light', 'dark', 'auto'], m = document.documentElement.dataset.mode;
+  const next = order[(order.indexOf(m) + 1) % order.length];
+  document.documentElement.dataset.mode = next;
+  try { localStorage.setItem('timetable.mode', next); } catch (e) {}
+  paintMode(); toast(`화면 모드: ${MODES[next][0]}`);
+});
+paintMode();
 
 /* ── 공통 ── */
 function updateTop() {
