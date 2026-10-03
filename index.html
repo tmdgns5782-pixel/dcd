@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>주간 시간표 9/28–10/2</title>
+<style>
+:root {
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --text: #1d1d1f;
+  --text-2: #6e6e73;
+  --line: rgba(0, 0, 0, .08);
+  --accent: #0071e3;
+  --warn: #b64400;
+  --warn-bg: rgba(255, 149, 0, .16);
+  --glass: rgba(245, 245, 247, .72);
+  --shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 10px 28px rgba(0, 0, 0, .06);
+  --shadow-up: 0 2px 4px rgba(0, 0, 0, .06), 0 16px 36px rgba(0, 0, 0, .12);
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  /* subject tint (hue set per block) */
+  --bs: 88%; --bl: 94%;
+  --fg-s: 55%; --fg-l: 21%;
+  --dot-s: 70%; --dot-l: 50%;
+  --radius: 22px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --surface: #1c1c1e;
+    --text: #f5f5f7;
+    --text-2: #a1a1a6;
+    --line: rgba(255, 255, 255, .12);
+    --accent: #2997ff;
+    --warn: #ffb457;
+    --warn-bg: rgba(255, 159, 10, .2);
+    --glass: rgba(0, 0, 0, .68);
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4);
+    --shadow-up: 0 16px 40px rgba(0, 0, 0, .6);
+    --bs: 42%; --bl: 19%;
+    --fg-s: 85%; --fg-l: 90%;
+    --dot-s: 80%; --dot-l: 62%;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; -webkit-tap-highlight-color: transparent; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* ───────── Page ───────── */
+.page { max-width: 1280px; margin: 0 auto; padding: 0 20px 56px; }
+
+.hero { padding: 56px 4px 28px; }
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 14px; font-weight: 600; letter-spacing: .01em;
+  color: var(--accent);
+}
+.hero h1 {
+  margin-top: 10px;
+  font-size: clamp(2.25rem, 6vw, 4rem);
+  line-height: 1.05;
+  letter-spacing: -.035em;
+  font-weight: 700;
+}
+.hero p {
+  margin-top: 14px;
+  font-size: clamp(1rem, 1.6vw, 1.2rem);
+  color: var(--text-2);
+  letter-spacing: -.01em;
+}
+.notice {
+  margin-top: 22px;
+  display: inline-flex; align-items: flex-start; gap: 10px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: var(--warn-bg);
+  color: var(--warn);
+  font-size: 14.5px; font-weight: 600; letter-spacing: -.01em; line-height: 1.45;
+}
+.notice svg { flex: none; margin-top: 2px; }
+
+/* ───────── Desktop board ───────── */
+.board {
+  display: grid;
+  grid-template-columns: 112px repeat(5, minmax(0, 1fr));
+  grid-template-rows: auto repeat(7, 128px);
+  gap: 10px;
+}
+.dayhead {
+  position: sticky; top: 0; z-index: 5;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(180%);
+  box-shadow: inset 0 0 0 1px var(--line);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.dayhead .dow { font-size: 22px; font-weight: 700; letter-spacing: -.03em; line-height: 1.15; }
+.dayhead .md { font-size: 14px; color: var(--text-2); font-weight: 500; }
+.dayhead .tag {
+  align-self: flex-start; margin-top: 6px;
+  font-size: 12px; font-weight: 700; letter-spacing: 0;
+  padding: 3px 9px; border-radius: 999px;
+  background: var(--warn-bg); color: var(--warn);
+}
+.dayhead.today { background: var(--accent); box-shadow: none; }
+.dayhead.today .dow, .dayhead.today .md { color: #fff; }
+.dayhead.today .md { opacity: .85; }
+.dayhead.today .tag { background: rgba(255, 255, 255, .22); color: #fff; }
+
+.timecell {
+  align-self: stretch;
+  padding: 12px 6px 12px 4px;
+  display: flex; flex-direction: column; justify-content: center; gap: 1px;
+}
+.timecell b { font-size: 15px; font-weight: 700; letter-spacing: -.02em; }
+.timecell .t { font-size: 12.5px; color: var(--text-2); font-weight: 500; }
+.timecell .f { font-size: 12px; color: var(--warn); font-weight: 600; }
+
+/* ───────── Block (shared) ───────── */
+.blk {
+  --h: 210;
+  position: relative;
+  text-align: left;
+  border-radius: var(--radius);
+  padding: 16px 18px 15px;
+  background: hsl(var(--h) var(--bs) var(--bl));
+  color: hsl(var(--h) var(--fg-s) var(--fg-l));
+  display: flex; flex-direction: column; justify-content: space-between; gap: 14px;
+  min-width: 0;
+  box-shadow: var(--shadow);
+  transition: transform .35s var(--ease), box-shadow .35s var(--ease);
+  animation: rise .6s var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+  touch-action: manipulation;
+}
+.blk.muted { --bs: 7%; --fg-s: 10%; }
+.board .blk.one { gap: 8px; }
+.board .blk.one .per { display: none; }
+.blk .per { font-size: 12.5px; font-weight: 600; opacity: .7; letter-spacing: 0; }
+.blk .sub {
+  font-size: clamp(1.25rem, 1.9vw, 1.7rem);
+  line-height: 1.12;
+  letter-spacing: -.03em;
+  font-weight: 700;
+  margin-top: 4px;
+  word-break: keep-all;
+}
+.blk .prof { margin-top: 5px; font-size: 14px; font-weight: 500; opacity: .82; letter-spacing: -.01em; word-break: keep-all; }
+.blk .foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.blk .time {
+  font-size: 14px; font-weight: 700; letter-spacing: -.01em;
+  font-variant-numeric: tabular-nums;
+}
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12.5px; font-weight: 700; letter-spacing: 0;
+  padding: 3px 10px; border-radius: 999px;
+  background: hsl(var(--h) var(--dot-s) var(--dot-l) / .2);
+}
+.chip::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%;
+  background: hsl(var(--h) var(--dot-s) var(--dot-l));
+}
+.blk.live { box-shadow: 0 0 0 3px var(--accent), var(--shadow-up); }
+.live-badge {
+  position: absolute; top: 14px; right: 14px;
+  display: none; align-items: center; gap: 6px;
+  font-size: 11.5px; font-weight: 700;
+  padding: 3px 9px; border-radius: 999px;
+  background: var(--accent); color: #fff;
+}
+.live-badge::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%; background: #fff;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+.blk.live .live-badge { display: inline-flex; }
+
+/* press = instant feedback (on pointer-down, not release) */
+.blk:active { transform: scale(.975); transition-duration: .12s; }
+@media (hover: hover) {
+  .blk:hover { transform: translateY(-2px); box-shadow: var(--shadow-up); }
+  .blk:active { transform: scale(.975); }
+}
+.blk:focus-visible, .seg button:focus-visible, .close:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+@keyframes rise { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes pulse { 50% { opacity: .25; } }
+
+/* ───────── Mobile agenda ───────── */
+.mobile { display: none; }
+.seg {
+  position: sticky; top: 8px; z-index: 6;
+  margin-top: 4px;
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  padding: 4px; border-radius: 18px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(180%);
+  box-shadow: inset 0 0 0 1px var(--line), var(--shadow);
+}
+.seg .thumb {
+  position: absolute; top: 4px; bottom: 4px; left: 4px;
+  width: calc((100% - 8px) / 5);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .15), 0 4px 12px rgba(0, 0, 0, .08);
+  transform: translateX(calc(var(--idx, 0) * 100%));
+  transition: transform .45s var(--ease);
+}
+.seg button {
+  position: relative; z-index: 1;
+  padding: 8px 0 7px;
+  display: flex; flex-direction: column; align-items: center; line-height: 1.2;
+  border-radius: 14px;
+  transition: transform .12s ease-out;
+}
+.seg button:active { transform: scale(.94); }
+.seg .d { font-size: 16px; font-weight: 700; letter-spacing: -.02em; }
+.seg .m { font-size: 11.5px; color: var(--text-2); font-weight: 500; }
+.seg button[aria-selected="true"] .m { color: var(--text); }
+.seg button.today .d::after {
+  content: ""; display: block; width: 5px; height: 5px; margin: 2px auto 0;
+  border-radius: 50%; background: var(--accent);
+}
+
+.panel { margin-top: 18px; display: none; }
+.panel.on { display: block; animation: slide .5s var(--ease) both; }
+@keyframes slide { from { opacity: 0; transform: translateX(calc(var(--dir, 1) * 28px)); } to { opacity: 1; transform: none; } }
+.panel .adj {
+  margin-bottom: 12px; padding: 10px 14px; border-radius: 14px;
+  background: var(--warn-bg); color: var(--warn);
+  font-size: 13.5px; font-weight: 600; line-height: 1.4;
+}
+.agenda { display: grid; gap: 10px; }
+.row { display: grid; grid-template-columns: 54px 1fr; gap: 12px; align-items: stretch; }
+.row .when {
+  padding-top: 16px; text-align: right;
+  display: flex; flex-direction: column; gap: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.row .when b { font-size: 16px; font-weight: 700; letter-spacing: -.02em; line-height: 1.2; }
+.row .when span { font-size: 13px; color: var(--text-2); font-weight: 500; line-height: 1.2; }
+.row .blk { min-height: 92px; }
+.row .blk .sub { font-size: 1.45rem; }
+
+/* ───────── Sheet ───────── */
+dialog.sheet {
+  border: 0; padding: 0; background: transparent; color: var(--text);
+  width: min(440px, calc(100% - 24px)); max-width: none;
+  margin: auto;
+  overflow: visible;
+}
+dialog.sheet::backdrop {
+  background: rgba(0, 0, 0, .35);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+dialog.sheet[open] { animation: sheet .5s var(--ease) both; }
+dialog.sheet[open]::backdrop { animation: fade .35s ease both; }
+@keyframes sheet { from { opacity: 0; transform: translateY(32px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes fade { from { opacity: 0; } }
+.card {
+  --h: 210;
+  border-radius: 28px; overflow: hidden;
+  background: var(--surface);
+  box-shadow: var(--shadow-up);
+}
+.card .top {
+  padding: 28px 26px 22px;
+  background: hsl(var(--h) var(--bs) var(--bl));
+  color: hsl(var(--h) var(--fg-s) var(--fg-l));
+}
+.card.muted .top { --bs: 7%; --fg-s: 10%; }
+.card .top small { font-size: 13px; font-weight: 600; opacity: .7; }
+.card .top h2 { margin-top: 4px; font-size: 2.1rem; line-height: 1.08; letter-spacing: -.035em; font-weight: 700; word-break: keep-all; }
+.card dl { padding: 8px 26px 6px; }
+.card .r { display: flex; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 15.5px; }
+.card .r:last-child { border-bottom: 0; }
+.card dt { color: var(--text-2); font-weight: 500; }
+.card dd { font-weight: 600; text-align: right; letter-spacing: -.01em; }
+.card dd.warn { color: var(--warn); }
+.close {
+  display: block; width: calc(100% - 52px); margin: 8px 26px 26px;
+  padding: 14px; border-radius: 16px;
+  background: var(--accent); color: #fff; font-weight: 700; font-size: 16px;
+  transition: transform .12s ease-out;
+}
+.close:active { transform: scale(.97); }
+
+/* ───────── Responsive ───────── */
+@media (max-width: 860px) {
+  .page { padding: 0 16px 48px; }
+  .hero { padding: 36px 2px 20px; }
+  .board { display: none; }
+  .notice { display: none; }
+  .mobile { display: block; }
+  dialog.sheet { margin: auto auto 12px; }
+}
+@media (min-width: 861px) and (max-width: 1100px) {
+  .board { grid-template-columns: 88px repeat(5, minmax(0, 1fr)); gap: 8px; }
+  .blk { padding: 14px 13px; }
+  .dayhead { padding: 12px; }
+  .timecell .t, .timecell .f { font-size: 11.5px; }
+}
+
+/* ───────── Accessibility ───────── */
+@media (prefers-reduced-motion: reduce) {
+  .blk, .panel.on, dialog.sheet[open], dialog.sheet[open]::backdrop { animation: none; }
+  .blk, .seg .thumb { transition: opacity .2s ease; }
+  .blk:hover { transform: none; }
+  .live-badge::before { animation: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .dayhead, .seg { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@media (prefers-contrast: more) {
+  .blk { box-shadow: inset 0 0 0 2px currentColor; }
+}
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="hero">
+    <div class="eyebrow">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="4"/><path d="M8 2.5v4M16 2.5v4M3 10h18"/></svg>
+      <span>9월 28일 – 10월 2일</span>
+    </div>
+    <h1>이번 주 시간표</h1>
+    <p>교시별 시작·종료 시간과 강의실을 한눈에 확인하세요.</p>
+    <div class="notice">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.5l3.5 2"/></svg>
+      <span>금요일(10/2)은 공휴일 전날이라 수업 시간이 앞당겨졌어요. (1교시 08:00 시작)</span>
+    </div>
+  </header>
+
+  <section class="board" id="board" aria-label="주간 시간표"></section>
+
+  <section class="mobile" id="mobile" aria-label="요일별 시간표">
+    <div class="seg" id="seg" role="tablist"><div class="thumb"></div></div>
+    <div id="panels"></div>
+  </section>
+</main>
+
+<dialog class="sheet" id="sheet" aria-label="수업 상세">
+  <div class="card" id="card"></div>
+</dialog>
+
+<script>
+const DAYS = [
+  { dow: '월', md: '9/28', date: '2026-09-28' },
+  { dow: '화', md: '9/29', date: '2026-09-29' },
+  { dow: '수', md: '9/30', date: '2026-09-30' },
+  { dow: '목', md: '10/1', date: '2026-10-01' },
+  { dow: '금', md: '10/2', date: '2026-10-02', adj: true },
+];
+const NORMAL = [['09:00','09:50'],['10:00','10:50'],['11:00','11:50'],['14:00','14:50'],['15:00','15:50'],['16:00','16:50'],['17:00','17:50']];
+const FRIDAY = [['08:00','08:50'],['09:00','09:50'],['10:00','10:50'],['11:00','11:50'],['13:00','13:50'],['14:00','14:50'],['15:00','15:50']];
+
+// 과목별 색상 (hue). muted = 자습/미정 같은 비강의 블록
+const HUE = { '민생': 212, '죄종별': 268, '체포술': 12, '사격': 36, '112초동': 190, '관계성': 330, '민감': 148, '풍속': 92, '팀빌딩': 52, '자기주도학습': 240 };
+const MUTED = new Set(['자기주도학습']);
+
+// [요일, 시작교시, 끝교시, 과목, 교수(들), 강의실]
+const RAW = [
+  [0,1,3,'민생',['이혜환'],'A206'],
+  [0,4,6,'죄종별',['김재용'],'A206'],
+  [0,7,7,'자기주도학습',[],'A206'],
+  [1,1,3,'체포술',['강경덕','전민주'],'유도장'],
+  [1,4,6,'사격',['장영광'],'A206'],
+  [1,7,7,'자기주도학습',[],'A206'],
+  [2,1,3,'112초동',['최문영'],'A206'],
+  [2,4,6,'관계성',['차서호'],'A206'],
+  [2,7,7,'자기주도학습',[],'A206'],
+  [3,1,3,'민감',['신수안'],'A206'],
+  [3,4,6,'풍속',['서증원'],'A206'],
+  [3,7,7,'팀빌딩',[],'미정'],
+  [4,1,1,'팀빌딩',[],'미정'],
+  [4,2,4,'사격',['장영광'],'A206'],
+  [4,5,7,'체포술',['강경덕','전민주'],'유도장'],
+];
+const BLOCKS = RAW.map(([day, from, to, subject, profs, room]) => {
+  const slots = DAYS[day].adj ? FRIDAY : NORMAL;
+  return {
+    day, from, to, subject, room,
+    prof: profs.length ? profs.join(' · ') + ' 교수님' : '',
+    start: slots[from - 1][0], end: slots[to - 1][1],
+    hue: HUE[subject], muted: MUTED.has(subject),
+    per: from === to ? `${from}교시` : `${from}–${to}교시`,
+  };
+});
+
+const $ = (s) => document.querySelector(s);
+const roomLabel = (r) => (r === '미정' ? '장소 미정' : r);
+const roomChip = (b) => `<span class="chip">${roomLabel(b.room)}</span>`;
+
+/* ── now (테스트: ?now=2026-09-29T10:30) ── */
+const nowParam = new URLSearchParams(location.search).get('now');
+const getNow = () => (nowParam ? new Date(nowParam) : new Date());
+const stamp = (date, hm) => new Date(`${date}T${hm}:00`);
+const isLive = (b, now) => now >= stamp(DAYS[b.day].date, b.start) && now <= stamp(DAYS[b.day].date, b.end);
+const todayIdx = () => {
+  const d = getNow(), p = (n) => String(n).padStart(2, '0');
+  const key = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  return DAYS.findIndex((x) => x.date === key);
+};
+
+/* ── Desktop board ── */
+function buildBoard() {
+  const t = todayIdx();
+  let html = `<div></div>` + DAYS.map((d, i) => `
+    <div class="dayhead${i === t ? ' today' : ''}" style="grid-column:${i + 2};grid-row:1">
+      <span class="dow">${d.dow}</span><span class="md num">${d.md}</span>
+      ${d.adj ? '<span class="tag">시간 조정</span>' : ''}
+    </div>`).join('');
+
+  NORMAL.forEach((s, i) => {
+    html += `<div class="timecell num" style="grid-column:1;grid-row:${i + 2}">
+      <b>${i + 1}교시</b>
+      <span class="t">${s[0]}–${s[1]}</span>
+      <span class="f">금 ${FRIDAY[i][0]}–${FRIDAY[i][1]}</span>
+    </div>`;
+  });
+
+  BLOCKS.forEach((b, n) => {
+    html += `<button class="blk${b.muted ? ' muted' : ''}${b.from === b.to ? ' one' : ''}" data-i="${n}"
+      style="--h:${b.hue};--i:${n};grid-column:${b.day + 2};grid-row:${b.from + 1} / ${b.to + 2}"
+      aria-label="${b.subject} ${b.start}부터 ${b.end}까지 ${b.room}">
+      <span class="live-badge">진행 중</span>
+      <div>
+        <div class="per">${b.per}</div>
+        <div class="sub">${b.subject}</div>
+        ${b.prof ? `<div class="prof">${b.prof}</div>` : ''}
+      </div>
+      <div class="foot"><span class="time">${b.start} – ${b.end}</span>${roomChip(b)}</div>
+    </button>`;
+  });
+  $('#board').innerHTML = html;
+}
+
+/* ── Mobile agenda ── */
+let cur = 0, prev = 0;
+function buildMobile() {
+  const t = todayIdx();
+  $('#seg').insertAdjacentHTML('beforeend', DAYS.map((d, i) => `
+    <button role="tab" data-d="${i}" class="${i === t ? 'today' : ''}" aria-selected="false">
+      <span class="d">${d.dow}</span><span class="m num">${d.md}</span>
+    </button>`).join(''));
+
+  $('#panels').innerHTML = DAYS.map((d, i) => `
+    <div class="panel" data-p="${i}" role="tabpanel">
+      ${d.adj ? '<div class="adj">공휴일 전날이라 수업 시간이 앞당겨졌어요.</div>' : ''}
+      <div class="agenda">
+        ${BLOCKS.map((b, n) => b.day !== i ? '' : `
+          <div class="row">
+            <div class="when num"><b>${b.start}</b><span>${b.end}</span></div>
+            <button class="blk${b.muted ? ' muted' : ''}" data-i="${n}" style="--h:${b.hue};--i:${n % 3}">
+              <span class="live-badge">진행 중</span>
+              <div>
+                <div class="per">${b.per}</div>
+                <div class="sub">${b.subject}</div>
+                ${b.prof ? `<div class="prof">${b.prof}</div>` : ''}
+              </div>
+              <div class="foot">${roomChip(b)}</div>
+            </button>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+
+  select(t >= 0 ? t : 0, true);
+}
+function select(i, first) {
+  prev = cur; cur = i;
+  document.documentElement.style.setProperty('--dir', i >= prev ? 1 : -1);
+  $('#seg').style.setProperty('--idx', i);
+  document.querySelectorAll('#seg button').forEach((b) => b.setAttribute('aria-selected', String(+b.dataset.d === i)));
+  document.querySelectorAll('.panel').forEach((p) => {
+    const on = +p.dataset.p === i;
+    p.classList.toggle('on', on);
+    if (on && !first) { p.style.animation = 'none'; void p.offsetWidth; p.style.animation = ''; }
+  });
+}
+$('#seg').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (b) select(+b.dataset.d);
+});
+let sx = null, sy = null;
+$('#panels').addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+$('#panels').addEventListener('touchend', (e) => {
+  if (sx == null) return;
+  const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+  if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) select(Math.min(4, Math.max(0, cur + (dx < 0 ? 1 : -1))));
+  sx = null;
+}, { passive: true });
+
+/* ── Detail sheet ── */
+const sheet = $('#sheet');
+function openSheet(n) {
+  const b = BLOCKS[n], d = DAYS[b.day];
+  $('#card').className = 'card' + (b.muted ? ' muted' : '');
+  $('#card').style.setProperty('--h', b.hue);
+  $('#card').innerHTML = `
+    <div class="top"><small>${d.dow}요일 · ${d.md} · ${b.per}</small><h2>${b.subject}</h2></div>
+    <dl>
+      <div class="r"><dt>시간</dt><dd class="num">${b.start} – ${b.end}</dd></div>
+      ${b.prof ? `<div class="r"><dt>교수님</dt><dd>${b.prof.replace(' 교수님', '')}</dd></div>` : ''}
+      <div class="r"><dt>강의실</dt><dd>${roomLabel(b.room)}</dd></div>
+      ${d.adj ? '<div class="r"><dt>안내</dt><dd class="warn">공휴일 전 조정 시간</dd></div>' : ''}
+    </dl>
+    <button class="close" id="closeBtn">닫기</button>`;
+  $('#closeBtn').onclick = () => sheet.close();
+  sheet.showModal();
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('.blk'); if (b) openSheet(+b.dataset.i);
+});
+sheet.addEventListener('click', (e) => { if (e.target === sheet) sheet.close(); });
+
+/* ── Live state ── */
+function tick() {
+  const now = getNow();
+  document.querySelectorAll('.blk').forEach((el) => el.classList.toggle('live', isLive(BLOCKS[+el.dataset.i], now)));
+}
+
+buildBoard();
+buildMobile();
+tick();
+setInterval(tick, 30000);
+</script>
+</body>
+</html>
