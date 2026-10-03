@@ -17,40 +17,65 @@
        url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/woff2/PretendardVariable.woff2") format("woff2-variations");
 }
 
-/* 색은 둘뿐: 파랑(오늘·진행 중) / 주황(공휴일 전). 나머지는 모두 흑백 위계로 만든다. */
+/* 색은 의미가 있을 때만 쓴다 — 파랑: 오늘·진행 중 / 주황: 공휴일 전 조정 시간 / 빨강: 공휴일 */
 :root {
   --bg: #f5f5f7;
   --surface: #ffffff;
+  --tile: #f2f2f7;
+  --tile-hover: #e8e8ed;
   --text: #1d1d1f;
   --text-2: #6e6e73;
-  --text-3: #8e8e93;
-  --line: rgba(60, 60, 67, .14);
+  --text-3: #86868b;
+  --line: rgba(60, 60, 67, .11);
   --accent: #0071e3;
-  --warn: #c24100;
-  --warn-bg: rgba(255, 149, 0, .14);
-  --glass: rgba(245, 245, 247, .74);
-  --card-shadow: 0 0 0 .5px rgba(0, 0, 0, .06), 0 1px 3px rgba(0, 0, 0, .05), 0 12px 32px rgba(0, 0, 0, .04);
-  --lift-shadow: 0 0 0 .5px rgba(0, 0, 0, .06), 0 2px 6px rgba(0, 0, 0, .06), 0 20px 44px rgba(0, 0, 0, .1);
-  --ease: cubic-bezier(.2, .8, .2, 1);           /* 임계 감쇠: 기본 스프링 */
-  --ease-spring: cubic-bezier(.3, 1.25, .45, 1);  /* 관성이 있는 동작에만 약간의 오버슛 */
-  --cols: repeat(5, minmax(0, 1fr));
-  --gap: 12px;
-  --row: 132px;
+  --accent-soft: rgba(0, 113, 227, .1);
+  --accent-tint: rgba(0, 113, 227, .05);
+  --orange: #ff9500;
+  --warn: #c2410c;
+  --warn-soft: rgba(255, 149, 0, .16);
+  --warn-tint: rgba(255, 149, 0, .07);
+  --warn-tile: #ffefd9;
+  --warn-tile-hover: #ffe5c2;
+  --red: #ff3b30;
+  --holi: #d70015;
+  --holi-soft: rgba(255, 59, 48, .12);
+  --holi-tint: rgba(255, 59, 48, .045);
+  --glass: rgba(245, 245, 247, .76);
+  --platter-shadow: 0 0 0 .5px rgba(0, 0, 0, .05), 0 2px 6px rgba(0, 0, 0, .03), 0 24px 60px rgba(0, 0, 0, .06);
+  --sheet-shadow: 0 0 0 .5px rgba(0, 0, 0, .06), 0 30px 80px rgba(0, 0, 0, .22);
+  --ease: cubic-bezier(.2, .8, .2, 1);           /* 임계 감쇠 — 기본 */
+  --ease-spring: cubic-bezier(.3, 1.25, .45, 1);  /* 관성이 실린 동작에만 살짝 오버슛 */
+  --axis: 108px;
+  --rail: 56px;
+  --row: 80px;
+  --gap: 6px;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #000000;
     --surface: #1c1c1e;
+    --tile: #2c2c2e;
+    --tile-hover: #3a3a3c;
     --text: #f5f5f7;
-    --text-2: #a1a1a6;
+    --text-2: #aeaeb2;
     --text-3: #8e8e93;
-    --line: rgba(235, 235, 245, .16);
+    --line: rgba(235, 235, 245, .12);
     --accent: #2997ff;
-    --warn: #ffb04f;
-    --warn-bg: rgba(255, 159, 10, .18);
-    --glass: rgba(28, 28, 30, .74);
-    --card-shadow: 0 0 0 .5px rgba(255, 255, 255, .08);
-    --lift-shadow: 0 0 0 .5px rgba(255, 255, 255, .1), 0 20px 44px rgba(0, 0, 0, .6);
+    --accent-soft: rgba(41, 151, 255, .18);
+    --accent-tint: rgba(41, 151, 255, .08);
+    --orange: #ff9f0a;
+    --warn: #ffb340;
+    --warn-soft: rgba(255, 159, 10, .2);
+    --warn-tint: rgba(255, 159, 10, .08);
+    --warn-tile: #3b2a14;
+    --warn-tile-hover: #4a341a;
+    --red: #ff453a;
+    --holi: #ff6961;
+    --holi-soft: rgba(255, 69, 58, .2);
+    --holi-tint: rgba(255, 69, 58, .07);
+    --glass: rgba(22, 22, 24, .76);
+    --platter-shadow: 0 0 0 .5px rgba(255, 255, 255, .08);
+    --sheet-shadow: 0 0 0 .5px rgba(255, 255, 255, .1), 0 30px 80px rgba(0, 0, 0, .6);
   }
 }
 
@@ -63,16 +88,17 @@ body {
   font-size: 16px;
   line-height: 1.5;
   letter-spacing: -.011em;
+  word-break: keep-all; /* 한글은 어절 단위로 줄바꿈 */
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   min-height: 100vh;
   padding-bottom: env(safe-area-inset-bottom);
 }
-button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; text-align: inherit; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
 .num { font-variant-numeric: tabular-nums; }
-:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
-/* ───────── 상단 바: 스크롤하면 작은 제목으로 ───────── */
+/* ───────── 상단 바: 큰 제목이 사라지면 나타난다 ───────── */
 .nav {
   position: fixed; inset: 0 0 auto 0; z-index: 30;
   height: calc(52px + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top);
@@ -88,126 +114,158 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .nav.on { opacity: 1; transform: none; }
 .nav small { font-size: 13px; font-weight: 500; color: var(--text-2); }
 
-/* ───────── 페이지 ───────── */
-.page { max-width: 1240px; margin: 0 auto; padding: 0 20px 64px; }
-.hero { padding: 52px 2px 22px; }
-.hero-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.eyebrow { font-size: 15px; font-weight: 600; color: var(--text-2); }
-.textbtn {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 15px; font-weight: 600; color: var(--accent);
-  padding: 6px 4px; transition: opacity .12s ease-out, transform .12s ease-out;
+/* ───────── 페이지 · 머리말 ───────── */
+.page { max-width: 1180px; margin: 0 auto; padding: 0 24px 72px; }
+.hero {
+  padding: 64px 4px 28px;
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap;
 }
-.textbtn:active { opacity: .45; transform: scale(.96); }
+.eyebrow { font-size: 17px; font-weight: 600; color: var(--text-2); letter-spacing: -.015em; }
 .hero h1 {
   margin-top: 2px;
-  font-size: clamp(2.5rem, 6vw, 3.5rem);
-  line-height: 1.08;
+  font-size: clamp(2.25rem, 5vw, 3.25rem);
+  line-height: 1.06;
   font-weight: 700;
   letter-spacing: -.035em;
 }
-.notice {
-  margin-top: 14px;
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 7px 14px 7px 12px; border-radius: 999px;
-  background: var(--warn-bg); color: var(--warn);
-  font-size: 14px; font-weight: 600; letter-spacing: -.01em; line-height: 1.4;
+.notice { margin-top: 14px; display: grid; gap: 4px; }
+.notice:empty { display: none; }
+.nl { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--text-2); }
+.nl i { flex: none; width: 8px; height: 8px; border-radius: 50%; }
+.nl i.o { background: var(--orange); }
+.nl i.r { background: var(--red); }
+.nl b { font-weight: 650; color: var(--warn); }
+.nl b.r { color: var(--holi); }
+.pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 16px 9px 14px; border-radius: 999px;
+  background: var(--accent-soft); color: var(--accent);
+  font-size: 15px; font-weight: 600; letter-spacing: -.01em;
+  transition: transform .12s ease-out, opacity .12s ease-out;
 }
-.notice[hidden] { display: none; }
-.notice svg { flex: none; }
+.pill:active { transform: scale(.95); opacity: .7; }
 
-/* ───────── 요일 헤더 (데스크톱) ───────── */
-.heads {
-  position: sticky; top: 52px; z-index: 10;
-  margin: 0 -20px; padding: 12px 20px 12px;
-  display: grid; grid-template-columns: var(--cols); gap: var(--gap);
-  background: var(--glass);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  backdrop-filter: blur(24px) saturate(180%);
-  box-shadow: 0 .5px 0 var(--line);
-}
-.dh { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 0 6px; min-width: 0; }
-.dh .dow { font-size: 13px; font-weight: 600; color: var(--text-2); display: flex; gap: 6px; align-items: baseline; }
-.dh .dow em { font-style: normal; font-weight: 500; color: var(--text-3); }
-.dh .dn {
-  min-width: 36px; height: 36px; padding: 0 2px; border-radius: 18px;
-  display: grid; place-items: center; margin-left: -4px;
-  font-size: 26px; font-weight: 650; letter-spacing: -.03em; line-height: 1;
-}
-.dh .rng { margin-top: 3px; font-size: 14px; font-weight: 600; color: var(--text-2); }
-.dh.today .dow { color: var(--accent); }
-.dh.today .dn { background: var(--accent); color: #fff; padding: 0 10px; }
-.dh.eve .rng { color: var(--warn); font-weight: 700; }
-.evetag {
-  margin-top: 5px; font-size: 11.5px; font-weight: 700; letter-spacing: 0;
-  padding: 2px 8px; border-radius: 999px; background: var(--warn-bg); color: var(--warn);
-}
-
-/* ───────── 시간표 보드 (데스크톱) ───────── */
+/* ───────── 주간 표 ───────── */
 .board {
-  margin-top: var(--gap);
-  display: grid; grid-template-columns: var(--cols);
-  grid-template-rows: repeat(7, var(--row));
+  display: grid;
+  grid-template-rows: auto repeat(7, var(--row));
   gap: var(--gap);
+  padding: 8px 10px 10px;
+  background: var(--surface);
+  border-radius: 28px;
+  box-shadow: var(--platter-shadow);
+}
+.colbg { grid-row: 1 / -1; border-radius: 18px; }
+.colbg.today { background: var(--accent-tint); }
+.colbg.eve { background: var(--warn-tint); }
+.colbg.holi { background: var(--holi-tint); }
+.rowline {
+  grid-column: 1 / -1; align-self: end; height: 1px;
+  background: var(--line);
+  transform: translateY(calc(var(--gap) / 2 + .5px));
+  pointer-events: none;
 }
 
-/* ───────── 수업 카드: 교시마다 한 줄씩 (교시 · 시간) ───────── */
-.blk {
+/* 요일 머리 */
+.ah { position: relative; grid-row: 1; grid-column: 1; align-self: end; padding: 0 0 13px 14px; font-size: 12px; font-weight: 600; color: var(--text-3); }
+.dh { position: relative; grid-row: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; padding: 12px 4px 12px; }
+.dh .wd { font-size: 13px; font-weight: 600; color: var(--text-2); line-height: 1.3; }
+.dh .dn {
+  margin-top: 3px; min-width: 36px; height: 36px; padding: 0 7px; border-radius: 18px;
+  display: grid; place-items: center;
+  font-size: 22px; font-weight: 650; letter-spacing: -.02em; line-height: 1;
+}
+.dh.today .wd { color: var(--accent); }
+.dh.today .dn { background: var(--accent); color: #fff; }
+.dh.eve .wd { color: var(--warn); }
+.dh.holi .wd, .dh.holi .dn { color: var(--holi); }
+.dh.holi.today .dn { background: var(--holi); color: #fff; }
+.cap {
+  margin-top: 8px; padding: 4px 10px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 700; letter-spacing: -.005em; white-space: nowrap;
+}
+.cap.eve { background: var(--warn-soft); color: var(--warn); }
+.cap.holi { background: var(--holi-soft); color: var(--holi); }
+
+/* 왼쪽 축: 교시 + 시간 */
+.ax {
+  position: relative; grid-column: 1;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 0 8px 0 14px; border-radius: 12px;
+  transition: background-color .2s ease;
+}
+.ax b { font-size: 15px; font-weight: 650; letter-spacing: -.02em; line-height: 1.3; transition: color .2s ease; }
+.ax span { font-size: 12.5px; font-weight: 500; color: var(--text-2); line-height: 1.4; white-space: nowrap; }
+.ax.eve span { color: var(--warn); font-weight: 600; }
+.ax.hl { background: var(--accent-tint); }
+.ax.hl b { color: var(--accent); }
+
+/* 공휴일 전날 전용 시간 축 — 그날 바로 옆, 같은 줄에 실제 시간 */
+.rl {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border-radius: 12px; color: var(--warn); line-height: 1.3;
+  transition: background-color .2s ease;
+}
+.rl b { font-size: 13px; font-weight: 700; }
+.rl span { font-size: 11.5px; font-weight: 500; opacity: .75; }
+.rl.hl { background: var(--warn-soft); }
+
+/* 수업 칸: 과목 / 교수님 / 강의실 */
+.tile {
   position: relative; min-width: 0;
-  border-radius: 22px;
-  background: var(--surface);
-  box-shadow: var(--card-shadow);
-  display: flex; flex-direction: column;
-  overflow: hidden;
-  transition: transform .4s var(--ease), box-shadow .4s var(--ease);
-  animation: rise .55s var(--ease) both;
-  animation-delay: calc(var(--i, 0) * 35ms);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  padding: 8px 10px; text-align: center;
+  border-radius: 16px;
+  background: var(--tile);
+  transition: transform .16s var(--ease), background-color .2s ease, box-shadow .2s ease;
   touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
 }
 @supports (corner-shape: squircle) {
-  .blk, .group, .card { corner-shape: squircle; }
-  .blk { border-radius: 34px; } .group { border-radius: 36px; } .card { border-radius: 48px; }
+  .tile, .board, .mgrid, .card, .colbg { corner-shape: squircle; }
+  .tile { border-radius: 24px; } .colbg { border-radius: 26px; }
+  .board, .mgrid { border-radius: 40px; } .card { border-radius: 44px; }
 }
-.blk.muted { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
-.blk.muted .sub { color: var(--text-2); }
-
-.sec { flex: 1 1 0; padding: 14px 18px 12px; min-height: 0; display: flex; flex-direction: column; }
-.sec + .sec { border-top: .5px solid var(--line); }
-.pt { display: flex; align-items: baseline; gap: 8px; font-size: 13px; line-height: 1.3; white-space: nowrap; }
-.pt .pn { font-weight: 600; color: var(--text-3); }
-.pt .tm { font-size: 14px; font-weight: 650; letter-spacing: -.01em; color: var(--text); }
-.eve .pt .tm { color: var(--warn); }
-.pt .room { margin-left: auto; font-size: 13px; font-weight: 600; color: var(--text-2); }
-.sub { margin-top: 10px; font-size: 23px; font-weight: 700; line-height: 1.15; letter-spacing: -.035em; word-break: keep-all; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.prof { margin-top: 4px; font-size: 14px; color: var(--text-2); word-break: keep-all; }
-.live-badge {
-  display: none; align-items: center; gap: 5px;
-  font-size: 11.5px; font-weight: 700; letter-spacing: 0; color: var(--accent);
-  padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 12%, transparent);
+.tile.eve { background: var(--warn-tile); }
+.tile.free { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+.tt {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 19px; font-weight: 650; letter-spacing: -.025em; line-height: 1.25; word-break: keep-all;
 }
-.live-badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 1.6s ease-in-out infinite; }
-.live .live-badge { display: inline-flex; }
-.blk.live { box-shadow: 0 0 0 2px var(--accent), var(--lift-shadow); }
-
-.blk:active { transform: scale(.975); transition-duration: .12s; }
+.free .tt { font-size: 16px; font-weight: 600; color: var(--text-2); }
+.tp { font-size: 13px; color: var(--text-2); line-height: 1.35; word-break: keep-all; }
+.tr { margin-top: 4px; display: inline-flex; align-items: center; gap: 3px; font-size: 12.5px; font-weight: 600; color: var(--text-2); }
+.tr svg { flex: none; }
+.tile:active { transform: scale(.97); transition-duration: .08s; }
 @media (hover: hover) {
-  .blk:hover { transform: translateY(-2px); box-shadow: var(--lift-shadow); }
-  .blk.live:hover { box-shadow: 0 0 0 2px var(--accent), var(--lift-shadow); }
-  .blk:active { transform: scale(.975); }
+  .tile:hover { background: var(--tile-hover); }
+  .tile.eve:hover { background: var(--warn-tile-hover); }
+  .tile.free:hover { background: var(--tile); }
 }
-@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.tile.live { box-shadow: 0 0 0 2px var(--accent); }
+.tile.live .tt::before {
+  content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+.holi-msg { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center; }
+.holi-msg b { font-size: 17px; font-weight: 650; color: var(--holi); }
+.holi-msg span { font-size: 13px; color: var(--text-2); }
+
+.board.enter .tile, .board.enter .holi-msg { animation: tileIn .55s var(--ease) backwards; animation-delay: calc(var(--i, 0) * 45ms + 60ms); }
+@keyframes tileIn { from { opacity: 0; transform: scale(.96); } }
 @keyframes pulse { 50% { opacity: .3; } }
 
-/* ───────── 모바일 ───────── */
+/* ───────── 모바일: 하루씩, 같은 구조 ───────── */
 .mobile { display: none; }
 .seg {
-  position: sticky; top: 8px; z-index: 12;
+  position: sticky; top: calc(60px + env(safe-area-inset-top)); z-index: 12;
   display: grid; grid-template-columns: repeat(5, 1fr);
   padding: 4px; border-radius: 22px;
   background: var(--glass);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   backdrop-filter: blur(24px) saturate(180%);
-  box-shadow: 0 0 0 .5px var(--line), 0 6px 20px rgba(0, 0, 0, .06);
+  box-shadow: 0 0 0 .5px var(--line), 0 8px 24px rgba(0, 0, 0, .06);
 }
 .seg .thumb {
   position: absolute; top: 4px; bottom: 4px; left: 4px;
@@ -218,168 +276,191 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   transition: transform .5s var(--ease-spring);
 }
 .seg button {
-  position: relative; z-index: 1; padding: 8px 0 7px; text-align: center;
+  position: relative; z-index: 1; padding: 8px 0 6px;
   display: flex; flex-direction: column; align-items: center; line-height: 1.15;
   transition: transform .12s ease-out;
 }
 .seg button:active { transform: scale(.93); }
 .seg .d { font-size: 12.5px; font-weight: 600; color: var(--text-2); }
-.seg .m { font-size: 22px; font-weight: 650; letter-spacing: -.03em; margin-top: 2px; }
-.seg .dots { height: 6px; margin-top: 3px; display: flex; gap: 3px; }
+.seg .m { margin-top: 2px; font-size: 21px; font-weight: 650; letter-spacing: -.03em; }
+.seg .dots { height: 5px; margin-top: 4px; display: flex; gap: 3px; }
 .seg .dots i { width: 5px; height: 5px; border-radius: 50%; }
 .seg .dots .t { background: var(--accent); }
-.seg .dots .e { background: #ff9500; }
+.seg .dots .e { background: var(--orange); }
+.seg .dots .h { background: var(--red); }
 .seg button.today .d { color: var(--accent); }
+.seg button.holi .d, .seg button.holi .m { color: var(--holi); }
 
-.panel { margin-top: 18px; display: none; }
-.panel.on { display: block; animation: slide .5s var(--ease) both; }
-@keyframes slide { from { opacity: 0; transform: translateX(calc(var(--dir, 1) * 24px)); } to { opacity: 1; transform: none; } }
-.banner {
-  margin-bottom: 12px; padding: 14px 18px; border-radius: 20px;
-  background: var(--warn-bg); color: var(--warn);
+#mday.slide { animation: slide .45s var(--ease) both; }
+@keyframes slide { from { opacity: 0; transform: translateX(calc(var(--dir, 1) * 22px)); } }
+.mbanner {
+  margin-top: 14px; padding: 14px 18px; border-radius: 20px;
+  background: var(--warn-soft); color: var(--warn);
   display: flex; flex-direction: column; gap: 1px;
 }
-.banner small { font-size: 13px; font-weight: 600; opacity: .85; }
-.banner b { font-size: 22px; font-weight: 700; letter-spacing: -.03em; }
-
-/* 인셋 그룹 리스트: 수업 하나 = 카드 하나, 안에 교시별 줄 */
-.stack { display: grid; gap: 12px; }
-.item {
-  width: 100%; display: block; position: relative;
-  background: var(--surface); border-radius: 24px; box-shadow: var(--card-shadow); overflow: hidden;
-  transition: transform .12s ease-out;
-  animation: rise .5s var(--ease) both; animation-delay: calc(var(--i, 0) * 40ms);
+.mbanner span { font-size: 13px; font-weight: 600; }
+.mbanner b { font-size: 22px; font-weight: 700; letter-spacing: -.03em; }
+.mgrid {
+  margin-top: 14px;
+  display: grid; grid-template-columns: 96px minmax(0, 1fr); grid-template-rows: repeat(7, 74px);
+  gap: var(--gap); padding: 10px;
+  background: var(--surface); border-radius: 26px; box-shadow: var(--platter-shadow);
 }
-.item:active { transform: scale(.98); }
-.item.muted { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
-.item.muted .sub { color: var(--text-2); }
-.item.live { box-shadow: 0 0 0 2px var(--accent), var(--lift-shadow); }
-.item .sec { padding: 14px 18px 13px; }
-.item .sub { margin-top: 8px; font-size: 22px; }
-.item .pt { font-size: 14px; }
-.item .pt .tm { font-size: 16px; }
+.mempty {
+  margin-top: 14px; padding: 56px 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center;
+  background: var(--surface); border-radius: 26px; box-shadow: var(--platter-shadow);
+}
+.mempty b { font-size: 22px; font-weight: 700; color: var(--holi); letter-spacing: -.02em; }
+.mempty span { font-size: 15px; color: var(--text-2); }
 
-/* ───────── 시트 (상세 / 설정) ───────── */
+/* ───────── 시트 (상세 · 공휴일 지정) ───────── */
 dialog.sheet {
   border: 0; padding: 0; background: transparent; color: var(--text);
-  width: min(440px, calc(100% - 24px)); max-width: none; margin: auto; overflow: visible;
+  width: min(420px, calc(100% - 24px)); max-width: none; margin: auto; overflow: visible;
 }
-dialog.sheet::backdrop { background: rgba(0, 0, 0, .32); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
-dialog.sheet[open] { animation: sheet .5s var(--ease) both; }
+dialog.sheet::backdrop { background: rgba(0, 0, 0, .3); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+dialog.sheet[open] { animation: sheetIn .45s var(--ease) both; }
 dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
-@keyframes sheet { from { opacity: 0; transform: translateY(40px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes sheetIn { from { opacity: 0; transform: translateY(28px) scale(.98); } }
 @keyframes fade { from { opacity: 0; } }
-.card { border-radius: 32px; background: var(--surface); box-shadow: var(--lift-shadow); overflow: hidden; }
+.card { background: var(--surface); border-radius: 30px; box-shadow: var(--sheet-shadow); overflow: hidden; }
 .grab { display: none; width: 36px; height: 5px; border-radius: 3px; background: var(--line); margin: 8px auto 0; }
-.card .top { padding: 22px 26px 8px; }
-.card .top .cap { font-size: 13px; font-weight: 600; color: var(--text-3); }
-.card .top h2 { margin-top: 4px; font-size: 2rem; line-height: 1.1; font-weight: 700; letter-spacing: -.035em; word-break: keep-all; }
-.card dl { padding: 8px 26px 4px; }
-.card .r { display: flex; justify-content: space-between; gap: 16px; padding: 13px 0; border-top: .5px solid var(--line); font-size: 15.5px; }
-.card .r:first-child { border-top: 0; }
-.card dt { color: var(--text-2); }
+.card .top { padding: 24px 26px 4px; }
+.card .cap2 { font-size: 14px; font-weight: 600; color: var(--text-2); }
+.card .cap2 em { font-style: normal; color: var(--warn); }
+.card h2 { margin-top: 4px; font-size: 30px; font-weight: 700; letter-spacing: -.035em; line-height: 1.12; word-break: keep-all; }
+.card .lead { margin-top: 8px; font-size: 15px; color: var(--text-2); line-height: 1.5; }
+.card .lead b { color: var(--warn); font-weight: 650; }
+.card dl { margin: 14px 26px 0; padding: 2px 16px; background: var(--tile); border-radius: 16px; }
+.card .r { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 12px 0; font-size: 15px; }
+.card .r + .r { border-top: .5px solid var(--line); }
+.card dt { color: var(--text-2); flex: none; }
 .card dd { font-weight: 600; text-align: right; }
 .card dd.warn { color: var(--warn); }
-.card dd.pl { font-weight: 500; line-height: 1.75; }
+.card dd.pl { font-weight: 500; line-height: 1.7; }
 .card dd.pl b { font-weight: 600; color: var(--text-3); margin-right: 10px; }
-.card .hint { padding: 4px 26px 6px; font-size: 14.5px; color: var(--text-2); }
-.card .hint b { color: var(--warn); font-weight: 650; }
 .close {
-  display: block; width: calc(100% - 52px); margin: 10px 26px 26px; padding: 14px;
-  border-radius: 16px; text-align: center;
-  background: var(--accent); color: #fff; font-weight: 650; font-size: 16px;
-  transition: transform .12s ease-out, opacity .12s;
+  display: block; width: calc(100% - 52px); margin: 18px 26px 26px; padding: 14px;
+  border-radius: 14px; text-align: center;
+  background: var(--accent); color: #fff; font-size: 16px; font-weight: 650;
+  transition: transform .1s ease-out, opacity .1s ease-out;
 }
 .close:active { transform: scale(.97); opacity: .85; }
-.slist { padding: 4px 26px 0; }
-.srow { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-top: .5px solid var(--line); }
-.srow:first-child { border-top: 0; }
-.srow b { font-size: 16.5px; font-weight: 600; letter-spacing: -.02em; }
-.srow b .num { font-weight: 500; color: var(--text-3); margin-left: 4px; }
-.srow small { display: block; font-size: 13px; color: var(--text-2); }
-.sw { position: relative; flex: none; width: 51px; height: 31px; border-radius: 999px; background: rgba(120, 120, 128, .32); transition: background .3s var(--ease); }
-.sw i { position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, .28); transition: transform .4s var(--ease-spring), width .2s var(--ease); }
-.sw:active i { width: 33px; }
-.sw[aria-checked="true"] { background: #34c759; }
-.sw[aria-checked="true"] i { transform: translateX(20px); }
-.sw[aria-checked="true"]:active i { transform: translateX(14px); }
+
+.week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; padding: 14px 18px 2px; }
+.wday { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px 0 6px; }
+.wday .w { font-size: 12.5px; font-weight: 600; color: var(--text-3); transition: color .2s ease; }
+.wday .n {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 18px; font-weight: 600;
+  transition: background-color .25s var(--ease), color .25s var(--ease), transform .35s var(--ease-spring);
+}
+.wday:active .n { transform: scale(.86); transition-duration: .1s; }
+.wday.on .n { background: var(--red); color: #fff; }
+.wday.on .w { color: var(--holi); }
+.derived { margin: 12px 26px 0; padding: 2px 16px; border-radius: 16px; background: var(--tile); }
+.drow { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; font-size: 15px; }
+.drow + .drow { border-top: .5px solid var(--line); }
+.drow .dl { font-weight: 600; }
+.drow .dv { font-weight: 600; }
+.drow .dv.eve { color: var(--warn); }
+.drow .dv.holi { color: var(--holi); }
+.dnone { padding: 12px 0; font-size: 14px; color: var(--text-2); }
 
 /* ───────── 반응형 ───────── */
-@media (max-width: 860px) {
-  .page { padding: 0 16px 48px; }
-  .hero { padding: 36px 2px 16px; }
-  .heads, .board { display: none; }
+@media (max-width: 1080px) {
+  :root { --axis: 96px; --rail: 50px; }
+  .ax { padding-left: 10px; }
+  .ax span { font-size: 11.5px; }
+  .tt { font-size: 17px; }
+  .tp { font-size: 12px; }
+  .cap { font-size: 12px; padding: 3px 8px; }
+}
+@media (max-width: 820px) {
+  .page { padding: 0 16px 56px; }
+  .hero { padding: 40px 2px 18px; }
+  .desktop { display: none; }
   .mobile { display: block; }
+  .tt { font-size: 19px; }
+  .tp { font-size: 13px; }
+  .ax span { font-size: 12.5px; }
   dialog.sheet { margin: auto auto 10px; }
   .card { touch-action: none; }
   .grab { display: block; }
 }
-@media (min-width: 861px) and (max-width: 1060px) {
-  :root { --gap: 8px; }
-  .sec { padding: 12px 13px 10px; }
-  .sub { font-size: 19px; }
-  .pt .room { display: none; }
-}
 
-/* ───────── 접근성 ───────── */
+/* ───────── 접근성 · 인쇄 ───────── */
 @media (prefers-reduced-motion: reduce) {
-  .blk, .item, .panel.on, dialog.sheet[open], dialog.sheet[open]::backdrop { animation: none; }
-  .blk:hover { transform: none; }
-  .seg .thumb, .sw i { transition: opacity .2s; }
-  .live-badge::before { animation: none; }
+  .board.enter .tile, .board.enter .holi-msg, #mday.slide, dialog.sheet[open], dialog.sheet[open]::backdrop { animation: none; }
+  .seg .thumb, .wday .n { transition: none; }
+  .tile.live .tt::before { animation: none; }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .heads, .seg, .nav { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .nav, .seg { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 @media (prefers-contrast: more) {
-  .blk, .item { box-shadow: 0 0 0 1.5px currentColor; }
+  .tile { box-shadow: inset 0 0 0 1.5px currentColor; }
+  :root { --line: rgba(60, 60, 67, .35); }
+}
+@media print {
+  body { background: #fff; }
+  .nav, .pill, .mobile { display: none !important; }
+  .desktop { display: block !important; }
+  .page { max-width: none; padding: 0; }
+  .hero { padding-top: 0; }
+  .board { box-shadow: 0 0 0 1px #d2d2d7; }
 }
 </style>
 </head>
 <body>
-<div class="nav" id="nav" aria-hidden="true">시간표<small id="navRange"></small></div>
+<div class="nav" id="nav" aria-hidden="true">주간 시간표<small id="navRange"></small></div>
 
 <main class="page">
   <header class="hero">
-    <div class="hero-top">
-      <span class="eyebrow" id="weekLabel"></span>
-      <button class="textbtn" id="openSettings">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="4"/><path d="M8 2.5v4M16 2.5v4M3 10h18M9 15l2 2 4-4"/></svg>
-        공휴일 설정
-      </button>
+    <div>
+      <p class="eyebrow" id="weekLabel"></p>
+      <h1>주간 시간표</h1>
+      <div class="notice" id="notice"></div>
     </div>
-    <h1>시간표</h1>
-    <div class="notice" id="notice">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.5l3.5 2"/></svg>
-      <span id="noticeText"></span>
-    </div>
+    <button class="pill" id="openSettings">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="4"/><path d="M8 2.5v4M16 2.5v4M3 10h18"/><circle cx="15.5" cy="15" r="1.6" fill="currentColor" stroke="none"/></svg>
+      공휴일 지정
+    </button>
   </header>
 
-  <div class="heads" id="heads"></div>
-  <section class="board" id="board" aria-label="주간 시간표"></section>
+  <section class="desktop" aria-label="주간 시간표">
+    <div class="board" id="board"></div>
+  </section>
 
-  <section class="mobile" id="mobile" aria-label="요일별 시간표">
+  <section class="mobile" aria-label="요일별 시간표">
     <div class="seg" id="seg" role="tablist"><div class="thumb"></div></div>
-    <div id="panels"></div>
+    <div id="mday"></div>
   </section>
 </main>
 
 <dialog class="sheet" id="sheet" aria-label="수업 상세"><div class="card" id="card"></div></dialog>
-<dialog class="sheet" id="settings" aria-label="공휴일 설정"><div class="card" id="setcard"></div></dialog>
+<dialog class="sheet" id="settings" aria-label="공휴일 지정"><div class="card" id="setcard"></div></dialog>
 
 <script>
-const DAYS = ['2026-09-28', '2026-09-29', '2026-09-30', '2026-10-01', '2026-10-02'].map((date, i) => {
-  const [, m, n] = date.split('-').map(Number);
-  return { dow: '월화수목금'[i], date, m, n, md: `${m}/${n}` };
+/* ── 이번 주 ── */
+const WEEK_START = [2026, 9, 28]; // 월요일 (년, 월, 일)
+const pad = (n) => String(n).padStart(2, '0');
+const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const WEEK = Array.from({ length: 7 }, (_, i) => {
+  const d = new Date(WEEK_START[0], WEEK_START[1] - 1, WEEK_START[2] + i);
+  return { date: iso(d), m: d.getMonth() + 1, n: d.getDate(), md: `${d.getMonth() + 1}/${d.getDate()}`, dow: '월화수목금토일'[i] };
 });
+const DAYS = WEEK.slice(0, 5); // 수업은 월–금
+const nextDate = (date) => { const [y, m, d] = date.split('-').map(Number); return iso(new Date(y, m - 1, d + 1)); };
 
-// 평소 시간표 / 공휴일 전 시간표 (공휴일 전날로 지정한 요일에 적용)
+/* ── 교시 시간: 평소 / 공휴일 전날 ── */
 const NORMAL = [['09:00','09:50'],['10:00','10:50'],['11:00','11:50'],['14:00','14:50'],['15:00','15:50'],['16:00','16:50'],['17:00','17:50']];
 const EVE    = [['08:00','08:50'],['09:00','09:50'],['10:00','10:50'],['11:00','11:50'],['13:00','13:50'],['14:00','14:50'],['15:00','15:50']];
 
-const MUTED = new Set(['자기주도학습']);
-
-// [요일, 시작교시, 끝교시, 과목, 교수(들), 강의실]
+/* ── 수업: [요일, 시작교시, 끝교시, 과목, 교수(들), 강의실] ── */
+const FREE = new Set(['자기주도학습']);
 const RAW = [
   [0,1,3,'민생',['이혜환'],'A206'],
   [0,4,6,'죄종별',['김재용'],'A206'],
@@ -398,126 +479,183 @@ const RAW = [
   [4,5,7,'체포술',['강경덕','전민주'],'유도장'],
 ];
 
-/* ── 공휴일 전날 지정 (브라우저에 저장) ── */
-const KEY = 'timetable.holidayEve.v1';
-const loadEve = () => {
+/* ── 공휴일: 날짜로 직접 지정 → 그 전날은 자동으로 조정 시간표 (브라우저에 저장) ── */
+const KEY = 'timetable.holidays.v1';
+let holidays = (() => {
   try { const v = JSON.parse(localStorage.getItem(KEY)); if (Array.isArray(v)) return new Set(v); } catch (e) {}
-  return new Set([4]);
-};
-const saveEve = () => { try { localStorage.setItem(KEY, JSON.stringify([...eve])); } catch (e) {} };
-let eve = loadEve();
-const slotsFor = (day) => (eve.has(day) ? EVE : NORMAL);
-const dayRange = (day) => { const s = slotsFor(day); return `${s[0][0]} – ${s[s.length - 1][1]}`; };
+  return new Set(['2026-10-03']); // 개천절
+})();
+const saveHolidays = () => { try { localStorage.setItem(KEY, JSON.stringify([...holidays])); } catch (e) {} };
+const isHoli = (i) => holidays.has(DAYS[i].date);
+const isEve = (i) => !isHoli(i) && holidays.has(nextDate(DAYS[i].date));
+const slotsFor = (i) => (isEve(i) ? EVE : NORMAL);
+const dayRange = (i) => { const s = slotsFor(i); return `${s[0][0]} – ${s[s.length - 1][1]}`; };
+const dayNames = (list) => list.map((i) => DAYS[i].dow).join('·') + '요일';
+const idx = (pred) => DAYS.map((_, i) => i).filter(pred);
 
 let BLOCKS = [];
 function computeBlocks() {
   BLOCKS = RAW.map(([day, from, to, subject, profs, room]) => {
-    const slots = slotsFor(day);
+    const s = slotsFor(day);
     const periods = [];
-    for (let p = from; p <= to; p++) periods.push({ p, s: slots[p - 1][0], e: slots[p - 1][1] });
+    for (let p = from; p <= to; p++) periods.push({ p, s: s[p - 1][0], e: s[p - 1][1] });
     return {
-      day, from, to, subject, room, periods,
-      prof: profs.length ? profs.join(' · ') + ' 교수님' : '',
-      start: slots[from - 1][0], end: slots[to - 1][1],
-      muted: MUTED.has(subject),
+      day, from, to, subject, room, periods, free: FREE.has(subject),
+      prof: profs.length ? `${profs.join(' · ')} 교수님` : '',
+      start: s[from - 1][0], end: s[to - 1][1],
     };
   });
 }
 
 const $ = (s) => document.querySelector(s);
+const PIN = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5.2 6.2 12.2 6.5 12.5a.7.7 0 0 0 1 0C12.8 21.2 19 14.2 19 9a7 7 0 0 0-7-7Zm0 9.6A2.6 2.6 0 1 1 12 6.4a2.6 2.6 0 0 1 0 5.2Z"/></svg>';
 const roomLabel = (r) => (r === '미정' ? '장소 미정' : r);
 
-/* 교시 한 줄: "1교시  09:00 – 09:50" (첫 줄에만 과목·교수님, 강의실은 오른쪽) */
-function sectionsHTML(b) {
-  return b.periods.map((x, k) => `
-    <div class="sec">
-      <div class="pt num"><span class="pn">${x.p}교시</span><span class="tm">${x.s} – ${x.e}</span>${k === 0 ? `<span class="room">${b.room}</span>` : ''}</div>
-      ${k === 0 ? `<div class="sub">${b.subject}<span class="live-badge">진행 중</span></div>${b.prof ? `<div class="prof">${b.prof}</div>` : ''}` : ''}
-    </div>`).join('');
+function tileHTML(b, n, place) {
+  const cls = ['tile', b.free && 'free', isEve(b.day) && 'eve'].filter(Boolean).join(' ');
+  return `<button class="${cls}" data-i="${n}" style="${place};--i:${b.day}"
+      aria-label="${b.subject}, ${b.start}부터 ${b.end}까지${b.prof ? ', ' + b.prof : ''}, ${roomLabel(b.room)}">
+    <span class="tt">${b.subject}</span>
+    ${b.prof ? `<span class="tp">${b.prof}</span>` : ''}
+    <span class="tr">${PIN}${roomLabel(b.room)}</span>
+  </button>`;
 }
 
-/* ── now (테스트: ?now=2026-09-29T10:30) ── */
+/* ── 지금 (테스트: ?now=2026-09-29T10:30) ── */
 const nowParam = new URLSearchParams(location.search).get('now');
 const getNow = () => (nowParam ? new Date(nowParam) : new Date());
 const stamp = (date, hm) => new Date(`${date}T${hm}:00`);
-const isLive = (b, now) => now >= stamp(DAYS[b.day].date, b.start) && now <= stamp(DAYS[b.day].date, b.end);
-const todayIdx = () => {
-  const d = getNow(), p = (n) => String(n).padStart(2, '0');
-  const key = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-  return DAYS.findIndex((x) => x.date === key);
-};
+const isLive = (b, now) => !isHoli(b.day) && now >= stamp(DAYS[b.day].date, b.start) && now <= stamp(DAYS[b.day].date, b.end);
+const todayIdx = () => DAYS.findIndex((d) => d.date === iso(getNow()));
 
-/* ── 데스크톱 ── */
-function buildHeads() {
-  const t = todayIdx();
-  $('#heads').innerHTML = DAYS.map((d, i) => `
-    <div class="dh${i === t ? ' today' : ''}${eve.has(i) ? ' eve' : ''}">
-      <span class="dow">${d.dow}${i === 0 || d.m !== DAYS[i - 1].m ? `<em>${d.m}월</em>` : ''}</span>
-      <span class="dn num">${d.n}</span>
-      <span class="rng num">${dayRange(i)}</span>
-      ${eve.has(i) ? '<span class="evetag">공휴일 전</span>' : ''}
-    </div>`).join('');
+/* ── 데스크톱 표 ── */
+function layout() {
+  const normalExists = DAYS.some((_, i) => !isHoli(i) && !isEve(i));
+  const cols = ['var(--axis)'];
+  const map = DAYS.map((_, i) => {
+    let rail = null;
+    if (isEve(i) && normalExists) { cols.push('var(--rail)'); rail = cols.length; }
+    cols.push('minmax(0, 1fr)');
+    return { rail, col: cols.length, start: rail || cols.length };
+  });
+  // 모든 수업일이 공휴일 전날이면 왼쪽 축 자체를 조정 시간으로
+  return { template: cols.join(' '), map, axisEve: !normalExists && DAYS.some((_, i) => isEve(i)) };
 }
+
+let firstRender = true;
 function buildBoard() {
-  $('#board').innerHTML = BLOCKS.map((b, n) => `
-    <button class="blk${b.muted ? ' muted' : ''}${eve.has(b.day) ? ' eve' : ''}" data-i="${n}"
-      style="--i:${n};grid-column:${b.day + 1};grid-row:${b.from} / ${b.to + 1}"
-      aria-label="${b.subject}, ${b.start}부터 ${b.end}까지, ${b.room}">${sectionsHTML(b)}</button>`).join('');
+  const { template, map, axisEve } = layout();
+  const t = todayIdx();
+  const axis = axisEve ? EVE : NORMAL;
+  let h = '';
+
+  DAYS.forEach((_, i) => {
+    const kind = isHoli(i) ? 'holi' : isEve(i) ? 'eve' : i === t ? 'today' : '';
+    if (kind) h += `<div class="colbg ${kind}" style="grid-column:${map[i].start} / ${map[i].col + 1}" aria-hidden="true"></div>`;
+  });
+  for (let r = 1; r <= 7; r++) h += `<div class="rowline" style="grid-row:${r}" aria-hidden="true"></div>`;
+
+  h += `<div class="ah">${map.some((m) => m.rail) ? '기본 시간' : ''}</div>`;
+  DAYS.forEach((d, i) => {
+    const cls = [i === t && 'today', isEve(i) && 'eve', isHoli(i) && 'holi'].filter(Boolean).join(' ');
+    h += `<div class="dh ${cls}" style="grid-column:${map[i].start} / ${map[i].col + 1}">
+      <span class="wd">${d.dow}</span><span class="dn num">${d.n}</span>
+      ${isEve(i) ? `<span class="cap eve num">공휴일 전 · ${dayRange(i)}</span>` : ''}
+      ${isHoli(i) ? '<span class="cap holi">공휴일</span>' : ''}
+    </div>`;
+  });
+
+  axis.forEach(([s, e], k) => {
+    h += `<div class="ax${axisEve ? ' eve' : ''}" data-r="${k + 1}" style="grid-row:${k + 2}"><b>${k + 1}교시</b><span class="num">${s} – ${e}</span></div>`;
+  });
+  DAYS.forEach((_, i) => {
+    const m = map[i];
+    if (m.rail) EVE.forEach(([s, e], k) => {
+      h += `<div class="rl num" data-d="${i}" data-r="${k + 1}" style="grid-column:${m.rail};grid-row:${k + 2}"><b>${s}</b><span>${e}</span></div>`;
+    });
+    if (isHoli(i)) h += `<div class="holi-msg" style="grid-column:${m.col};grid-row:2 / 9;--i:${i}"><b>공휴일</b><span>수업 없음</span></div>`;
+  });
+
+  BLOCKS.forEach((b, n) => {
+    if (!isHoli(b.day)) h += tileHTML(b, n, `grid-column:${map[b.day].col};grid-row:${b.from + 1} / ${b.to + 2}`);
+  });
+
+  const el = $('#board');
+  el.style.gridTemplateColumns = template;
+  el.innerHTML = h;
+  el.classList.toggle('enter', firstRender);
 }
 
-/* ── 모바일 ── */
-let cur = Math.max(0, todayIdx()), prev = cur;
-function buildMobile() {
+/* 수업 칸에 손을 올리면 그 수업의 교시가 시간 축에서 함께 켜진다 */
+function highlight(tile, on) {
+  const b = BLOCKS[+tile.dataset.i], scope = tile.parentElement;
+  const rail = scope.querySelector(`.rl[data-d="${b.day}"]`);
+  scope.querySelectorAll(rail ? `.rl[data-d="${b.day}"]` : '.ax').forEach((c) => {
+    const r = +c.dataset.r; c.classList.toggle('hl', on && r >= b.from && r <= b.to);
+  });
+}
+['pointerover', 'focusin'].forEach((ev) => document.addEventListener(ev, (e) => { const t = e.target.closest('.tile'); if (t) highlight(t, true); }));
+['pointerout', 'focusout'].forEach((ev) => document.addEventListener(ev, (e) => {
+  const t = e.target.closest('.tile'); if (t && !t.contains(e.relatedTarget)) highlight(t, false);
+}));
+
+/* ── 모바일: 하루씩 ── */
+let cur = Math.max(0, todayIdx());
+function buildSeg() {
   const t = todayIdx();
   $('#seg').querySelectorAll('button').forEach((b) => b.remove());
   $('#seg').insertAdjacentHTML('beforeend', DAYS.map((d, i) => `
-    <button role="tab" data-d="${i}" class="${i === t ? 'today' : ''}" aria-selected="false" aria-label="${d.dow}요일 ${d.md}">
+    <button role="tab" data-d="${i}" class="${[i === t && 'today', isHoli(i) && 'holi'].filter(Boolean).join(' ')}"
+        aria-selected="${i === cur}" aria-label="${d.dow}요일 ${d.md}">
       <span class="d">${d.dow}</span><span class="m num">${d.n}</span>
-      <span class="dots">${i === t ? '<i class="t"></i>' : ''}${eve.has(i) ? '<i class="e"></i>' : ''}</span>
+      <span class="dots">${i === t ? '<i class="t"></i>' : ''}${isEve(i) ? '<i class="e"></i>' : ''}${isHoli(i) ? '<i class="h"></i>' : ''}</span>
     </button>`).join(''));
-
-  $('#panels').innerHTML = DAYS.map((d, i) => `
-    <div class="panel" data-p="${i}" role="tabpanel">
-      ${eve.has(i) ? `<div class="banner"><small>${d.dow}요일 ${d.md} · 공휴일 전</small><b class="num">${EVE[0][0]} 시작 · ${EVE[6][1]} 종료</b></div>` : ''}
-      <div class="stack">
-        ${BLOCKS.map((b, n) => b.day !== i ? '' : `
-          <button class="item${b.muted ? ' muted' : ''}${eve.has(i) ? ' eve' : ''}" data-i="${n}" style="--i:${n % 3}">${sectionsHTML(b)}</button>`).join('')}
-      </div>
-    </div>`).join('');
-  select(cur, true);
+  $('#seg').style.setProperty('--idx', cur);
 }
-function select(i, first) {
-  prev = cur; cur = i;
-  document.documentElement.style.setProperty('--dir', i >= prev ? 1 : -1);
+function buildDay(dir) {
+  const i = cur, d = DAYS[i], el = $('#mday');
+  if (isHoli(i)) {
+    el.innerHTML = `<div class="mempty"><b>공휴일</b><span>${d.dow}요일 ${d.md}은 수업이 없어요.</span></div>`;
+  } else {
+    const s = slotsFor(i), ev = isEve(i);
+    let g = '';
+    for (let r = 1; r <= 6; r++) g += `<div class="rowline" style="grid-row:${r}" aria-hidden="true"></div>`;
+    s.forEach(([a, z], k) => { g += `<div class="ax${ev ? ' eve' : ''}" data-r="${k + 1}" style="grid-row:${k + 1}"><b>${k + 1}교시</b><span class="num">${a} – ${z}</span></div>`; });
+    BLOCKS.forEach((b, n) => { if (b.day === i) g += tileHTML(b, n, `grid-column:2;grid-row:${b.from} / ${b.to + 1}`); });
+    el.innerHTML = (ev ? `<div class="mbanner"><span>${d.dow}요일 ${d.md} · 공휴일 전</span><b class="num">${s[0][0]} 시작 · ${s[s.length - 1][1]} 종료</b></div>` : '')
+      + `<div class="mgrid">${g}</div>`;
+  }
+  if (dir) { el.style.setProperty('--dir', dir); el.classList.remove('slide'); void el.offsetWidth; el.classList.add('slide'); }
+}
+function select(i) {
+  if (i === cur) return;
+  const dir = i > cur ? 1 : -1;
+  cur = i;
   $('#seg').style.setProperty('--idx', i);
   document.querySelectorAll('#seg button').forEach((b) => b.setAttribute('aria-selected', String(+b.dataset.d === i)));
-  document.querySelectorAll('.panel').forEach((p) => {
-    const on = +p.dataset.p === i;
-    p.classList.toggle('on', on);
-    if (on && !first) { p.style.animation = 'none'; void p.offsetWidth; p.style.animation = ''; }
-  });
+  buildDay(dir);
+  tick();
 }
 $('#seg').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) select(+b.dataset.d); });
 let sx = null, sy = null;
-$('#panels').addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
-$('#panels').addEventListener('touchend', (e) => {
+$('#mday').addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+$('#mday').addEventListener('touchend', (e) => {
   if (sx == null) return;
   const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
   if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) select(Math.min(4, Math.max(0, cur + (dx < 0 ? 1 : -1))));
   sx = null;
 }, { passive: true });
-document.addEventListener('touchstart', () => {}, { passive: true }); // iOS: 터치 즉시 :active 반응
+document.addEventListener('touchstart', () => {}, { passive: true }); // iOS: 누르는 즉시 :active
 
 /* ── 시트: 아래로 끌어서 닫기 (1:1 추적 · 속도 투영 · 고무줄 저항) ── */
 function makeSheet(dlg, card) {
-  const mobile = () => matchMedia('(max-width: 860px)').matches;
+  const mobile = () => matchMedia('(max-width: 820px)').matches;
   const rubber = (o, dim = 320, c = .55) => (o * dim * c) / (dim + c * Math.abs(o));
   const project = (v, d = .998) => (v / 1000) * d / (1 - d); // Apple의 감속 투영식
   let drag = null;
-
   card.addEventListener('pointerdown', (e) => {
     if (!mobile() || e.target.closest('button')) return;
-    card.getAnimations().forEach((a) => a.cancel()); // 이동 중에도 붙잡을 수 있다
+    card.getAnimations().forEach((a) => a.cancel()); // 움직이는 중에도 다시 잡을 수 있다
     card.setPointerCapture(e.pointerId);
     drag = { y0: e.clientY, y: 0, pts: [{ y: e.clientY, t: e.timeStamp }] };
   });
@@ -532,11 +670,9 @@ function makeSheet(dlg, card) {
     if (!drag) return;
     const a = drag.pts[0], z = drag.pts[drag.pts.length - 1];
     const v = ((z.y - a.y) / Math.max(1, z.t - a.t)) * 1000;
-    const y = drag.y, h = card.offsetHeight;
-    const projected = Math.max(0, y) + project(v);
+    const y = drag.y, h = card.offsetHeight, from = `translateY(${y}px)`;
     drag = null;
-    const from = `translateY(${y}px)`;
-    if (projected > h * .45) {
+    if (Math.max(0, y) + project(v) > h * .45) {
       card.animate([{ transform: from }, { transform: `translateY(${h + 80}px)` }], { duration: 280, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' })
         .finished.then(() => dlg.close()).catch(() => {});
     } else {
@@ -554,66 +690,78 @@ makeSheet(sheet, $('#card'));
 makeSheet(settings, $('#setcard'));
 
 /* ── 수업 상세 ── */
-function openSheet(n) {
-  const b = BLOCKS[n], d = DAYS[b.day];
+function openDetail(n) {
+  const b = BLOCKS[n], d = DAYS[b.day], ev = isEve(b.day);
   $('#card').innerHTML = `
     <div class="grab"></div>
-    <div class="top"><div class="cap">${d.dow}요일 · ${d.md}</div><h2>${b.subject}</h2></div>
+    <div class="top"><p class="cap2">${d.dow}요일 · ${d.md}${ev ? ' · <em>공휴일 전</em>' : ''}</p><h2>${b.subject}</h2></div>
     <dl>
-      <div class="r"><dt>시간</dt><dd class="num">${b.start} – ${b.end}</dd></div>
-      ${b.periods.length > 1 ? `<div class="r"><dt>교시별</dt><dd class="pl num">${b.periods.map((x) => `<div><b>${x.p}교시</b>${x.s} – ${x.e}</div>`).join('')}</dd></div>` : ''}
+      <div class="r"><dt>시간</dt><dd class="num${ev ? ' warn' : ''}">${b.start} – ${b.end}</dd></div>
+      <div class="r"><dt>교시</dt><dd class="pl num">${b.periods.map((x) => `<div><b>${x.p}교시</b>${x.s} – ${x.e}</div>`).join('')}</dd></div>
       ${b.prof ? `<div class="r"><dt>교수님</dt><dd>${b.prof.replace(' 교수님', '')}</dd></div>` : ''}
       <div class="r"><dt>강의실</dt><dd>${roomLabel(b.room)}</dd></div>
-      ${eve.has(b.day) ? '<div class="r"><dt>안내</dt><dd class="warn">공휴일 전 조정 시간</dd></div>' : ''}
     </dl>
     <button class="close" id="closeBtn">닫기</button>`;
   $('#closeBtn').onclick = () => sheet.close();
   sheet.showModal();
 }
-document.addEventListener('click', (e) => { const b = e.target.closest('.blk, .item'); if (b) openSheet(+b.dataset.i); });
+document.addEventListener('click', (e) => { const t = e.target.closest('.tile'); if (t) openDetail(+t.dataset.i); });
 
-/* ── 공휴일 설정 ── */
+/* ── 공휴일 지정 ── */
 function buildSettings() {
   $('#setcard').innerHTML = `
     <div class="grab"></div>
-    <div class="top"><h2>공휴일 설정</h2></div>
-    <p class="hint">공휴일 전날로 켠 요일은 <b>${EVE[0][0]} 시작 · ${EVE[6][1]} 종료</b> 시간표로 바뀌어요.</p>
-    <div class="slist">${DAYS.map((d, i) => `
-      <div class="srow">
-        <div><b>${d.dow}요일 <span class="num">${d.md}</span></b><small class="num" data-r="${i}"></small></div>
-        <button class="sw" role="switch" data-d="${i}" aria-label="${d.dow}요일 공휴일 전날"><i></i></button>
-      </div>`).join('')}
+    <div class="top">
+      <h2>공휴일 지정</h2>
+      <p class="lead">공휴일로 지정한 날의 <b>전날</b>은 ${EVE[0][0]} 시작 · ${EVE[6][1]} 종료로 앞당겨져요.</p>
     </div>
+    <div class="week">${WEEK.map((d) => `
+      <button class="wday" data-date="${d.date}" aria-label="${d.dow}요일 ${d.md} 공휴일">
+        <span class="w">${d.dow}</span><span class="n num">${d.n}</span>
+      </button>`).join('')}
+    </div>
+    <div class="derived" id="derived"></div>
     <button class="close" id="setDone">완료</button>`;
   $('#setDone').onclick = () => settings.close();
   syncSettings();
 }
 function syncSettings() {
-  document.querySelectorAll('.sw').forEach((b) => b.setAttribute('aria-checked', String(eve.has(+b.dataset.d))));
-  document.querySelectorAll('[data-r]').forEach((r) => { r.textContent = (eve.has(+r.dataset.r) ? '공휴일 전 · ' : '') + dayRange(+r.dataset.r); });
+  document.querySelectorAll('.wday').forEach((b) => {
+    const on = holidays.has(b.dataset.date);
+    b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
+  });
+  const rows = [];
+  DAYS.forEach((d, i) => {
+    if (isEve(i)) rows.push(`<div class="drow"><span class="dl">${d.dow}요일 ${d.md}</span><span class="dv eve num">공휴일 전 · ${dayRange(i)}</span></div>`);
+    if (isHoli(i)) rows.push(`<div class="drow"><span class="dl">${d.dow}요일 ${d.md}</span><span class="dv holi">공휴일 · 수업 없음</span></div>`);
+  });
+  $('#derived').innerHTML = rows.join('') || '<p class="dnone">지정된 공휴일이 없어요. 모든 요일이 기본 시간표로 진행돼요.</p>';
 }
 $('#openSettings').addEventListener('click', () => { buildSettings(); settings.showModal(); });
 settings.addEventListener('click', (e) => {
-  const sw = e.target.closest('.sw'); if (!sw) return;
-  const i = +sw.dataset.d;
-  eve.has(i) ? eve.delete(i) : eve.add(i);
-  saveEve(); syncSettings(); render();
+  const w = e.target.closest('.wday'); if (!w) return;
+  const date = w.dataset.date;
+  holidays.has(date) ? holidays.delete(date) : holidays.add(date);
+  saveHolidays(); syncSettings(); render();
 });
 
 /* ── 공통 ── */
 function updateTop() {
   $('#weekLabel').textContent = `${DAYS[0].m}월 ${DAYS[0].n}일 – ${DAYS[4].m}월 ${DAYS[4].n}일`;
   $('#navRange').textContent = `${DAYS[0].md} – ${DAYS[4].md}`;
-  const days = [...eve].sort(), el = $('#notice');
-  el.hidden = !days.length;
-  if (!days.length) return;
-  $('#noticeText').innerHTML = `${days.map((i) => DAYS[i].dow).join('·')}요일 공휴일 전 · <b>${EVE[0][0]} 시작 – ${EVE[6][1]} 종료</b>`;
+  const ev = idx(isEve), ho = idx(isHoli), lines = [];
+  if (ev.length) lines.push(`<p class="nl"><i class="o"></i><span>${dayNames(ev)}은 공휴일 전날이라 <b class="num">${EVE[0][0]} 시작 · ${EVE[6][1]} 종료</b>예요.</span></p>`);
+  if (ho.length) lines.push(`<p class="nl"><i class="r"></i><span>${dayNames(ho)}은 <b class="r">공휴일</b>이라 수업이 없어요.</span></p>`);
+  $('#notice').innerHTML = lines.join('');
 }
 function tick() {
   const now = getNow();
-  document.querySelectorAll('.blk, .item').forEach((el) => el.classList.toggle('live', isLive(BLOCKS[+el.dataset.i], now)));
+  document.querySelectorAll('.tile').forEach((el) => el.classList.toggle('live', isLive(BLOCKS[+el.dataset.i], now)));
 }
-function render() { computeBlocks(); buildHeads(); buildBoard(); buildMobile(); updateTop(); tick(); }
+function render() {
+  computeBlocks(); buildBoard(); buildSeg(); buildDay(0); updateTop(); tick();
+  firstRender = false;
+}
 
 new IntersectionObserver(([e]) => $('#nav').classList.toggle('on', !e.isIntersecting), { rootMargin: '-40px 0px 0px 0px' })
   .observe(document.querySelector('.hero h1'));
