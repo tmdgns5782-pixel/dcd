@@ -48,9 +48,9 @@
   --sheet-shadow: 0 0 0 .5px rgba(0, 0, 0, .06), 0 30px 80px rgba(0, 0, 0, .22);
   --ease: cubic-bezier(.2, .8, .2, 1);           /* 임계 감쇠 — 기본 */
   --ease-spring: cubic-bezier(.3, 1.25, .45, 1);  /* 관성이 실린 동작에만 살짝 오버슛 */
-  --axis: 108px;
-  --rail: 56px;
-  --row: 80px;
+  --axis: 124px;
+  --rail: 64px;
+  --row: 94px;
   --gap: 6px;
 }
 /* 화면 모드: 라이트(기본) · 다크 · 자동(기기 설정) — html[data-mode] */
@@ -166,7 +166,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 }
 .notice { margin-top: 14px; display: grid; gap: 4px; }
 .notice:empty { display: none; }
-.nl { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--text-2); }
+.nl { display: flex; align-items: center; gap: 8px; font-size: 16.5px; color: var(--text-2); }
 .nl i { flex: none; width: 8px; height: 8px; border-radius: 50%; }
 .nl i.o { background: var(--orange); }
 .nl i.b { background: var(--accent); }
@@ -207,11 +207,11 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 /* 요일 머리 */
 .ah { position: relative; grid-row: 1; grid-column: 1; align-self: end; padding: 0 0 13px 14px; font-size: 12px; font-weight: 600; color: var(--text-3); }
 .dh { position: relative; grid-row: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; padding: 12px 4px 12px; }
-.dh .wd { font-size: 13px; font-weight: 600; color: var(--text-2); line-height: 1.3; }
+.dh .wd { font-size: 15px; font-weight: 600; color: var(--text-2); line-height: 1.3; }
 .dh .dn {
   margin-top: 3px; min-width: 36px; height: 36px; padding: 0 7px; border-radius: 18px;
   display: grid; place-items: center;
-  font-size: 22px; font-weight: 650; letter-spacing: -.02em; line-height: 1;
+  font-size: 26px; font-weight: 650; letter-spacing: -.02em; line-height: 1;
 }
 .dh.today .wd { color: var(--accent); }
 .dh.today .dn { background: var(--accent); color: #fff; }
@@ -220,7 +220,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .dh.holi.today .dn { background: var(--holi); color: #fff; }
 .cap {
   margin-top: 8px; padding: 4px 10px; border-radius: 999px;
-  font-size: 12.5px; font-weight: 700; letter-spacing: -.005em; white-space: nowrap;
+  font-size: 14px; font-weight: 700; letter-spacing: -.005em; white-space: nowrap;
 }
 .cap.eve { background: var(--warn-soft); color: var(--warn); }
 .cap.holi { background: var(--holi-soft); color: var(--holi); }
@@ -232,8 +232,8 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   padding: 0 8px 0 14px; border-radius: 12px;
   transition: background-color .2s ease;
 }
-.ax b { font-size: 15px; font-weight: 650; letter-spacing: -.02em; line-height: 1.3; transition: color .2s ease; }
-.ax span { font-size: 12.5px; font-weight: 500; color: var(--text-2); line-height: 1.4; white-space: nowrap; }
+.ax b { font-size: 17px; font-weight: 650; letter-spacing: -.02em; line-height: 1.3; transition: color .2s ease; }
+.ax span { font-size: 14.5px; font-weight: 500; color: var(--text-2); line-height: 1.4; white-space: nowrap; }
 .ax.eve span { color: var(--warn); font-weight: 600; }
 .ax.hl { background: var(--accent-tint); }
 .ax.hl b { color: var(--accent); }
@@ -247,8 +247,8 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   border-radius: 12px; color: var(--warn); line-height: 1.3;
   transition: background-color .2s ease;
 }
-.rl b { font-size: 13px; font-weight: 700; }
-.rl span { font-size: 11.5px; font-weight: 500; opacity: .75; }
+.rl b { font-size: 15px; font-weight: 700; }
+.rl span { font-size: 13px; font-weight: 500; opacity: .75; }
 .rl.hl { background: var(--warn-tint); }
 .rl.hl b { text-decoration: underline; text-underline-offset: 3px; }
 
@@ -272,11 +272,11 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .tile.free { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
 .tt {
   display: inline-flex; align-items: center; gap: 6px;
-  font-size: 19px; font-weight: 650; letter-spacing: -.025em; line-height: 1.25; word-break: keep-all;
+  font-size: 23px; font-weight: 650; letter-spacing: -.025em; line-height: 1.25; word-break: keep-all;
 }
-.free .tt { font-size: 16px; font-weight: 600; color: var(--text-2); }
-.tp { font-size: 13px; color: var(--text-2); line-height: 1.35; word-break: keep-all; }
-.tr { margin-top: 4px; display: inline-flex; align-items: center; gap: 3px; font-size: 12.5px; font-weight: 600; color: var(--text-2); }
+.free .tt { font-size: 19px; font-weight: 600; color: var(--text-2); }
+.tp { font-size: 15px; color: var(--text-2); line-height: 1.35; word-break: keep-all; }
+.tr { margin-top: 4px; display: inline-flex; align-items: center; gap: 4px; font-size: 14.5px; font-weight: 600; color: var(--text-2); }
 .tr svg { flex: none; }
 .tile:active { transform: scale(.97); transition-duration: .08s; }
 @media (hover: hover) {
@@ -290,8 +290,8 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   animation: pulse 1.6s ease-in-out infinite;
 }
 .holi-msg { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center; }
-.holi-msg b { font-size: 17px; font-weight: 650; color: var(--holi); }
-.holi-msg span { font-size: 13px; color: var(--text-2); }
+.holi-msg b { font-size: 20px; font-weight: 650; color: var(--holi); }
+.holi-msg span { font-size: 15px; color: var(--text-2); }
 
 .board.enter .tile, .board.enter .holi-msg { animation: tileIn .55s var(--ease) backwards; animation-delay: calc(var(--i, 0) * 45ms + 60ms); }
 @keyframes tileIn { from { opacity: 0; transform: scale(.96); } }
@@ -343,7 +343,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .mbanner b { font-size: 22px; font-weight: 700; letter-spacing: -.03em; }
 .mgrid {
   margin-top: 14px;
-  display: grid; grid-template-columns: 96px minmax(0, 1fr); grid-template-rows: repeat(7, 74px);
+  display: grid; grid-template-columns: 112px minmax(0, 1fr); grid-template-rows: repeat(7, 88px);
   gap: var(--gap); padding: 10px;
   background: var(--surface); border-radius: 26px; box-shadow: var(--platter-shadow);
 }
@@ -518,21 +518,22 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
 
 /* ───────── 반응형 ───────── */
 @media (max-width: 1080px) {
-  :root { --axis: 96px; --rail: 50px; }
+  :root { --axis: 110px; --rail: 56px; }
   .ax { padding-left: 10px; }
-  .ax span { font-size: 11.5px; }
-  .tt { font-size: 17px; }
-  .tp { font-size: 12px; }
-  .cap { font-size: 12px; padding: 3px 8px; }
+  .ax span { font-size: 13px; }
+  .tt { font-size: 20px; }
+  .tp { font-size: 13.5px; }
+  .tr { font-size: 13px; }
+  .cap { font-size: 12.5px; padding: 3px 8px; }
 }
 @media (max-width: 820px) {
   .page { padding: 0 16px 56px; }
   .hero { padding: 40px 2px 18px; }
   .desktop { display: none; }
   .mobile { display: block; }
-  .tt { font-size: 19px; }
-  .tp { font-size: 13px; }
-  .ax span { font-size: 12.5px; }
+  .tt { font-size: 22px; }
+  .tp { font-size: 15px; }
+  .ax span { font-size: 14px; }
   dialog.sheet { margin: auto auto 10px; }
   .card { max-height: calc(100dvh - 20px); overflow-y: auto; }
   .card .grab, .card .top { touch-action: none; }
@@ -566,7 +567,7 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
     --line: rgba(60, 60, 67, .16); --accent: #0071e3; --accent-tint: rgba(0, 113, 227, .05);
     --warn: #c2410c; --warn-soft: rgba(255, 149, 0, .16); --warn-tint: rgba(255, 149, 0, .07); --warn-tile: #ffefd9;
     --holi: #d70015; --holi-soft: rgba(255, 59, 48, .12); --holi-tint: rgba(255, 59, 48, .045);
-    --axis: 96px; --rail: 50px; --row: 58px; --gap: 5px;
+    --axis: 106px; --rail: 56px; --row: 60px; --gap: 5px;
   }
   html, body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .num { font-variant-numeric: normal; } /* PDF에서 숫자도 복사·검색되도록 */
@@ -584,18 +585,18 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
   .tile.live { box-shadow: none; }
   .tile.live .tt::before { display: none; }
   .tile.free { box-shadow: inset 0 0 0 1px var(--line); }
-  .tt { font-size: 15.5px; }
-  .free .tt { font-size: 14px; }
-  .tp { font-size: 11px; }
-  .tr { margin-top: 2px; font-size: 11px; }
+  .tt { font-size: 17.5px; }
+  .free .tt { font-size: 15.5px; }
+  .tp { font-size: 12.5px; }
+  .tr { margin-top: 2px; font-size: 12px; }
   .dh { padding: 8px 4px; }
   .dh .dn { font-size: 19px; height: 30px; min-width: 30px; }
   .dh.today .wd { color: var(--text-2); }
   .dh.today .dn { background: none; color: var(--text); }
   .colbg.today { background: none; }
   .cap { margin-top: 5px; font-size: 11px; }
-  .ax b { font-size: 13px; }
-  .ax span { font-size: 11px; }
+  .ax b { font-size: 14.5px; }
+  .ax span { font-size: 12px; }
 }
 
 /* 같은 모양을 페이지 안에서 PDF로 그릴 때 (claude.ai 링크) */
@@ -603,7 +604,7 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
     --line: rgba(60, 60, 67, .16); --accent: #0071e3; --accent-tint: rgba(0, 113, 227, .05);
     --warn: #c2410c; --warn-soft: rgba(255, 149, 0, .16); --warn-tint: rgba(255, 149, 0, .07); --warn-tile: #ffefd9;
     --holi: #d70015; --holi-soft: rgba(255, 59, 48, .12); --holi-tint: rgba(255, 59, 48, .045);
-    --axis: 96px; --rail: 50px; --row: 58px; --gap: 5px; }
+    --axis: 106px; --rail: 56px; --row: 60px; --gap: 5px; }
 .pdf-mode { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .pdf-mode .num { font-variant-numeric: normal; }
 .pdf-mode .wn, .pdf-mode .thisweek, .pdf-mode .nav, .pdf-mode .hero-actions, .pdf-mode .mobile, .pdf-mode .editbar, .pdf-mode .toast, .pdf-mode dialog, .pdf-mode .slot { display: none !important; }
@@ -620,18 +621,18 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
 .pdf-mode .tile.live { box-shadow: none; }
 .pdf-mode .tile.live .tt::before { display: none; }
 .pdf-mode .tile.free { box-shadow: inset 0 0 0 1px var(--line); }
-.pdf-mode .tt { font-size: 15.5px; }
-.pdf-mode .free .tt { font-size: 14px; }
-.pdf-mode .tp { font-size: 11px; }
-.pdf-mode .tr { margin-top: 2px; font-size: 11px; }
+.pdf-mode .tt { font-size: 17.5px; }
+.pdf-mode .free .tt { font-size: 15.5px; }
+.pdf-mode .tp { font-size: 12.5px; }
+.pdf-mode .tr { margin-top: 2px; font-size: 12px; }
 .pdf-mode .dh { padding: 8px 4px; }
 .pdf-mode .dh .dn { font-size: 19px; height: 30px; min-width: 30px; }
 .pdf-mode .dh.today .wd { color: var(--text-2); }
 .pdf-mode .dh.today .dn { background: none; color: var(--text); }
 .pdf-mode .colbg.today { background: none; }
 .pdf-mode .cap { margin-top: 5px; font-size: 11px; }
-.pdf-mode .ax b { font-size: 13px; }
-.pdf-mode .ax span { font-size: 11px; }
+.pdf-mode .ax b { font-size: 14.5px; }
+.pdf-mode .ax span { font-size: 12px; }
 /* PDF 그리기 라이브러리는 안쪽 그림자를 못 그리므로 실제 테두리로 */
 .pdf-mode .tile.free { box-shadow: none; border: 1px solid #d9d9de; }
 .pdf-mode .board { box-shadow: none; border: 1px solid #d2d2d7; }
@@ -812,7 +813,7 @@ function computeBlocks() {
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
-const PIN = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5.2 6.2 12.2 6.5 12.5a.7.7 0 0 0 1 0C12.8 21.2 19 14.2 19 9a7 7 0 0 0-7-7Zm0 9.6A2.6 2.6 0 1 1 12 6.4a2.6 2.6 0 0 1 0 5.2Z"/></svg>';
+const PIN = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5.2 6.2 12.2 6.5 12.5a.7.7 0 0 0 1 0C12.8 21.2 19 14.2 19 9a7 7 0 0 0-7-7Zm0 9.6A2.6 2.6 0 1 1 12 6.4a2.6 2.6 0 0 1 0 5.2Z"/></svg>';
 const roomLabel = (r) => (!r || r === '미정' ? '장소 미정' : r);
 let editing = false;
 
@@ -953,7 +954,7 @@ function buildDay(dir) {
     });
     const r0 = dayRange(i).split(' – ');
     el.innerHTML = (ev ? `<div class="mbanner"><span>${d.dow}요일 ${d.md} · 공휴일 전</span><b class="num">${r0[0]} 시작 · ${r0[1]} 종료</b></div>` : '')
-      + `<div class="mgrid" style="grid-template-rows:repeat(${rows.length}, 74px)">${g}</div>`;
+      + `<div class="mgrid" style="grid-template-rows:repeat(${rows.length}, 88px)">${g}</div>`;
   }
   if (dir) { el.style.setProperty('--dir', dir); el.classList.remove('slide'); void el.offsetWidth; el.classList.add('slide'); }
 }
