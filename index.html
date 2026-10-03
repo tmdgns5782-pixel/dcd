@@ -785,7 +785,10 @@ applyData();
 const isHoli = (i) => holidays.has(DAYS[i].date);
 const isEve = (i) => !isHoli(i) && holidays.has(nextDate(DAYS[i].date));
 const slotsFor = (i) => (isEve(i) ? EVE : NORMAL);
-const hasZero = (i) => data.classes.some((c) => c.day === i && c.from === 0);
+// 공휴일 전날은 7교시가 없으므로 7교시 수업은 0교시(08:00)로 당겨진다 (0교시가 비어 있을 때)
+const movesToZero = (c) => isEve(c.day) && c.from === PMAX && c.to === PMAX && !slotsFor(c.day)[PMAX]
+  && !data.classes.some((x) => x.day === c.day && x.from === 0);
+const hasZero = (i) => data.classes.some((c) => c.day === i && (c.from === 0 || movesToZero(c)));
 const showZero = () => editing || DAYS.some((_, i) => !isHoli(i) && hasZero(i));
 const rowsFor = () => (showZero() ? ALL_P : ALL_P.slice(1));            // 표에 그릴 교시
 const dayPeriods = (i) => ALL_P.filter((p) => slotsFor(i)[p] && (p > 0 || hasZero(i)));
@@ -798,11 +801,13 @@ const perLabel = (c) => (c.from === c.to ? `${c.from}교시` : `${c.from}–${c.
 let BLOCKS = [];
 function computeBlocks() {
   BLOCKS = data.classes.map((c) => {
-    const s = slotsFor(c.day), periods = [];
-    for (let p = c.from; p <= c.to; p++) if (s[p]) periods.push({ p, s: s[p][0], e: s[p][1] });
-    const na = !periods.length; // 그날 없는 교시(공휴일 전 7교시 등)에만 걸친 수업
+    const s = slotsFor(c.day), periods = [], moved = movesToZero(c);
+    const f = moved ? 0 : c.from, t = moved ? 0 : c.to;
+    for (let p = f; p <= t; p++) if (s[p]) periods.push({ p, s: s[p][0], e: s[p][1] });
+    const na = !periods.length; // 그날 없는 교시에만 걸친 수업
     return {
-      day: c.day, from: c.from, to: na ? c.to : periods[periods.length - 1].p, rawTo: c.to,
+      day: c.day, from: na ? c.from : periods[0].p, to: na ? c.to : periods[periods.length - 1].p,
+      rawFrom: c.from, rawTo: c.to, moved,
       subject: c.subject, room: c.room || '미정', periods, free: !!c.free, na,
       prof: c.profs.length ? `${c.profs.join(' · ')} 교수님` : '',
       start: na ? '' : periods[0].s, end: na ? '' : periods[periods.length - 1].e,
@@ -894,9 +899,9 @@ function buildBoard() {
 
   BLOCKS.forEach((b, n) => {
     if (!editing && (isHoli(b.day) || b.na)) return;
-    const to = editing ? b.rawTo : b.to;               // 편집 중에는 원래 교시 그대로
-    if (!rows.includes(b.from)) return;
-    h += tileHTML(b, n, `grid-column:${map[b.day].col};grid-row:${rowOf(b.from)} / ${rowOf(to) + 1}`);
+    const f = editing ? b.rawFrom : b.from, to = editing ? b.rawTo : b.to; // 편집 중에는 원래 교시 그대로
+    if (!rows.includes(f)) return;
+    h += tileHTML(b, n, `grid-column:${map[b.day].col};grid-row:${rowOf(f)} / ${rowOf(to) + 1}`);
   });
 
   const el = $('#board');
@@ -948,8 +953,8 @@ function buildDay(dir) {
     if (editing) emptyPeriods(i).forEach((p) => { if (rows.includes(p)) g += slotHTML(i, p, `grid-column:2;grid-row:${rowOf(p)}`); });
     BLOCKS.forEach((b, n) => {
       if (b.day !== i || (!editing && b.na)) return;
-      const to = editing ? b.rawTo : b.to;
-      if (rows.includes(b.from)) g += tileHTML(b, n, `grid-column:2;grid-row:${rowOf(b.from)} / ${rowOf(to) + 1}`);
+      const f = editing ? b.rawFrom : b.from, to = editing ? b.rawTo : b.to;
+      if (rows.includes(f)) g += tileHTML(b, n, `grid-column:2;grid-row:${rowOf(f)} / ${rowOf(to) + 1}`);
     });
     const r0 = dayRange(i).split(' – ');
     el.innerHTML = (ev ? `<div class="mbanner"><span>${d.dow}요일 ${d.md} · 공휴일 전</span><b class="num">${r0[0]} 시작 · ${r0[1]} 종료</b></div>` : '')
@@ -1048,6 +1053,7 @@ function openDetail(n) {
       <div class="r"><dt>교시</dt><dd class="pl num">${b.periods.map((x) => `<div><b>${x.p}교시</b>${x.s} – ${x.e}</div>`).join('')}</dd></div>
       ${b.prof ? `<div class="r"><dt>교수님</dt><dd>${esc(b.prof.replace(/ 교수님$/, ''))}</dd></div>` : ''}
       <div class="r"><dt>강의실</dt><dd>${esc(roomLabel(b.room))}</dd></div>
+      ${b.moved ? '<div class="r"><dt>안내</dt><dd class="warn">공휴일 전날이라 7교시 → 0교시로 당겨졌어요</dd></div>' : ''}
     </dl>
     <div class="btnrow">
       <button class="close soft" id="detEdit">수정</button>
