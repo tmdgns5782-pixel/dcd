@@ -1183,10 +1183,12 @@ async function saveFile(filename, data) {
     try { await dl.save({ filename, data }); return true; }
     catch (e) { if (e?.code !== 'declined') toast('파일을 저장하지 못했어요'); return false; }
   }
+  // 바탕화면에서 연 파일(file://)은 blob 링크의 파일 이름이 무시되므로 data: 링크를 쓴다
+  const blob = data instanceof Blob ? data : new Blob([data]);
+  const href = await new Promise((ok) => { const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(blob); });
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(data instanceof Blob ? data : new Blob([data]));
-  a.download = filename; a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  a.href = href; a.download = filename; a.style.display = 'none';
+  document.body.appendChild(a); a.click(); a.remove();
   return true;
 }
 const loadScript = (src) => new Promise((ok, no) => {
@@ -1196,8 +1198,14 @@ async function makePdf() {
   const btn = $('#printPdf'), label = btn.querySelector('span');
   btn.disabled = true; label.textContent = 'PDF 만드는 중…';
   try {
-    if (!window.html2canvas) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-    if (!window.jspdf) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    try {
+      if (!window.html2canvas) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+      if (!window.jspdf) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    } catch (e) {
+      // 인터넷이 안 되면 PDF 도구를 못 불러온다 → 브라우저 인쇄 창으로 (claude 링크에서는 인쇄가 막혀 있음)
+      if (!(await getDownloads())) { window.print(); return; }
+      throw e;
+    }
     if (editing) setEditing(false);
     const canvas = await window.html2canvas($('.page'), {
       scale: 2.5, backgroundColor: '#ffffff', windowWidth: 1240, logging: false,
@@ -1207,14 +1215,15 @@ async function makePdf() {
     const mw = 277, mh = 190, r = Math.min(mw / canvas.width, mh / canvas.height);
     const w = canvas.width * r, h = canvas.height * r;
     pdf.addImage(canvas.toDataURL('image/jpeg', .92), 'JPEG', 10 + (mw - w) / 2, 10, w, h);
-    if (await saveFile(`시간표 ${data.weekStart}.pdf`, pdf.output('blob'))) toast('PDF를 저장했어요');
+    if (await saveFile(`시간표_${data.weekStart}.pdf`, pdf.output('blob'))) toast('PDF를 저장했어요');
   } catch (e) {
     toast('PDF를 만들지 못했어요');
   } finally {
     btn.disabled = false; label.textContent = 'PDF 저장';
   }
 }
-$('#printPdf').addEventListener('click', async () => { (await getDownloads()) ? makePdf() : window.print(); });
+/* 인쇄 창을 거치지 않고 가로 A4 PDF를 직접 만든다 — PC의 프린터 기본 방향(세로)에 영향받지 않도록 */
+$('#printPdf').addEventListener('click', makePdf);
 let titleBefore = document.title;
 addEventListener('beforeprint', () => {
   if (editing) setEditing(false);
