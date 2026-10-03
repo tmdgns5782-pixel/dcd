@@ -522,8 +522,8 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
   .tile { box-shadow: inset 0 0 0 1.5px currentColor; }
   :root { --line: rgba(60, 60, 67, .35); }
 }
-/* PDF 저장: A4 가로 한 장에 화면과 같은 디자인으로 */
-@page { size: A4 landscape; margin: 10mm; }
+/* PDF 저장: 세로 A4 한 장에, 가로 시간표를 오른쪽으로 90° 돌려서 */
+@page { size: A4 portrait; margin: 10mm; }
 @media print {
   :root {
     --bg: #fff; --surface: #fff; --tile: #f2f2f7; --lesson: #ebf4fd; --text: #1d1d1f; --text-2: #6e6e73; --text-3: #86868b;
@@ -560,6 +560,11 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
   .cap { margin-top: 5px; font-size: 11px; }
   .ax b { font-size: 13px; }
   .ax span { font-size: 11px; }
+}
+
+@media print {
+  /* 가로로 짠 표(277×190mm)를 세로 용지에 맞춰 시계 방향으로 회전 — 표의 위쪽이 용지 오른쪽으로 */
+  .page { width: 277mm; height: 190mm; overflow: hidden; transform-origin: 0 0; transform: translateX(190mm) rotate(90deg); }
 }
 
 /* 같은 모양을 페이지 안에서 PDF로 그릴 때 (claude.ai 링크) */
@@ -1203,10 +1208,15 @@ async function makePdf() {
       scale: 2.5, backgroundColor: '#ffffff', windowWidth: 1240, logging: false,
       onclone: (doc) => doc.body.classList.add('pdf-mode'),
     });
-    const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const mw = 277, mh = 190, r = Math.min(mw / canvas.width, mh / canvas.height);
-    const w = canvas.width * r, h = canvas.height * r;
-    pdf.addImage(canvas.toDataURL('image/jpeg', .92), 'JPEG', 10 + (mw - w) / 2, 10, w, h);
+    // 세로 A4에 맞게 오른쪽으로 90° 회전 (표의 위쪽이 용지 오른쪽)
+    const rot = document.createElement('canvas');
+    rot.width = canvas.height; rot.height = canvas.width;
+    const g = rot.getContext('2d');
+    g.translate(rot.width, 0); g.rotate(Math.PI / 2); g.drawImage(canvas, 0, 0);
+    const pdf = new window.jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const mw = 190, mh = 277, r = Math.min(mw / rot.width, mh / rot.height);
+    const w = rot.width * r, h = rot.height * r;
+    pdf.addImage(rot.toDataURL('image/jpeg', .92), 'JPEG', 10 + mw - w, 10 + (mh - h) / 2, w, h);
     if (await saveFile(`시간표 ${data.weekStart}.pdf`, pdf.output('blob'))) toast('PDF를 저장했어요');
   } catch (e) {
     toast('PDF를 만들지 못했어요');
