@@ -683,7 +683,7 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
 <dialog class="sheet" id="times" aria-label="교시 시간"><div class="card" id="tmcard"></div></dialog>
 
 <div class="editbar" id="editbar" aria-label="편집 도구">
-  <p>칸을 눌러 수정하고, 빈 칸의 <b>＋</b>로 수업을 추가하세요.</p>
+  <p>칸을 눌러 수정하고, 빈 칸의 <b>＋</b>로 수업을 추가하세요. 0교시(08:00)는 수업이 있을 때만 표에 보여요.</p>
   <div class="tools">
     <button id="toolTimes">교시 시간</button>
     <button id="toolExport">내보내기</button>
@@ -745,10 +745,18 @@ const validData = (v) => !!v && isDate(v.weekStart) && validSlots(v.normal, fals
   && Array.isArray(v.classes) && v.classes.every(validClass) && overlapFree(v.classes);
 
 /* 예전(0교시 없는) 저장본은 0교시를 앞에 붙이고, 공휴일 전 시간은 새 기준으로 */
-const migrate = (v) => (v && Array.isArray(v.normal) && v.normal.length === 7
+const OLD_FRIDAY = '[{"day":4,"from":1,"to":1,"subject":"팀빌딩","profs":[],"room":"미정"},{"day":4,"from":2,"to":4,"subject":"사격","profs":["장영광"],"room":"A206"},{"day":4,"from":5,"to":7,"subject":"체포술","profs":["강경덕","전민주"],"room":"유도장"}]';
+// 손대지 않은 예전 금요일(팀빌딩 1교시 · 사격 2–4 · 체포술 5–7)은 새 기준(0교시 · 1–3 · 4–6)으로
+const fixFriday = (v) => {
+  if (!v || !Array.isArray(v.classes)) return v;
+  const fri = v.classes.filter((c) => c.day === 4);
+  if (JSON.stringify(fri) !== OLD_FRIDAY) return v;
+  return { ...v, classes: v.classes.filter((c) => c.day !== 4).concat(clone(DEFAULT.classes.filter((c) => c.day === 4))) };
+};
+const migrate = (v) => fixFriday(v && Array.isArray(v.normal) && v.normal.length === 7
   ? { ...v, normal: [clone(DEFAULT.normal[0]), ...v.normal], eve: clone(DEFAULT.eve) } : v);
 let data = (() => {
-  const v = store.get(DATA_KEY) || migrate(store.get('timetable.data.v1'));
+  const v = fixFriday(store.get(DATA_KEY)) || migrate(store.get('timetable.data.v1'));
   return validData(v) ? v : clone(DEFAULT);
 })();
 let holidays = (() => { const v = store.get(HOLI_KEY); return new Set(Array.isArray(v) ? v.filter(isDate) : DEFAULT_HOLIDAYS); })();
