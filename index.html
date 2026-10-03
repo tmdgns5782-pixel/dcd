@@ -23,6 +23,8 @@
   --surface: #ffffff;
   --tile: #f2f2f7;
   --tile-hover: #e8e8ed;
+  --lesson: #ebf4fd;        /* 수업 칸: 포인트 색을 아주 옅게 */
+  --lesson-hover: #deedfb;
   --text: #1d1d1f;
   --text-2: #6e6e73;
   --text-3: #86868b;
@@ -56,6 +58,8 @@
     --surface: #1c1c1e;
     --tile: #2c2c2e;
     --tile-hover: #3a3a3c;
+    --lesson: #1e2d3e;
+    --lesson-hover: #253850;
     --text: #f5f5f7;
     --text-2: #aeaeb2;
     --text-3: #8e8e93;
@@ -133,6 +137,8 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .nl { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--text-2); }
 .nl i { flex: none; width: 8px; height: 8px; border-radius: 50%; }
 .nl i.o { background: var(--orange); }
+.nl i.b { background: var(--accent); }
+.nl b.b { color: var(--accent); }
 .nl i.r { background: var(--red); }
 .nl b { font-weight: 650; color: var(--warn); }
 .nl b.r { color: var(--holi); }
@@ -217,7 +223,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
   padding: 8px 10px; text-align: center;
   border-radius: 16px;
-  background: var(--tile);
+  background: var(--lesson);
   transition: transform .16s var(--ease), background-color .2s ease, box-shadow .2s ease;
   touch-action: manipulation;
   -webkit-user-select: none; user-select: none;
@@ -239,7 +245,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .tr svg { flex: none; }
 .tile:active { transform: scale(.97); transition-duration: .08s; }
 @media (hover: hover) {
-  .tile:hover { background: var(--tile-hover); }
+  .tile:hover { background: var(--lesson-hover); }
   .tile.eve:hover { background: var(--warn-tile-hover); }
   .tile.free:hover { background: var(--tile); }
 }
@@ -520,7 +526,7 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
 @page { size: A4 landscape; margin: 10mm; }
 @media print {
   :root {
-    --bg: #fff; --surface: #fff; --tile: #f2f2f7; --text: #1d1d1f; --text-2: #6e6e73; --text-3: #86868b;
+    --bg: #fff; --surface: #fff; --tile: #f2f2f7; --lesson: #ebf4fd; --text: #1d1d1f; --text-2: #6e6e73; --text-3: #86868b;
     --line: rgba(60, 60, 67, .16); --accent: #0071e3; --accent-tint: rgba(0, 113, 227, .05);
     --warn: #c2410c; --warn-soft: rgba(255, 149, 0, .16); --warn-tint: rgba(255, 149, 0, .07); --warn-tile: #ffefd9;
     --holi: #d70015; --holi-soft: rgba(255, 59, 48, .12); --holi-tint: rgba(255, 59, 48, .045);
@@ -1216,6 +1222,7 @@ function updateTop() {
   const ev = idx(isEve), ho = idx(isHoli), lines = [];
   if (ev.length) lines.push(`<p class="nl"><i class="o"></i><span>${dayNames(ev)}은 공휴일 전날이라 <b class="num">${EVE[0][0]} 시작 · ${EVE[PERIODS - 1][1]} 종료</b>예요.</span></p>`);
   if (ho.length) lines.push(`<p class="nl"><i class="r"></i><span>${dayNames(ho)}은 <b class="r">공휴일</b>이라 수업이 없어요.</span></p>`);
+  if (!lines.length) lines.push(`<p class="nl"><i class="b"></i><span>이번 주는 평소 시간표예요 · <b class="b num">${NORMAL[0][0]} 시작 · ${NORMAL[PERIODS - 1][1]} 종료</b></span></p>`);
   $('#notice').innerHTML = lines.join('');
 }
 function tick() {
