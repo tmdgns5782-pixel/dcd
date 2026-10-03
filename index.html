@@ -237,6 +237,8 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .ax.eve span { color: var(--warn); font-weight: 600; }
 .ax.hl { background: var(--accent-tint); }
 .ax.hl b { color: var(--accent); }
+.ax.zero b { color: var(--text-2); }
+#tmForm .hint { margin: 8px 26px 0; font-size: 13px; color: var(--text-3); }
 
 /* 공휴일 전날 전용 시간 축 — 그날 바로 옆, 같은 줄에 실제 시간 */
 .rl {
@@ -695,11 +697,14 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
 
 <script>
 /* ── 기본 데이터: 처음 상태이자 '초기화'의 기준 ── */
-const PERIODS = 7;
+const PMAX = 7;                       // 0교시(팀빌딩 등, 있을 때만 표시) ~ 7교시
+const ALL_P = [0, 1, 2, 3, 4, 5, 6, 7];
 const DEFAULT = {
   weekStart: '2026-09-28', // 시간표 주의 월요일
-  normal: [['09:00','09:50'],['10:00','10:50'],['11:00','11:50'],['14:00','14:50'],['15:00','15:50'],['16:00','16:50'],['17:00','17:50']],
-  eve:    [['08:00','08:50'],['09:00','09:50'],['10:00','10:50'],['11:00','11:50'],['13:00','13:50'],['14:00','14:50'],['15:00','15:50']],
+  // [교시] = [시작, 끝]. 0교시는 수업이 있을 때만 표에 나타난다
+  normal: [['08:00','08:50'],['09:00','09:50'],['10:00','10:50'],['11:00','11:50'],['14:00','14:50'],['15:00','15:50'],['16:00','16:50'],['17:00','17:50']],
+  // 공휴일 전날: 오전 09:00–11:50, 오후 13:00–15:50, 7교시 없음 (팀빌딩이 있으면 0교시 08:00)
+  eve:    [['08:00','08:50'],['09:00','09:50'],['10:00','10:50'],['11:00','11:50'],['13:00','13:50'],['14:00','14:50'],['15:00','15:50'], null],
   classes: [ // day: 0=월 … 4=금, from–to: 교시
     { day: 0, from: 1, to: 3, subject: '민생', profs: ['이혜환'], room: 'A206' },
     { day: 0, from: 4, to: 6, subject: '죄종별', profs: ['김재용'], room: 'A206' },
@@ -713,15 +718,15 @@ const DEFAULT = {
     { day: 3, from: 1, to: 3, subject: '민감', profs: ['신수안'], room: 'A206' },
     { day: 3, from: 4, to: 6, subject: '풍속', profs: ['서증원'], room: 'A206' },
     { day: 3, from: 7, to: 7, subject: '팀빌딩', profs: [], room: '미정' },
-    { day: 4, from: 1, to: 1, subject: '팀빌딩', profs: [], room: '미정' },
-    { day: 4, from: 2, to: 4, subject: '사격', profs: ['장영광'], room: 'A206' },
-    { day: 4, from: 5, to: 7, subject: '체포술', profs: ['강경덕', '전민주'], room: '유도장' },
+    { day: 4, from: 0, to: 0, subject: '팀빌딩', profs: [], room: '미정' },
+    { day: 4, from: 1, to: 3, subject: '사격', profs: ['장영광'], room: 'A206' },
+    { day: 4, from: 4, to: 6, subject: '체포술', profs: ['강경덕', '전민주'], room: '유도장' },
   ],
 };
 const DEFAULT_HOLIDAYS = ['2026-10-03']; // 개천절
 
 /* ── 저장 (이 브라우저) · 검증 ── */
-const DATA_KEY = 'timetable.data.v1', HOLI_KEY = 'timetable.holidays.v1';
+const DATA_KEY = 'timetable.data.v2', HOLI_KEY = 'timetable.holidays.v1';
 const store = {
   get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
@@ -729,16 +734,23 @@ const store = {
 const clone = (o) => JSON.parse(JSON.stringify(o));
 const isTime = (t) => typeof t === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(t);
 const isDate = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
-const validSlots = (a) => Array.isArray(a) && a.length === PERIODS && a.every((x) => Array.isArray(x) && isTime(x[0]) && isTime(x[1]) && x[0] < x[1]);
+const validSlots = (a, allowNull) => Array.isArray(a) && a.length === PMAX + 1
+  && a.every((x, p) => (x === null ? allowNull && p > 0 : Array.isArray(x) && isTime(x[0]) && isTime(x[1]) && x[0] < x[1]));
 const validClass = (c) => c && Number.isInteger(c.day) && c.day >= 0 && c.day <= 4
-  && Number.isInteger(c.from) && Number.isInteger(c.to) && c.from >= 1 && c.to <= PERIODS && c.from <= c.to
+  && Number.isInteger(c.from) && Number.isInteger(c.to) && c.from >= 0 && c.to <= PMAX && c.from <= c.to
   && typeof c.subject === 'string' && c.subject.trim() !== ''
   && Array.isArray(c.profs) && c.profs.every((p) => typeof p === 'string') && typeof c.room === 'string';
 const overlapFree = (cs) => cs.every((a, i) => cs.every((b, j) => j <= i || a.day !== b.day || a.to < b.from || a.from > b.to));
-const validData = (v) => !!v && isDate(v.weekStart) && validSlots(v.normal) && validSlots(v.eve)
+const validData = (v) => !!v && isDate(v.weekStart) && validSlots(v.normal, false) && validSlots(v.eve, true)
   && Array.isArray(v.classes) && v.classes.every(validClass) && overlapFree(v.classes);
 
-let data = (() => { const v = store.get(DATA_KEY); return validData(v) ? v : clone(DEFAULT); })();
+/* 예전(0교시 없는) 저장본은 0교시를 앞에 붙이고, 공휴일 전 시간은 새 기준으로 */
+const migrate = (v) => (v && Array.isArray(v.normal) && v.normal.length === 7
+  ? { ...v, normal: [clone(DEFAULT.normal[0]), ...v.normal], eve: clone(DEFAULT.eve) } : v);
+let data = (() => {
+  const v = store.get(DATA_KEY) || migrate(store.get('timetable.data.v1'));
+  return validData(v) ? v : clone(DEFAULT);
+})();
 let holidays = (() => { const v = store.get(HOLI_KEY); return new Set(Array.isArray(v) ? v.filter(isDate) : DEFAULT_HOLIDAYS); })();
 const saveAll = () => { store.set(DATA_KEY, data); store.set(HOLI_KEY, [...holidays]); };
 const snapshot = () => ({ data: clone(data), holidays: [...holidays] });
@@ -765,7 +777,12 @@ applyData();
 const isHoli = (i) => holidays.has(DAYS[i].date);
 const isEve = (i) => !isHoli(i) && holidays.has(nextDate(DAYS[i].date));
 const slotsFor = (i) => (isEve(i) ? EVE : NORMAL);
-const dayRange = (i) => { const s = slotsFor(i); return `${s[0][0]} – ${s[s.length - 1][1]}`; };
+const hasZero = (i) => data.classes.some((c) => c.day === i && c.from === 0);
+const showZero = () => editing || DAYS.some((_, i) => !isHoli(i) && hasZero(i));
+const rowsFor = () => (showZero() ? ALL_P : ALL_P.slice(1));            // 표에 그릴 교시
+const dayPeriods = (i) => ALL_P.filter((p) => slotsFor(i)[p] && (p > 0 || hasZero(i)));
+const dayRange = (i) => { const s = slotsFor(i), ps = dayPeriods(i); return `${s[ps[0]][0]} – ${s[ps[ps.length - 1]][1]}`; };
+const lastEnd = (slots) => slots.filter(Boolean).pop()[1];
 const dayNames = (list) => list.map((i) => DAYS[i].dow).join('·') + '요일';
 const idx = (pred) => DAYS.map((_, i) => i).filter(pred);
 const perLabel = (c) => (c.from === c.to ? `${c.from}교시` : `${c.from}–${c.to}교시`);
@@ -774,11 +791,13 @@ let BLOCKS = [];
 function computeBlocks() {
   BLOCKS = data.classes.map((c) => {
     const s = slotsFor(c.day), periods = [];
-    for (let p = c.from; p <= c.to; p++) periods.push({ p, s: s[p - 1][0], e: s[p - 1][1] });
+    for (let p = c.from; p <= c.to; p++) if (s[p]) periods.push({ p, s: s[p][0], e: s[p][1] });
+    const na = !periods.length; // 그날 없는 교시(공휴일 전 7교시 등)에만 걸친 수업
     return {
-      day: c.day, from: c.from, to: c.to, subject: c.subject, room: c.room || '미정', periods, free: !!c.free,
+      day: c.day, from: c.from, to: na ? c.to : periods[periods.length - 1].p, rawTo: c.to,
+      subject: c.subject, room: c.room || '미정', periods, free: !!c.free, na,
       prof: c.profs.length ? `${c.profs.join(' · ')} 교수님` : '',
-      start: s[c.from - 1][0], end: s[c.to - 1][1],
+      start: na ? '' : periods[0].s, end: na ? '' : periods[periods.length - 1].e,
     };
   });
 }
@@ -790,7 +809,7 @@ const roomLabel = (r) => (!r || r === '미정' ? '장소 미정' : r);
 let editing = false;
 
 function tileHTML(b, n, place) {
-  const cls = ['tile', b.free && 'free', isEve(b.day) && 'eve', isHoli(b.day) && 'off'].filter(Boolean).join(' ');
+  const cls = ['tile', b.free && 'free', isEve(b.day) && 'eve', (isHoli(b.day) || b.na) && 'off'].filter(Boolean).join(' ');
   return `<button class="${cls}" data-i="${n}" style="${place};--i:${b.day}"
       aria-label="${esc(b.subject)}, ${b.start}부터 ${b.end}까지${b.prof ? ', ' + esc(b.prof) : ''}, ${esc(roomLabel(b.room))}${editing ? ', 수정' : ''}">
     <span class="tt">${esc(b.subject)}</span>
@@ -801,7 +820,7 @@ function tileHTML(b, n, place) {
 function emptyPeriods(day) {
   const used = new Set();
   data.classes.forEach((c) => { if (c.day === day) for (let p = c.from; p <= c.to; p++) used.add(p); });
-  return Array.from({ length: PERIODS }, (_, k) => k + 1).filter((p) => !used.has(p));
+  return rowsFor().filter((p) => !used.has(p) && slotsFor(day)[p]);
 }
 const slotHTML = (day, p, place) =>
   `<button class="slot" data-day="${day}" data-p="${p}" style="${place}" aria-label="${DAYS[day].dow}요일 ${p}교시에 수업 추가">＋</button>`;
@@ -810,7 +829,7 @@ const slotHTML = (day, p, place) =>
 const nowParam = new URLSearchParams(location.search).get('now');
 const getNow = () => (nowParam ? new Date(nowParam) : new Date());
 const stamp = (date, hm) => new Date(`${date}T${hm}:00`);
-const isLive = (b, now) => !isHoli(b.day) && now >= stamp(DAYS[b.day].date, b.start) && now <= stamp(DAYS[b.day].date, b.end);
+const isLive = (b, now) => !isHoli(b.day) && !b.na && now >= stamp(DAYS[b.day].date, b.start) && now <= stamp(DAYS[b.day].date, b.end);
 const todayIdx = () => DAYS.findIndex((d) => d.date === iso(getNow()));
 
 /* ── 데스크톱 표 ── */
@@ -832,13 +851,14 @@ function buildBoard() {
   const { template, map, axisEve } = layout();
   const t = todayIdx();
   const axis = axisEve ? EVE : NORMAL;
+  const rows = rowsFor(), rowOf = (p) => rows.indexOf(p) + 2;
   let h = '';
 
   DAYS.forEach((_, i) => {
     const kind = isHoli(i) ? 'holi' : isEve(i) ? 'eve' : i === t ? 'today' : '';
     if (kind) h += `<div class="colbg ${kind}" style="grid-column:${map[i].start} / ${map[i].col + 1}" aria-hidden="true"></div>`;
   });
-  for (let r = 1; r <= PERIODS; r++) h += `<div class="rowline" style="grid-row:${r}" aria-hidden="true"></div>`;
+  for (let r = 1; r <= rows.length; r++) h += `<div class="rowline" style="grid-row:${r}" aria-hidden="true"></div>`;
 
   h += '<div class="ah"></div>';
   DAYS.forEach((d, i) => {
@@ -850,24 +870,30 @@ function buildBoard() {
     </div>`;
   });
 
-  axis.forEach(([s, e], k) => {
-    h += `<div class="ax${axisEve ? ' eve' : ''}" data-r="${k + 1}" style="grid-row:${k + 2}"><b>${k + 1}교시</b><span class="num">${s} – ${e}</span></div>`;
+  rows.forEach((p) => {
+    const sl = axis[p];
+    h += `<div class="ax${axisEve ? ' eve' : ''}${p === 0 ? ' zero' : ''}" data-r="${p}" style="grid-row:${rowOf(p)}"><b>${p}교시</b><span class="num">${sl ? `${sl[0]} – ${sl[1]}` : '없음'}</span></div>`;
   });
   DAYS.forEach((_, i) => {
     const m = map[i];
-    if (m.rail) EVE.forEach(([s, e], k) => {
-      h += `<div class="rl num" data-d="${i}" data-r="${k + 1}" style="grid-column:${m.rail};grid-row:${k + 2}"><b>${s}</b><span>${e}</span></div>`;
+    if (m.rail) rows.forEach((p) => {
+      const sl = EVE[p];
+      h += `<div class="rl num" data-d="${i}" data-r="${p}" style="grid-column:${m.rail};grid-row:${rowOf(p)}">${sl ? `<b>${sl[0]}</b><span>${sl[1]}</span>` : '<span>–</span>'}</div>`;
     });
-    if (isHoli(i) && !editing) h += `<div class="holi-msg" style="grid-column:${m.col};grid-row:2 / ${PERIODS + 2};--i:${i}"><b>공휴일</b><span>수업 없음</span></div>`;
-    if (editing) emptyPeriods(i).forEach((p) => { h += slotHTML(i, p, `grid-column:${m.col};grid-row:${p + 1}`); });
+    if (isHoli(i) && !editing) h += `<div class="holi-msg" style="grid-column:${m.col};grid-row:2 / ${rows.length + 2};--i:${i}"><b>공휴일</b><span>수업 없음</span></div>`;
+    if (editing) emptyPeriods(i).forEach((p) => { h += slotHTML(i, p, `grid-column:${m.col};grid-row:${rowOf(p)}`); });
   });
 
   BLOCKS.forEach((b, n) => {
-    if (!isHoli(b.day) || editing) h += tileHTML(b, n, `grid-column:${map[b.day].col};grid-row:${b.from + 1} / ${b.to + 2}`);
+    if (!editing && (isHoli(b.day) || b.na)) return;
+    const to = editing ? b.rawTo : b.to;               // 편집 중에는 원래 교시 그대로
+    if (!rows.includes(b.from)) return;
+    h += tileHTML(b, n, `grid-column:${map[b.day].col};grid-row:${rowOf(b.from)} / ${rowOf(to) + 1}`);
   });
 
   const el = $('#board');
   el.style.gridTemplateColumns = template;
+  el.style.gridTemplateRows = `auto repeat(${rows.length}, var(--row))`;
   el.innerHTML = h;
   el.classList.toggle('enter', firstRender);
 }
@@ -905,13 +931,21 @@ function buildDay(dir) {
     el.innerHTML = `<div class="mempty"><b>공휴일</b><span>${d.dow}요일 ${d.md}은 수업이 없어요.</span></div>`;
   } else {
     const s = slotsFor(i), ev = isEve(i);
+    const rows = editing ? ALL_P : dayPeriods(i), rowOf = (p) => rows.indexOf(p) + 1;
     let g = '';
-    for (let r = 1; r < PERIODS; r++) g += `<div class="rowline" style="grid-row:${r}" aria-hidden="true"></div>`;
-    s.forEach(([a, z], k) => { g += `<div class="ax${ev ? ' eve' : ''}" data-r="${k + 1}" style="grid-row:${k + 1}"><b>${k + 1}교시</b><span class="num">${a} – ${z}</span></div>`; });
-    if (editing) emptyPeriods(i).forEach((p) => { g += slotHTML(i, p, `grid-column:2;grid-row:${p}`); });
-    BLOCKS.forEach((b, n) => { if (b.day === i) g += tileHTML(b, n, `grid-column:2;grid-row:${b.from} / ${b.to + 1}`); });
-    el.innerHTML = (ev ? `<div class="mbanner"><span>${d.dow}요일 ${d.md} · 공휴일 전</span><b class="num">${s[0][0]} 시작 · ${s[s.length - 1][1]} 종료</b></div>` : '')
-      + `<div class="mgrid">${g}</div>`;
+    for (let r = 1; r < rows.length; r++) g += `<div class="rowline" style="grid-row:${r}" aria-hidden="true"></div>`;
+    rows.forEach((p) => {
+      g += `<div class="ax${ev ? ' eve' : ''}${p === 0 ? ' zero' : ''}" data-r="${p}" style="grid-row:${rowOf(p)}"><b>${p}교시</b><span class="num">${s[p] ? `${s[p][0]} – ${s[p][1]}` : '없음'}</span></div>`;
+    });
+    if (editing) emptyPeriods(i).forEach((p) => { if (rows.includes(p)) g += slotHTML(i, p, `grid-column:2;grid-row:${rowOf(p)}`); });
+    BLOCKS.forEach((b, n) => {
+      if (b.day !== i || (!editing && b.na)) return;
+      const to = editing ? b.rawTo : b.to;
+      if (rows.includes(b.from)) g += tileHTML(b, n, `grid-column:2;grid-row:${rowOf(b.from)} / ${rowOf(to) + 1}`);
+    });
+    const r0 = dayRange(i).split(' – ');
+    el.innerHTML = (ev ? `<div class="mbanner"><span>${d.dow}요일 ${d.md} · 공휴일 전</span><b class="num">${r0[0]} 시작 · ${r0[1]} 종료</b></div>` : '')
+      + `<div class="mgrid" style="grid-template-rows:repeat(${rows.length}, 74px)">${g}</div>`;
   }
   if (dir) { el.style.setProperty('--dir', dir); el.classList.remove('slide'); void el.offsetWidth; el.classList.add('slide'); }
 }
@@ -1059,8 +1093,8 @@ function renderEditor() {
       </div>
       <div class="fgroup">
         <div class="field"><span>요일</span><div class="segmini" id="edDay">${DAYS.map((x, k) => `<button type="button" data-d="${k}" aria-pressed="${k === d.day}">${x.dow}</button>`).join('')}</div></div>
-        <label class="field"><span>시작</span><select name="from">${NORMAL.map(([s], k) => `<option value="${k + 1}">${k + 1}교시 · ${s}</option>`).join('')}</select></label>
-        <label class="field"><span>끝</span><select name="to">${NORMAL.map(([, e], k) => `<option value="${k + 1}">${k + 1}교시 · ${e}</option>`).join('')}</select></label>
+        <label class="field"><span>시작</span><select name="from">${NORMAL.map(([s], p) => `<option value="${p}">${p}교시 · ${s}${p === 0 ? ' (팀빌딩 등)' : ''}</option>`).join('')}</select></label>
+        <label class="field"><span>끝</span><select name="to">${NORMAL.map(([, e], p) => `<option value="${p}">${p}교시 · ${e}</option>`).join('')}</select></label>
         <div class="field"><span>자습·비강의<small>회색 테두리 칸으로 보여요</small></span><button type="button" class="sw" id="edFree" role="switch" aria-checked="${!!d.free}" aria-label="자습·비강의"><i></i></button></div>
       </div>
       <div class="impact" id="impact" aria-live="polite"></div>
@@ -1136,36 +1170,45 @@ function renderTimes() {
         <button type="button" role="tab" data-t="normal" aria-selected="${tmTab === 'normal'}">기본</button>
         <button type="button" role="tab" data-t="eve" aria-selected="${tmTab === 'eve'}">공휴일 전</button>
       </div>
-      <div class="fgroup">${tm[tmTab].map(([s, e], k) => `
-        <div class="field"><span>${k + 1}교시</span><span class="tpair">
-          <input class="num" inputmode="numeric" maxlength="5" data-k="${k}" data-x="0" value="${s}" aria-label="${k + 1}교시 시작">
+      <div class="fgroup">${tm[tmTab].map((x, k) => { const [s, e] = x || ['', '']; const ph = tmTab === 'eve' && k > 0 ? '없음' : ''; return `
+        <div class="field"><span>${k}교시${k === 0 ? '<small>팀빌딩 등, 있을 때만 표시</small>' : ''}</span><span class="tpair">
+          <input class="num" inputmode="numeric" maxlength="5" data-k="${k}" data-x="0" value="${s}" placeholder="${ph}" aria-label="${k}교시 시작">
           <i>–</i>
-          <input class="num" inputmode="numeric" maxlength="5" data-k="${k}" data-x="1" value="${e}" aria-label="${k + 1}교시 끝">
-        </span></div>`).join('')}
+          <input class="num" inputmode="numeric" maxlength="5" data-k="${k}" data-x="1" value="${e}" placeholder="${ph}" aria-label="${k}교시 끝">
+        </span></div>`; }).join('')}
       </div>
+      ${tmTab === 'eve' ? '<p class="hint">비워 둔 교시는 공휴일 전날에 없는 교시로 처리돼요.</p>' : ''}
       <p class="ferr" id="tmErr" aria-live="polite"></p>
       <button type="submit" class="close">저장</button>
     </form>`;
   const f = $('#tmForm');
   f.elements.week.addEventListener('change', (e) => { if (isDate(e.target.value)) tm.weekStart = e.target.value; });
   f.querySelectorAll('.tpair input').forEach((inp) => {
-    inp.addEventListener('input', () => { tm[tmTab][+inp.dataset.k][+inp.dataset.x] = inp.value; });
-    inp.addEventListener('blur', () => { inp.value = normTime(inp.value); tm[tmTab][+inp.dataset.k][+inp.dataset.x] = inp.value; });
+    const put = () => { const k = +inp.dataset.k; tm[tmTab][k] = tm[tmTab][k] || ['', '']; tm[tmTab][k][+inp.dataset.x] = inp.value; };
+    inp.addEventListener('input', put);
+    inp.addEventListener('blur', () => { inp.value = normTime(inp.value); put(); });
   });
   f.querySelector('.tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { tmTab = b.dataset.t; renderTimes(); } });
   f.addEventListener('submit', (e) => { e.preventDefault(); saveTimes(); });
 }
-function timesError(list, name) {
+function timesError(list, name, allowEmpty) {
+  let prev = null;
   for (let k = 0; k < list.length; k++) {
-    const [s, e] = list[k] = list[k].map(normTime);
-    if (!isTime(s) || !isTime(e)) return `${name} ${k + 1}교시: 시간을 09:00 형식으로 입력하세요.`;
-    if (s >= e) return `${name} ${k + 1}교시: 끝 시간이 시작보다 늦어야 해요.`;
-    if (k && s < list[k - 1][1]) return `${name} ${k + 1}교시: ${k}교시가 끝나기 전에 시작해요.`;
+    if (list[k]) list[k] = list[k].map(normTime);
+    if (!list[k] || (!list[k][0] && !list[k][1])) {
+      if (allowEmpty && k > 0) { list[k] = null; continue; }
+      return `${name} ${k}교시: 시간을 입력하세요.`;
+    }
+    const [s, e] = list[k];
+    if (!isTime(s) || !isTime(e)) return `${name} ${k}교시: 시간을 09:00 형식으로 입력하세요.`;
+    if (s >= e) return `${name} ${k}교시: 끝 시간이 시작보다 늦어야 해요.`;
+    if (prev && s < prev[1][1]) return `${name} ${k}교시: ${prev[0]}교시가 끝나기 전에 시작해요.`;
+    prev = [k, list[k]];
   }
   return '';
 }
 function saveTimes() {
-  const err = timesError(tm.normal, '기본') || timesError(tm.eve, '공휴일 전');
+  const err = timesError(tm.normal, '기본', false) || timesError(tm.eve, '공휴일 전', true);
   if (err) { $('#tmErr').textContent = err; return; }
   const before = snapshot();
   data.weekStart = mondayOf(tm.weekStart); data.normal = tm.normal; data.eve = tm.eve;
@@ -1193,7 +1236,7 @@ $('#importFile').addEventListener('change', async (e) => {
   if (!file) return;
   try {
     const v = JSON.parse(await file.text());
-    const next = { weekStart: v.weekStart, normal: v.normal, eve: v.eve, classes: v.classes };
+    const next = migrate({ weekStart: v.weekStart, normal: v.normal, eve: v.eve, classes: v.classes });
     if (!validData(next)) throw new Error('invalid');
     const before = snapshot();
     data = clone(next);
@@ -1298,7 +1341,7 @@ function buildSettings() {
     <div class="grab"></div>
     <div class="top">
       <h2>공휴일 지정</h2>
-      <p class="lead">공휴일로 지정한 날의 <b>전날</b>은 ${EVE[0][0]} 시작 · ${EVE[PERIODS - 1][1]} 종료로 앞당겨져요.</p>
+      <p class="lead">공휴일로 지정한 날의 <b>전날</b>은 ${EVE[1][0]} – ${lastEnd(EVE)} 시간표로 바뀌어요. 팀빌딩이 있으면 0교시 ${EVE[0][0]} – ${EVE[0][1]}부터예요.</p>
     </div>
     <div class="week">${WEEK.map((d) => `
       <button class="wday" data-date="${d.date}" aria-label="${d.dow}요일 ${d.md} 공휴일">
@@ -1354,9 +1397,9 @@ function updateTop() {
   $('#thisWeek').hidden = mondayOf(iso(getNow())) === data.weekStart;
   $('#navRange').textContent = `${DAYS[0].md} – ${DAYS[4].md}`;
   const ev = idx(isEve), ho = idx(isHoli), lines = [];
-  if (ev.length) lines.push(`<p class="nl"><i class="o"></i><span>${dayNames(ev)}은 공휴일 전날이라 <b class="num">${EVE[0][0]} 시작 · ${EVE[PERIODS - 1][1]} 종료</b>예요.</span></p>`);
+  if (ev.length) lines.push(`<p class="nl"><i class="o"></i><span>${dayNames(ev)}은 공휴일 전날이라 <b class="num">${EVE[1][0]} – ${lastEnd(EVE)}</b>예요 · 팀빌딩 시 <b class="num">${EVE[0][0]} – ${EVE[0][1]}</b></span></p>`);
   if (ho.length) lines.push(`<p class="nl"><i class="r"></i><span>${dayNames(ho)}은 <b class="r">공휴일</b>이라 수업이 없어요.</span></p>`);
-  if (!lines.length) lines.push(`<p class="nl"><i class="b"></i><span>이번 주는 평소 시간표예요 · <b class="b num">${NORMAL[0][0]} 시작 · ${NORMAL[PERIODS - 1][1]} 종료</b></span></p>`);
+  if (!lines.length) lines.push(`<p class="nl"><i class="b"></i><span>이번 주는 평소 시간표예요 · <b class="b num">${NORMAL[1][0]} – ${lastEnd(NORMAL)}</b>${DAYS.some((_, i) => hasZero(i)) ? ` · 0교시 <b class="b num">${NORMAL[0][0]}</b> 있음` : ''}</span></p>`);
   $('#notice').innerHTML = lines.join('');
 }
 function tick() {
