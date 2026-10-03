@@ -561,6 +561,44 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
   .ax b { font-size: 13px; }
   .ax span { font-size: 11px; }
 }
+
+/* 같은 모양을 페이지 안에서 PDF로 그릴 때 (claude.ai 링크) */
+.pdf-mode { --bg: #fff; --surface: #fff; --tile: #f2f2f7; --lesson: #ebf4fd; --text: #1d1d1f; --text-2: #6e6e73; --text-3: #86868b;
+    --line: rgba(60, 60, 67, .16); --accent: #0071e3; --accent-tint: rgba(0, 113, 227, .05);
+    --warn: #c2410c; --warn-soft: rgba(255, 149, 0, .16); --warn-tint: rgba(255, 149, 0, .07); --warn-tile: #ffefd9;
+    --holi: #d70015; --holi-soft: rgba(255, 59, 48, .12); --holi-tint: rgba(255, 59, 48, .045);
+    --axis: 96px; --rail: 50px; --row: 58px; --gap: 5px; }
+.pdf-mode { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.pdf-mode .num { font-variant-numeric: normal; }
+.pdf-mode .wn, .pdf-mode .thisweek, .pdf-mode .nav, .pdf-mode .hero-actions, .pdf-mode .mobile, .pdf-mode .editbar, .pdf-mode .toast, .pdf-mode dialog, .pdf-mode .slot { display: none !important; }
+.pdf-mode .desktop { display: block !important; }
+.pdf-mode .page { max-width: none; padding: 0; }
+.pdf-mode .hero { padding: 0 2px 12px; }
+.pdf-mode .eyebrow { font-size: 13px; }
+.pdf-mode .hero h1 { font-size: 26px; }
+.pdf-mode .notice { margin-top: 6px; }
+.pdf-mode .nl { font-size: 12.5px; }
+.pdf-mode .board { box-shadow: 0 0 0 1px #d2d2d7; padding: 6px 8px 8px; border-radius: 20px; }
+.pdf-mode .board .tile, .pdf-mode .board .holi-msg { animation: none !important; }
+.pdf-mode .tile { padding: 4px 8px; box-shadow: none; }
+.pdf-mode .tile.live { box-shadow: none; }
+.pdf-mode .tile.live .tt::before { display: none; }
+.pdf-mode .tile.free { box-shadow: inset 0 0 0 1px var(--line); }
+.pdf-mode .tt { font-size: 15.5px; }
+.pdf-mode .free .tt { font-size: 14px; }
+.pdf-mode .tp { font-size: 11px; }
+.pdf-mode .tr { margin-top: 2px; font-size: 11px; }
+.pdf-mode .dh { padding: 8px 4px; }
+.pdf-mode .dh .dn { font-size: 19px; height: 30px; min-width: 30px; }
+.pdf-mode .dh.today .wd { color: var(--text-2); }
+.pdf-mode .dh.today .dn { background: none; color: var(--text); }
+.pdf-mode .colbg.today { background: none; }
+.pdf-mode .cap { margin-top: 5px; font-size: 11px; }
+.pdf-mode .ax b { font-size: 13px; }
+.pdf-mode .ax span { font-size: 11px; }
+/* PDF 그리기 라이브러리는 안쪽 그림자를 못 그리므로 실제 테두리로 */
+.pdf-mode .tile.free { box-shadow: none; border: 1px solid #d9d9de; }
+.pdf-mode .board { box-shadow: none; border: 1px solid #d2d2d7; }
 </style>
 </head>
 <body>
@@ -586,7 +624,7 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
       </button>
       <button class="pill alt" id="printPdf">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 20h14"/></svg>
-        PDF 저장
+        <span>PDF 저장</span>
       </button>
       <button class="pill alt" id="editToggle" aria-pressed="false">편집</button>
     </div>
@@ -1110,14 +1148,9 @@ function setEditing(on) {
 $('#editToggle').addEventListener('click', () => setEditing(!editing));
 $('#toolDone').addEventListener('click', () => setEditing(false));
 $('#toolTimes').addEventListener('click', openTimes);
-$('#toolExport').addEventListener('click', () => {
+$('#toolExport').addEventListener('click', async () => {
   const payload = { app: 'weekly-timetable', version: 1, ...data, holidays: [...holidays] };
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
-  a.download = `시간표-${data.weekStart}.json`;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  toast('시간표 파일을 저장했어요');
+  if (await saveFile(`시간표-${data.weekStart}.json`, JSON.stringify(payload, null, 2))) toast('시간표 파일을 저장했어요');
 });
 $('#toolImport').addEventListener('click', () => $('#importFile').click());
 $('#importFile').addEventListener('change', async (e) => {
@@ -1141,8 +1174,47 @@ $('#toolReset').addEventListener('click', () => {
   commit(before, '처음 상태로 되돌렸어요');
 });
 
-/* PDF 저장: 브라우저 인쇄 → 'PDF로 저장'. 파일 이름이 되도록 제목을 잠시 바꾼다 */
-$('#printPdf').addEventListener('click', () => window.print());
+/* 파일 저장 — claude.ai 링크 안에서는 다운로드 기능으로, 일반 브라우저에서는 인쇄 창 · 링크로 */
+let downloadsP = null;
+const getDownloads = () => (downloadsP ??= window.claude?.use ? Promise.resolve(window.claude.use('downloads')).catch(() => null) : Promise.resolve(null));
+async function saveFile(filename, data) {
+  const dl = await getDownloads();
+  if (dl) {
+    try { await dl.save({ filename, data }); return true; }
+    catch (e) { if (e?.code !== 'declined') toast('파일을 저장하지 못했어요'); return false; }
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(data instanceof Blob ? data : new Blob([data]));
+  a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  return true;
+}
+const loadScript = (src) => new Promise((ok, no) => {
+  const el = document.createElement('script'); el.src = src; el.onload = ok; el.onerror = no; document.head.appendChild(el);
+});
+async function makePdf() {
+  const btn = $('#printPdf'), label = btn.querySelector('span');
+  btn.disabled = true; label.textContent = 'PDF 만드는 중…';
+  try {
+    if (!window.html2canvas) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    if (!window.jspdf) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    if (editing) setEditing(false);
+    const canvas = await window.html2canvas($('.page'), {
+      scale: 2.5, backgroundColor: '#ffffff', windowWidth: 1240, logging: false,
+      onclone: (doc) => doc.body.classList.add('pdf-mode'),
+    });
+    const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const mw = 277, mh = 190, r = Math.min(mw / canvas.width, mh / canvas.height);
+    const w = canvas.width * r, h = canvas.height * r;
+    pdf.addImage(canvas.toDataURL('image/jpeg', .92), 'JPEG', 10 + (mw - w) / 2, 10, w, h);
+    if (await saveFile(`시간표 ${data.weekStart}.pdf`, pdf.output('blob'))) toast('PDF를 저장했어요');
+  } catch (e) {
+    toast('PDF를 만들지 못했어요');
+  } finally {
+    btn.disabled = false; label.textContent = 'PDF 저장';
+  }
+}
+$('#printPdf').addEventListener('click', async () => { (await getDownloads()) ? makePdf() : window.print(); });
 let titleBefore = document.title;
 addEventListener('beforeprint', () => {
   if (editing) setEditing(false);
