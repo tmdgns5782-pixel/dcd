@@ -23,3 +23,11 @@ PPT 납품 시: 의뢰인 PC에 폰트가 없으면 깨지므로 **파일 › �
 - GPT 이미지 사용: 캐릭터 13장, 버스(글자 없는 버전 + 간판 글자는 텍스트), 로고 A02, 마무리 문구 A03, 아이콘 I01~I12, 반짝이 D01, 효과선 D05, 체크 D06·D07.
 - 쓰지 않은 것: A01 배경(모서리에만 붓 터치가 있어 샘플과 다름 → 샘플처럼 배치한 벡터 줄무늬 유지), D02 별·D03/D04 음표(로고·캐릭터 그림에 이미 포함).
 - 벡터로 그린 것: 표지·마무리 태극 붓 터치 줄무늬, 빨간 붓 스윕, 구름·덤불·도로.
+
+## PPT (`갈현이룸태권도_상담PPT.pptx`)
+
+- 만드는 법: `python3 build/build.py` → `python3 build/pptx_extract.py` → `node build/build_pptx.js` (pptxgenjs 필요).
+  초안(index.html)에서 각 요소의 위치·스타일을 재서 그대로 PPT 개체로 옮긴다.
+- 수정 가능: 모든 글자(제목·설명·금액·시간표·버스 간판), 카드·배지·가격 박스·말풍선·안내 박스(도형), 시간표(표).
+- 그림: 캐릭터·로고·아이콘은 원본 PNG. 붓 터치 줄무늬·그라데이션 원·구름·도로 같은 장식만 슬라이드 배경 그림.
+- 폰트: `fonts_ppt/` (TTF/OTF). PPT 여는 PC에 설치 필요 — 레코체(Recipekorea), 온글잎 석영체(Ownglyph SeokyoungChae), Pretendard Medium/SemiBold/Bold, Montserrat ExtraBold.
