@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>프로필 포트폴리오 시안</title>
+<style>
+/* Paperlogy(페이퍼로지) — 저장소에 포함된 파일 우선, 실패 시 CDN */
+@font-face { font-family: "Paperlogy"; font-weight: 300; font-style: normal; font-display: swap;
+  src: url("fonts/Paperlogy-3Light.woff2") format("woff2"), url("https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-3Light.woff2") format("woff2"); }
+@font-face { font-family: "Paperlogy"; font-weight: 400; font-style: normal; font-display: swap;
+  src: url("fonts/Paperlogy-4Regular.woff2") format("woff2"), url("https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-4Regular.woff2") format("woff2"); }
+@font-face { font-family: "Paperlogy"; font-weight: 500; font-style: normal; font-display: swap;
+  src: url("fonts/Paperlogy-5Medium.woff2") format("woff2"), url("https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-5Medium.woff2") format("woff2"); }
+@font-face { font-family: "Paperlogy"; font-weight: 600; font-style: normal; font-display: swap;
+  src: url("fonts/Paperlogy-6SemiBold.woff2") format("woff2"), url("https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-6SemiBold.woff2") format("woff2"); }
+@font-face { font-family: "Paperlogy"; font-weight: 700; font-style: normal; font-display: swap;
+  src: url("fonts/Paperlogy-7Bold.woff2") format("woff2"), url("https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-7Bold.woff2") format("woff2"); }
+
+/*
+  슬라이드는 A4 가로(297 × 210mm) 기준.
+  모든 위치·크기는 mm 숫자(--x --y --w --h)로 적고, 글자 크기는 pt로 적는다.
+  → PPT(디자인 › 슬라이드 크기 › A4)로 옮길 때 숫자를 그대로 쓰면 된다.
+*/
+:root {
+  --page:  #dedede;   /* 화면 바탕 */
+  --paper: #ebebeb;   /* 슬라이드 바탕 */
+  --ink:   #262626;   /* 이름 · 제목 · 작품명 */
+  --ink-2: #6b6b6b;   /* 정보 · 배역 */
+  --ink-3: #a6a6a6;   /* 연도 */
+  --ink-4: #bdbdbd;   /* 그 외 다수 */
+  --slide-w: min(calc(100vw - 32px), 1123px);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--page);
+  color: var(--ink);
+  font-family: "Paperlogy", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── 상단 바 (화면 전용) ─────────────────────────── */
+.bar {
+  width: var(--slide-w);
+  margin: 0 auto;
+  padding: 28px 0 20px;
+  display: flex; flex-wrap: wrap; gap: 12px 24px;
+  align-items: flex-end; justify-content: space-between;
+}
+.bar h1 { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+.bar p { margin-top: 4px; font-size: 12px; color: var(--ink-2); }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; }
+.seg { display: inline-flex; padding: 3px; border-radius: 999px; background: #d0d0d0; }
+.controls button {
+  font: inherit; font-size: 12px; font-weight: 500;
+  color: var(--ink-2); background: transparent;
+  border: 0; border-radius: 999px; padding: 7px 14px; cursor: pointer;
+}
+.seg button[aria-pressed="true"] { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.controls > button { background: #d0d0d0; }
+.controls > button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.controls button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* ── 슬라이드 ───────────────────────────────────── */
+.deck {
+  width: var(--slide-w);
+  margin: 0 auto;
+  display: grid; gap: 28px;
+}
+.slide {
+  --mm: calc(var(--slide-w) / 297);
+  --pt: calc(var(--mm) * .352778);
+  position: relative;
+  width: var(--slide-w);
+  height: calc(var(--mm) * 210);
+  background: var(--paper);
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 12px 32px rgba(0,0,0,.08);
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+.box {
+  position: absolute;
+  left: calc(var(--x) * var(--mm));
+  top:  calc(var(--y) * var(--mm));
+}
+.ph, .qr {
+  width:  calc(var(--w) * var(--mm));
+  height: calc(var(--h) * var(--mm));
+}
+.ph { overflow: hidden; background: #d4d4d4; }
+.ph img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.qr { display: block; }
+
+/* 글자 — 한 줄 높이 6mm로 고정해 같은 y의 글자끼리 가운데가 맞도록 */
+.t {
+  font-size: calc(var(--pt) * 9);
+  line-height: calc(var(--mm) * 6);
+  white-space: nowrap;
+  letter-spacing: -.01em;
+}
+.name { font-size: calc(var(--pt) * 12); font-weight: 600; letter-spacing: -.02em; }
+.info { color: var(--ink-2); }
+.head { font-size: calc(var(--pt) * 11); font-weight: 700; letter-spacing: -.02em; }
+
+/* 필모그래피 목록: 연도 | 작품 | 배역 | 그 외 다수 */
+.list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: calc(var(--mm) * 11) calc(var(--mm) * var(--c-title, 41)) calc(var(--mm) * var(--c-role, 20)) auto;
+  grid-auto-rows: calc(var(--mm) * 8);
+  align-items: center;
+  font-size: calc(var(--pt) * 9);
+  white-space: nowrap;
+  letter-spacing: -.01em;
+}
+.list li { display: contents; }
+.yr   { grid-column: 1; color: var(--ink-3); font-weight: 400; }
+.ti   { grid-column: 2; color: var(--ink);   font-weight: 500; }
+.ro   { grid-column: 3; color: var(--ink-2); }
+.more { grid-column: 4; color: var(--ink-4); }
+
+/* ── 목업 보기: 레퍼런스처럼 두 장을 겹쳐 놓기 ─────── */
+.deck.is-mock {
+  --deck-w: min(calc(100vw - 32px), 1200px);
+  --slide-w: calc(var(--deck-w) * .436);
+  position: relative;
+  width: var(--deck-w);
+  aspect-ratio: 1000 / 643;
+  background: #e1e1e1;
+}
+.deck.is-mock .slide { position: absolute; }
+.deck.is-mock #s1 { left: 13.3%; top: 13.2%; z-index: 2; box-shadow: 0 2px 4px rgba(0,0,0,.08), 18px 22px 30px rgba(0,0,0,.2); }
+.deck.is-mock #s2 { left: 42.5%; top: 43.1%; z-index: 1; box-shadow: 0 2px 4px rgba(0,0,0,.08), 10px 14px 24px rgba(0,0,0,.14); }
+.bar.is-mock { width: min(calc(100vw - 32px), 1200px); }
+
+/* ── 가이드 보기: 요소마다 위치(mm)·크기 표시 ─────── */
+.guide { display: none; }
+.show-guides .box { outline: 1px dashed rgba(255, 59, 48, .9); outline-offset: -1px; }
+.show-guides .guide {
+  display: block; position: absolute; z-index: 5;
+  font: 500 10px/1 "Paperlogy", sans-serif; letter-spacing: 0;
+  color: #fff; background: rgba(255, 59, 48, .92);
+  padding: 3px 5px; border-radius: 2px; white-space: nowrap; pointer-events: none;
+}
+
+/* ── PPT 메모 (화면 전용) ───────────────────────── */
+.spec {
+  width: var(--slide-w);
+  margin: 40px auto 64px;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px 32px;
+  font-size: 12px; line-height: 1.7; color: var(--ink-2);
+}
+.spec h2 { font-size: 12px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+.spec ul { list-style: none; }
+.spec b { font-weight: 500; color: var(--ink); }
+.chip { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 6px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+.spec.is-mock { display: none; }
+
+/* ── 인쇄 / PDF: A4 가로 한 장에 한 슬라이드 ───────── */
+@page { size: 297mm 210mm; margin: 0; }
+@media print {
+  :root { --slide-w: 297mm; }
+  body { background: none; }
+  .bar, .spec, .guide { display: none !important; }
+  .deck, .deck.is-mock { --slide-w: 297mm; width: auto; aspect-ratio: auto; background: none; display: block; }
+  .slide, .deck.is-mock .slide { position: relative; left: 0; top: 0; box-shadow: none; break-after: page; }
+  .show-guides .box { outline: 0; }
+}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div>
+    <h1>프로필 포트폴리오 · 시안 01</h1>
+    <p>A4 가로 297 × 210mm · Paperlogy · 텍스트는 더미</p>
+  </div>
+  <div class="controls">
+    <div class="seg" role="group" aria-label="보기 방식">
+      <button type="button" data-view="slides" aria-pressed="true">슬라이드</button>
+      <button type="button" data-view="mock" aria-pressed="false">목업</button>
+    </div>
+    <button type="button" id="guides" aria-pressed="false">가이드(mm)</button>
+    <button type="button" id="print">PDF 저장</button>
+  </div>
+</header>
+
+<main class="deck" id="deck">
+
+  <!-- 01 · 프로필 -->
+  <section class="slide" id="s1" aria-label="슬라이드 1 · 프로필">
+    <figure class="box ph" style="--x:47; --y:0; --w:250; --h:168">
+      <img src="images/01-main.webp" alt="정면 프로필 컷">
+    </figure>
+
+    <p class="box t name" style="--x:47; --y:180">한지우</p>
+    <p class="box t info" style="--x:116.5; --y:180">2000년 3월 14일</p>
+    <p class="box t info" style="--x:116.5; --y:187.5">168cm</p>
+    <p class="box t info" style="--x:186; --y:180">@hanjiu</p>
+
+    <img class="box qr" src="images/qr.svg" alt="인스타그램 QR 코드" style="--x:271; --y:183; --w:20; --h:20">
+  </section>
+
+  <!-- 02 · 필모그래피 + 사진 -->
+  <section class="slide" id="s2" aria-label="슬라이드 2 · 필모그래피">
+    <h2 class="box t head" style="--x:8; --y:19">영화</h2>
+    <ol class="box list" style="--x:8; --y:40.7">
+      <li><span class="yr">2024</span><span class="ti">여름의 온도</span><span class="ro">서하</span></li>
+      <li><span class="yr">2023</span><span class="ti">밤의 정원</span><span class="ro">수인</span></li>
+      <li><span class="yr">2022</span><span class="ti">파란 의자</span><span class="ro">은재</span><span class="more">그 외 다수</span></li>
+    </ol>
+
+    <h2 class="box t head" style="--x:116.5; --y:19">드라마</h2>
+    <ol class="box list" style="--x:116.5; --y:40.7">
+      <li><span class="yr">2024</span><span class="ti">우리가 머문 계절</span><span class="ro">해원</span></li>
+      <li><span class="yr">2023</span><span class="ti">서울, 오후 세 시</span><span class="ro">다은</span></li>
+      <li><span class="yr">2021</span><span class="ti">너의 이름을 부를 때</span><span class="ro">소이</span><span class="more">그 외 다수</span></li>
+    </ol>
+
+    <h2 class="box t head" style="--x:225.5; --y:19">광고</h2>
+    <ol class="box list" style="--x:225.5; --y:40.7; --c-title:33; --c-role:0">
+      <li><span class="yr">2024</span><span class="ti">뷰티 브랜드</span></li>
+      <li><span class="yr">2023</span><span class="ti">데님 브랜드</span></li>
+      <li><span class="yr">2022</span><span class="ti">스킨케어 브랜드</span><span class="more">그 외 다수</span></li>
+    </ol>
+
+    <figure class="box ph" style="--x:0; --y:78; --w:110.5; --h:132">
+      <img src="images/02-sit.webp" alt="앉은 포즈 컷">
+    </figure>
+    <figure class="box ph" style="--x:116.5; --y:78; --w:76.5; --h:94">
+      <img src="images/03-bw.webp" alt="흑백 클로즈업 컷">
+    </figure>
+    <figure class="box ph" style="--x:225.5; --y:78; --w:71.5; --h:132">
+      <img src="images/04-sit-long.webp" alt="앉은 포즈 세로 컷" style="object-position: 50% 20%">
+    </figure>
+  </section>
+
+</main>
+
+<section class="spec" id="spec" aria-label="PPT 제작 메모">
+  <div>
+    <h2>슬라이드</h2>
+    <ul>
+      <li>크기 <b>A4 가로 297 × 210mm</b></li>
+      <li>세로 기준선 <b>47 · 116.5 · 186mm</b> (1장)</li>
+      <li>세로 기준선 <b>8 · 116.5 · 225.5mm</b> (2장)</li>
+      <li>사진 영역 시작 <b>y 78mm</b> (2장)</li>
+    </ul>
+  </div>
+  <div>
+    <h2>글자 · Paperlogy</h2>
+    <ul>
+      <li>이름 <b>12pt · 6 SemiBold</b></li>
+      <li>항목 제목 <b>11pt · 7 Bold</b></li>
+      <li>작품명 <b>9pt · 5 Medium</b></li>
+      <li>정보 · 연도 · 배역 <b>9pt · 4 Regular</b></li>
+    </ul>
+  </div>
+  <div>
+    <h2>색</h2>
+    <ul>
+      <li><span class="chip" style="background:#ebebeb"></span>바탕 <b>#EBEBEB</b></li>
+      <li><span class="chip" style="background:#262626"></span>이름 · 작품명 <b>#262626</b></li>
+      <li><span class="chip" style="background:#6b6b6b"></span>정보 · 배역 <b>#6B6B6B</b></li>
+      <li><span class="chip" style="background:#a6a6a6"></span>연도 <b>#A6A6A6</b> · <span class="chip" style="background:#bdbdbd"></span>그 외 다수 <b>#BDBDBD</b></li>
+    </ul>
+  </div>
+</section>
+
+<script>
+(() => {
+  const deck = document.getElementById('deck');
+  const bar = document.querySelector('.bar');
+  const spec = document.getElementById('spec');
+  const guidesBtn = document.getElementById('guides');
+
+  // 보기 방식: 슬라이드 / 목업
+  document.querySelectorAll('[data-view]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mock = btn.dataset.view === 'mock';
+      [deck, bar, spec].forEach(el => el.classList.toggle('is-mock', mock));
+      document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+      if (document.body.classList.contains('show-guides')) drawGuides();
+    });
+  });
+
+  // 가이드: 요소마다 x·y(mm)와 크기(mm) 또는 글자 크기(pt)를 붙인다
+  const num = v => +parseFloat(v).toFixed(1);
+  function drawGuides() {
+    document.querySelectorAll('.guide').forEach(g => g.remove());
+    document.querySelectorAll('.slide').forEach(slide => {
+      const mm = slide.clientWidth / 297;
+      slide.querySelectorAll('.box').forEach(el => {
+        const s = el.style;
+        const x = num(s.getPropertyValue('--x')), y = num(s.getPropertyValue('--y'));
+        const w = s.getPropertyValue('--w'), h = s.getPropertyValue('--h');
+        const size = w
+          ? `${num(w)}×${num(h)}mm`
+          : `${Math.round(parseFloat(getComputedStyle(el).fontSize) / (mm * .352778) * 2) / 2}pt`;
+        const label = document.createElement('span');
+        label.className = 'guide';
+        label.textContent = `x${x} y${y} · ${size}`;
+        label.style.left = `${el.offsetLeft}px`;
+        label.style.top = `${el.offsetTop + (w ? 0 : el.offsetHeight)}px`;
+        slide.appendChild(label);
+      });
+    });
+  }
+  guidesBtn.addEventListener('click', () => {
+    const on = document.body.classList.toggle('show-guides');
+    guidesBtn.setAttribute('aria-pressed', String(on));
+    on ? drawGuides() : document.querySelectorAll('.guide').forEach(g => g.remove());
+  });
+  addEventListener('resize', () => document.body.classList.contains('show-guides') && drawGuides());
+
+  document.getElementById('print').addEventListener('click', () => print());
+})();
+</script>
+</body>
+</html>
