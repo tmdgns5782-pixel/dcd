@@ -307,209 +307,320 @@ svg { display: block; overflow: visible; }
   <div class="body">
     <!-- landscape 1: 이 파일만 편집. 스타일은 #p1 로 범위를 한정 -->
 <style>
-#p1 .p1-wrap { display: flex; flex-direction: column; height: calc(100% - 22px); }
+#p1 .p1-wrap { display: flex; flex-direction: column; height: calc(100% - 10px); }
 
-/* ---- 배경 줄 ---- */
-#p1 .p1-ctx { display: flex; align-items: center; gap: 14px; }
-#p1 .p1-ctx-label { color: var(--ink-3); margin-right: 10px; }
-#p1 .p1-ctx .chip { height: 44px; }
+/* ===== A. PROJECT 카드 ===== */
+#p1 .p1-proj {
+  display: grid; grid-template-columns: 772px 2px 1fr; column-gap: 32px;
+  padding: 18px 32px 20px; border: 2px solid var(--line); border-radius: var(--radius); background: var(--paper);
+}
+#p1 .p1-sep { background: var(--line); }
+#p1 .p1-ctx { display: flex; align-items: center; gap: 10px; }
+#p1 .p1-ctx .eyebrow { margin-right: 8px; }
+#p1 .p1-ctx .chip { height: 34px; padding: 0 14px; gap: 8px; font-size: 19px; }
 #p1 .p1-four { display: inline-flex; gap: 4px; }
-#p1 .p1-four i { width: 9px; height: 9px; border-radius: 50%; background: var(--hec-green); display: block; }
-#p1 .p1-ctx .chip svg { width: 20px; height: 20px; }
+#p1 .p1-four i { width: 8px; height: 8px; border-radius: 50%; background: var(--hec-green); display: block; }
+#p1 .p1-topic {
+  margin-top: 10px; font-size: 40px; font-weight: 800; line-height: 1.25; white-space: nowrap;
+  color: var(--navy); letter-spacing: -0.035em;
+}
+#p1 .p1-desc { margin-top: 6px; font-size: var(--fs-small); font-weight: 500; line-height: 1.45; color: var(--ink-2); letter-spacing: -0.02em; }
 
-/* ---- 4단계 그리드 ---- */
-#p1 .p1-grid { display: grid; grid-template-columns: repeat(4, 1fr); column-gap: 32px; }
+#p1 .p1-proj-r { display: flex; flex-direction: column; justify-content: space-between; }
+#p1 .p1-flow { position: relative; height: 96px; }
+#p1 .p1-flow-line { position: absolute; left: 0; top: 0; width: 822px; height: 96px; }
+#p1 .p1-fn { position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; }
+#p1 .p1-fn .ring { width: 56px; height: 56px; color: var(--hec-blue); }
+#p1 .p1-fn .ring.solid { color: #fff; }
+#p1 .p1-fn .ring svg { width: 26px; height: 26px; }
+#p1 .p1-fn span { font-size: 20px; font-weight: 700; line-height: 1.3; white-space: nowrap; color: var(--ink); letter-spacing: -0.02em; }
+#p1 .p1-fn.last span { color: var(--hec-blue); font-weight: 800; }
 
-/* 미니 도식 패널 */
-#p1 .p1-stages { margin-top: 28px; }
-#p1 .p1-panel { position: relative; height: 262px; border-radius: var(--radius); background: var(--tint-blue); }
-#p1 .p1-panel svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+#p1 .p1-out {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 12px;
+  height: 44px; padding: 0 20px 0 14px; border-radius: 999px; background: var(--tint-yellow); color: var(--gold-ink);
+  font-size: var(--fs-small); font-weight: 600; letter-spacing: -0.02em; white-space: nowrap;
+}
+#p1 .p1-out svg { width: 22px; height: 22px; }
+#p1 .p1-out b { font-weight: 800; }
+#p1 .p1-out i { width: 2px; height: 18px; background: color-mix(in srgb, var(--gold-ink) 30%, transparent); display: block; }
+
+/* ===== B. 4단계 여정 ===== */
+#p1 .p1-jr { flex: 1; display: flex; flex-direction: column; margin-top: 20px; min-height: 0; }
+#p1 .p1-grid { display: grid; grid-template-columns: 256px 300px 1fr 300px; column-gap: 24px; }
+
+/* 길 + 이음매 + 단계 라벨 */
+#p1 .p1-path { position: relative; height: 30px; }
+#p1 .p1-path-line { position: absolute; left: 0; top: 0; width: 1728px; height: 30px; }
+#p1 .p1-eb {
+  position: absolute; top: 50%; transform: translateY(-50%); padding: 0 12px 0 10px; background: var(--paper);
+  display: flex; align-items: center; gap: 10px; line-height: 1;
+}
+#p1 .p1-eb b { font-weight: 800; color: var(--ink-3); letter-spacing: 0.04em; }
+
+#p1 .p1-cols { flex: 1; margin-top: 10px; min-height: 0; }
+#p1 .p1-col { display: flex; flex-direction: column; min-height: 0; }
+#p1 .p1-col h3 {
+  font-size: var(--fs-h3); font-weight: 700; line-height: 1.3; white-space: nowrap;
+  color: var(--navy); letter-spacing: -0.035em;
+}
+#p1 .p1-panel {
+  flex: 1; margin-top: 10px; border-radius: var(--radius); background: var(--tint-blue);
+  padding: 16px; display: flex; flex-direction: column; justify-content: space-between; min-height: 0;
+}
+
+/* 미니 도식 공통 */
+#p1 .p1-dia-box { flex: 1; display: grid; place-items: center; min-height: 0; }
+#p1 .p1-dia { position: relative; }
+#p1 .p1-dia > svg { position: absolute; left: 0; top: 0; }
 #p1 .p1-lbl {
   position: absolute; transform: translate(-50%, -50%);
-  font-size: 19px; font-weight: 700; line-height: 1; white-space: nowrap; letter-spacing: -0.01em;
-  color: var(--ink-2);
+  font-size: 19px; font-weight: 700; line-height: 1; white-space: nowrap; letter-spacing: -0.02em; color: var(--ink-2);
 }
-#p1 .p1-pill { padding: 7px 13px; border-radius: 999px; background: #fff; }
-#p1 .p1-pill.people { color: #0B6B33; box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--hec-green) 32%, #fff); }
-#p1 .p1-in { text-align: center; line-height: 1.15; }
-#p1 .p1-in.tech { color: var(--hec-blue); font-size: 20px; }
-#p1 .p1-in.field { color: var(--navy); font-size: 22px; font-weight: 800; }
+#p1 .p1-pill { padding: 7px 12px; border-radius: 999px; background: var(--paper); }
+#p1 .p1-in { width: 124px; text-align: center; color: var(--ink); }
+#p1 .p1-crit { font-size: 20px; line-height: 1.15; text-align: center; color: var(--hec-blue); font-weight: 800; }
+#p1 .p1-award { font-size: var(--fs-small); font-weight: 800; color: var(--navy); }
 
-/* ---- 여정 길 ---- */
-#p1 .p1-path { position: relative; height: 40px; margin-top: 22px; }
-#p1 .p1-path svg { position: absolute; left: 0; top: 0; width: 1728px; height: 40px; }
-#p1 .p1-tag {
-  position: absolute; top: 50%; transform: translateY(-50%);
-  height: 34px; padding: 0 14px 0 11px; display: inline-flex; align-items: center; gap: 7px;
-  border-radius: 999px; background: #fff; box-shadow: inset 0 0 0 2px var(--line);
-  font-size: 18px; font-weight: 700; color: var(--ink-2); white-space: nowrap;
+/* 사실 줄 (아이콘 + 글) */
+#p1 .p1-facts { display: grid; gap: 4px; }
+#p1 .p1-fact {
+  display: flex; align-items: flex-start; gap: 8px;
+  font-size: var(--fs-small); font-weight: 600; line-height: 1.4; color: var(--ink); letter-spacing: -0.025em;
 }
-#p1 .p1-tag.end { background: var(--tint-yellow); box-shadow: none; color: var(--gold-ink); }
-#p1 .p1-tag svg { position: static; width: 18px; height: 18px; }
+#p1 .p1-fact svg { flex: none; width: 20px; height: 20px; margin-top: 5px; color: var(--ink-3); }
+#p1 .p1-fact .p1-fd { flex: none; width: 12px; height: 12px; margin: 10px 4px 0; border-radius: 50%; background: var(--hec-yellow); }
 
-/* ---- 단계 텍스트 ---- */
-#p1 .p1-texts { margin-top: 18px; }
-#p1 .p1-step .eyebrow { display: flex; align-items: center; gap: 10px; }
-#p1 .p1-step .eyebrow b { font-weight: 800; color: var(--ink-3); letter-spacing: 0.04em; }
-#p1 .p1-step h3 {
-  margin-top: 6px; font-size: var(--fs-h3); font-weight: 700; color: var(--navy);
-  letter-spacing: -0.03em; line-height: 1.3; white-space: nowrap;
+/* ALIGN 결론 */
+#p1 .p1-agree {
+  display: flex; align-items: center; justify-content: center; gap: 10px; height: 44px;
+  border-radius: 999px; background: var(--paper); border: 2px solid var(--hec-blue);
+  font-size: var(--fs-small); font-weight: 800; color: var(--hec-blue); letter-spacing: -0.02em;
 }
-#p1 .p1-step ul { margin-top: 10px; display: grid; gap: 2px; }
-#p1 .p1-step li {
-  position: relative; padding-left: 16px;
-  font-size: var(--fs-small); font-weight: 500; color: var(--ink-2); letter-spacing: -0.02em; line-height: 1.45;
-}
-#p1 .p1-ar { display: inline-block; vertical-align: middle; width: 22px; height: 12px; margin: -3px 6px 0; color: var(--ink-3); }
-#p1 .p1-step li::before {
-  content: ""; position: absolute; left: 0; top: 0.68em; width: 6px; height: 6px; border-radius: 50%; background: var(--line-2);
-}
+#p1 .p1-agree svg { width: 20px; height: 20px; }
 
-/* ---- 핵심 메시지 ---- */
-#p1 .p1-wrap .key { margin-top: auto; }
+/* ONE TEAM : 역할 카드 4 + 공유 버스 */
+#p1 .p1-team { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto 40px auto; column-gap: 14px; padding: 14px 16px; }
+#p1 .p1-role { padding: 8px 14px; border-radius: 16px; background: var(--paper); border: 2px solid var(--paper); }
+#p1 .p1-role.me { border-color: var(--hec-blue); }
+#p1 .p1-who { display: flex; align-items: center; gap: 10px; font-size: var(--fs-small); font-weight: 800; color: var(--navy); line-height: 1.25; letter-spacing: -0.02em; }
+#p1 .p1-av { width: 22px; height: 22px; border-radius: 50%; background: var(--hec-green); border: 5px solid var(--tint-green); display: block; flex: none; }
+#p1 .p1-me {
+  width: 30px; height: 30px; border-radius: 50%; background: var(--navy); color: #fff;
+  display: grid; place-items: center; font-size: 18px; font-weight: 700; line-height: 1;
+}
+#p1 .p1-role ul { margin-top: 4px; }
+#p1 .p1-role li {
+  position: relative; padding-left: 14px; display: flex; align-items: center; gap: 8px;
+  font-size: var(--fs-small); font-weight: 500; line-height: 1.4; color: var(--ink-2); letter-spacing: -0.025em; white-space: nowrap;
+}
+#p1 .p1-role li::before { content: ""; position: absolute; left: 1px; top: 0.66em; width: 6px; height: 6px; border-radius: 50%; background: var(--line-2); }
+#p1 .p1-tool { height: 28px; padding: 0 9px; font-size: 18px; }
+#p1 .p1-bus { grid-column: 1 / -1; position: relative; }
+#p1 .p1-bus > svg { position: absolute; left: 0; top: 0; width: 100%; height: 40px; }
+#p1 .p1-share {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 16px 0 12px;
+  border-radius: 999px;
+  font-size: 20px; font-weight: 700; white-space: nowrap; letter-spacing: -0.02em;
+}
+#p1 .p1-share svg { width: 20px; height: 20px; }
+
+/* ===== C. 핵심 메시지 ===== */
+#p1 .p1-wrap .key { margin-top: 18px; padding: 20px 40px; }
 </style>
 
 <div class="p1-wrap">
 
-  <!-- 배경 -->
-  <div class="p1-ctx">
-    <span class="eyebrow p1-ctx-label">Background</span>
-    <span class="chip tech">학생 BIM 경진대회</span>
-    <span class="chip people"><span class="p1-four"><i></i><i></i><i></i><i></i></span>4인 팀 · 팀장</span>
-    <span class="chip ghost"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 5.5V10l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>마감 3주 전 · 주제 미확정</span>
-  </div>
-
-  <!-- 미니 도식 -->
-  <div class="p1-grid p1-stages">
-
-    <!-- 1 CONFLICT : 2 대 2 로 반대 방향 -->
-    <div class="p1-panel">
-      <svg viewBox="0 0 408 262" aria-hidden="true">
-        <line x1="160" y1="104" x2="248" y2="104" stroke="var(--line-2)" stroke-width="2.5" stroke-dasharray="5 7" stroke-linecap="round"/>
-        <g fill="none" stroke="var(--ink-3)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="108" y1="104" x2="40" y2="104"/><path d="M51 94 L39 104 L51 114"/>
-          <line x1="300" y1="104" x2="368" y2="104"/><path d="M357 94 L369 104 L357 114"/>
-        </g>
-        <line x1="136" y1="80" x2="136" y2="128" stroke="var(--hec-green)" stroke-width="3" opacity=".45"/>
-        <line x1="272" y1="80" x2="272" y2="128" stroke="var(--hec-green)" stroke-width="3" opacity=".45"/>
-        <g fill="var(--tint-green)"><circle cx="136" cy="80" r="21"/><circle cx="136" cy="128" r="21"/><circle cx="272" cy="80" r="21"/><circle cx="272" cy="128" r="21"/></g>
-        <g fill="var(--hec-green)" stroke="#fff" stroke-width="3">
-          <circle cx="136" cy="80" r="13"/><circle cx="136" cy="128" r="13"/>
-          <circle cx="272" cy="80" r="13"/><circle cx="272" cy="128" r="13"/>
-        </g>
-      </svg>
-      <span class="p1-lbl p1-pill" style="left:100px; top:190px">참신성</span>
-      <span class="p1-lbl p1-pill" style="left:308px; top:190px">구현 가능성</span>
+  <!-- A. 무엇을 만들었나 -->
+  <section class="p1-proj">
+    <div class="p1-proj-l">
+      <p class="p1-ctx">
+        <span class="eyebrow">Project</span>
+        <span class="chip tech">학생 BIM 경진대회</span>
+        <span class="chip people"><span class="p1-four"><i></i><i></i><i></i><i></i></span>4인 팀 · 팀장</span>
+      </p>
+      <h2 class="p1-topic">‘유닛 모듈러 기반 사용자 맞춤형 리모델링 방법’</h2>
+      <p class="p1-desc">사용자가 원하는 리모델링 규모에 따라 유닛 모듈러를 배치하고,<br>필요한 모듈 수와 자재 물량을 자동으로 산출하는 BIM 기반 리모델링 방법 제안</p>
     </div>
-
-    <!-- 2 ALIGN : 공통 기준으로 모임 -->
-    <div class="p1-panel">
-      <svg viewBox="0 0 408 262" aria-hidden="true">
-        <circle cx="204" cy="131" r="84" fill="none" stroke="var(--sky)" stroke-width="1.5" stroke-dasharray="3 7" opacity=".8"/>
-        <g stroke="var(--sky-2)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none">
-          <line x1="90" y1="70" x2="149" y2="102"/><path d="M135 103 L149 102 L142 90"/>
-          <line x1="318" y1="70" x2="259" y2="102"/><path d="M273 103 L259 102 L266 90"/>
-          <line x1="90" y1="192" x2="149" y2="160"/><path d="M135 159 L149 160 L142 172"/>
-          <line x1="318" y1="192" x2="259" y2="160"/><path d="M273 159 L259 160 L266 172"/>
-        </g>
-        <circle cx="204" cy="131" r="52" fill="#fff" stroke="var(--hec-blue)" stroke-width="3"/>
-        <g fill="var(--tint-green)"><circle cx="72" cy="61" r="21"/><circle cx="336" cy="61" r="21"/><circle cx="72" cy="201" r="21"/><circle cx="336" cy="201" r="21"/></g>
-        <g fill="var(--hec-green)" stroke="#fff" stroke-width="3">
-          <circle cx="72" cy="61" r="13"/><circle cx="336" cy="61" r="13"/>
-          <circle cx="72" cy="201" r="13"/><circle cx="336" cy="201" r="13"/>
-        </g>
-      </svg>
-      <span class="p1-lbl p1-in tech" style="left:204px; top:131px">공통<br>기준</span>
+    <span class="p1-sep" aria-hidden="true"></span>
+    <div class="p1-proj-r">
+      <div class="p1-flow">
+        <svg class="p1-flow-line" viewBox="0 0 822 96" aria-hidden="true">
+          <defs>
+            <linearGradient id="p1l-flow" gradientUnits="userSpaceOnUse" x1="100" y1="0" x2="700" y2="0"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient>
+          </defs>
+          <line x1="100" y1="28" x2="700" y2="28" stroke="url(#p1l-flow)" stroke-width="3"/>
+          <g fill="none" stroke="url(#p1l-flow)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M343 19 L353 28 L343 37"/><path d="M653 19 L663 28 L653 37"/>
+          </g>
+        </svg>
+        <div class="p1-fn" style="left:100px">
+          <span class="ring"><svg viewBox="0 0 26 26" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="20" height="20" rx="2.5"/><path d="M8.5 17.5L17.5 8.5M12.5 8.5H17.5V13.5M8.5 12.5V17.5H13.5"/></svg></span>
+          <span>리모델링 규모 입력</span>
+        </div>
+        <div class="p1-fn" style="left:390px">
+          <span class="ring"><svg viewBox="0 0 26 26" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="9" height="9" rx="1"/><rect x="14" y="14" width="9" height="9" rx="1"/></g><g fill="currentColor"><rect x="14" y="3" width="9" height="9" rx="1"/><rect x="3" y="14" width="9" height="9" rx="1"/></g></svg></span>
+          <span>유닛 모듈러 배치</span>
+        </div>
+        <div class="p1-fn last" style="left:700px">
+          <span class="ring solid"><svg viewBox="0 0 26 26" aria-hidden="true" fill="currentColor"><rect x="3" y="14" width="5" height="9" rx="1"/><rect x="10.5" y="8" width="5" height="15" rx="1"/><rect x="18" y="3" width="5" height="20" rx="1"/></svg></span>
+          <span>모듈 수 · 자재 물량 자동 산출</span>
+        </div>
+      </div>
+      <p class="p1-out"><svg viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 7.2V14.8L15 11Z" fill="currentColor"/></svg><b>결과물</b><i></i><span>유닛 모듈러 기반 사용자 맞춤형 리모델링 앱 개발 아이디어 시연 영상</span></p>
     </div>
+  </section>
 
-    <!-- 3 ONE TEAM : 서로 이어진 네트워크 -->
-    <div class="p1-panel">
-      <svg viewBox="0 0 408 262" aria-hidden="true">
-        <g stroke="var(--hec-green)" stroke-width="3" opacity=".45">
-          <line x1="112" y1="71" x2="296" y2="71"/><line x1="112" y1="191" x2="296" y2="191"/>
-          <line x1="112" y1="71" x2="112" y2="191"/><line x1="296" y1="71" x2="296" y2="191"/>
-          <line x1="112" y1="71" x2="296" y2="191"/><line x1="296" y1="71" x2="112" y2="191"/>
-        </g>
-        <g fill="var(--tint-green)"><circle cx="112" cy="71" r="21"/><circle cx="296" cy="71" r="21"/><circle cx="112" cy="191" r="21"/><circle cx="296" cy="191" r="21"/></g>
-        <g fill="var(--hec-green)" stroke="#fff" stroke-width="3">
-          <circle cx="112" cy="71" r="13"/><circle cx="296" cy="71" r="13"/>
-          <circle cx="112" cy="191" r="13"/><circle cx="296" cy="191" r="13"/>
-        </g>
-      </svg>
-      <span class="p1-lbl p1-pill people" style="left:204px; top:131px">이틀마다 공유</span>
-    </div>
+  <!-- B. 어떻게 함께 했나 -->
+  <div class="p1-jr">
 
-    <!-- 4 RESULT : 하나로 합쳐져 장려상 -->
-    <div class="p1-panel">
-      <svg viewBox="0 0 408 262" aria-hidden="true">
+    <!-- 하나의 그래디언트 길 + 이음매 점 (ALIGN 이음매는 위 프로젝트 카드로 이어짐 = 주제 합의) -->
+    <div class="p1-path">
+      <svg class="p1-path-line" viewBox="0 0 1728 30" aria-hidden="true">
         <defs>
-          <linearGradient id="p1l-arrow" gradientUnits="userSpaceOnUse" x1="198" y1="0" x2="242" y2="0"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient>
+          <linearGradient id="p1l-path" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1728" y2="0"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient>
         </defs>
-        <g fill="none" stroke="var(--hec-green)" stroke-width="3" opacity=".45">
-          <path d="M56 71 C112 71 108 131 150 131"/>
-          <path d="M56 111 C112 111 108 131 150 131"/>
-          <path d="M56 151 C112 151 108 131 150 131"/>
-          <path d="M56 191 C112 191 108 131 150 131"/>
+        <line x1="291" y1="-22" x2="291" y2="4" stroke="var(--sky-2)" stroke-width="2" stroke-dasharray="4 5"/>
+        <circle cx="291" cy="-22" r="5" fill="var(--sky-2)"/>
+        <line x1="11" y1="15" x2="1720" y2="15" stroke="url(#p1l-path)" stroke-width="3" stroke-linecap="round"/>
+        <path d="M1710 6 L1720 15 L1710 24" fill="none" stroke="url(#p1l-path)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <g fill="#fff" stroke="url(#p1l-path)" stroke-width="3">
+          <circle cx="11" cy="15" r="10"/><circle cx="291" cy="15" r="10"/><circle cx="615" cy="15" r="10"/><circle cx="1439" cy="15" r="10"/>
         </g>
-        <g fill="var(--hec-green)" stroke="#fff" stroke-width="3">
-          <circle cx="50" cy="71" r="11"/><circle cx="50" cy="111" r="11"/><circle cx="50" cy="151" r="11"/><circle cx="50" cy="191" r="11"/>
-        </g>
-        <circle cx="166" cy="131" r="30" fill="var(--tint-green)"/>
-        <circle cx="166" cy="131" r="19" fill="var(--hec-green)" stroke="#fff" stroke-width="3"/>
-        <line x1="200" y1="131" x2="240" y2="131" stroke="url(#p1l-arrow)" stroke-width="3" stroke-linecap="round"/>
-        <path d="M230 121 L241 131 L230 141" fill="none" stroke="url(#p1l-arrow)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-        <circle cx="318" cy="131" r="68" fill="var(--tint-yellow)"/>
-        <circle cx="318" cy="131" r="52" fill="var(--hec-yellow)"/>
+        <g fill="url(#p1l-path)"><circle cx="11" cy="15" r="4.5"/><circle cx="291" cy="15" r="4.5"/></g>
+        <circle cx="615" cy="15" r="5" fill="var(--hec-green)"/>
+        <circle cx="1439" cy="15" r="5" fill="var(--hec-yellow)"/>
       </svg>
-      <span class="p1-lbl p1-in field" style="left:318px; top:131px">장려상</span>
+      <p class="eyebrow p1-eb" style="left:24px"><b>01</b>Conflict</p>
+      <p class="eyebrow p1-eb" style="left:304px"><b>02</b>Align</p>
+      <p class="eyebrow p1-eb" style="left:628px"><b>03</b>One Team</p>
+      <p class="eyebrow p1-eb" style="left:1452px"><b>04</b>Result</p>
+    </div>
+
+    <div class="p1-grid p1-cols">
+
+      <!-- 1 CONFLICT : 2 대 2 로 반대 방향 -->
+      <div class="p1-col">
+        <h3>주제 선정 의견 충돌</h3>
+        <div class="p1-panel">
+          <div class="p1-dia-box">
+            <div class="p1-dia" style="width:224px; height:140px">
+              <svg viewBox="0 0 224 140" width="224" height="140" aria-hidden="true">
+                <line x1="92" y1="53" x2="132" y2="53" stroke="var(--line-2)" stroke-width="2.5" stroke-dasharray="4 6" stroke-linecap="round"/>
+                <g fill="none" stroke="var(--ink-3)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="50" y1="53" x2="6" y2="53"/><path d="M16 44 L5 53 L16 62"/>
+                  <line x1="174" y1="53" x2="218" y2="53"/><path d="M208 44 L219 53 L208 62"/>
+                </g>
+                <line x1="72" y1="30" x2="72" y2="76" stroke="var(--hec-green)" stroke-width="3" opacity=".45"/>
+                <line x1="152" y1="30" x2="152" y2="76" stroke="var(--hec-green)" stroke-width="3" opacity=".45"/>
+                <g fill="var(--tint-green)"><circle cx="72" cy="30" r="19"/><circle cx="72" cy="76" r="19"/><circle cx="152" cy="30" r="19"/><circle cx="152" cy="76" r="19"/></g>
+                <g fill="var(--hec-green)" stroke="#fff" stroke-width="3"><circle cx="72" cy="30" r="12"/><circle cx="72" cy="76" r="12"/><circle cx="152" cy="30" r="12"/><circle cx="152" cy="76" r="12"/></g>
+              </svg>
+              <span class="p1-lbl p1-pill" style="left:46px; top:122px">참신성</span>
+              <span class="p1-lbl p1-pill" style="left:164px; top:122px">구현 가능성</span>
+            </div>
+          </div>
+          <p class="p1-fact"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 5.5V10l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>마감 3주 전까지<br>주제 미확정</span></p>
+        </div>
+      </div>
+
+      <!-- 2 ALIGN : 세 가지 근거가 판단 기준으로 모임 -->
+      <div class="p1-col">
+        <h3>의견 조율 · 주제 확정</h3>
+        <div class="p1-panel">
+          <div class="p1-dia-box">
+            <div class="p1-dia" style="width:268px; height:150px">
+              <svg viewBox="0 0 268 150" width="268" height="150" aria-hidden="true">
+                <g fill="none" stroke="var(--sky-2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M126 25 C146 25 146 62 160 69"/>
+                  <line x1="126" y1="75" x2="158" y2="75"/>
+                  <path d="M126 125 C146 125 146 88 160 81"/>
+                  <path d="M151 68 L160 75 L151 82"/>
+                </g>
+                <circle cx="215" cy="75" r="51" fill="#fff" stroke="var(--hec-blue)" stroke-width="3"/>
+              </svg>
+              <span class="p1-lbl p1-pill p1-in" style="left:62px; top:25px">경청</span>
+              <span class="p1-lbl p1-pill p1-in" style="left:62px; top:75px">수상작 분석</span>
+              <span class="p1-lbl p1-pill p1-in" style="left:62px; top:125px">교수님 조언</span>
+              <span class="p1-lbl p1-crit" style="left:215px; top:75px">판단<br>기준</span>
+            </div>
+          </div>
+          <p class="p1-agree"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6.2 10.2l2.6 2.6 5-5.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>주제 합의</p>
+        </div>
+      </div>
+
+      <!-- 3 ONE TEAM : 강점 기반 역할 4 + 이틀마다 공유 -->
+      <div class="p1-col">
+        <h3>강점 기반 역할 분담 · 지속적인 공유</h3>
+        <div class="p1-panel p1-team">
+          <div class="p1-role me">
+            <p class="p1-who"><i class="p1-av"></i>팀장<span class="p1-me">나</span></p>
+            <ul><li>프로젝트 총괄</li><li><span class="chip tech p1-tool">Dynamo</span>기반 자동화 알고리즘 개발</li></ul>
+          </div>
+          <div class="p1-role">
+            <p class="p1-who"><i class="p1-av"></i>팀원 A</p>
+            <ul><li>유닛 모듈러 설계</li><li>배치계획</li></ul>
+          </div>
+          <div class="p1-bus">
+            <svg viewBox="0 0 768 40" preserveAspectRatio="none" aria-hidden="true">
+              <g stroke="var(--hec-green)" stroke-width="3" opacity=".45">
+                <line x1="188.5" y1="0" x2="188.5" y2="40"/><line x1="579.5" y1="0" x2="579.5" y2="40"/>
+                <line x1="188.5" y1="20" x2="579.5" y2="20"/>
+              </g>
+              <g fill="var(--hec-green)" stroke="var(--tint-blue)" stroke-width="3"><circle cx="188.5" cy="20" r="7"/><circle cx="579.5" cy="20" r="7"/></g>
+            </svg>
+            <span class="chip people p1-share"><svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8.5A6.2 6.2 0 0 0 4.6 6.4M4 11.5a6.2 6.2 0 0 0 11.4 2.1"/><path d="M4.2 2.8v3.8H8M15.8 17.2v-3.8H12"/></svg>이틀마다 진행상황 공유 · 피드백</span>
+          </div>
+          <div class="p1-role">
+            <p class="p1-who"><i class="p1-av"></i>팀원 B</p>
+            <ul><li><span class="chip tech p1-tool">Revit</span>기반 BIM 모델링</li><li>데이터 구축</li></ul>
+          </div>
+          <div class="p1-role">
+            <p class="p1-who"><i class="p1-av"></i>팀원 C</p>
+            <ul><li>리모델링 적용 시나리오 구성</li><li>시연 영상 제작</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 RESULT : 하나로 합쳐져 장려상 -->
+      <div class="p1-col">
+        <h3>프로젝트 완성 · 장려상 수상</h3>
+        <div class="p1-panel">
+          <div class="p1-dia-box">
+            <div class="p1-dia" style="width:268px; height:140px">
+              <svg viewBox="0 0 268 140" width="268" height="140" aria-hidden="true">
+                <defs>
+                  <linearGradient id="p1l-arrow" gradientUnits="userSpaceOnUse" x1="124" y1="0" x2="152" y2="0"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient>
+                </defs>
+                <g fill="none" stroke="var(--hec-green)" stroke-width="3" opacity=".45">
+                  <path d="M14 16 C54 16 54 70 86 70"/><path d="M14 52 C54 52 54 70 86 70"/>
+                  <path d="M14 88 C54 88 54 70 86 70"/><path d="M14 124 C54 124 54 70 86 70"/>
+                </g>
+                <g fill="var(--hec-green)" stroke="var(--tint-blue)" stroke-width="3">
+                  <circle cx="11" cy="16" r="9"/><circle cx="11" cy="52" r="9"/><circle cx="11" cy="88" r="9"/><circle cx="11" cy="124" r="9"/>
+                </g>
+                <circle cx="98" cy="70" r="24" fill="var(--tint-green)"/>
+                <circle cx="98" cy="70" r="15" fill="var(--hec-green)" stroke="#fff" stroke-width="3"/>
+                <line x1="126" y1="70" x2="152" y2="70" stroke="url(#p1l-arrow)" stroke-width="3" stroke-linecap="round"/>
+                <path d="M144 62 L153 70 L144 78" fill="none" stroke="url(#p1l-arrow)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="212" cy="70" r="56" fill="var(--tint-yellow)"/>
+                <circle cx="212" cy="70" r="45" fill="var(--hec-yellow)"/>
+              </svg>
+              <span class="p1-lbl p1-award" style="left:212px; top:70px">장려상</span>
+            </div>
+          </div>
+          <div class="p1-facts">
+            <p class="p1-fact"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6.2 10.2l2.6 2.6 5-5.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>남은 3주 내 시연 영상 완성</span></p>
+            <p class="p1-fact"><i class="p1-fd"></i><span>학생 BIM 경진대회 장려상</span></p>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
-  <!-- 여정 길 : 하나의 그래디언트 선 + 단계별 이음매 -->
-  <div class="p1-path">
-    <svg viewBox="0 0 1728 40" aria-hidden="true">
-      <defs>
-        <linearGradient id="p1l-path" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1728" y2="0"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient>
-      </defs>
-      <line x1="11" y1="20" x2="1720" y2="20" stroke="url(#p1l-path)" stroke-width="3" stroke-linecap="round"/>
-      <path d="M1710 11 L1720 20 L1710 29" fill="none" stroke="url(#p1l-path)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-      <g fill="#fff" stroke="url(#p1l-path)" stroke-width="3">
-        <circle cx="11" cy="20" r="10"/><circle cx="451" cy="20" r="10"/><circle cx="891" cy="20" r="10"/><circle cx="1331" cy="20" r="10"/>
-      </g>
-      <g fill="url(#p1l-path)">
-        <circle cx="11" cy="20" r="4.5"/><circle cx="451" cy="20" r="4.5"/><circle cx="891" cy="20" r="4.5"/>
-      </g>
-      <circle cx="1331" cy="20" r="5" fill="var(--hec-yellow)"/>
-    </svg>
-    <span class="p1-tag" style="left:34px"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 5.5V10l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>마감 3주 전</span>
-    <span class="p1-tag end" style="left:1354px"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6.2 10.2l2.6 2.6 5-5.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>3주 내 완수</span>
-  </div>
-
-  <!-- 단계 텍스트 -->
-  <div class="p1-grid p1-texts">
-    <div class="p1-step">
-      <p class="eyebrow"><b>01</b>Conflict</p>
-      <h3>서로 다른 의견</h3>
-      <ul><li>참신성<svg class="p1-ar" viewBox="0 0 22 12" aria-hidden="true"><path d="M2 6H20M6 2L2 6L6 10M16 2L20 6L16 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>구현 가능성</li><li>마감 3주 전까지 주제 미확정</li></ul>
-    </div>
-    <div class="p1-step">
-      <p class="eyebrow"><b>02</b>Align</p>
-      <h3>의견 조율 · 공통 기준 마련</h3>
-      <ul><li>경청 · 수상작 분석 · 교수님 조언</li><li>판단 기준 마련<svg class="p1-ar" viewBox="0 0 22 12" aria-hidden="true"><path d="M2 6H20M16 2L20 6L16 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>방향 합의</li></ul>
-    </div>
-    <div class="p1-step">
-      <p class="eyebrow"><b>03</b>One Team</p>
-      <h3>역할 분담 · 지속적인 공유</h3>
-      <ul><li>강점 기반 역할 분담</li><li>이틀마다 진행상황 공유 · 피드백</li></ul>
-    </div>
-    <div class="p1-step">
-      <p class="eyebrow"><b>04</b>Result</p>
-      <h3>프로젝트 완성 · 장려상 수상</h3>
-      <ul><li>남은 3주 내 프로젝트 완수</li><li>학생 BIM 경진대회 장려상</li></ul>
-    </div>
-  </div>
-
-  <!-- 핵심 메시지 -->
+  <!-- C. 핵심 메시지 -->
   <div class="key">
     <span class="key-label"><span class="mark"><i></i><b></b><i></i><b></b><i></i></span>KEY MESSAGE</span>
     <p class="key-text">서로 다른 사람을 <em>하나의 공동 목표</em>로 연결합니다</p>

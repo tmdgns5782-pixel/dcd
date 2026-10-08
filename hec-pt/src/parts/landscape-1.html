@@ -5,7 +5,7 @@
 /* ===== A. PROJECT 카드 ===== */
 #p1 .p1-proj {
   display: grid; grid-template-columns: 772px 2px 1fr; column-gap: 32px;
-  padding: 18px 32px 20px; border: 2px solid var(--line); border-radius: var(--radius); background: #fff;
+  padding: 18px 32px 20px; border: 2px solid var(--line); border-radius: var(--radius); background: var(--paper);
 }
 #p1 .p1-sep { background: var(--line); }
 #p1 .p1-ctx { display: flex; align-items: center; gap: 10px; }
@@ -46,7 +46,7 @@
 #p1 .p1-path { position: relative; height: 30px; }
 #p1 .p1-path-line { position: absolute; left: 0; top: 0; width: 1728px; height: 30px; }
 #p1 .p1-eb {
-  position: absolute; top: 50%; transform: translateY(-50%); padding: 0 12px 0 10px; background: #fff;
+  position: absolute; top: 50%; transform: translateY(-50%); padding: 0 12px 0 10px; background: var(--paper);
   display: flex; align-items: center; gap: 10px; line-height: 1;
 }
 #p1 .p1-eb b { font-weight: 800; color: var(--ink-3); letter-spacing: 0.04em; }
@@ -70,7 +70,7 @@
   position: absolute; transform: translate(-50%, -50%);
   font-size: 19px; font-weight: 700; line-height: 1; white-space: nowrap; letter-spacing: -0.02em; color: var(--ink-2);
 }
-#p1 .p1-pill { padding: 7px 12px; border-radius: 999px; background: #fff; }
+#p1 .p1-pill { padding: 7px 12px; border-radius: 999px; background: var(--paper); }
 #p1 .p1-in { width: 124px; text-align: center; color: var(--ink); }
 #p1 .p1-crit { font-size: 20px; line-height: 1.15; text-align: center; color: var(--hec-blue); font-weight: 800; }
 #p1 .p1-award { font-size: var(--fs-small); font-weight: 800; color: var(--navy); }
@@ -87,14 +87,14 @@
 /* ALIGN 결론 */
 #p1 .p1-agree {
   display: flex; align-items: center; justify-content: center; gap: 10px; height: 44px;
-  border-radius: 999px; background: #fff; border: 2px solid var(--hec-blue);
+  border-radius: 999px; background: var(--paper); border: 2px solid var(--hec-blue);
   font-size: var(--fs-small); font-weight: 800; color: var(--hec-blue); letter-spacing: -0.02em;
 }
 #p1 .p1-agree svg { width: 20px; height: 20px; }
 
 /* ONE TEAM : 역할 카드 4 + 공유 버스 */
 #p1 .p1-team { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto 40px auto; column-gap: 14px; padding: 14px 16px; }
-#p1 .p1-role { padding: 8px 14px; border-radius: 16px; background: #fff; border: 2px solid #fff; }
+#p1 .p1-role { padding: 8px 14px; border-radius: 16px; background: var(--paper); border: 2px solid var(--paper); }
 #p1 .p1-role.me { border-color: var(--hec-blue); }
 #p1 .p1-who { display: flex; align-items: center; gap: 10px; font-size: var(--fs-small); font-weight: 800; color: var(--navy); line-height: 1.25; letter-spacing: -0.02em; }
 #p1 .p1-av { width: 22px; height: 22px; border-radius: 50%; background: var(--hec-green); border: 5px solid var(--tint-green); display: block; flex: none; }
@@ -114,7 +114,7 @@
 #p1 .p1-share {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 16px 0 12px;
-  border-radius: 999px; background: var(--tint-green); color: #0B6B33;
+  border-radius: 999px;
   font-size: 20px; font-weight: 700; white-space: nowrap; letter-spacing: -0.02em;
 }
 #p1 .p1-share svg { width: 20px; height: 20px; }
@@ -263,7 +263,7 @@
               </g>
               <g fill="var(--hec-green)" stroke="var(--tint-blue)" stroke-width="3"><circle cx="188.5" cy="20" r="7"/><circle cx="579.5" cy="20" r="7"/></g>
             </svg>
-            <span class="p1-share"><svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8.5A6.2 6.2 0 0 0 4.6 6.4M4 11.5a6.2 6.2 0 0 0 11.4 2.1"/><path d="M4.2 2.8v3.8H8M15.8 17.2v-3.8H12"/></svg>이틀마다 진행상황 공유 · 피드백</span>
+            <span class="chip people p1-share"><svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8.5A6.2 6.2 0 0 0 4.6 6.4M4 11.5a6.2 6.2 0 0 0 11.4 2.1"/><path d="M4.2 2.8v3.8H8M15.8 17.2v-3.8H12"/></svg>이틀마다 진행상황 공유 · 피드백</span>
           </div>
           <div class="p1-role">
             <p class="p1-who"><i class="p1-av"></i>팀원 B</p>
