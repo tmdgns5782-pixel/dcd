@@ -1,7 +1,7 @@
 <!-- portrait 3: 이 파일만 편집. 스타일은 #p3 로 범위를 한정 -->
 <style>
 #p3 .p3w { position: absolute; inset: 0 0 12px 0; display: flex; flex-direction: column; }
-#p3 .dia { position: relative; width: 1072px; height: 1150px; flex: none; }
+#p3 .dia { position: relative; width: 1072px; height: 1180px; flex: none; }
 #p3 .dia > svg { position: absolute; left: 0; top: 0; z-index: 1; }
 #p3 .dia .ring { z-index: 2; }
 #p3 .joint { z-index: 2; }
@@ -36,7 +36,7 @@
 #p3 .joint svg { width: 20px; height: 20px; }
 
 /* branch cards */
-#p3 .card { position: absolute; top: 406px; width: 520px; height: 352px; border-radius: var(--radius); }
+#p3 .card { position: absolute; top: 412px; width: 520px; height: 368px; border-radius: var(--radius); }
 #p3 .card.people { left: 0; background: var(--tint-green); }
 #p3 .card.tech { left: 552px; background: var(--tint-blue); }
 #p3 .card .ring { position: absolute; top: 30px; width: 100px; height: 100px; }
@@ -57,10 +57,10 @@
 #p3 .card .ref .num { font-weight: 800; color: var(--ink-3); letter-spacing: 0.04em; }
 
 /* improve */
-#p3 .ring.imp { width: 204px; height: 204px; left: 434px; top: 906px; }
+#p3 .ring.imp { width: 204px; height: 204px; left: 434px; top: 938px; }
 #p3 .ring.imp .nl small { color: rgba(255,255,255,.78); }
 #p3 .ring.imp .nl b { color: #fff; font-size: var(--fs-h3); }
-#p3 .out { position: absolute; left: 730px; height: 54px; transform: translateY(-50%); padding: 0 22px 0 18px; gap: 12px; font-size: var(--fs-small); font-weight: 600; }
+#p3 .out { position: absolute; left: 730px; height: 54px; transform: translateY(-50%); padding: 0 20px; gap: 12px; width: 190px; font-size: var(--fs-small); font-weight: 600; }
 #p3 .out .dot { width: 12px; height: 12px; }
 #p3 .out b { font-weight: 800; }
 
@@ -68,33 +68,33 @@
 </style>
 <div class="p3w">
   <div class="dia">
-    <svg width="1072" height="1150" viewBox="0 0 1072 1150" aria-hidden="true">
+    <svg width="1072" height="1180" viewBox="0 0 1072 1180" aria-hidden="true">
       <defs>
-        <linearGradient id="p3p-grad" gradientUnits="userSpaceOnUse" x1="0" y1="172" x2="0" y2="906">
+        <linearGradient id="p3p-grad" gradientUnits="userSpaceOnUse" x1="0" y1="172" x2="0" y2="938">
           <stop offset="0" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--sky-2)"/>
         </linearGradient>
         <linearGradient id="p3p-fan" gradientUnits="userSpaceOnUse" x1="638" y1="0" x2="730" y2="0">
-          <stop offset="0" stop-color="var(--sky-2)"/><stop offset="1" stop-color="var(--hec-yellow)"/>
+          <stop offset="0" stop-color="var(--sky-2)"/><stop offset="1" stop-color="var(--sky)"/>
         </linearGradient>
       </defs>
       <path class="ln" d="M536,172 V244"/>
       <path class="ln" d="M536,298 V334"/>
-      <path class="ln" d="M536,334 C536,370 440,370 440,406 V436"/>
-      <path class="ln" d="M536,334 C536,370 632,370 632,406 V436"/>
-      <path class="ln" d="M440,536 V794 C440,832 536,832 536,870"/>
-      <path class="ln" d="M632,536 V794 C632,832 536,832 536,870"/>
-      <path class="ln" d="M536,870 V906"/>
-      <path class="fan" d="M638,1008 C688.6,1008 679.4,900 730,900"/>
-      <path class="fan" d="M638,1008 C688.6,1008 679.4,972 730,972"/>
-      <path class="fan" d="M638,1008 C688.6,1008 679.4,1044 730,1044"/>
-      <path class="fan" d="M638,1008 C688.6,1008 679.4,1116 730,1116"/>
+      <path class="ln" d="M536,334 C536,373 440,373 440,412 V442"/>
+      <path class="ln" d="M536,334 C536,373 632,373 632,412 V442"/>
+      <path class="ln" d="M440,542 V820 C440,861 536,861 536,902"/>
+      <path class="ln" d="M632,542 V820 C632,861 536,861 536,902"/>
+      <path class="ln" d="M536,902 V938"/>
+      <path class="fan" d="M638,1040 C688.6,1040 679.4,932 730,932"/>
+      <path class="fan" d="M638,1040 C688.6,1040 679.4,1004 730,1004"/>
+      <path class="fan" d="M638,1040 C688.6,1040 679.4,1076 730,1076"/>
+      <path class="fan" d="M638,1040 C688.6,1040 679.4,1148 730,1148"/>
       <circle class="d-sky" cx="536" cy="334" r="7"/>
-      <circle class="d-green" cx="440" cy="406" r="7"/>
-      <circle class="d-blue" cx="632" cy="406" r="7"/>
-      <circle class="d-green" cx="440" cy="758" r="7"/>
-      <circle class="d-blue" cx="632" cy="758" r="7"/>
-      <circle class="d-sky" cx="536" cy="870" r="7"/>
-      <circle class="d-yel" cx="638" cy="1008" r="8"/>
+      <circle class="d-green" cx="440" cy="412" r="7"/>
+      <circle class="d-blue" cx="632" cy="412" r="7"/>
+      <circle class="d-green" cx="440" cy="780" r="7"/>
+      <circle class="d-blue" cx="632" cy="780" r="7"/>
+      <circle class="d-sky" cx="536" cy="902" r="7"/>
+      <circle class="d-yel" cx="638" cy="1040" r="8"/>
     </svg>
 
     <!-- STEP 1 FIELD -->
@@ -141,14 +141,14 @@
 
     <!-- STEP 4 IMPROVE -->
     <div class="ring solid imp node"><div class="nl"><small>IMPROVE</small><b>문제 해결</b></div></div>
-    <div class="side l" style="--r:678px; top:1008px">
+    <div class="side l" style="--r:678px; top:1040px">
       <div class="eb field"><i class="dot field"></i>STEP 04</div>
       <div class="tt">현장의 변화를 만든다</div>
     </div>
-    <span class="chip field out" style="top:900px"><i class="dot field"></i><span><b>공정</b> 개선</span></span>
-    <span class="chip field out" style="top:972px"><i class="dot field"></i><span><b>품질</b> 개선</span></span>
-    <span class="chip field out" style="top:1044px"><i class="dot field"></i><span><b>안전</b> 개선</span></span>
-    <span class="chip field out" style="top:1116px"><i class="dot field"></i><span><b>생산성</b> 개선</span></span>
+    <span class="chip field out" style="top:932px"><i class="dot field"></i><span><b>공정</b> 개선</span></span>
+    <span class="chip field out" style="top:1004px"><i class="dot field"></i><span><b>품질</b> 개선</span></span>
+    <span class="chip field out" style="top:1076px"><i class="dot field"></i><span><b>안전</b> 개선</span></span>
+    <span class="chip field out" style="top:1148px"><i class="dot field"></i><span><b>생산성</b> 개선</span></span>
   </div>
 
   <div class="key">
