@@ -1,6 +1,6 @@
 /* ==========================================================================
    현대엔지니어링 PT 시안 — 공통 디자인 시스템 (가로형 · 세로형 공용)
-   - CI 전용색: 현대 Blue(PMS 286C) · Green(PMS 3415C) · Yellow(PMS 130C)
+   - CI 전용색: 현대엔지니어링 공식 CI 파일(HEC영문CI.ai) 기준 Blue · Green · Yellow
    - 2026 가치체계 안내 그래픽의 하늘색 → 파랑 그래디언트를 '잇는 길(연결선)'에 사용
    - 의미 색: 사람·우리 = Green / 기술 = Blue / 현장·성과 = Yellow
    - 서체: Paperlogy(페이퍼로지)
@@ -16,9 +16,9 @@
 
 :root {
   /* CI 전용색 */
-  --hec-blue: #004098;
-  --hec-green: #009944;
-  --hec-yellow: #FABE00;
+  --hec-blue: #004B8D;
+  --hec-green: #00A94F;
+  --hec-yellow: #FDBB30;
 
   /* 가치체계 그래디언트 (잇는 길) */
   --sky: #45B9EC;
@@ -38,9 +38,9 @@
   /* 옅은 면 (의미 색 틴트) */
   --tint-blue: #EEF4FC;
   --tint-sky: #E9F6FD;
-  --tint-green: #E7F5EC;
-  --tint-yellow: #FFF5D6;
-  --gold-ink: #8A6400;  /* 노랑 면 위 글자용 (노랑 자체는 글자색으로 쓰지 않는다) */
+  --tint-green: #E5F6EC;
+  --tint-yellow: #FFF4DB;
+  --gold-ink: #8A5A00;  /* 노랑 면 위 글자용 (노랑 자체는 글자색으로 쓰지 않는다) */
 
   /* 타입 스케일 — 가로형 기준. 세로형 파일에서 덮어쓴다 */
   --fs-topic: 22px;
@@ -161,13 +161,13 @@ svg { display: block; overflow: visible; }
 .mark b { width: 14px; height: 2px; background: var(--line-2); display: block; }
 
 /* ---------- 로고 자리 ---------- */
-/* hec-pt 폴더에 logo.png(공식 CI)를 넣으면 자동으로 표시된다. 없으면 점선 자리표시 */
+/* hec-pt/logo.svg(공식 CI 국문 로고)를 빌드 때 파일 안에 넣는다. 없으면 점선 자리표시 */
 .logo {
   position: absolute;
   top: var(--pad-top);
   right: var(--pad-x);
-  width: 260px;
-  height: 64px;
+  width: 280px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -273,7 +273,7 @@ svg { display: block; overflow: visible; }
   letter-spacing: -0.03em;
   line-height: 1.3;
 }
-.key .key-text em { color: #FFD24D; }   /* 남색 위 강조 — CI 옐로우 계열 */
+.key .key-text em { color: var(--hec-yellow); }   /* 남색 위 강조 — CI 옐로우 */
 
 /* 숫자 · 짧은 텍스트 정렬 보조 */
 .num { font-variant-numeric: tabular-nums; }
