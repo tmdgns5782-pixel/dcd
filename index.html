@@ -18,7 +18,7 @@
        url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/woff2/PretendardVariable.woff2") format("woff2-variations");
 }
 
-/* 색은 의미가 있을 때만 쓴다 — 파랑: 오늘·진행 중 / 주황: 공휴일 전 조정 시간 / 빨강: 공휴일 */
+/* 색은 의미가 있을 때만 쓴다 — 파랑: 오늘·진행 중 / 주황: 쉬는 날 전날(금요일·공휴일 전날)의 시간 / 빨강: 공휴일 */
 :root {
   --bg: #f5f5f7;
   --surface: #ffffff;
@@ -153,13 +153,13 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 /* ───────── 페이지 · 머리말 ───────── */
 .page { max-width: 1180px; margin: 0 auto; padding: 0 24px 72px; }
 .hero {
-  padding: 64px 4px 28px;
+  padding: 40px 4px 22px;
   display: flex; align-items: flex-end; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap;
 }
 .eyebrow { font-size: 17px; font-weight: 600; color: var(--text-2); letter-spacing: -.015em; }
 .hero h1 {
   margin-top: 2px;
-  font-size: clamp(2.25rem, 5vw, 3.25rem);
+  font-size: clamp(2rem, 4vw, 2.75rem);
   line-height: 1.06;
   font-weight: 700;
   letter-spacing: -.035em;
@@ -240,7 +240,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .ax.zero b { color: var(--text-2); }
 #tmForm .hint { margin: 8px 26px 0; font-size: 13px; color: var(--text-3); }
 
-/* 공휴일 전날 전용 시간 축 — 그날 바로 옆, 같은 줄에 실제 시간 */
+/* 단축일(금요일·공휴일 전날) 전용 시간 축 — 그날 바로 옆, 같은 줄에 실제 시간 */
 .rl {
   position: relative;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -334,13 +334,6 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 
 #mday.slide { animation: slide .45s var(--ease) both; }
 @keyframes slide { from { opacity: 0; transform: translateX(calc(var(--dir, 1) * 22px)); } }
-.mbanner {
-  margin-top: 14px; padding: 14px 18px; border-radius: 20px;
-  background: var(--warn-soft); color: var(--warn);
-  display: flex; flex-direction: column; gap: 1px;
-}
-.mbanner span { font-size: 13px; font-weight: 600; }
-.mbanner b { font-size: 22px; font-weight: 700; letter-spacing: -.03em; }
 .mgrid {
   margin-top: 14px;
   display: grid; grid-template-columns: 124px minmax(0, 1fr); grid-template-rows: repeat(7, 98px);
@@ -389,7 +382,7 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
 }
 .close:active { transform: scale(.97); opacity: .85; }
 
-.week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; padding: 14px 18px 2px; }
+.week { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; padding: 14px 18px 2px; }
 .wday { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px 0 6px; }
 .wday .w { font-size: 12.5px; font-weight: 600; color: var(--text-3); transition: color .2s ease; }
 .wday .n {
@@ -528,7 +521,10 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
 }
 @media (max-width: 820px) {
   .page { padding: 0 16px 56px; }
-  .hero { padding: 40px 2px 18px; }
+  .hero { padding: 28px 2px 16px; }
+  .pill { padding: 8px 12px; font-size: 14px; gap: 6px; }
+  #modeBtn .lbl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  #modeBtn { padding: 8px 10px; }
   .desktop { display: none; }
   .mobile { display: block; }
   .tt { font-size: 25px; }
@@ -633,6 +629,15 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
 .pdf-mode .cap { margin-top: 5px; font-size: 11px; }
 .pdf-mode .ax b { font-size: 15.5px; }
 .pdf-mode .ax span { font-size: 13px; }
+/* PDF에서 줄 높이가 넉넉해지면 글자도 키운다 */
+.pdf-mode.pdf-roomy .tt { font-size: 22px; }
+.pdf-mode.pdf-roomy .free .tt { font-size: 19px; }
+.pdf-mode.pdf-roomy .tp { font-size: 15px; }
+.pdf-mode.pdf-roomy .tr { font-size: 14px; }
+.pdf-mode.pdf-roomy .ax b { font-size: 17px; }
+.pdf-mode.pdf-roomy .ax span { font-size: 14px; }
+.pdf-mode.pdf-roomy .rl b { font-size: 15px; }
+.pdf-mode.pdf-roomy .rl span { font-size: 12.5px; }
 /* PDF 그리기 라이브러리는 안쪽 그림자를 못 그리므로 실제 테두리로 */
 .pdf-mode .tile.free { box-shadow: none; border: 1px solid #d9d9de; }
 .pdf-mode .board { box-shadow: none; border: 1px solid #d2d2d7; }
@@ -704,7 +709,7 @@ const DEFAULT = {
   weekStart: '2026-09-28', // 시간표 주의 월요일
   // [교시] = [시작, 끝]. 0교시는 수업이 있을 때만 표에 나타난다
   normal: [['08:00','08:50'],['09:00','09:50'],['10:00','10:50'],['11:00','11:50'],['14:00','14:50'],['15:00','15:50'],['16:00','16:50'],['17:00','17:50']],
-  // 공휴일 전날: 오전 09:00–11:50, 오후 13:00–15:50, 7교시 없음 (팀빌딩이 있으면 0교시 08:00)
+  // 쉬는 날 전날(금요일·공휴일 전날): 오전 09:00–11:50, 오후 13:00–15:50, 7교시 없음 (팀빌딩이 있으면 0교시 08:00)
   eve:    [['08:00','08:50'],['09:00','09:50'],['10:00','10:50'],['11:00','11:50'],['13:00','13:50'],['14:00','14:50'],['15:00','15:50'], null],
   classes: [ // day: 0=월 … 4=금, from–to: 교시
     { day: 0, from: 1, to: 3, subject: '민생', profs: ['이혜환'], room: 'A206' },
@@ -724,7 +729,7 @@ const DEFAULT = {
     { day: 4, from: 4, to: 6, subject: '체포술', profs: ['강경덕', '전민주'], room: '유도장' },
   ],
 };
-const DEFAULT_HOLIDAYS = ['2026-10-03']; // 개천절
+const DEFAULT_HOLIDAYS = ['2026-10-05', '2026-10-09', '2026-12-25']; // 개천절 대체공휴일 · 한글날 · 성탄절
 
 /* ── 저장 (이 브라우저) · 검증 ── */
 const DATA_KEY = 'timetable.data.v2', HOLI_KEY = 'timetable.holidays.v1';
@@ -782,9 +787,12 @@ function applyData() {
 }
 applyData();
 
-/* ── 공휴일 → 전날은 자동으로 조정 시간표 ── */
+/* ── 쉬는 날(주말·공휴일)의 전날은 단축 시간표 — 토요일 전날인 금요일은 항상 ── */
 const isHoli = (i) => holidays.has(DAYS[i].date);
-const isEve = (i) => !isHoli(i) && holidays.has(nextDate(DAYS[i].date));
+const isWeekend = (s) => { const g = parseISO(s).getDay(); return g === 0 || g === 6; };
+const isOff = (s) => isWeekend(s) || holidays.has(s);
+const isEve = (i) => !isHoli(i) && isOff(nextDate(DAYS[i].date));
+const eveByHoliday = (i) => isEve(i) && holidays.has(nextDate(DAYS[i].date)); // 금요일 말고 공휴일 때문에 생긴 단축일
 const slotsFor = (i) => (isEve(i) ? EVE : NORMAL);
 const hasZero = (i) => data.classes.some((c) => c.day === i && c.from === 0);
 const showZero = () => editing || DAYS.some((_, i) => !isHoli(i) && hasZero(i));
@@ -801,7 +809,7 @@ function computeBlocks() {
   BLOCKS = data.classes.map((c) => {
     const s = slotsFor(c.day), periods = [];
     for (let p = c.from; p <= c.to; p++) if (s[p]) periods.push({ p, s: s[p][0], e: s[p][1] });
-    const na = !periods.length; // 그날 없는 교시(공휴일 전 7교시 등)에만 걸친 수업
+    const na = !periods.length; // 그날 없는 교시(단축일 7교시 등)에만 걸친 수업
     return {
       day: c.day, from: c.from, to: na ? c.to : periods[periods.length - 1].p, rawTo: c.to,
       subject: c.subject, room: c.room || '미정', periods, free: !!c.free, na,
@@ -851,7 +859,7 @@ function layout() {
     cols.push('minmax(0, 1fr)');
     return { rail, col: cols.length, start: rail || cols.length };
   });
-  // 모든 수업일이 공휴일 전날이면 왼쪽 축 자체를 조정 시간으로
+  // 모든 수업일이 단축일이면 왼쪽 축 자체를 단축 시간으로
   return { template: cols.join(' '), map, axisEve: !normalExists && DAYS.some((_, i) => isEve(i)) };
 }
 
@@ -874,7 +882,7 @@ function buildBoard() {
     const cls = [i === t && 'today', isEve(i) && 'eve', isHoli(i) && 'holi'].filter(Boolean).join(' ');
     h += `<div class="dh ${cls}" style="grid-column:${map[i].start} / ${map[i].col + 1}">
       <span class="wd">${d.dow}</span><span class="dn num">${d.n}</span>
-      ${isEve(i) ? `<span class="cap eve num">공휴일 전 · ${dayRange(i)}</span>` : ''}
+      ${isEve(i) ? `<span class="cap eve num">${dayRange(i)}</span>` : ''}
       ${isHoli(i) ? '<span class="cap holi">공휴일</span>' : ''}
     </div>`;
   });
@@ -930,7 +938,7 @@ function buildSeg() {
     <button role="tab" data-d="${i}" class="${[i === t && 'today', isHoli(i) && 'holi'].filter(Boolean).join(' ')}"
         aria-selected="${i === cur}" aria-label="${d.dow}요일 ${d.md}">
       <span class="d">${d.dow}</span><span class="m num">${d.n}</span>
-      <span class="dots">${i === t ? '<i class="t"></i>' : ''}${isEve(i) ? '<i class="e"></i>' : ''}${isHoli(i) ? '<i class="h"></i>' : ''}</span>
+      <span class="dots">${i === t ? '<i class="t"></i>' : ''}${isHoli(i) ? '<i class="h"></i>' : ''}</span>
     </button>`).join(''));
   $('#seg').style.setProperty('--idx', cur);
 }
@@ -952,9 +960,7 @@ function buildDay(dir) {
       const to = editing ? b.rawTo : b.to;
       if (rows.includes(b.from)) g += tileHTML(b, n, `grid-column:2;grid-row:${rowOf(b.from)} / ${rowOf(to) + 1}`);
     });
-    const r0 = dayRange(i).split(' – ');
-    el.innerHTML = (ev ? `<div class="mbanner"><span>${d.dow}요일 ${d.md} · 공휴일 전</span><b class="num">${r0[0]} 시작 · ${r0[1]} 종료</b></div>` : '')
-      + `<div class="mgrid" style="grid-template-rows:repeat(${rows.length}, 98px)">${g}</div>`;
+    el.innerHTML = `<div class="mgrid" style="grid-template-rows:repeat(${rows.length}, 98px)">${g}</div>`;
   }
   if (dir) { el.style.setProperty('--dir', dir); el.classList.remove('slide'); void el.offsetWidth; el.classList.add('slide'); }
 }
@@ -1043,7 +1049,7 @@ function openDetail(n) {
   const b = BLOCKS[n], d = DAYS[b.day], ev = isEve(b.day);
   $('#card').innerHTML = `
     <div class="grab"></div>
-    <div class="top"><p class="cap2">${d.dow}요일 · ${d.md}${ev ? ' · <em>공휴일 전</em>' : ''}</p><h2>${esc(b.subject)}</h2></div>
+    <div class="top"><p class="cap2">${d.dow}요일 · ${d.md}</p><h2>${esc(b.subject)}</h2></div>
     <dl>
       <div class="r"><dt>시간</dt><dd class="num${ev ? ' warn' : ''}">${b.start} – ${b.end}</dd></div>
       <div class="r"><dt>교시</dt><dd class="pl num">${b.periods.map((x) => `<div><b>${x.p}교시</b>${x.s} – ${x.e}</div>`).join('')}</dd></div>
@@ -1164,7 +1170,7 @@ const normTime = (v) => {
   return v;
 };
 function openTimes() {
-  tm = { weekStart: data.weekStart, normal: clone(data.normal), eve: clone(data.eve) };
+  tm = { normal: clone(data.normal), eve: clone(data.eve) };
   tmTab = 'normal';
   renderTimes();
   timesSheet.showModal();
@@ -1172,12 +1178,11 @@ function openTimes() {
 function renderTimes() {
   $('#tmcard').innerHTML = `
     <div class="grab"></div>
-    <div class="top"><h2>교시 시간</h2><p class="lead">학기가 바뀌면 시작 주와 교시별 시간을 여기서 바꾸세요.</p></div>
+    <div class="top"><h2>교시 시간</h2><p class="lead">학기가 바뀌어 교시 시간이 달라지면 여기서 바꾸세요.</p></div>
     <form id="tmForm" novalidate>
-      <div class="fgroup"><label class="field"><span>시작 주</span><input type="date" name="week" value="${tm.weekStart}"></label></div>
       <div class="tabs" role="tablist">
         <button type="button" role="tab" data-t="normal" aria-selected="${tmTab === 'normal'}">기본</button>
-        <button type="button" role="tab" data-t="eve" aria-selected="${tmTab === 'eve'}">공휴일 전</button>
+        <button type="button" role="tab" data-t="eve" aria-selected="${tmTab === 'eve'}">금요일 · 공휴일 전날</button>
       </div>
       <div class="fgroup">${tm[tmTab].map((x, k) => { const [s, e] = x || ['', '']; const ph = tmTab === 'eve' && k > 0 ? '없음' : ''; return `
         <div class="field"><span>${k}교시${k === 0 ? '<small>팀빌딩 등, 있을 때만 표시</small>' : ''}</span><span class="tpair">
@@ -1186,12 +1191,11 @@ function renderTimes() {
           <input class="num" inputmode="numeric" maxlength="5" data-k="${k}" data-x="1" value="${e}" placeholder="${ph}" aria-label="${k}교시 끝">
         </span></div>`; }).join('')}
       </div>
-      ${tmTab === 'eve' ? '<p class="hint">비워 둔 교시는 공휴일 전날에 없는 교시로 처리돼요.</p>' : ''}
+      ${tmTab === 'eve' ? '<p class="hint">금요일과 공휴일 전날에 쓰는 시간이에요. 비워 둔 교시는 그날 없는 교시예요.</p>' : ''}
       <p class="ferr" id="tmErr" aria-live="polite"></p>
       <button type="submit" class="close">저장</button>
     </form>`;
   const f = $('#tmForm');
-  f.elements.week.addEventListener('change', (e) => { if (isDate(e.target.value)) tm.weekStart = e.target.value; });
   f.querySelectorAll('.tpair input').forEach((inp) => {
     const put = () => { const k = +inp.dataset.k; tm[tmTab][k] = tm[tmTab][k] || ['', '']; tm[tmTab][k][+inp.dataset.x] = inp.value; };
     inp.addEventListener('input', put);
@@ -1217,10 +1221,10 @@ function timesError(list, name, allowEmpty) {
   return '';
 }
 function saveTimes() {
-  const err = timesError(tm.normal, '기본', false) || timesError(tm.eve, '공휴일 전', true);
+  const err = timesError(tm.normal, '기본', false) || timesError(tm.eve, '금요일·공휴일 전날', true);
   if (err) { $('#tmErr').textContent = err; return; }
   const before = snapshot();
-  data.weekStart = mondayOf(tm.weekStart); data.normal = tm.normal; data.eve = tm.eve;
+  data.normal = tm.normal; data.eve = tm.eve;
   timesSheet.close(); commit(before, '교시 시간을 저장했어요');
 }
 
@@ -1294,9 +1298,18 @@ async function makePdf() {
       throw e;
     }
     if (editing) setEditing(false);
+    document.querySelectorAll('.tile.live').forEach((el) => el.classList.remove('live')); // '진행 중' 표시는 PDF에 넣지 않는다
     const canvas = await window.html2canvas($('.page'), {
       scale: 2.5, backgroundColor: '#ffffff', windowWidth: 1240, logging: false,
-      onclone: (doc) => doc.body.classList.add('pdf-mode'),
+      onclone: (doc) => {
+        doc.body.classList.add('pdf-mode');
+        // 줄 높이를 늘려 A4 가로(277×190mm) 비율에 맞춘다
+        const page = doc.querySelector('.page'), n = doc.querySelectorAll('.board .ax').length || 7;
+        const r0 = parseFloat(doc.defaultView.getComputedStyle(doc.body).getPropertyValue('--row')) || 61;
+        const r = Math.max(r0, Math.min(120, r0 + (page.offsetWidth / (277 / 190) - page.offsetHeight) / n));
+        doc.body.style.setProperty('--row', `${Math.floor(r)}px`);
+        if (r >= 76) doc.body.classList.add('pdf-roomy');
+      },
     });
     const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const mw = 277, mh = 190, r = Math.min(mw / canvas.width, mh / canvas.height);
@@ -1306,6 +1319,7 @@ async function makePdf() {
   } catch (e) {
     toast('PDF를 만들지 못했어요');
   } finally {
+    tick();
     btn.disabled = false; label.textContent = 'PDF 저장';
   }
 }
@@ -1327,17 +1341,19 @@ document.addEventListener('click', (e) => {
 });
 
 /* ── 주 이동: 화살표 · 날짜 선택 · 이번 주 ── */
+// 지금 봐야 할 주: 평일이면 이번 주, 주말이면 다음 주
+const currentWeek = () => { const d = getNow(), g = d.getDay(); d.setDate(d.getDate() + (g === 6 ? 2 : g === 0 ? 1 : 0)); return mondayOf(iso(d)); };
 function setWeek(date) {
   const m = mondayOf(date);
   if (m === data.weekStart) return;
-  data.weekStart = m; saveAll(); applyData();
+  data.weekStart = m; applyData();
   cur = Math.max(0, todayIdx());
   render();
 }
 const shiftWeek = (n) => { const d = parseISO(data.weekStart); d.setDate(d.getDate() + 7 * n); setWeek(iso(d)); };
 $('#prevWeek').addEventListener('click', () => shiftWeek(-1));
 $('#nextWeek').addEventListener('click', () => shiftWeek(1));
-$('#thisWeek').addEventListener('click', () => setWeek(iso(getNow())));
+$('#thisWeek').addEventListener('click', () => setWeek(currentWeek()));
 $('#weekLabel').addEventListener('click', () => {
   const p = $('#weekPick'); p.value = data.weekStart;
   try { p.showPicker(); } catch (e) { p.focus(); p.click(); }
@@ -1350,9 +1366,9 @@ function buildSettings() {
     <div class="grab"></div>
     <div class="top">
       <h2>공휴일 지정</h2>
-      <p class="lead">공휴일로 지정한 날의 <b>전날</b>은 ${EVE[1][0]} – ${lastEnd(EVE)} 시간표로 바뀌어요. 팀빌딩이 있으면 0교시 ${EVE[0][0]} – ${EVE[0][1]}부터예요.</p>
+      <p class="lead">공휴일로 지정한 날은 수업이 없고, 그 전날은 금요일처럼 <b>${EVE[1][0]} – ${lastEnd(EVE)}</b> 시간표가 돼요.</p>
     </div>
-    <div class="week">${WEEK.map((d) => `
+    <div class="week">${DAYS.map((d) => `
       <button class="wday" data-date="${d.date}" aria-label="${d.dow}요일 ${d.md} 공휴일">
         <span class="w">${d.dow}</span><span class="n num">${d.n}</span>
       </button>`).join('')}
@@ -1369,10 +1385,10 @@ function syncSettings() {
   });
   const rows = [];
   DAYS.forEach((d, i) => {
-    if (isEve(i)) rows.push(`<div class="drow"><span class="dl">${d.dow}요일 ${d.md}</span><span class="dv eve num">공휴일 전 · ${dayRange(i)}</span></div>`);
+    if (eveByHoliday(i)) rows.push(`<div class="drow"><span class="dl">${d.dow}요일 ${d.md}</span><span class="dv eve num">${dayRange(i)}</span></div>`);
     if (isHoli(i)) rows.push(`<div class="drow"><span class="dl">${d.dow}요일 ${d.md}</span><span class="dv holi">공휴일 · 수업 없음</span></div>`);
   });
-  $('#derived').innerHTML = rows.join('') || '<p class="dnone">지정된 공휴일이 없어요. 모든 요일이 기본 시간표로 진행돼요.</p>';
+  $('#derived').innerHTML = rows.join('') || '<p class="dnone">이번 주에 지정된 공휴일이 없어요.</p>';
 }
 $('#openSettings').addEventListener('click', () => { buildSettings(); settings.showModal(); });
 settings.addEventListener('click', (e) => {
@@ -1388,7 +1404,7 @@ const MODES = { light: ['라이트', '<circle cx="12" cy="12" r="4.2"/><path d="
   auto: ['자동', '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17a8.5 8.5 0 0 0 0-17Z" fill="currentColor"/>'] };
 function paintMode() {
   const m = document.documentElement.dataset.mode in MODES ? document.documentElement.dataset.mode : 'light';
-  $('#modeBtn').innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${MODES[m][1]}</svg>${MODES[m][0]}`;
+  $('#modeBtn').innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${MODES[m][1]}</svg><span class="lbl">${MODES[m][0]}</span>`;
   $('#modeBtn').setAttribute('aria-label', `화면 모드: ${MODES[m][0]} (눌러서 바꾸기)`);
 }
 $('#modeBtn').addEventListener('click', () => {
@@ -1403,12 +1419,10 @@ paintMode();
 /* ── 공통 ── */
 function updateTop() {
   $('#weekLabel').textContent = `${DAYS[0].m}월 ${DAYS[0].n}일 – ${DAYS[4].m}월 ${DAYS[4].n}일`;
-  $('#thisWeek').hidden = mondayOf(iso(getNow())) === data.weekStart;
+  $('#thisWeek').hidden = currentWeek() === data.weekStart;
   $('#navRange').textContent = `${DAYS[0].md} – ${DAYS[4].md}`;
-  const ev = idx(isEve), ho = idx(isHoli), lines = [];
-  if (ev.length) lines.push(`<p class="nl"><i class="o"></i><span>${dayNames(ev)}은 공휴일 전날이라 <b class="num">${EVE[1][0]} – ${lastEnd(EVE)}</b>예요 · 팀빌딩 시 <b class="num">${EVE[0][0]} – ${EVE[0][1]}</b></span></p>`);
+  const ho = idx(isHoli), lines = [];
   if (ho.length) lines.push(`<p class="nl"><i class="r"></i><span>${dayNames(ho)}은 <b class="r">공휴일</b>이라 수업이 없어요.</span></p>`);
-  if (!lines.length) lines.push(`<p class="nl"><i class="b"></i><span>이번 주는 평소 시간표예요 · <b class="b num">${NORMAL[1][0]} – ${lastEnd(NORMAL)}</b>${DAYS.some((_, i) => hasZero(i)) ? ` · 0교시 <b class="b num">${NORMAL[0][0]}</b> 있음` : ''}</span></p>`);
   $('#notice').innerHTML = lines.join('');
 }
 function tick() {
@@ -1423,6 +1437,8 @@ function render() {
 new IntersectionObserver(([e]) => $('#nav').classList.toggle('on', !e.isIntersecting), { rootMargin: '-40px 0px 0px 0px' })
   .observe(document.querySelector('.hero h1'));
 
+data.weekStart = currentWeek(); applyData();
+cur = Math.max(0, todayIdx());
 render();
 setInterval(tick, 30000);
 </script>
