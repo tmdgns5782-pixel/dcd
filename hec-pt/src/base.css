@@ -1,0 +1,281 @@
+/* ==========================================================================
+   현대엔지니어링 PT 시안 — 공통 디자인 시스템 (가로형 · 세로형 공용)
+   - CI 전용색: 현대 Blue(PMS 286C) · Green(PMS 3415C) · Yellow(PMS 130C)
+   - 2026 가치체계 안내 그래픽의 하늘색 → 파랑 그래디언트를 '잇는 길(연결선)'에 사용
+   - 의미 색: 사람·우리 = Green / 기술 = Blue / 현장·성과 = Yellow
+   - 서체: Paperlogy(페이퍼로지)
+   ========================================================================== */
+
+@font-face { font-family: "Paperlogy"; font-weight: 300; font-style: normal; font-display: block; src: url("../fonts/Paperlogy-3Light.woff2") format("woff2"); }
+@font-face { font-family: "Paperlogy"; font-weight: 400; font-style: normal; font-display: block; src: url("../fonts/Paperlogy-4Regular.woff2") format("woff2"); }
+@font-face { font-family: "Paperlogy"; font-weight: 500; font-style: normal; font-display: block; src: url("../fonts/Paperlogy-5Medium.woff2") format("woff2"); }
+@font-face { font-family: "Paperlogy"; font-weight: 600; font-style: normal; font-display: block; src: url("../fonts/Paperlogy-6SemiBold.woff2") format("woff2"); }
+@font-face { font-family: "Paperlogy"; font-weight: 700; font-style: normal; font-display: block; src: url("../fonts/Paperlogy-7Bold.woff2") format("woff2"); }
+@font-face { font-family: "Paperlogy"; font-weight: 800; font-style: normal; font-display: block; src: url("../fonts/Paperlogy-8ExtraBold.woff2") format("woff2"); }
+@font-face { font-family: "Paperlogy"; font-weight: 900; font-style: normal; font-display: block; src: url("../fonts/Paperlogy-9Black.woff2") format("woff2"); }
+
+:root {
+  /* CI 전용색 */
+  --hec-blue: #004098;
+  --hec-green: #009944;
+  --hec-yellow: #FABE00;
+
+  /* 가치체계 그래디언트 (잇는 길) */
+  --sky: #45B9EC;
+  --sky-2: #2A78DD;
+  --grad: linear-gradient(90deg, var(--sky) 0%, var(--sky-2) 100%);
+  --grad-v: linear-gradient(180deg, var(--sky) 0%, var(--sky-2) 100%);
+
+  /* 텍스트 · 면 */
+  --navy: #0B2147;      /* 제목, 어두운 카드 */
+  --ink: #1C2536;       /* 본문 */
+  --ink-2: #4B5568;     /* 보조 본문 */
+  --ink-3: #8691A5;     /* 캡션 · 푸터 */
+  --line: #D8E0EB;      /* 얇은 구분선 */
+  --line-2: #C3CEDD;
+  --paper: #FFFFFF;
+
+  /* 옅은 면 (의미 색 틴트) */
+  --tint-blue: #EEF4FC;
+  --tint-sky: #E9F6FD;
+  --tint-green: #E7F5EC;
+  --tint-yellow: #FFF5D6;
+  --gold-ink: #8A6400;  /* 노랑 면 위 글자용 (노랑 자체는 글자색으로 쓰지 않는다) */
+
+  /* 타입 스케일 — 가로형 기준. 세로형 파일에서 덮어쓴다 */
+  --fs-topic: 22px;
+  --fs-lead: 32px;
+  --fs-title: 56px;
+  --fs-h2: 34px;
+  --fs-h3: 28px;
+  --fs-body: 26px;
+  --fs-small: 22px;
+  --fs-eyebrow: 19px;
+  --fs-foot: 18px;
+
+  /* 여백 */
+  --pad-top: 64px;
+  --pad-x: 96px;
+  --pad-bottom: 44px;
+  --gap: 32px;
+  --radius: 22px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: #E3E8EF;   /* 화면 미리보기용 바탕 — 인쇄 시 흰색 */
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+body {
+  font-family: "Paperlogy", "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  font-weight: 500;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  line-height: 1.45;
+}
+
+h1, h2, h3, h4, p, ul, ol { margin: 0; padding: 0; }
+ul, ol { list-style: none; }
+em { font-style: normal; }
+svg { display: block; overflow: visible; }
+
+/* ---------- 페이지 틀 ---------- */
+.deck {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  padding: 40px 0 64px;
+}
+
+.slide {
+  position: relative;
+  width: var(--W);
+  height: var(--H);
+  overflow: hidden;
+  background: var(--paper);
+  box-shadow: 0 2px 6px rgba(11, 33, 71, .06), 0 18px 48px rgba(11, 33, 71, .10);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: var(--pad-top) var(--pad-x) var(--pad-bottom);
+  zoom: var(--s, 1);   /* 화면 폭에 맞춰 축소 (deck.js) */
+}
+
+.body { position: relative; min-height: 0; margin-top: 44px; }
+
+@media print {
+  html, body { background: #fff; }
+  .deck { display: block; padding: 0; }
+  .slide { zoom: 1; box-shadow: none; break-after: page; page-break-after: always; }
+  .slide:last-child { break-after: auto; page-break-after: auto; }
+  .screen-only { display: none !important; }
+}
+
+/* ---------- 머리글 ---------- */
+.hd { position: relative; }
+.hd-meta, .hd-lead { padding-right: 320px; }   /* 오른쪽 위는 로고 자리. 제목은 로고 아래라 전체 폭 사용 */
+
+.hd-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: var(--fs-topic);
+  font-weight: 600;
+  color: var(--ink-3);
+  letter-spacing: -0.01em;
+}
+.hd-no {
+  font-weight: 800;
+  color: var(--hec-blue);
+  letter-spacing: 0.02em;
+}
+.hd-lead {
+  margin-top: 22px;
+  font-size: var(--fs-lead);
+  font-weight: 600;
+  color: var(--ink-2);
+  letter-spacing: -0.02em;
+}
+.hd-title {
+  margin-top: 8px;
+  font-size: var(--fs-title);
+  font-weight: 800;
+  line-height: 1.24;
+  color: var(--navy);
+  letter-spacing: -0.035em;
+}
+.hd-title em { color: var(--hec-blue); }
+
+/* 시그니처: 사람(Green) · 기술(Blue) · 현장(Yellow)이 하나의 선으로 이어진 표식 */
+.mark { display: inline-flex; align-items: center; gap: 0; }
+.mark i { width: 10px; height: 10px; border-radius: 50%; display: block; }
+.mark i:nth-of-type(1) { background: var(--hec-green); }
+.mark i:nth-of-type(2) { background: var(--hec-blue); }
+.mark i:nth-of-type(3) { background: var(--hec-yellow); }
+.mark b { width: 14px; height: 2px; background: var(--line-2); display: block; }
+
+/* ---------- 로고 자리 ---------- */
+/* hec-pt 폴더에 logo.png(공식 CI)를 넣으면 자동으로 표시된다. 없으면 점선 자리표시 */
+.logo {
+  position: absolute;
+  top: var(--pad-top);
+  right: var(--pad-x);
+  width: 260px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+.logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.logo span {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  border: 2px dashed var(--line-2);
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink-3);
+  letter-spacing: 0.02em;
+}
+.logo:has(img) span { display: none; }
+
+/* ---------- 바닥글 ---------- */
+.ft {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--fs-foot);
+  font-weight: 500;
+  color: var(--ink-3);
+  letter-spacing: -0.01em;
+}
+.ft .pg { font-weight: 700; color: var(--ink-2); letter-spacing: 0.06em; }
+.ft .pg b { color: var(--hec-blue); }
+
+/* ---------- 공통 요소 ---------- */
+.eyebrow {
+  font-size: var(--fs-eyebrow);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sky-2);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 46px;
+  padding: 0 20px;
+  border-radius: 999px;
+  background: var(--tint-blue);
+  color: var(--hec-blue);
+  font-size: var(--fs-small);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.chip.ghost { background: transparent; border: 2px solid var(--line); color: var(--ink-2); }
+.chip.people { background: var(--tint-green); color: #0B6B33; }
+.chip.tech { background: var(--tint-blue); color: var(--hec-blue); }
+.chip.field { background: var(--tint-yellow); color: var(--gold-ink); }
+
+/* 링 노드 — 가치체계 그래픽처럼 그래디언트 테두리의 얇은 원 */
+.ring {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  background: linear-gradient(#fff, #fff) padding-box, var(--grad-v) border-box;
+}
+.ring.solid {
+  border: 0;
+  background: var(--grad-v);
+  color: #fff;
+}
+
+/* 작은 연결점 */
+.dot { width: 12px; height: 12px; border-radius: 50%; background: var(--sky-2); display: block; }
+.dot.people { background: var(--hec-green); }
+.dot.tech { background: var(--hec-blue); }
+.dot.field { background: var(--hec-yellow); }
+
+/* 핵심 메시지 — 각 장의 결론. 짙은 남색 면 + 흰 글자 */
+.key {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 26px 40px;
+  border-radius: var(--radius);
+  background: var(--navy);
+  color: #fff;
+}
+.key .key-label {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: var(--fs-eyebrow);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #8FD3F5;
+}
+.key .key-text {
+  font-size: var(--fs-h2);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.3;
+}
+.key .key-text em { color: #FFD24D; }   /* 남색 위 강조 — CI 옐로우 계열 */
+
+/* 숫자 · 짧은 텍스트 정렬 보조 */
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--ink-3); }
+.strong { font-weight: 700; color: var(--navy); }
