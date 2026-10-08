@@ -351,19 +351,27 @@ svg { display: block; overflow: visible; }
 #p1 .p1p-topic h4 em { color: var(--sky); margin-left: 6px; }
 #p1 .p1p-topic p { margin-top: 6px; font-size: 22px; font-weight: 500; color: color-mix(in srgb, var(--paper) 80%, var(--navy)); letter-spacing: -0.025em; }
 
-/* 02 조직도 */
-#p1 .p1p-lead { width: 640px; margin: 0 auto; padding: 13px 28px 15px; border-radius: var(--radius); background: var(--navy); color: var(--paper); text-align: center; }
-#p1 .p1p-lead b { display: inline-flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
-#p1 .p1p-lead b i, #p1 .p1p-mem b i { width: 12px; height: 12px; border-radius: 50%; background: var(--hec-green); display: block; }
-#p1 .p1p-lead p { margin-top: 4px; font-size: 22px; font-weight: 500; color: color-mix(in srgb, var(--paper) 85%, var(--navy)); letter-spacing: -0.025em; }
-#p1 .p1p-tree { display: block; width: 100%; height: 38px; }
-#p1 .p1p-mems { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-#p1 .p1p-mem { padding: 11px 16px 13px; border: 2px solid var(--line); border-radius: var(--radius); background: var(--paper); text-align: center; }
-#p1 .p1p-mem b { display: inline-flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 800; color: var(--navy); letter-spacing: -0.02em; }
-#p1 .p1p-mem p { margin-top: 4px; font-size: 22px; font-weight: 500; color: var(--ink-2); line-height: 1.42; letter-spacing: -0.03em; }
-#p1 .p1p-cyc { margin-top: 14px; display: flex; justify-content: center; }
-#p1 .p1p-cyc span { display: inline-flex; align-items: center; gap: 12px; height: 42px; padding: 0 24px 0 18px; border-radius: 999px; background: var(--tint-green); color: #0B6B33; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
-#p1 .p1p-cyc svg { width: 24px; height: 24px; flex: none; }
+/* 02 공동 목표를 둘러싼 원탁 */
+#p1 .p1p-rt { position: relative; height: 330px; }
+#p1 .p1p-rt > svg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+#p1 .p1p-rt > svg.top { z-index: 2; }
+#p1 .p1p-seat { position: absolute; z-index: 1; width: 324px; height: 112px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 12px 2px; border: 2px solid var(--line); border-radius: var(--radius); background: var(--paper); text-align: center; }
+#p1 .p1p-seat.t { left: 342px; top: 0; }
+#p1 .p1p-seat.b { left: 342px; top: 218px; }
+#p1 .p1p-seat.l { left: 0; top: 109px; }
+#p1 .p1p-seat.r { left: 684px; top: 109px; }
+#p1 .p1p-seat b { display: inline-flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 800; color: var(--navy); letter-spacing: -0.02em; line-height: 1.25; }
+#p1 .p1p-seat b i { width: 12px; height: 12px; border-radius: 50%; background: var(--hec-green); display: block; }
+#p1 .p1p-seat p { margin-top: 3px; font-size: 22px; font-weight: 500; color: var(--ink-2); line-height: 1.32; letter-spacing: -0.04em; white-space: nowrap; }
+#p1 .p1p-seat.me { border-color: var(--navy); background: var(--navy); }
+#p1 .p1p-seat.me b { color: var(--paper); }
+#p1 .p1p-seat.me p { color: color-mix(in srgb, var(--paper) 85%, var(--navy)); }
+#p1 .p1p-me { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 999px; background: var(--paper); color: var(--navy); font-size: 18px; font-weight: 800; letter-spacing: 0; }
+#p1 .p1p-goal { position: absolute; z-index: 1; left: 394px; top: 134px; width: 220px; height: 62px; border-radius: 999px; background: var(--grad); color: var(--paper); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+#p1 .p1p-goal b { font-size: 22px; font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; }
+#p1 .p1p-goal span { margin-top: 3px; font-size: 19px; font-weight: 600; line-height: 1.1; letter-spacing: -0.02em; color: color-mix(in srgb, var(--paper) 88%, var(--sky-2)); }
+#p1 .p1p-loop { position: absolute; z-index: 1; right: 0; top: 284px; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px 0 14px; border-radius: 999px; background: var(--tint-green); color: #0B6B33; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; }
+#p1 .p1p-loop svg { width: 22px; height: 22px; flex: none; }
 
 /* 03 영상 → 메달 */
 #p1 .p1p-out { display: flex; align-items: flex-start; }
@@ -426,20 +434,26 @@ svg { display: block; overflow: visible; }
     <section class="p1p-blk b2">
       <div class="p1p-bh"><span class="ring solid p1p-no">02</span><h3>강점에 맞게 역할을 나누다</h3></div>
       <div class="p1p-bd">
-        <div class="p1p-lead">
-          <b><i></i>팀장 · 나</b>
-          <p>프로젝트 총괄 · Dynamo 기반 자동화 알고리즘 개발</p>
+        <div class="p1p-rt">
+          <!-- 공유 순환 고리(타원) + 화살촉 -->
+          <svg viewBox="0 0 1008 330" aria-hidden="true">
+            <defs><linearGradient id="p1p-rg" gradientUnits="userSpaceOnUse" x1="162" y1="0" x2="846" y2="0"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient></defs>
+            <ellipse cx="504" cy="165" rx="342" ry="109" fill="none" stroke="url(#p1p-rg)" stroke-width="3"/>
+            <path d="M744.6 87.5L730.1 90.4L734.1 77.0Z M732.1 246.3L742.5 235.8L746.6 249.2Z M263.4 242.5L277.9 239.6L273.9 253.0Z M275.9 83.7L265.5 94.2L261.4 80.8Z" style="fill:var(--sky-2)"/>
+          </svg>
+          <div class="p1p-seat t me"><b><i></i>팀장<span class="p1p-me">나</span></b><p>프로젝트 총괄 · Dynamo 기반<br>자동화 알고리즘 개발</p></div>
+          <div class="p1p-seat r"><b><i></i>팀원 A</b><p>유닛 모듈러 설계<br>배치계획</p></div>
+          <div class="p1p-seat b"><b><i></i>팀원 B</b><p>Revit 기반 BIM 모델링<br>데이터 구축</p></div>
+          <div class="p1p-seat l"><b><i></i>팀원 C</b><p>리모델링 적용 시나리오 구성<br>시연 영상 제작</p></div>
+          <div class="p1p-goal"><b>공동 목표</b><span>3주 내 완성</span></div>
+          <!-- 바큇살: 각 자리 → 공동 목표 -->
+          <svg class="top" viewBox="0 0 1008 330" aria-hidden="true">
+            <defs><linearGradient id="p1p-sg" gradientUnits="userSpaceOnUse" x1="324" y1="0" x2="684" y2="0"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient></defs>
+            <path d="M504 112V134M504 196V218M324 165H394M614 165H684" fill="none" stroke="url(#p1p-sg)" stroke-width="3"/>
+            <g style="fill:var(--sky-2);stroke:var(--paper)" stroke-width="2.5"><circle cx="504" cy="112" r="5.5"/><circle cx="504" cy="218" r="5.5"/><circle cx="324" cy="165" r="5.5"/><circle cx="684" cy="165" r="5.5"/></g>
+          </svg>
+          <span class="p1p-loop"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.2 9A7.6 7.6 0 0 0 5 8M4.8 15a7.6 7.6 0 0 0 14.2 1" fill="none" style="stroke:var(--hec-green)" stroke-width="2.4" stroke-linecap="round"/><path d="M20 4v5.2h-5.2M4 20v-5.2h5.2" fill="none" style="stroke:var(--hec-green)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>이틀마다 진행상황 공유 · 피드백</span>
         </div>
-        <svg class="p1p-tree" viewBox="0 0 1008 38" preserveAspectRatio="none" aria-hidden="true">
-          <defs><linearGradient id="p1p-tg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="38"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient></defs>
-          <path d="M504 0V18M164 38V18H844V38" fill="none" stroke="url(#p1p-tg)" stroke-width="3" stroke-linejoin="round"/>
-        </svg>
-        <div class="p1p-mems">
-          <div class="p1p-mem"><b><i></i>팀원 A</b><p>유닛 모듈러 설계<br>배치계획</p></div>
-          <div class="p1p-mem"><b><i></i>팀원 B</b><p>Revit 기반 BIM 모델링<br>데이터 구축</p></div>
-          <div class="p1p-mem"><b><i></i>팀원 C</b><p>리모델링 적용 시나리오 구성<br>시연 영상 제작</p></div>
-        </div>
-        <div class="p1p-cyc"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.2 9A7.6 7.6 0 0 0 5 8M4.8 15a7.6 7.6 0 0 0 14.2 1" fill="none" style="stroke:var(--hec-green)" stroke-width="2.4" stroke-linecap="round"/><path d="M20 4v5.2h-5.2M4 20v-5.2h5.2" fill="none" style="stroke:var(--hec-green)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>이틀마다 진행상황 공유 · 피드백</span></div>
       </div>
     </section>
 

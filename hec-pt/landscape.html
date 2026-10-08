@@ -360,29 +360,30 @@ svg { display: block; overflow: visible; }
 #p1 .p1-topic h4 span { color: var(--sky); }
 #p1 .p1-topic p { margin-top: 8px; font-size: 20px; font-weight: 500; line-height: 1.4; letter-spacing: -0.02em; color: color-mix(in srgb, var(--paper) 78%, var(--navy)); }
 
-/* --- 02 역할 트리 --- */
-#p1 .p1-b2 { padding: 22px 20px; justify-content: flex-start; }
-#p1 .p1-bus { flex: 1; min-height: 18px; position: relative; }
-#p1 .p1-bus > svg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
-#p1 .p1-org { display: flex; flex-direction: column; }
-#p1 .p1-lead {
-  align-self: center; border-radius: 18px; background: var(--navy); color: var(--paper);
-  padding: 18px 30px; text-align: center;
+/* --- 02 공동 목표를 둘러앉은 원탁 --- */
+#p1 .p1-b2 { padding: 0; }
+#p1 .p1-b2 > svg { position: absolute; left: 0; top: 0; width: 660px; height: 514px; }
+#p1 .p1-card {
+  position: absolute; width: 226px; height: 148px; border-radius: 18px; background: var(--paper); border: 2px solid var(--line);
+  display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; text-align: center;
 }
-#p1 .p1-who { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 24px; font-weight: 800; line-height: 1.3; letter-spacing: -0.02em; }
+#p1 .p1-card.me { background: var(--navy); border-color: var(--navy); color: var(--paper); }
+#p1 .p1-who { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 24px; font-weight: 800; line-height: 1.2; color: var(--navy); letter-spacing: -0.02em; }
+#p1 .p1-card.me .p1-who { color: var(--paper); }
 #p1 .p1-av { width: 14px; height: 14px; border-radius: 50%; background: var(--hec-green); display: block; flex: none; }
-#p1 .p1-lead .p1-role { margin-top: 4px; font-size: 24px; font-weight: 500; line-height: 1.35; letter-spacing: -0.025em; color: color-mix(in srgb, var(--paper) 85%, var(--navy)); }
-#p1 .p1-tree { display: block; width: 620px; height: 82px; }
-#p1 .p1-mems { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 14px; }
-#p1 .p1-mem { border-radius: 18px; background: var(--paper); border: 2px solid var(--line); padding: 14px 12px; text-align: center; }
-#p1 .p1-mem .p1-who { color: var(--navy); }
-#p1 .p1-mem .p1-role { margin-top: 4px; font-size: 24px; font-weight: 500; line-height: 1.35; letter-spacing: -0.025em; color: var(--ink-2); }
-#p1 .p1-share {
-  display: flex; align-items: center; justify-content: center; gap: 10px; height: 52px; border-radius: 999px;
-  background: var(--tint-green); color: var(--hec-green); font-size: 24px; font-weight: 700; letter-spacing: -0.02em;
+#p1 .p1-me {
+  width: 28px; height: 28px; border-radius: 50%; background: var(--paper); color: var(--navy);
+  display: grid; place-items: center; font-size: 18px; font-weight: 800; line-height: 1;
 }
-#p1 .p1-share span { color: var(--navy); }
-#p1 .p1-share svg { width: 26px; height: 26px; }
+#p1 .p1-role { font-size: 24px; font-weight: 500; line-height: 1.25; letter-spacing: -0.03em; color: var(--ink-2); white-space: nowrap; }
+#p1 .p1-card.me .p1-role { color: color-mix(in srgb, var(--paper) 85%, var(--navy)); }
+#p1 .p1-goal { position: absolute; transform: translate(-50%, -50%); text-align: center; white-space: nowrap; }
+#p1 .p1-goal b { display: block; font-size: 24px; font-weight: 800; line-height: 1.2; color: var(--hec-blue); letter-spacing: -0.02em; }
+#p1 .p1-goal span { display: block; margin-top: 2px; font-size: 18px; font-weight: 700; line-height: 1.2; color: var(--ink-2); letter-spacing: -0.02em; }
+#p1 .p1-share {
+  position: absolute; padding: 8px 16px; border-radius: 16px; background: var(--tint-green); border: 2px solid var(--paper);
+  font-size: 20px; font-weight: 700; line-height: 1.3; color: var(--navy); letter-spacing: -0.02em; white-space: nowrap; text-align: center;
+}
 
 /* --- 03 영상 → 장려상 --- */
 #p1 .p1-b3 { padding: 0; }
@@ -458,29 +459,39 @@ svg { display: block; overflow: visible; }
       </div>
     </div>
 
-    <!-- 02 : 팀장이 위에서 역할을 나눔 -->
+    <!-- 02 : 공동 목표를 가운데 두고 네 사람이 같은 크기로 둘러앉음. 타원 = 이틀마다 공유 순환 -->
     <div class="p1-blk p1-b2">
-      <div class="p1-org">
-      <div class="p1-lead">
-        <p class="p1-who"><i class="p1-av"></i>팀장 · 나</p>
-        <p class="p1-role">프로젝트 총괄 ·<br>Dynamo 기반 자동화 알고리즘 개발</p>
-      </div>
-      <svg class="p1-tree" viewBox="0 0 620 82" aria-hidden="true">
-        <defs><linearGradient id="p1l-tree" gradientUnits="userSpaceOnUse" x1="98" y1="0" x2="522" y2="0"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient></defs>
-        <g stroke="url(#p1l-tree)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="310" y1="0" x2="310" y2="82"/>
-          <path d="M98.7 82 V41 H521.3 V82"/>
+      <svg viewBox="0 0 660 514" aria-hidden="true">
+        <defs>
+          <linearGradient id="p1l-goal" gradientUnits="userSpaceOnUse" x1="0" y1="201" x2="0" y2="313"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient>
+          <linearGradient id="p1l-spoke" gradientUnits="userSpaceOnUse" x1="242" y1="0" x2="418" y2="0"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient>
+        </defs>
+        <!-- 공유 순환 고리 -->
+        <ellipse cx="330" cy="257" rx="201" ry="171" fill="none" stroke="var(--hec-green)" stroke-width="3" opacity=".5"/>
+        <g fill="none" stroke="var(--hec-green)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M472.5 147.0 L485.9 149.0 L483.7 135.6"/>
+          <path d="M187.5 367.0 L174.1 365.0 L176.3 378.4"/>
+          <path d="M179.0 155.4 L181.2 142.0 L167.7 144.0"/>
         </g>
-        <circle cx="310" cy="41" r="6" fill="var(--sky-2)" stroke="var(--tint-blue)" stroke-width="3"/>
+        <!-- 바퀴살 -->
+        <g stroke="url(#p1l-spoke)" stroke-width="3" stroke-linecap="round">
+          <line x1="330" y1="160" x2="330" y2="201"/><line x1="330" y1="313" x2="330" y2="354"/>
+          <line x1="242" y1="257" x2="274" y2="257"/><line x1="386" y1="257" x2="418" y2="257"/>
+        </g>
+        <g fill="var(--sky-2)" stroke="var(--tint-blue)" stroke-width="3">
+          <circle cx="330" cy="163" r="6"/><circle cx="330" cy="351" r="6"/><circle cx="245" cy="257" r="6"/><circle cx="415" cy="257" r="6"/>
+        </g>
+        <!-- 공동 목표 -->
+        <circle cx="330" cy="257" r="56" fill="var(--paper)" stroke="url(#p1l-goal)" stroke-width="4"/>
       </svg>
-      <div class="p1-mems">
-        <div class="p1-mem"><p class="p1-who"><i class="p1-av"></i>팀원 A</p><p class="p1-role">유닛 모듈러 설계 ·<br>배치계획</p></div>
-        <div class="p1-mem"><p class="p1-who"><i class="p1-av"></i>팀원 B</p><p class="p1-role">Revit 기반<br>BIM 모델링 ·<br>데이터 구축</p></div>
-        <div class="p1-mem"><p class="p1-who"><i class="p1-av"></i>팀원 C</p><p class="p1-role">리모델링 적용<br>시나리오 구성 ·<br>시연 영상 제작</p></div>
-      </div>
-      </div>
-      <div class="p1-bus"><svg viewBox="0 0 620 20" preserveAspectRatio="none" aria-hidden="true"><g stroke="var(--hec-green)" stroke-width="3" opacity=".45"><line x1="98.7" y1="0" x2="98.7" y2="20" vector-effect="non-scaling-stroke"/><line x1="310" y1="0" x2="310" y2="20" vector-effect="non-scaling-stroke"/><line x1="521.3" y1="0" x2="521.3" y2="20" vector-effect="non-scaling-stroke"/></g></svg></div>
-      <p class="p1-share"><svg viewBox="0 0 26 26" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11A8.2 8.2 0 0 0 6 8.2M5 15a8.2 8.2 0 0 0 15 2.8"/><path d="M5.4 3.6v5h5M20.6 22.4v-5h-5"/></svg><span>이틀마다 진행상황 공유 · 피드백</span></p>
+      <p class="p1-goal" style="left:330px; top:257px"><b>공동 목표</b><span>3주 내 완성</span></p>
+
+      <div class="p1-card me" style="left:217px; top:12px"><p class="p1-who"><i class="p1-av"></i>팀장<span class="p1-me">나</span></p><p class="p1-role">프로젝트 총괄 ·<br>Dynamo 기반<br>자동화 알고리즘 개발</p></div>
+      <div class="p1-card" style="left:418px; top:183px"><p class="p1-who"><i class="p1-av"></i>팀원 A</p><p class="p1-role">유닛 모듈러 설계 ·<br>배치계획</p></div>
+      <div class="p1-card" style="left:217px; top:354px"><p class="p1-who"><i class="p1-av"></i>팀원 B</p><p class="p1-role">Revit 기반<br>BIM 모델링 ·<br>데이터 구축</p></div>
+      <div class="p1-card" style="left:16px; top:183px"><p class="p1-who"><i class="p1-av"></i>팀원 C</p><p class="p1-role">리모델링 적용<br>시나리오 구성 ·<br>시연 영상 제작</p></div>
+
+      <p class="p1-share" style="left:452px; top:364px">이틀마다 진행상황<br>공유 · 피드백</p>
     </div>
 
     <!-- 03 : 시연 영상 → 장려상 -->
