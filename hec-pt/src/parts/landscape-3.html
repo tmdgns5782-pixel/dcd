@@ -1,3 +1,167 @@
 <!-- landscape 3: 이 파일만 편집. 스타일은 #p3 로 범위를 한정 -->
 <style>
+#p3 .p3l { height: 100%; display: flex; flex-direction: column; padding-bottom: 8px;
+  --g-ink: color-mix(in srgb, var(--hec-green), #000 32%); }
+#p3 .p3l .stage { position: relative; width: 1728px; height: 590px; flex: none; }
+#p3 .p3l .stage > svg { position: absolute; left: 0; top: 0; width: 1728px; height: 590px; }
+#p3 .p3l .key { margin-top: auto; }
+
+/* SVG strokes */
+#p3 .p3l .ln { fill: none; stroke-width: 3; stroke-linecap: round; }
+#p3 .p3l .ln.trunk { stroke: url(#p3l-grad); }
+#p3 .p3l .ln.ppl { stroke: var(--hec-green); }
+#p3 .p3l .ln.tch { stroke: var(--hec-blue); }
+#p3 .p3l .ln.fan { stroke: url(#p3l-grad); stroke-width: 2.5; }
+#p3 .p3l .ln.dash { stroke: var(--line-2); stroke-width: 2; stroke-dasharray: 2 7; }
+#p3 .p3l .g0 { stop-color: var(--sky); }
+#p3 .p3l .g1 { stop-color: var(--sky-2); }
+#p3 .p3l .jd { fill: var(--sky-2); }
+#p3 .p3l .jd.ppl { fill: var(--hec-green); }
+#p3 .p3l .jd.tch { fill: var(--hec-blue); }
+#p3 .p3l .jd.fld { fill: var(--hec-yellow); }
+#p3 .p3l .halo { fill: none; stroke: var(--line); stroke-width: 2; }
+
+/* positioned items */
+#p3 .p3l .a { position: absolute; }
+
+/* text blocks */
+#p3 .p3l .eb { display: flex; align-items: center; gap: 10px; font-size: var(--fs-eyebrow); font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3); line-height: 1.3; white-space: nowrap; }
+#p3 .p3l .eb b { font-weight: 800; color: var(--navy); letter-spacing: 0.08em; }
+#p3 .p3l .eb .dot { width: 10px; height: 10px; }
+#p3 .p3l .ttl { margin-top: 6px; font-size: var(--fs-h3); font-weight: 800; color: var(--navy);
+  letter-spacing: -0.03em; line-height: 1.3; white-space: nowrap; }
+#p3 .p3l .dl { margin-top: 10px; display: grid; gap: 4px; }
+#p3 .p3l .dl li { display: flex; align-items: center; gap: 12px; font-size: var(--fs-small); font-weight: 600;
+  color: var(--ink-2); line-height: 1.4; white-space: nowrap; }
+#p3 .p3l .dl li::before { content: ""; width: 14px; height: 2px; border-radius: 2px; background: var(--line-2); flex: none; }
+#p3 .p3l .people .eb { color: var(--g-ink); }
+#p3 .p3l .tech .eb { color: var(--hec-blue); }
+
+/* nodes */
+#p3 .p3l .node { display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; border-radius: 50%; }
+#p3 .p3l .node .st { font-size: 18px; font-weight: 700; letter-spacing: 0.14em; line-height: 1; }
+#p3 .p3l .node .nm { margin-top: 8px; font-size: 30px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
+#p3 .p3l .n-field { width: 204px; height: 204px; left: 0; top: 193px;
+  background: linear-gradient(var(--tint-yellow), var(--tint-yellow)) padding-box, var(--grad-v) border-box; }
+#p3 .p3l .n-field .st { color: var(--gold-ink); }
+#p3 .p3l .n-field .nm { color: var(--navy); }
+#p3 .p3l .n-ppl, #p3 .p3l .n-tch { width: 116px; height: 116px; border: 3px solid; }
+#p3 .p3l .n-ppl { left: 542px; top: 117px; background: var(--tint-green); border-color: var(--hec-green); }
+#p3 .p3l .n-tch { left: 542px; top: 357px; background: var(--tint-blue); border-color: var(--hec-blue); }
+#p3 .p3l .n-ppl .st, #p3 .p3l .n-tch .st { font-size: 16px; letter-spacing: 0.1em; }
+#p3 .p3l .n-ppl .nm, #p3 .p3l .n-tch .nm { font-size: 28px; margin-top: 6px; }
+#p3 .p3l .n-ppl .st, #p3 .p3l .n-ppl .nm { color: var(--g-ink); }
+#p3 .p3l .n-tch .st, #p3 .p3l .n-tch .nm { color: var(--hec-blue); }
+#p3 .p3l .n-imp { width: 214px; height: 214px; left: 1183px; top: 188px; }
+#p3 .p3l .n-imp .st { color: rgba(255,255,255,.78); }
+#p3 .p3l .n-imp .nm { color: #fff; }
+
+/* joint: 문제 발견 */
+#p3 .p3l .joint { width: 64px; height: 64px; left: 298px; top: 263px; }
+#p3 .p3l .joint svg { width: 28px; height: 28px; }
+#p3 .p3l .jl { left: 330px; top: 340px; transform: translateX(-50%); font-size: var(--fs-small); font-weight: 800;
+  color: var(--navy); letter-spacing: -0.02em; white-space: nowrap; }
+
+/* plus between branches */
+#p3 .p3l .plus { width: 44px; height: 44px; left: 578px; top: 273px; border-radius: 50%; background: #fff;
+  border: 2px solid var(--line-2); display: grid; place-items: center; }
+#p3 .p3l .plus svg { width: 16px; height: 16px; }
+
+/* ghost chips (deck link) */
+#p3 .p3l .gh { height: 38px; padding: 0 16px; font-size: 18px; gap: 8px; background: #fff; }
+#p3 .p3l .gh b { font-weight: 800; color: var(--navy); letter-spacing: 0.04em; }
+
+/* outcomes */
+#p3 .p3l .oc { left: 1492px; width: 236px; height: 56px; padding: 0 22px; font-size: var(--fs-body); font-weight: 800;
+  gap: 14px; letter-spacing: -0.02em; }
+#p3 .p3l .oc .dot { width: 14px; height: 14px; }
+#p3 .p3l .oc span { font-weight: 600; }
 </style>
+
+<div class="p3l">
+  <div class="stage">
+    <svg viewBox="0 0 1728 590" aria-hidden="true">
+      <defs>
+        <linearGradient id="p3l-grad" gradientUnits="userSpaceOnUse" x1="200" y1="0" x2="1500" y2="0">
+          <stop offset="0" class="g0"/><stop offset="1" class="g1"/>
+        </linearGradient>
+      </defs>
+      <!-- trunk: FIELD → 문제 발견 -->
+      <path class="ln trunk" d="M204 295 H330"/>
+      <!-- upper (PEOPLE) & lower (TECH) branches -->
+      <path class="ln ppl" d="M362 295 C455 295 455 175 542 175 M658 175 H1000 C1070 175 1066 295 1130 295"/>
+      <path class="ln tch" d="M362 295 C455 295 455 415 542 415 M658 415 H1000 C1070 415 1066 295 1130 295"/>
+      <!-- connector between branches -->
+      <path class="ln dash" d="M600 236 V356"/>
+      <!-- merge → IMPROVE -->
+      <path class="ln trunk" d="M1130 295 H1190"/>
+      <!-- fan out -->
+      <path class="ln fan" d="M1397 295 C1450 295 1440 151 1492 151"/>
+      <path class="ln fan" d="M1397 295 C1450 295 1440 247 1492 247"/>
+      <path class="ln fan" d="M1397 295 C1450 295 1440 343 1492 343"/>
+      <path class="ln fan" d="M1397 295 C1450 295 1440 439 1492 439"/>
+      <!-- joint dots -->
+      <circle class="jd" cx="1130" cy="295" r="8"/>
+      <circle class="jd ppl" cx="1000" cy="175" r="6"/>
+      <circle class="jd tch" cx="1000" cy="415" r="6"/>
+      <circle class="halo" cx="1290" cy="295" r="124"/>
+    </svg>
+
+    <!-- STEP 1 FIELD -->
+    <div class="a field" style="left:0; top:24px">
+      <div class="eb"><i class="dot field"></i><b>STEP 01</b>FIELD</div>
+      <div class="ttl">현장을 이해한다</div>
+    </div>
+    <div class="a node ring n-field"><span class="st">FIELD</span><span class="nm">현장 이해</span></div>
+    <ul class="a dl" style="left:0; top:418px">
+      <li>공정 · 품질 · 안전</li>
+      <li>시공관리 기본기</li>
+    </ul>
+
+    <!-- 문제 발견 -->
+    <div class="a node ring joint">
+      <svg viewBox="0 0 28 28"><circle cx="12" cy="12" r="8" fill="none" stroke="var(--hec-blue)" stroke-width="3"/><path d="M18 18 L24 24" stroke="var(--hec-blue)" stroke-width="3" stroke-linecap="round"/></svg>
+    </div>
+    <div class="a jl">문제 발견</div>
+
+    <!-- STEP 2 PEOPLE -->
+    <div class="a node n-ppl"><span class="st">STEP 02</span><span class="nm">사람</span></div>
+    <div class="a people" style="left:692px; top:4px">
+      <div class="eb"><i class="dot people"></i><b>STEP 02</b>PEOPLE</div>
+      <div class="ttl">사람을 연결한다</div>
+      <ul class="dl"><li>유관부서 · 협력업체 · 공종</li><li>목표 · 진행상황 공유</li></ul>
+    </div>
+    <span class="a chip ghost gh" style="left:692px; top:202px"><b>01</b>협업</span>
+
+    <div class="a plus"><svg viewBox="0 0 16 16"><path d="M8 1 V15 M1 8 H15" stroke="var(--ink-3)" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+
+    <!-- STEP 3 TECH -->
+    <div class="a node n-tch"><span class="st">STEP 03</span><span class="nm">기술</span></div>
+    <span class="a chip ghost gh" style="left:692px; top:350px"><b>02</b>우리의 기술</span>
+    <div class="a tech" style="left:692px; top:440px">
+      <div class="eb"><i class="dot tech"></i><b>STEP 03</b>TECH</div>
+      <div class="ttl">기술을 연결한다</div>
+      <ul class="dl"><li>BIM 간섭 · 시공성 사전 검토</li><li>AI 반복업무 효율화</li></ul>
+    </div>
+
+    <!-- STEP 4 IMPROVE -->
+    <div class="a" style="left:1183px; top:24px">
+      <div class="eb"><i class="dot field"></i><b>STEP 04</b>IMPROVE</div>
+      <div class="ttl">현장의 변화를 만든다</div>
+    </div>
+    <div class="a node ring solid n-imp"><span class="st">IMPROVE</span><span class="nm">문제 해결</span></div>
+
+    <!-- outcomes -->
+    <span class="a chip field oc" style="top:123px"><i class="dot field"></i>공정 <span>개선</span></span>
+    <span class="a chip field oc" style="top:219px"><i class="dot field"></i>품질 <span>개선</span></span>
+    <span class="a chip field oc" style="top:315px"><i class="dot field"></i>안전 <span>개선</span></span>
+    <span class="a chip field oc" style="top:411px"><i class="dot field"></i>생산성 <span>개선</span></span>
+  </div>
+
+  <div class="key">
+    <div class="key-label"><span class="mark"><i></i><b></b><i></i><b></b><i></i></span>KEY MESSAGE</div>
+    <p class="key-text">사람 · 전문성 · 기술을 연결해 <em>현장의 변화</em>를 만들겠습니다</p>
+  </div>
+</div>

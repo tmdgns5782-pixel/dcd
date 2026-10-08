@@ -1,3 +1,156 @@
 <!-- portrait 3: 이 파일만 편집. 스타일은 #p3 로 범위를 한정 -->
 <style>
+#p3 .p3w { position: absolute; inset: 0 0 12px 0; display: flex; flex-direction: column; }
+#p3 .dia { position: relative; width: 1072px; height: 1150px; flex: none; }
+#p3 .dia > svg { position: absolute; left: 0; top: 0; }
+#p3 .ln { fill: none; stroke: url(#p3p-grad); stroke-width: 3; stroke-linecap: round; }
+#p3 .fan { fill: none; stroke: url(#p3p-fan); stroke-width: 2.5; stroke-linecap: round; }
+#p3 .d-sky { fill: var(--sky-2); }
+#p3 .d-green { fill: var(--hec-green); stroke: #fff; stroke-width: 3; }
+#p3 .d-blue { fill: var(--hec-blue); stroke: #fff; stroke-width: 3; }
+#p3 .d-yel { fill: var(--hec-yellow); stroke: #fff; stroke-width: 3; }
+
+#p3 .eb { display: flex; align-items: center; gap: 10px; font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; white-space: nowrap; }
+#p3 .eb .dot { width: 10px; height: 10px; }
+#p3 .eb.field { color: var(--gold-ink); }
+#p3 .eb.people { color: color-mix(in srgb, var(--hec-green) 72%, #000); }
+#p3 .eb.tech { color: var(--hec-blue); }
+#p3 .tt { margin-top: 8px; font-size: var(--fs-h2); font-weight: 800; color: var(--navy); letter-spacing: -0.035em; line-height: 1.25; white-space: nowrap; }
+
+/* spine rows */
+#p3 .side { position: absolute; transform: translateY(-50%); }
+#p3 .side.l { right: var(--r); }
+#p3 .side.r { left: var(--l); }
+#p3 .fd { font-size: var(--fs-body); font-weight: 700; color: var(--ink); letter-spacing: -0.02em; white-space: nowrap; }
+#p3 .fd + .fd { margin-top: 4px; font-weight: 500; color: var(--ink-2); font-size: var(--fs-small); }
+
+#p3 .node { position: absolute; }
+#p3 .ring.field { width: 150px; height: 150px; left: 461px; top: 0px; }
+#p3 .ring .nl { text-align: center; line-height: 1.15; }
+#p3 .ring .nl small { display: block; font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: 0.14em; color: var(--sky-2); margin-bottom: 4px; }
+#p3 .ring .nl b { display: block; font-size: var(--fs-h3); font-weight: 800; color: var(--navy); letter-spacing: -0.03em; }
+
+#p3 .joint { position: absolute; left: 448px; top: 212px; width: 176px; height: 52px; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 999px; border: 3px solid transparent; background: linear-gradient(#fff, #fff) padding-box, var(--grad) border-box; font-size: var(--fs-small); font-weight: 700; color: var(--navy); letter-spacing: -0.02em; white-space: nowrap; }
+#p3 .joint svg { width: 20px; height: 20px; }
+
+/* branch cards */
+#p3 .card { position: absolute; top: 360px; width: 520px; height: 392px; border-radius: var(--radius); }
+#p3 .card.people { left: 0; background: var(--tint-green); }
+#p3 .card.tech { left: 552px; background: var(--tint-blue); }
+#p3 .card .ring { position: absolute; top: 30px; width: 96px; height: 96px; }
+#p3 .card.people .ring { right: 30px; }
+#p3 .card.tech .ring { left: 30px; }
+#p3 .card .ring b { font-size: var(--fs-h3); font-weight: 800; letter-spacing: -0.03em; }
+#p3 .card.people .ring b { color: color-mix(in srgb, var(--hec-green) 80%, #000); }
+#p3 .card.tech .ring b { color: var(--hec-blue); }
+#p3 .card .txt { position: absolute; top: 30px; bottom: 30px; display: flex; flex-direction: column; }
+#p3 .card.people .txt { left: 30px; right: 152px; }
+#p3 .card.tech .txt { left: 152px; right: 30px; }
+#p3 .card ul { margin-top: 26px; display: flex; flex-direction: column; gap: 14px; }
+#p3 .card li { display: flex; align-items: baseline; gap: 12px; font-size: var(--fs-body); font-weight: 600; color: var(--ink); letter-spacing: -0.025em; line-height: 1.35; }
+#p3 .card li::before { content: ""; flex: none; width: 9px; height: 9px; border-radius: 50%; transform: translateY(-4px); }
+#p3 .card.people li::before { background: var(--hec-green); }
+#p3 .card.tech li::before { background: var(--hec-blue); }
+#p3 .card .ref { margin-top: auto; align-self: flex-start; height: 40px; padding: 0 16px; gap: 8px; font-size: var(--fs-eyebrow); background: rgba(255,255,255,.6); }
+#p3 .card .ref .num { font-weight: 800; color: var(--ink-3); letter-spacing: 0.04em; }
+
+/* improve */
+#p3 .ring.imp { width: 176px; height: 176px; left: 448px; top: 864px; }
+#p3 .ring.imp .nl small { color: rgba(255,255,255,.78); }
+#p3 .ring.imp .nl b { color: #fff; font-size: var(--fs-h3); }
+#p3 .out { position: absolute; left: 712px; height: 50px; transform: translateY(-50%); padding: 0 22px 0 18px; gap: 12px; font-size: var(--fs-small); font-weight: 600; }
+#p3 .out .dot { width: 12px; height: 12px; }
+#p3 .out b { font-weight: 800; }
+
+#p3 .key { margin-top: auto; }
 </style>
+<div class="p3w">
+  <div class="dia">
+    <svg width="1072" height="1150" viewBox="0 0 1072 1150" aria-hidden="true">
+      <defs>
+        <linearGradient id="p3p-grad" gradientUnits="userSpaceOnUse" x1="0" y1="150" x2="0" y2="864">
+          <stop offset="0" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--sky-2)"/>
+        </linearGradient>
+        <linearGradient id="p3p-fan" gradientUnits="userSpaceOnUse" x1="624" y1="0" x2="712" y2="0">
+          <stop offset="0" stop-color="var(--sky-2)"/><stop offset="1" stop-color="var(--hec-yellow)"/>
+        </linearGradient>
+      </defs>
+      <path class="ln" d="M536,150 V212"/>
+      <path class="ln" d="M536,264 V298"/>
+      <path class="ln" d="M536,298 C536,324 442,324 442,350 V390"/>
+      <path class="ln" d="M536,298 C536,324 630,324 630,350 V390"/>
+      <path class="ln" d="M442,486 V778 C442,806 536,806 536,834"/>
+      <path class="ln" d="M630,486 V778 C630,806 536,806 536,834"/>
+      <path class="ln" d="M536,834 V864"/>
+      <path class="fan" d="M624,952 C672.4,952 663.6,859 712,859"/>
+      <path class="fan" d="M624,952 C672.4,952 663.6,921 712,921"/>
+      <path class="fan" d="M624,952 C672.4,952 663.6,983 712,983"/>
+      <path class="fan" d="M624,952 C672.4,952 663.6,1045 712,1045"/>
+      <circle class="d-sky" cx="536" cy="298" r="7"/>
+      <circle class="d-green" cx="442" cy="360" r="7"/>
+      <circle class="d-blue" cx="630" cy="360" r="7"/>
+      <circle class="d-green" cx="442" cy="752" r="7"/>
+      <circle class="d-blue" cx="630" cy="752" r="7"/>
+      <circle class="d-sky" cx="536" cy="834" r="7"/>
+      <circle class="d-yel" cx="624" cy="952" r="8"/>
+    </svg>
+
+    <!-- STEP 1 FIELD -->
+    <div class="ring field node"><div class="nl"><small>FIELD</small><b>현장</b></div></div>
+    <div class="side l" style="--r:651px; top:75px">
+      <div class="eb field"><i class="dot field"></i>STEP 01</div>
+      <div class="tt">현장을 이해한다</div>
+    </div>
+    <div class="side r" style="--l:651px; top:75px">
+      <div class="fd">공정 · 품질 · 안전</div>
+      <div class="fd">시공관리 기본기</div>
+    </div>
+
+    <!-- joint -->
+    <div class="joint"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="6" fill="none" stroke="var(--sky-2)" stroke-width="2.4"/><path d="M13 13 L18 18" stroke="var(--sky-2)" stroke-width="2.6" stroke-linecap="round"/></svg>문제 발견</div>
+
+    <!-- STEP 2 PEOPLE -->
+    <div class="card people">
+      <div class="ring"><b>사람</b></div>
+      <div class="txt">
+        <div class="eb people"><i class="dot people"></i>STEP 02 · PEOPLE</div>
+        <div class="tt">사람을 연결한다</div>
+        <ul>
+          <li>유관부서 · 협력업체 · 공종</li>
+          <li>목표 · 진행상황 공유</li>
+        </ul>
+        <span class="chip ghost ref"><span class="num">01</span>협업</span>
+      </div>
+    </div>
+
+    <!-- STEP 3 TECH -->
+    <div class="card tech">
+      <div class="ring"><b>기술</b></div>
+      <div class="txt">
+        <div class="eb tech"><i class="dot tech"></i>STEP 03 · TECH</div>
+        <div class="tt">기술을 연결한다</div>
+        <ul>
+          <li>BIM 간섭 · 시공성 사전 검토</li>
+          <li>AI 반복업무 효율화</li>
+        </ul>
+        <span class="chip ghost ref"><span class="num">02</span>우리의 기술</span>
+      </div>
+    </div>
+
+    <!-- STEP 4 IMPROVE -->
+    <div class="ring solid imp node"><div class="nl"><small>IMPROVE</small><b>문제 해결</b></div></div>
+    <div class="side l" style="--r:664px; top:952px">
+      <div class="eb field"><i class="dot field"></i>STEP 04</div>
+      <div class="tt">현장의 변화를<br>만든다</div>
+    </div>
+    <span class="chip field out" style="top:859px"><i class="dot field"></i><span><b>공정</b> 개선</span></span>
+    <span class="chip field out" style="top:921px"><i class="dot field"></i><span><b>품질</b> 개선</span></span>
+    <span class="chip field out" style="top:983px"><i class="dot field"></i><span><b>안전</b> 개선</span></span>
+    <span class="chip field out" style="top:1045px"><i class="dot field"></i><span><b>생산성</b> 개선</span></span>
+  </div>
+
+  <div class="key">
+    <div class="key-label"><span class="mark"><i></i><b></b><i></i><b></b><i></i></span>KEY MESSAGE</div>
+    <p class="key-text">사람 · 전문성 · 기술을 연결해 <em>현장의 변화</em>를 만들겠습니다</p>
+  </div>
+</div>
