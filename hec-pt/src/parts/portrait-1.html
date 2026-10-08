@@ -15,17 +15,21 @@
 #p1 .p1p-bd { position: relative; margin: 16px 0 0 var(--cx); }
 
 /* 01 의견 → 판단 기준 → 주제 */
-#p1 .p1p-ops { position: relative; height: 52px; }
-#p1 .p1p-op { position: absolute; top: 0; width: 240px; height: 52px; display: flex; align-items: center; justify-content: center; gap: 10px; border: 2px solid var(--line-2); border-radius: 999px; background: var(--paper); font-size: 22px; font-weight: 700; color: var(--navy); letter-spacing: -0.03em; }
-#p1 .p1p-op::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--hec-green); flex: none; }
-#p1 .p1p-op.l { left: 60px; }
-#p1 .p1p-op.r { right: 60px; }
-#p1 .p1p-vs { position: absolute; left: 300px; right: 300px; top: 0; height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
-#p1 .p1p-vs span { font-size: 19px; font-weight: 600; color: var(--ink-3); letter-spacing: -0.02em; white-space: nowrap; }
-#p1 .p1p-vs svg { width: 100%; height: 14px; }
-#p1 .p1p-fun { position: relative; height: 84px; }
-#p1 .p1p-fun svg { position: absolute; left: 0; top: 0; width: 100%; height: 84px; }
-#p1 .p1p-fun span { position: absolute; left: 50%; top: 28px; transform: translate(-50%, -50%); font-size: 22px; font-weight: 600; color: var(--ink); letter-spacing: -0.03em; white-space: nowrap; }
+#p1 .p1p-due { display: flex; justify-content: center; }
+#p1 .p1p-due span { display: inline-flex; align-items: center; gap: 10px; height: 38px; padding: 0 18px 0 14px; border-radius: 999px; border: 2px solid var(--line-2); background: var(--paper); font-size: 20px; font-weight: 700; color: var(--ink); letter-spacing: -0.02em; white-space: nowrap; }
+#p1 .p1p-due svg { width: 20px; height: 20px; flex: none; }
+#p1 .p1p-ops { position: relative; height: 64px; margin-top: 10px; }
+#p1 .p1p-op { position: absolute; top: 2px; width: 260px; height: 60px; display: flex; align-items: center; justify-content: center; gap: 12px; border: 2px solid var(--navy); border-radius: 999px; background: var(--paper); font-size: 26px; font-weight: 700; color: var(--navy); letter-spacing: -0.035em; white-space: nowrap; }
+#p1 .p1p-op svg { width: 30px; height: 30px; flex: none; }
+#p1 .p1p-op.l { left: 164px; }
+#p1 .p1p-op.r { right: 164px; }
+#p1 .p1p-vsb { position: absolute; left: 50%; top: 0; width: 64px; height: 64px; margin-left: -32px; border-radius: 50%; background: var(--navy); color: var(--paper); display: grid; place-items: center; font-size: 22px; font-weight: 800; letter-spacing: 0.02em; }
+#p1 .p1p-pull { position: absolute; top: 20px; width: 56px; height: 24px; }
+#p1 .p1p-pull.l { left: 96px; }
+#p1 .p1p-pull.r { right: 96px; }
+#p1 .p1p-fun { position: relative; height: 78px; }
+#p1 .p1p-fun svg { position: absolute; left: 0; top: -2px; width: 100%; height: 80px; }
+#p1 .p1p-fun span { position: absolute; left: 50%; top: 26px; transform: translate(-50%, -50%); font-size: 22px; font-weight: 600; color: var(--ink); letter-spacing: -0.03em; white-space: nowrap; }
 #p1 .p1p-crit { display: flex; justify-content: center; }
 #p1 .p1p-crit span { display: inline-flex; align-items: center; height: 46px; padding: 0 30px; border-radius: 999px; border: 2px solid var(--hec-blue); background: var(--tint-blue); color: var(--hec-blue); font-size: 22px; font-weight: 800; letter-spacing: -0.03em; }
 #p1 .p1p-down { display: block; width: 20px; height: 26px; margin: 0 auto; }
@@ -78,21 +82,21 @@
 
     <!-- 01 -->
     <section class="p1p-blk b1">
-      <div class="p1p-bh"><span class="ring solid p1p-no">01</span><h3>의견을 모아 주제를 정하다</h3><p class="p1p-ctx"><i></i>학생 BIM 경진대회 · 4인 팀 팀장</p></div>
+      <div class="p1p-bh"><span class="ring solid p1p-no">01</span><h3>충돌을 조율해 주제를 정하다</h3><p class="p1p-ctx"><i></i>학생 BIM 경진대회 · 4인 팀 팀장</p></div>
       <div class="p1p-bd">
+        <div class="p1p-due"><span><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.2" fill="none" style="stroke:var(--ink-2)" stroke-width="2.2"/><path d="M10 5.6V10l3 2" fill="none" style="stroke:var(--ink-2)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>마감 3주 전까지 주제 미확정</span></div>
         <div class="p1p-ops">
-          <span class="p1p-op l">참신성</span>
-          <div class="p1p-vs">
-            <span>마감 3주 전까지 주제 미확정</span>
-            <svg viewBox="0 0 408 14" preserveAspectRatio="none" aria-hidden="true"><path d="M8 7H400M15 1L8 7L15 13M393 1L400 7L393 13" fill="none" style="stroke:var(--ink-3)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-          <span class="p1p-op r">구현 가능성</span>
+          <svg class="p1p-pull l" viewBox="0 0 56 24" aria-hidden="true"><path d="M54 12H6M15 3L5 12L15 21" fill="none" style="stroke:var(--ink-2)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="p1p-op l"><svg viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="15" style="fill:var(--hec-green)"/><circle cx="15" cy="11.6" r="4.6" style="fill:var(--paper)"/><path d="M7.4 23.4a7.6 6.6 0 0 1 15.2 0z" style="fill:var(--paper)"/></svg>참신성</span>
+          <span class="p1p-vsb">VS</span>
+          <span class="p1p-op r"><svg viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="15" style="fill:var(--hec-green)"/><circle cx="15" cy="11.6" r="4.6" style="fill:var(--paper)"/><path d="M7.4 23.4a7.6 6.6 0 0 1 15.2 0z" style="fill:var(--paper)"/></svg>구현 가능성</span>
+          <svg class="p1p-pull r" viewBox="0 0 56 24" aria-hidden="true"><path d="M2 12H50M41 3L51 12L41 21" fill="none" style="stroke:var(--ink-2)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
         <div class="p1p-fun">
-          <svg viewBox="0 0 1008 84" aria-hidden="true">
-            <defs><linearGradient id="p1p-fg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="84"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient></defs>
-            <path d="M180 0V44L504 68V72M828 0V44L504 68" fill="none" stroke="url(#p1p-fg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M495 70H513L504 83Z" style="fill:var(--sky-2)"/>
+          <svg viewBox="0 0 1008 80" aria-hidden="true">
+            <defs><linearGradient id="p1p-fg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="80"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient></defs>
+            <path d="M294 0V44L504 64V68M714 0V44L504 64" fill="none" stroke="url(#p1p-fg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M495 66H513L504 79Z" style="fill:var(--sky-2)"/>
           </svg>
           <span>경청 · 수상작 분석 · 교수님 조언</span>
         </div>
