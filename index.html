@@ -42,7 +42,7 @@
   --red: #ff3b30;
   --holi: #d70015;
   --holi-soft: rgba(255, 59, 48, .12);
-  --holi-tint: rgba(255, 59, 48, .045);
+  --holi-tint: rgba(255, 59, 48, .045); --vac-tint: rgba(120, 120, 128, .07);
   --glass: rgba(245, 245, 247, .76);
   --platter-shadow: 0 0 0 .5px rgba(0, 0, 0, .05), 0 2px 6px rgba(0, 0, 0, .03), 0 24px 60px rgba(0, 0, 0, .06);
   --sheet-shadow: 0 0 0 .5px rgba(0, 0, 0, .06), 0 30px 80px rgba(0, 0, 0, .22);
@@ -78,7 +78,7 @@
     --red: #ff453a;
     --holi: #ff6961;
     --holi-soft: rgba(255, 69, 58, .2);
-    --holi-tint: rgba(255, 69, 58, .07);
+    --holi-tint: rgba(255, 69, 58, .07); --vac-tint: rgba(235, 235, 245, .05);
     --glass: rgba(22, 22, 24, .76);
     --platter-shadow: 0 0 0 .5px rgba(255, 255, 255, .08);
     --sheet-shadow: 0 0 0 .5px rgba(255, 255, 255, .1), 0 30px 80px rgba(0, 0, 0, .6);
@@ -108,7 +108,7 @@
   --red: #ff453a;
   --holi: #ff6961;
   --holi-soft: rgba(255, 69, 58, .2);
-  --holi-tint: rgba(255, 69, 58, .07);
+  --holi-tint: rgba(255, 69, 58, .07); --vac-tint: rgba(235, 235, 245, .05);
   --glass: rgba(22, 22, 24, .76);
   --platter-shadow: 0 0 0 .5px rgba(255, 255, 255, .08);
   --sheet-shadow: 0 0 0 .5px rgba(255, 255, 255, .1), 0 30px 80px rgba(0, 0, 0, .6);
@@ -197,6 +197,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .colbg.today { background: var(--accent-tint); }
 .colbg.eve { background: var(--warn-tint); }
 .colbg.holi { background: var(--holi-tint); }
+.colbg.vac { background: var(--vac-tint); }
 .rowline {
   grid-column: 1 / -1; align-self: end; height: 1px;
   background: var(--line);
@@ -289,11 +290,22 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
   animation: pulse 1.6s ease-in-out infinite;
 }
+.dh.vac .wd, .dh.vac .dn { color: var(--text-3); }
+.dh.today.vac .dn { color: #fff; }
+.dh.today.vac .wd { color: var(--accent); }
+.cap.vac { background: rgba(120, 120, 128, .14); color: var(--text-2); }
+.vac-msg { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; }
+.vac-msg b { font-size: 22px; font-weight: 650; color: var(--text-3); }
+.vac-msg.all b { font-size: 44px; font-weight: 700; letter-spacing: -.035em; color: var(--text); }
+.vac-msg.all span { font-size: 18px; font-weight: 600; color: var(--text-2); }
+.nl i.g { background: var(--text-3); }
+.seg button.vac .d, .seg button.vac .m { color: var(--text-3); }
+.mempty.vac b { color: var(--text); }
 .holi-msg { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center; }
 .holi-msg b { font-size: 22px; font-weight: 650; color: var(--holi); }
 .holi-msg span { font-size: 16.5px; color: var(--text-2); }
 
-.board.enter .tile, .board.enter .holi-msg { animation: tileIn .55s var(--ease) backwards; animation-delay: calc(var(--i, 0) * 45ms + 60ms); }
+.board.enter .tile, .board.enter .holi-msg, .board.enter .vac-msg { animation: tileIn .55s var(--ease) backwards; animation-delay: calc(var(--i, 0) * 45ms + 60ms); }
 @keyframes tileIn { from { opacity: 0; transform: scale(.96); } }
 @keyframes pulse { 50% { opacity: .3; } }
 
@@ -544,7 +556,7 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
 
 /* ───────── 접근성 · 인쇄 ───────── */
 @media (prefers-reduced-motion: reduce) {
-  .board.enter .tile, .board.enter .holi-msg, #mday.slide, dialog.sheet[open], dialog.sheet[open]::backdrop { animation: none; }
+  .board.enter .tile, .board.enter .holi-msg, .board.enter .vac-msg, #mday.slide, dialog.sheet[open], dialog.sheet[open]::backdrop { animation: none; }
   .seg .thumb, .wday .n, .editbar, .toast, .sw i { transition: none; }
   .tile.live .tt::before { animation: none; }
 }
@@ -562,7 +574,7 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
     --bg: #fff; --surface: #fff; --tile: #f2f2f7; --lesson: #ebf4fd; --text: #1d1d1f; --text-2: #6e6e73; --text-3: #86868b;
     --line: rgba(60, 60, 67, .16); --accent: #0071e3; --accent-tint: rgba(0, 113, 227, .05);
     --warn: #c2410c; --warn-soft: rgba(255, 149, 0, .16); --warn-tint: rgba(255, 149, 0, .07); --warn-tile: #ffefd9;
-    --holi: #d70015; --holi-soft: rgba(255, 59, 48, .12); --holi-tint: rgba(255, 59, 48, .045);
+    --holi: #d70015; --holi-soft: rgba(255, 59, 48, .12); --holi-tint: rgba(255, 59, 48, .045); --vac-tint: rgba(120, 120, 128, .07);
     --axis: 112px; --rail: 58px; --row: 61px; --gap: 5px;
   }
   html, body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -576,7 +588,7 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
   .notice { margin-top: 6px; }
   .nl { font-size: 12.5px; }
   .board { box-shadow: 0 0 0 1px #d2d2d7; padding: 6px 8px 8px; border-radius: 20px; }
-  .board .tile, .board .holi-msg { animation: none !important; }
+  .board .tile, .board .holi-msg, .board .vac-msg { animation: none !important; }
   .tile { padding: 4px 8px; box-shadow: none; }
   .tile.live { box-shadow: none; }
   .tile.live .tt::before { display: none; }
@@ -599,7 +611,7 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
 .pdf-mode { --bg: #fff; --surface: #fff; --tile: #f2f2f7; --lesson: #ebf4fd; --text: #1d1d1f; --text-2: #6e6e73; --text-3: #86868b;
     --line: rgba(60, 60, 67, .16); --accent: #0071e3; --accent-tint: rgba(0, 113, 227, .05);
     --warn: #c2410c; --warn-soft: rgba(255, 149, 0, .16); --warn-tint: rgba(255, 149, 0, .07); --warn-tile: #ffefd9;
-    --holi: #d70015; --holi-soft: rgba(255, 59, 48, .12); --holi-tint: rgba(255, 59, 48, .045);
+    --holi: #d70015; --holi-soft: rgba(255, 59, 48, .12); --holi-tint: rgba(255, 59, 48, .045); --vac-tint: rgba(120, 120, 128, .07);
     --axis: 112px; --rail: 58px; --row: 61px; --gap: 5px; }
 .pdf-mode { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .pdf-mode .num { font-variant-numeric: normal; }
@@ -612,7 +624,7 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
 .pdf-mode .notice { margin-top: 6px; }
 .pdf-mode .nl { font-size: 12.5px; }
 .pdf-mode .board { box-shadow: 0 0 0 1px #d2d2d7; padding: 6px 8px 8px; border-radius: 20px; }
-.pdf-mode .board .tile, .pdf-mode .board .holi-msg { animation: none !important; }
+.pdf-mode .board .tile, .pdf-mode .board .holi-msg, .pdf-mode .board .vac-msg { animation: none !important; }
 .pdf-mode .tile { padding: 4px 8px; box-shadow: none; }
 .pdf-mode .tile.live { box-shadow: none; }
 .pdf-mode .tile.live .tt::before { display: none; }
@@ -687,11 +699,13 @@ dialog.sheet[open]::backdrop { animation: fade .3s ease both; }
 <dialog class="sheet" id="settings" aria-label="공휴일 지정"><div class="card" id="setcard"></div></dialog>
 <dialog class="sheet" id="editor" aria-label="수업 편집"><div class="card" id="edcard"></div></dialog>
 <dialog class="sheet" id="times" aria-label="교시 시간"><div class="card" id="tmcard"></div></dialog>
+<dialog class="sheet" id="term" aria-label="학기 기간"><div class="card" id="trcard"></div></dialog>
 
 <div class="editbar" id="editbar" aria-label="편집 도구">
   <p>칸을 눌러 수정하고, 빈 칸의 <b>＋</b>로 수업을 추가하세요. 0교시(08:00)는 수업이 있을 때만 표에 보여요.</p>
   <div class="tools">
     <button id="toolTimes">교시 시간</button>
+    <button id="toolTerm">학기 기간</button>
     <button id="toolExport">내보내기</button>
     <button id="toolImport">불러오기</button>
     <button id="toolReset" class="red">초기화</button>
@@ -761,9 +775,12 @@ const fixFriday = (v) => {
 };
 const migrate = (v) => fixFriday(v && Array.isArray(v.normal) && v.normal.length === 7
   ? { ...v, normal: [clone(DEFAULT.normal[0]), ...v.normal], eve: clone(DEFAULT.eve) } : v);
+const validTerm = (t) => !!t && isDate(t.start) && isDate(t.end) && t.start <= t.end;
 let data = (() => {
   const v = fixFriday(store.get(DATA_KEY)) || migrate(store.get('timetable.data.v1'));
-  return validData(v) ? v : clone(DEFAULT);
+  if (!validData(v)) return clone(DEFAULT);
+  if (v.term && !validTerm(v.term)) delete v.term;
+  return v;
 })();
 let holidays = (() => { const v = store.get(HOLI_KEY); return new Set(Array.isArray(v) ? v.filter(isDate) : DEFAULT_HOLIDAYS); })();
 const saveAll = () => { store.set(DATA_KEY, data); store.set(HOLI_KEY, [...holidays]); };
@@ -791,11 +808,13 @@ applyData();
 const isHoli = (i) => holidays.has(DAYS[i].date);
 const isWeekend = (s) => { const g = parseISO(s).getDay(); return g === 0 || g === 6; };
 const isOff = (s) => isWeekend(s) || holidays.has(s);
-const isEve = (i) => !isHoli(i) && isOff(nextDate(DAYS[i].date));
+// 학기 기간(개강일~종강일)을 정해 두면 그 밖의 날은 방학
+const isVac = (i) => !!data.term && (DAYS[i].date < data.term.start || DAYS[i].date > data.term.end);
+const isEve = (i) => !isHoli(i) && !isVac(i) && isOff(nextDate(DAYS[i].date));
 const eveByHoliday = (i) => isEve(i) && holidays.has(nextDate(DAYS[i].date)); // 금요일 말고 공휴일 때문에 생긴 단축일
 const slotsFor = (i) => (isEve(i) ? EVE : NORMAL);
 const hasZero = (i) => data.classes.some((c) => c.day === i && c.from === 0);
-const showZero = () => editing || DAYS.some((_, i) => !isHoli(i) && hasZero(i));
+const showZero = () => editing || DAYS.some((_, i) => !isHoli(i) && !isVac(i) && hasZero(i));
 const rowsFor = () => (showZero() ? ALL_P : ALL_P.slice(1));            // 표에 그릴 교시
 const dayPeriods = (i) => ALL_P.filter((p) => slotsFor(i)[p] && (p > 0 || hasZero(i)));
 const dayRange = (i) => { const s = slotsFor(i), ps = dayPeriods(i); return `${s[ps[0]][0]} – ${s[ps[ps.length - 1]][1]}`; };
@@ -826,7 +845,7 @@ const roomLabel = (r) => (!r || r === '미정' ? '장소 미정' : r);
 let editing = false;
 
 function tileHTML(b, n, place) {
-  const cls = ['tile', b.free && 'free', isEve(b.day) && 'eve', (isHoli(b.day) || b.na) && 'off'].filter(Boolean).join(' ');
+  const cls = ['tile', b.free && 'free', isEve(b.day) && 'eve', (isHoli(b.day) || isVac(b.day) || b.na) && 'off'].filter(Boolean).join(' ');
   return `<button class="${cls}" data-i="${n}" style="${place};--i:${b.day}"
       aria-label="${esc(b.subject)}, ${b.start}부터 ${b.end}까지${b.prof ? ', ' + esc(b.prof) : ''}, ${esc(roomLabel(b.room))}${editing ? ', 수정' : ''}">
     <span class="tt">${esc(b.subject)}</span>
@@ -842,16 +861,28 @@ function emptyPeriods(day) {
 const slotHTML = (day, p, place) =>
   `<button class="slot" data-day="${day}" data-p="${p}" style="${place}" aria-label="${DAYS[day].dow}요일 ${p}교시에 수업 추가">＋</button>`;
 
+const mdKo = (s) => { const d = parseISO(s); return `${d.getMonth() + 1}월 ${d.getDate()}일`; };
+const daysUntil = (s) => Math.round((parseISO(s) - parseISO(iso(getNow()))) / 86400000);
+// 방학 안내: 개강 전이면 개강일(과 남은 날), 종강 후면 종강일
+function vacText() {
+  if (!data.term) return '';
+  if (DAYS.some((d) => d.date < data.term.start)) {
+    const n = daysUntil(data.term.start);
+    return `개강 ${mdKo(data.term.start)}${n > 0 ? ` · ${n}일 남음` : ''}`;
+  }
+  return `종강 ${mdKo(data.term.end)}`;
+}
+
 /* ── 지금 (테스트: ?now=2026-09-29T10:30) ── */
 const nowParam = new URLSearchParams(location.search).get('now');
 const getNow = () => (nowParam ? new Date(nowParam) : new Date());
 const stamp = (date, hm) => new Date(`${date}T${hm}:00`);
-const isLive = (b, now) => !isHoli(b.day) && !b.na && now >= stamp(DAYS[b.day].date, b.start) && now <= stamp(DAYS[b.day].date, b.end);
+const isLive = (b, now) => !isHoli(b.day) && !isVac(b.day) && !b.na && now >= stamp(DAYS[b.day].date, b.start) && now <= stamp(DAYS[b.day].date, b.end);
 const todayIdx = () => DAYS.findIndex((d) => d.date === iso(getNow()));
 
 /* ── 데스크톱 표 ── */
 function layout() {
-  const normalExists = DAYS.some((_, i) => !isHoli(i) && !isEve(i));
+  const normalExists = DAYS.some((_, i) => !isHoli(i) && !isVac(i) && !isEve(i));
   const cols = ['var(--axis)'];
   const map = DAYS.map((_, i) => {
     let rail = null;
@@ -869,21 +900,22 @@ function buildBoard() {
   const t = todayIdx();
   const axis = axisEve ? EVE : NORMAL;
   const rows = rowsFor(), rowOf = (p) => rows.indexOf(p) + 2;
+  const allVac = DAYS.every((_, i) => isVac(i));
   let h = '';
 
   DAYS.forEach((_, i) => {
-    const kind = isHoli(i) ? 'holi' : isEve(i) ? 'eve' : i === t ? 'today' : '';
+    const kind = isVac(i) ? 'vac' : isHoli(i) ? 'holi' : isEve(i) ? 'eve' : i === t ? 'today' : '';
     if (kind) h += `<div class="colbg ${kind}" style="grid-column:${map[i].start} / ${map[i].col + 1}" aria-hidden="true"></div>`;
   });
   for (let r = 1; r <= rows.length; r++) h += `<div class="rowline" style="grid-row:${r}" aria-hidden="true"></div>`;
 
   h += '<div class="ah"></div>';
   DAYS.forEach((d, i) => {
-    const cls = [i === t && 'today', isEve(i) && 'eve', isHoli(i) && 'holi'].filter(Boolean).join(' ');
+    const cls = [i === t && 'today', isEve(i) && 'eve', isVac(i) ? 'vac' : isHoli(i) && 'holi'].filter(Boolean).join(' ');
     h += `<div class="dh ${cls}" style="grid-column:${map[i].start} / ${map[i].col + 1}">
       <span class="wd">${d.dow}</span><span class="dn num">${d.n}</span>
       ${isEve(i) ? `<span class="cap eve num">${dayRange(i)}</span>` : ''}
-      ${isHoli(i) ? '<span class="cap holi">공휴일</span>' : ''}
+      ${isVac(i) ? '<span class="cap vac">방학</span>' : isHoli(i) ? '<span class="cap holi">공휴일</span>' : ''}
     </div>`;
   });
 
@@ -897,12 +929,16 @@ function buildBoard() {
       const sl = EVE[p];
       h += `<div class="rl num" data-d="${i}" data-r="${p}" style="grid-column:${m.rail};grid-row:${rowOf(p)}">${sl ? `<b>${sl[0]}</b><span>${sl[1]}</span>` : '<span>–</span>'}</div>`;
     });
-    if (isHoli(i) && !editing) h += `<div class="holi-msg" style="grid-column:${m.col};grid-row:2 / ${rows.length + 2};--i:${i}"><b>공휴일</b><span>수업 없음</span></div>`;
+    if (isVac(i) && !editing && !allVac) h += `<div class="vac-msg" style="grid-column:${m.col};grid-row:2 / ${rows.length + 2};--i:${i}"><b>방학</b></div>`;
+    else if (isHoli(i) && !isVac(i) && !editing) h += `<div class="holi-msg" style="grid-column:${m.col};grid-row:2 / ${rows.length + 2};--i:${i}"><b>공휴일</b><span>수업 없음</span></div>`;
     if (editing) emptyPeriods(i).forEach((p) => { h += slotHTML(i, p, `grid-column:${m.col};grid-row:${rowOf(p)}`); });
   });
 
+  // 한 주 전체가 방학이면 가운데에 크게 한 번만
+  if (allVac && !editing) h += `<div class="vac-msg all" style="grid-column:2 / -1;grid-row:2 / ${rows.length + 2}"><b>방학</b><span>${vacText()}</span></div>`;
+
   BLOCKS.forEach((b, n) => {
-    if (!editing && (isHoli(b.day) || b.na)) return;
+    if (!editing && (isHoli(b.day) || isVac(b.day) || b.na)) return;
     const to = editing ? b.rawTo : b.to;               // 편집 중에는 원래 교시 그대로
     if (!rows.includes(b.from)) return;
     h += tileHTML(b, n, `grid-column:${map[b.day].col};grid-row:${rowOf(b.from)} / ${rowOf(to) + 1}`);
@@ -935,7 +971,7 @@ function buildSeg() {
   const t = todayIdx();
   $('#seg').querySelectorAll('button').forEach((b) => b.remove());
   $('#seg').insertAdjacentHTML('beforeend', DAYS.map((d, i) => `
-    <button role="tab" data-d="${i}" class="${[i === t && 'today', isHoli(i) && 'holi'].filter(Boolean).join(' ')}"
+    <button role="tab" data-d="${i}" class="${[i === t && 'today', isVac(i) ? 'vac' : isHoli(i) && 'holi'].filter(Boolean).join(' ')}"
         aria-selected="${i === cur}" aria-label="${d.dow}요일 ${d.md}">
       <span class="d">${d.dow}</span><span class="m num">${d.n}</span>
       <span class="dots">${i === t ? '<i class="t"></i>' : ''}${isHoli(i) ? '<i class="h"></i>' : ''}</span>
@@ -944,7 +980,9 @@ function buildSeg() {
 }
 function buildDay(dir) {
   const i = cur, d = DAYS[i], el = $('#mday');
-  if (isHoli(i) && !editing) {
+  if (isVac(i) && !editing) {
+    el.innerHTML = `<div class="mempty vac"><b>방학</b><span>${vacText()}</span></div>`;
+  } else if (isHoli(i) && !editing) {
     el.innerHTML = `<div class="mempty"><b>공휴일</b><span>${d.dow}요일 ${d.md}은 수업이 없어요.</span></div>`;
   } else {
     const s = slotsFor(i), ev = isEve(i);
@@ -956,7 +994,7 @@ function buildDay(dir) {
     });
     if (editing) emptyPeriods(i).forEach((p) => { if (rows.includes(p)) g += slotHTML(i, p, `grid-column:2;grid-row:${rowOf(p)}`); });
     BLOCKS.forEach((b, n) => {
-      if (b.day !== i || (!editing && b.na)) return;
+      if (b.day !== i || (!editing && b.na)) return; // (방학·공휴일 요일은 위에서 이미 걸러짐)
       const to = editing ? b.rawTo : b.to;
       if (rows.includes(b.from)) g += tileHTML(b, n, `grid-column:2;grid-row:${rowOf(b.from)} / ${rowOf(to) + 1}`);
     });
@@ -1027,6 +1065,8 @@ makeSheet(sheet, $('#card'));
 makeSheet(settings, $('#setcard'));
 makeSheet(editor, $('#edcard'));
 makeSheet(timesSheet, $('#tmcard'));
+const termSheet = $('#term');
+makeSheet(termSheet, $('#trcard'));
 
 /* ── 되돌리기 알림 ── */
 let toastTimer;
@@ -1239,6 +1279,40 @@ function setEditing(on) {
 $('#editToggle').addEventListener('click', () => setEditing(!editing));
 $('#toolDone').addEventListener('click', () => setEditing(false));
 $('#toolTimes').addEventListener('click', openTimes);
+
+/* ── 학기 기간: 개강일~종강일 밖은 방학으로 ── */
+function openTerm() {
+  const t = data.term || { start: '', end: '' };
+  $('#trcard').innerHTML = `
+    <div class="grab"></div>
+    <div class="top"><h2>학기 기간</h2><p class="lead">개강일과 종강일을 넣으면 그 밖의 날짜는 방학으로 보여요.</p></div>
+    <form id="trForm" novalidate>
+      <div class="fgroup">
+        <label class="field"><span>개강일</span><input type="date" name="start" value="${t.start}"></label>
+        <label class="field"><span>종강일</span><input type="date" name="end" value="${t.end}"></label>
+      </div>
+      <p class="ferr" id="trErr" aria-live="polite"></p>
+      <button type="submit" class="close">저장</button>
+      ${data.term ? '<button type="button" class="danger" id="trClear">학기 기간 지우기</button>' : ''}
+    </form>`;
+  const f = $('#trForm');
+  f.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const start = f.elements.start.value, end = f.elements.end.value;
+    if (!isDate(start) || !isDate(end)) { $('#trErr').textContent = '개강일과 종강일을 모두 넣어 주세요.'; return; }
+    if (start > end) { $('#trErr').textContent = '종강일이 개강일보다 빨라요.'; return; }
+    const before = snapshot();
+    data.term = { start, end };
+    termSheet.close(); commit(before, '학기 기간을 저장했어요');
+  });
+  if (data.term) $('#trClear').addEventListener('click', () => {
+    const before = snapshot();
+    delete data.term;
+    termSheet.close(); commit(before, '학기 기간을 지웠어요');
+  });
+  termSheet.showModal();
+}
+$('#toolTerm').addEventListener('click', openTerm);
 $('#toolExport').addEventListener('click', async () => {
   const payload = { app: 'weekly-timetable', version: 1, ...data, holidays: [...holidays] };
   if (await saveFile(`시간표-${data.weekStart}.json`, JSON.stringify(payload, null, 2))) toast('시간표 파일을 저장했어요');
@@ -1249,7 +1323,7 @@ $('#importFile').addEventListener('change', async (e) => {
   if (!file) return;
   try {
     const v = JSON.parse(await file.text());
-    const next = migrate({ weekStart: v.weekStart, normal: v.normal, eve: v.eve, classes: v.classes });
+    const next = migrate({ weekStart: v.weekStart, normal: v.normal, eve: v.eve, classes: v.classes, ...(validTerm(v.term) ? { term: v.term } : {}) });
     if (!validData(next)) throw new Error('invalid');
     const before = snapshot();
     data = clone(next);
@@ -1421,7 +1495,9 @@ function updateTop() {
   $('#weekLabel').textContent = `${DAYS[0].m}월 ${DAYS[0].n}일 – ${DAYS[4].m}월 ${DAYS[4].n}일`;
   $('#thisWeek').hidden = currentWeek() === data.weekStart;
   $('#navRange').textContent = `${DAYS[0].md} – ${DAYS[4].md}`;
-  const ho = idx(isHoli), lines = [];
+  const ho = idx((i) => isHoli(i) && !isVac(i)), va = idx(isVac), lines = [];
+  if (va.length === 5) lines.push(`<p class="nl"><i class="g"></i><span>이번 주는 방학이에요 · ${vacText()}</span></p>`);
+  else if (va.length) lines.push(`<p class="nl"><i class="g"></i><span>${dayNames(va)}은 방학이에요 · ${vacText()}</span></p>`);
   if (ho.length) lines.push(`<p class="nl"><i class="r"></i><span>${dayNames(ho)}은 <b class="r">공휴일</b>이라 수업이 없어요.</span></p>`);
   $('#notice').innerHTML = lines.join('');
 }
