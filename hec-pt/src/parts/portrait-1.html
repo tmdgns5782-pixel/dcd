@@ -19,12 +19,12 @@
 #p1 .p1p-vid { position: relative; flex: none; width: 420px; height: 236px; border-radius: 16px; border: 2px solid var(--line-2); background: var(--paper); overflow: hidden; }
 #p1 .p1p-scr { position: absolute; left: 12px; right: 12px; top: 12px; bottom: 34px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 #p1 .p1p-pan { display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 12px 6px 10px; border-radius: 10px; background: var(--tint-sky); }
-#p1 .p1p-pan svg { width: 56px; height: 40px; flex: none; }
+#p1 .p1p-pan svg { width: 64px; height: 46px; flex: none; }
 #p1 .p1p-pan span { font-size: 18px; font-weight: 700; line-height: 1.22; color: var(--navy); text-align: center; letter-spacing: -0.03em; }
 #p1 .p1p-fi { fill: none; stroke: var(--hec-blue); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 #p1 .p1p-fi.fill { fill: var(--hec-blue); stroke: none; }
 #p1 .p1p-fi.soft { fill: var(--paper); }
-#p1 .p1p-play { position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px 0 0 -27px; border-radius: 50%; background: var(--navy); box-shadow: 0 0 0 5px color-mix(in srgb, var(--paper) 85%, transparent); display: grid; place-items: center; }
+#p1 .p1p-play { position: absolute; left: 50%; top: calc(50% - 11px); width: 54px; height: 54px; margin: -27px 0 0 -27px; border-radius: 50%; background: var(--navy); box-shadow: 0 0 0 5px color-mix(in srgb, var(--paper) 85%, transparent); display: grid; place-items: center; }
 #p1 .p1p-play svg { width: 22px; height: 22px; margin-left: 4px; }
 #p1 .p1p-bar { position: absolute; left: 18px; right: 18px; bottom: 14px; height: 5px; border-radius: 3px; background: var(--line); }
 #p1 .p1p-bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 64%; border-radius: 3px; background: var(--grad); }
@@ -38,13 +38,13 @@
 #p1 .p1p-arw svg { flex: none; width: 20px; height: 26px; margin-left: -1px; }
 
 #p1 .p1p-award { flex: none; width: 220px; display: flex; flex-direction: column; align-items: center; }
-#p1 .p1p-medal { position: relative; width: 186px; height: 214px; }
+#p1 .p1p-medal { position: relative; width: 186px; height: 206px; }
 #p1 .p1p-medal svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 #p1 .p1p-medal .disc { fill: var(--hec-yellow); }
 #p1 .p1p-medal .rim2 { fill: none; stroke: var(--paper); stroke-width: 3; stroke-opacity: .9; }
 #p1 .p1p-medal .tl { fill: color-mix(in srgb, var(--hec-yellow) 78%, var(--gold-ink)); }
-#p1 .p1p-medal span { position: absolute; left: 50%; top: 41.1%; transform: translate(-50%, -50%); font-size: 44px; font-weight: 800; color: var(--navy); letter-spacing: -0.04em; white-space: nowrap; line-height: 1; }
-#p1 .p1p-comp { position: relative; margin-top: -18px; display: inline-flex; align-items: center; height: 38px; padding: 0 18px; border-radius: 999px; border: 2px solid var(--paper); background: var(--tint-yellow); color: var(--gold-ink); font-size: var(--fs-small); font-weight: 800; white-space: nowrap; letter-spacing: -0.02em; }
+#p1 .p1p-medal span { position: absolute; left: 50%; top: 42.7%; transform: translate(-50%, -50%); font-size: 44px; font-weight: 800; color: var(--navy); letter-spacing: -0.04em; white-space: nowrap; line-height: 1; }
+#p1 .p1p-comp { position: relative; margin-top: 2px; display: inline-flex; align-items: center; height: 36px; padding: 0 18px; border-radius: 999px; background: var(--tint-yellow); color: var(--gold-ink); font-size: var(--fs-small); font-weight: 800; white-space: nowrap; letter-spacing: -0.02em; }
 
 /* ---- B. 여정 ---- */
 #p1 .p1p-journey { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; }
@@ -181,9 +181,9 @@
       <!-- 장려상 메달 -->
       <div class="p1p-award">
         <div class="p1p-medal">
-          <svg viewBox="0 0 186 214" aria-hidden="true">
-            <path class="tl" d="M60 140L42 208L63 198L75 212L94 152Z"/>
-            <path class="tl" d="M126 140L144 208L123 198L111 212L92 152Z"/>
+          <svg viewBox="0 0 186 206" aria-hidden="true">
+            <path class="tl" d="M60 140L46 201L64 192L75 205L94 152Z"/>
+            <path class="tl" d="M126 140L140 201L122 192L111 205L92 152Z"/>
             <circle class="disc" cx="93" cy="88" r="86"/>
             <circle class="rim2" cx="93" cy="88" r="74"/>
           </svg>

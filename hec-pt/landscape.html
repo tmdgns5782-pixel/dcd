@@ -309,64 +309,68 @@ svg { display: block; overflow: visible; }
 <style>
 #p1 .p1-wrap { display: flex; flex-direction: column; height: calc(100% - 10px); }
 
-/* ===== A. PROJECT 카드 ===== */
+/* ===== A. PROJECT 카드 : 왼쪽 = 무엇을 / 오른쪽 = 결과물 → 장려상 ===== */
 #p1 .p1-proj {
-  display: grid; grid-template-columns: 772px 2px 1fr; column-gap: 32px;
-  padding: 18px 32px 20px; border: 2px solid var(--line); border-radius: var(--radius); background: var(--paper);
+  display: grid; grid-template-columns: 800px 2px 1fr; column-gap: 28px;
+  padding: 10px 32px; border: 2px solid var(--line); border-radius: var(--radius); background: var(--paper);
 }
 #p1 .p1-sep { background: var(--line); }
+#p1 .p1-proj-l { display: flex; flex-direction: column; justify-content: center; }
 #p1 .p1-ctx { display: flex; align-items: center; gap: 10px; }
 #p1 .p1-ctx .eyebrow { margin-right: 8px; }
 #p1 .p1-ctx .chip { height: 34px; padding: 0 14px; gap: 8px; font-size: 19px; }
 #p1 .p1-four { display: inline-flex; gap: 4px; }
 #p1 .p1-four i { width: 8px; height: 8px; border-radius: 50%; background: var(--hec-green); display: block; }
 #p1 .p1-topic {
-  margin-top: 10px; font-size: 40px; font-weight: 800; line-height: 1.25; white-space: nowrap;
+  margin-top: 18px; font-size: 40px; font-weight: 800; line-height: 1.25; white-space: nowrap;
   color: var(--navy); letter-spacing: -0.035em;
 }
-#p1 .p1-desc { margin-top: 6px; font-size: var(--fs-small); font-weight: 500; line-height: 1.45; color: var(--ink-2); letter-spacing: -0.02em; }
+#p1 .p1-desc { margin-top: 10px; font-size: var(--fs-small); font-weight: 500; line-height: 1.45; color: var(--ink-2); letter-spacing: -0.02em; }
 
-#p1 .p1-proj-r { display: flex; flex-direction: column; justify-content: space-between; }
-#p1 .p1-flow { position: relative; height: 96px; }
-#p1 .p1-flow-line { position: absolute; left: 0; top: 0; width: 822px; height: 96px; }
-#p1 .p1-fn { position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; }
-#p1 .p1-fn .ring { width: 56px; height: 56px; color: var(--hec-blue); }
-#p1 .p1-fn .ring.solid { color: #fff; }
-#p1 .p1-fn .ring svg { width: 26px; height: 26px; }
-#p1 .p1-fn span { font-size: 20px; font-weight: 700; line-height: 1.3; white-space: nowrap; color: var(--ink); letter-spacing: -0.02em; }
-#p1 .p1-fn.last span { color: var(--hec-blue); font-weight: 800; }
-
-#p1 .p1-out {
-  align-self: flex-start; display: inline-flex; align-items: center; gap: 12px;
-  height: 44px; padding: 0 20px 0 14px; border-radius: 999px; background: var(--tint-yellow); color: var(--gold-ink);
-  font-size: var(--fs-small); font-weight: 600; letter-spacing: -0.02em; white-space: nowrap;
+/* 히어로 */
+#p1 .p1-hero { position: relative; height: 250px; }
+#p1 .p1-hero-art { position: absolute; left: 0; top: 0; width: 802px; height: 250px; }
+#p1 .p1-video { position: absolute; left: 0; top: 0; width: 338px; height: 190px; border-radius: 16px; background: var(--navy); }
+#p1 .p1-video > svg { position: absolute; left: 0; top: 0; width: 338px; height: 190px; }
+#p1 .p1-vl {
+  position: absolute; top: 119px; transform: translateX(-50%);
+  font-size: 18px; font-weight: 700; line-height: 1.15; text-align: center; white-space: nowrap;
+  color: var(--paper); letter-spacing: -0.02em;
 }
-#p1 .p1-out svg { width: 22px; height: 22px; }
-#p1 .p1-out b { font-weight: 800; }
-#p1 .p1-out i { width: 2px; height: 18px; background: color-mix(in srgb, var(--gold-ink) 30%, transparent); display: block; }
+#p1 .p1-vl.last { color: var(--sky); }
+#p1 .p1-medal-t {
+  position: absolute; transform: translate(-50%, -50%);
+  font-size: 40px; font-weight: 900; line-height: 1; white-space: nowrap; color: var(--navy); letter-spacing: -0.03em;
+}
+#p1 .p1-cap {
+  position: absolute; top: 198px; font-size: 20px; font-weight: 600; line-height: 1.3; white-space: nowrap;
+  color: var(--ink-2); letter-spacing: -0.02em;
+}
+#p1 .p1-cap b { font-weight: 800; color: var(--hec-blue); }
+#p1 .p1-cap.medal { top: 224px; transform: translateX(-50%); font-weight: 700; color: var(--navy); }
 
 /* ===== B. 4단계 여정 ===== */
-#p1 .p1-jr { flex: 1; display: flex; flex-direction: column; margin-top: 20px; min-height: 0; }
-#p1 .p1-grid { display: grid; grid-template-columns: 256px 300px 1fr 300px; column-gap: 24px; }
+#p1 .p1-jr { flex: 1; display: flex; flex-direction: column; margin-top: 14px; min-height: 0; }
+#p1 .p1-grid { display: grid; grid-template-columns: 276px 316px 1fr 200px; column-gap: 24px; }
 
 /* 길 + 이음매 + 단계 라벨 */
-#p1 .p1-path { position: relative; height: 30px; }
-#p1 .p1-path-line { position: absolute; left: 0; top: 0; width: 1728px; height: 30px; }
+#p1 .p1-path { position: relative; height: 26px; }
+#p1 .p1-path-line { position: absolute; left: 0; top: 0; width: 1728px; height: 26px; }
 #p1 .p1-eb {
   position: absolute; top: 50%; transform: translateY(-50%); padding: 0 12px 0 10px; background: var(--paper);
   display: flex; align-items: center; gap: 10px; line-height: 1;
 }
 #p1 .p1-eb b { font-weight: 800; color: var(--ink-3); letter-spacing: 0.04em; }
 
-#p1 .p1-cols { flex: 1; margin-top: 10px; min-height: 0; }
+#p1 .p1-cols { flex: 1; margin-top: 6px; min-height: 0; }
 #p1 .p1-col { display: flex; flex-direction: column; min-height: 0; }
 #p1 .p1-col h3 {
   font-size: var(--fs-h3); font-weight: 700; line-height: 1.3; white-space: nowrap;
   color: var(--navy); letter-spacing: -0.035em;
 }
 #p1 .p1-panel {
-  flex: 1; margin-top: 10px; border-radius: var(--radius); background: var(--tint-blue);
-  padding: 16px; display: flex; flex-direction: column; justify-content: space-between; min-height: 0;
+  flex: 1; margin-top: 6px; border-radius: var(--radius); background: var(--tint-blue);
+  padding: 14px 16px; display: flex; flex-direction: column; justify-content: space-between; min-height: 0;
 }
 
 /* 미니 도식 공통 */
@@ -380,16 +384,13 @@ svg { display: block; overflow: visible; }
 #p1 .p1-pill { padding: 7px 12px; border-radius: 999px; background: var(--paper); }
 #p1 .p1-in { width: 124px; text-align: center; color: var(--ink); }
 #p1 .p1-crit { font-size: 20px; line-height: 1.15; text-align: center; color: var(--hec-blue); font-weight: 800; }
-#p1 .p1-award { font-size: var(--fs-small); font-weight: 800; color: var(--navy); }
 
 /* 사실 줄 (아이콘 + 글) */
-#p1 .p1-facts { display: grid; gap: 4px; }
 #p1 .p1-fact {
   display: flex; align-items: flex-start; gap: 8px;
   font-size: var(--fs-small); font-weight: 600; line-height: 1.4; color: var(--ink); letter-spacing: -0.025em;
 }
 #p1 .p1-fact svg { flex: none; width: 20px; height: 20px; margin-top: 5px; color: var(--ink-3); }
-#p1 .p1-fact .p1-fd { flex: none; width: 12px; height: 12px; margin: 10px 4px 0; border-radius: 50%; background: var(--hec-yellow); }
 
 /* ALIGN 결론 */
 #p1 .p1-agree {
@@ -400,13 +401,13 @@ svg { display: block; overflow: visible; }
 #p1 .p1-agree svg { width: 20px; height: 20px; }
 
 /* ONE TEAM : 역할 카드 4 + 공유 버스 */
-#p1 .p1-team { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto 40px auto; column-gap: 14px; padding: 14px 16px; }
-#p1 .p1-role { padding: 8px 14px; border-radius: 16px; background: var(--paper); border: 2px solid var(--paper); }
+#p1 .p1-team { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto 32px auto; column-gap: 14px; align-content: center; padding: 8px 16px; }
+#p1 .p1-role { padding: 6px 14px; border-radius: 16px; background: var(--paper); border: 2px solid var(--paper); }
 #p1 .p1-role.me { border-color: var(--hec-blue); }
 #p1 .p1-who { display: flex; align-items: center; gap: 10px; font-size: var(--fs-small); font-weight: 800; color: var(--navy); line-height: 1.25; letter-spacing: -0.02em; }
 #p1 .p1-av { width: 22px; height: 22px; border-radius: 50%; background: var(--hec-green); border: 5px solid var(--tint-green); display: block; flex: none; }
 #p1 .p1-me {
-  width: 30px; height: 30px; border-radius: 50%; background: var(--navy); color: #fff;
+  width: 30px; height: 30px; border-radius: 50%; background: var(--navy); color: var(--paper);
   display: grid; place-items: center; font-size: 18px; font-weight: 700; line-height: 1;
 }
 #p1 .p1-role ul { margin-top: 4px; }
@@ -417,22 +418,21 @@ svg { display: block; overflow: visible; }
 #p1 .p1-role li::before { content: ""; position: absolute; left: 1px; top: 0.66em; width: 6px; height: 6px; border-radius: 50%; background: var(--line-2); }
 #p1 .p1-tool { height: 28px; padding: 0 9px; font-size: 18px; }
 #p1 .p1-bus { grid-column: 1 / -1; position: relative; }
-#p1 .p1-bus > svg { position: absolute; left: 0; top: 0; width: 100%; height: 40px; }
+#p1 .p1-bus > svg { position: absolute; left: 0; top: 0; width: 100%; height: 32px; }
 #p1 .p1-share {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 16px 0 12px;
-  border-radius: 999px;
-  font-size: 20px; font-weight: 700; white-space: nowrap; letter-spacing: -0.02em;
+  display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 16px 0 12px;
+  border-radius: 999px; font-size: 20px; font-weight: 700; white-space: nowrap; letter-spacing: -0.02em;
 }
 #p1 .p1-share svg { width: 20px; height: 20px; }
 
 /* ===== C. 핵심 메시지 ===== */
-#p1 .p1-wrap .key { margin-top: 18px; padding: 20px 40px; }
+#p1 .p1-wrap .key { margin-top: 14px; padding: 12px 40px; }
 </style>
 
 <div class="p1-wrap">
 
-  <!-- A. 무엇을 만들었나 -->
+  <!-- A. 무엇을 만들었나 → 무엇을 받았나 -->
   <section class="p1-proj">
     <div class="p1-proj-l">
       <p class="p1-ctx">
@@ -444,58 +444,92 @@ svg { display: block; overflow: visible; }
       <p class="p1-desc">사용자가 원하는 리모델링 규모에 따라 유닛 모듈러를 배치하고,<br>필요한 모듈 수와 자재 물량을 자동으로 산출하는 BIM 기반 리모델링 방법 제안</p>
     </div>
     <span class="p1-sep" aria-hidden="true"></span>
-    <div class="p1-proj-r">
-      <div class="p1-flow">
-        <svg class="p1-flow-line" viewBox="0 0 822 96" aria-hidden="true">
+
+    <div class="p1-hero">
+      <!-- 굵은 연결 화살표 + 장려상 메달 -->
+      <svg class="p1-hero-art" viewBox="0 0 802 250" aria-hidden="true">
+        <defs>
+          <linearGradient id="p1l-hero" gradientUnits="userSpaceOnUse" x1="354" y1="0" x2="540" y2="0"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient>
+        </defs>
+        <line x1="360" y1="104" x2="534" y2="104" stroke="url(#p1l-hero)" stroke-width="6" stroke-linecap="round"/>
+        <path d="M518 88 L537 104 L518 120" fill="none" stroke="url(#p1l-hero)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="360" cy="104" r="8" fill="var(--paper)" stroke="var(--sky)" stroke-width="3"/>
+        <circle cx="647" cy="112" r="94" fill="var(--tint-yellow)"/>
+        <polygon points="587,4 615,4 659,56 631,56" fill="var(--hec-blue)"/>
+        <polygon points="679,4 707,4 663,56 635,56" fill="var(--sky-2)"/>
+        <circle cx="647" cy="112" r="84" fill="var(--hec-yellow)"/>
+        <circle cx="647" cy="112" r="70" fill="none" stroke="var(--paper)" stroke-width="2.5" opacity=".8"/>
+      </svg>
+      <span class="p1-medal-t" style="left:647px; top:112px">장려상</span>
+
+      <!-- 시연 영상 썸네일 : 앱 화면 3단계 + 가운데 재생 버튼 -->
+      <div class="p1-video">
+        <svg viewBox="0 0 340 191" aria-hidden="true">
           <defs>
-            <linearGradient id="p1l-flow" gradientUnits="userSpaceOnUse" x1="100" y1="0" x2="700" y2="0"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient>
+            <linearGradient id="p1l-vflow" gradientUnits="userSpaceOnUse" x1="60" y1="0" x2="280" y2="0"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient>
           </defs>
-          <line x1="100" y1="28" x2="700" y2="28" stroke="url(#p1l-flow)" stroke-width="3"/>
-          <g fill="none" stroke="url(#p1l-flow)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M343 19 L353 28 L343 37"/><path d="M653 19 L663 28 L653 37"/>
+          <!-- ① 규모 입력 -->
+          <rect x="36" y="18" width="48" height="30" rx="3" fill="none" stroke="var(--paper)" stroke-width="2"/>
+          <g stroke="var(--sky)" stroke-width="2" stroke-linecap="round" fill="none">
+            <line x1="36" y1="58" x2="84" y2="58"/><line x1="36" y1="53" x2="36" y2="63"/><line x1="84" y1="53" x2="84" y2="63"/>
           </g>
+          <!-- ② 유닛 모듈러 배치 -->
+          <g fill="var(--sky)">
+            <rect x="141" y="22" width="12" height="12" rx="2"/><rect x="156" y="22" width="12" height="12" rx="2"/>
+            <rect x="171" y="37" width="12" height="12" rx="2"/><rect x="186" y="37" width="12" height="12" rx="2"/><rect x="156" y="37" width="12" height="12" rx="2"/>
+          </g>
+          <g fill="none" stroke="var(--paper)" stroke-width="1.5" opacity=".7">
+            <rect x="171.75" y="22.75" width="10.5" height="10.5" rx="2"/><rect x="186.75" y="22.75" width="10.5" height="10.5" rx="2"/><rect x="141.75" y="37.75" width="10.5" height="10.5" rx="2"/>
+          </g>
+          <!-- ③ 모듈 수 · 자재 물량 자동 산출 -->
+          <line x1="254" y1="60" x2="306" y2="60" stroke="var(--paper)" stroke-width="1.5" opacity=".6"/>
+          <g fill="var(--sky)"><rect x="261" y="44" width="10" height="16" rx="2"/><rect x="275" y="34" width="10" height="26" rx="2"/><rect x="289" y="22" width="10" height="38" rx="2"/></g>
+          <!-- 흐름 선 + 재생 버튼 -->
+          <line x1="60" y1="92" x2="280" y2="92" stroke="url(#p1l-vflow)" stroke-width="3"/>
+          <g fill="none" stroke="url(#p1l-vflow)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M127 85 L135 92 L127 99"/><path d="M247 85 L255 92 L247 99"/></g>
+          <circle cx="60" cy="92" r="7" fill="var(--sky)" stroke="var(--navy)" stroke-width="3"/>
+          <circle cx="280" cy="92" r="7" fill="var(--sky-2)" stroke="var(--navy)" stroke-width="3"/>
+          <circle cx="170" cy="92" r="24" fill="var(--paper)"/>
+          <path d="M163 80 V104 L183 92 Z" fill="var(--navy)"/>
         </svg>
-        <div class="p1-fn" style="left:100px">
-          <span class="ring"><svg viewBox="0 0 26 26" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="20" height="20" rx="2.5"/><path d="M8.5 17.5L17.5 8.5M12.5 8.5H17.5V13.5M8.5 12.5V17.5H13.5"/></svg></span>
-          <span>리모델링 규모 입력</span>
-        </div>
-        <div class="p1-fn" style="left:390px">
-          <span class="ring"><svg viewBox="0 0 26 26" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="9" height="9" rx="1"/><rect x="14" y="14" width="9" height="9" rx="1"/></g><g fill="currentColor"><rect x="14" y="3" width="9" height="9" rx="1"/><rect x="3" y="14" width="9" height="9" rx="1"/></g></svg></span>
-          <span>유닛 모듈러 배치</span>
-        </div>
-        <div class="p1-fn last" style="left:700px">
-          <span class="ring solid"><svg viewBox="0 0 26 26" aria-hidden="true" fill="currentColor"><rect x="3" y="14" width="5" height="9" rx="1"/><rect x="10.5" y="8" width="5" height="15" rx="1"/><rect x="18" y="3" width="5" height="20" rx="1"/></svg></span>
-          <span>모듈 수 · 자재 물량 자동 산출</span>
-        </div>
+        <span class="p1-vl" style="left:59px">리모델링<br>규모 입력</span>
+        <span class="p1-vl" style="left:169px">유닛 모듈러<br>배치</span>
+        <span class="p1-vl last" style="left:278px">모듈 수 ·<br>자재 물량<br>자동 산출</span>
       </div>
-      <p class="p1-out"><svg viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 7.2V14.8L15 11Z" fill="currentColor"/></svg><b>결과물</b><i></i><span>유닛 모듈러 기반 사용자 맞춤형 리모델링 앱 개발 아이디어 시연 영상</span></p>
+
+      <p class="p1-cap"><b>결과물</b> · 유닛 모듈러 기반 사용자 맞춤형<br>리모델링 앱 개발 아이디어 시연 영상</p>
+      <p class="p1-cap medal" style="left:647px">학생 BIM 경진대회</p>
     </div>
   </section>
 
   <!-- B. 어떻게 함께 했나 -->
   <div class="p1-jr">
 
-    <!-- 하나의 그래디언트 길 + 이음매 점 (ALIGN 이음매는 위 프로젝트 카드로 이어짐 = 주제 합의) -->
+    <!-- 하나의 그래디언트 길 + 이음매 점. ALIGN → 주제, RESULT → 메달로 점선 연결 -->
     <div class="p1-path">
-      <svg class="p1-path-line" viewBox="0 0 1728 30" aria-hidden="true">
+      <svg class="p1-path-line" viewBox="0 0 1728 26" aria-hidden="true">
         <defs>
           <linearGradient id="p1l-path" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1728" y2="0"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient>
         </defs>
-        <line x1="291" y1="-22" x2="291" y2="4" stroke="var(--sky-2)" stroke-width="2" stroke-dasharray="4 5"/>
-        <circle cx="291" cy="-22" r="5" fill="var(--sky-2)"/>
-        <line x1="11" y1="15" x2="1720" y2="15" stroke="url(#p1l-path)" stroke-width="3" stroke-linecap="round"/>
-        <path d="M1710 6 L1720 15 L1710 24" fill="none" stroke="url(#p1l-path)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-        <g fill="#fff" stroke="url(#p1l-path)" stroke-width="3">
-          <circle cx="11" cy="15" r="10"/><circle cx="291" cy="15" r="10"/><circle cx="615" cy="15" r="10"/><circle cx="1439" cy="15" r="10"/>
+        <g stroke="var(--sky-2)" stroke-width="2" stroke-dasharray="4 5">
+          <line x1="311" y1="-16" x2="311" y2="2"/>
+          <line x1="1539" y1="-16" x2="1539" y2="2"/>
         </g>
-        <g fill="url(#p1l-path)"><circle cx="11" cy="15" r="4.5"/><circle cx="291" cy="15" r="4.5"/></g>
-        <circle cx="615" cy="15" r="5" fill="var(--hec-green)"/>
-        <circle cx="1439" cy="15" r="5" fill="var(--hec-yellow)"/>
+        <circle cx="311" cy="-16" r="5" fill="var(--sky-2)"/>
+        <circle cx="1539" cy="-16" r="5" fill="var(--sky-2)"/>
+        <line x1="11" y1="13" x2="1720" y2="13" stroke="url(#p1l-path)" stroke-width="3" stroke-linecap="round"/>
+        <path d="M1710 4 L1720 13 L1710 22" fill="none" stroke="url(#p1l-path)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <g fill="var(--paper)" stroke="url(#p1l-path)" stroke-width="3">
+          <circle cx="11" cy="13" r="10"/><circle cx="311" cy="13" r="10"/><circle cx="651" cy="13" r="10"/><circle cx="1539" cy="13" r="10"/>
+        </g>
+        <g fill="url(#p1l-path)"><circle cx="11" cy="13" r="4.5"/><circle cx="311" cy="13" r="4.5"/></g>
+        <circle cx="651" cy="13" r="5" fill="var(--hec-green)"/>
+        <circle cx="1539" cy="13" r="5" fill="var(--hec-yellow)"/>
       </svg>
       <p class="eyebrow p1-eb" style="left:24px"><b>01</b>Conflict</p>
-      <p class="eyebrow p1-eb" style="left:304px"><b>02</b>Align</p>
-      <p class="eyebrow p1-eb" style="left:628px"><b>03</b>One Team</p>
-      <p class="eyebrow p1-eb" style="left:1452px"><b>04</b>Result</p>
+      <p class="eyebrow p1-eb" style="left:324px"><b>02</b>Align</p>
+      <p class="eyebrow p1-eb" style="left:664px"><b>03</b>One Team</p>
+      <p class="eyebrow p1-eb" style="left:1552px"><b>04</b>Result</p>
     </div>
 
     <div class="p1-grid p1-cols">
@@ -515,7 +549,7 @@ svg { display: block; overflow: visible; }
                 <line x1="72" y1="30" x2="72" y2="76" stroke="var(--hec-green)" stroke-width="3" opacity=".45"/>
                 <line x1="152" y1="30" x2="152" y2="76" stroke="var(--hec-green)" stroke-width="3" opacity=".45"/>
                 <g fill="var(--tint-green)"><circle cx="72" cy="30" r="19"/><circle cx="72" cy="76" r="19"/><circle cx="152" cy="30" r="19"/><circle cx="152" cy="76" r="19"/></g>
-                <g fill="var(--hec-green)" stroke="#fff" stroke-width="3"><circle cx="72" cy="30" r="12"/><circle cx="72" cy="76" r="12"/><circle cx="152" cy="30" r="12"/><circle cx="152" cy="76" r="12"/></g>
+                <g fill="var(--hec-green)" stroke="var(--paper)" stroke-width="3"><circle cx="72" cy="30" r="12"/><circle cx="72" cy="76" r="12"/><circle cx="152" cy="30" r="12"/><circle cx="152" cy="76" r="12"/></g>
               </svg>
               <span class="p1-lbl p1-pill" style="left:46px; top:122px">참신성</span>
               <span class="p1-lbl p1-pill" style="left:164px; top:122px">구현 가능성</span>
@@ -538,7 +572,7 @@ svg { display: block; overflow: visible; }
                   <path d="M126 125 C146 125 146 88 160 81"/>
                   <path d="M151 68 L160 75 L151 82"/>
                 </g>
-                <circle cx="215" cy="75" r="51" fill="#fff" stroke="var(--hec-blue)" stroke-width="3"/>
+                <circle cx="215" cy="75" r="51" fill="var(--paper)" stroke="var(--hec-blue)" stroke-width="3"/>
               </svg>
               <span class="p1-lbl p1-pill p1-in" style="left:62px; top:25px">경청</span>
               <span class="p1-lbl p1-pill p1-in" style="left:62px; top:75px">수상작 분석</span>
@@ -563,12 +597,12 @@ svg { display: block; overflow: visible; }
             <ul><li>유닛 모듈러 설계</li><li>배치계획</li></ul>
           </div>
           <div class="p1-bus">
-            <svg viewBox="0 0 768 40" preserveAspectRatio="none" aria-hidden="true">
+            <svg viewBox="0 0 832 32" preserveAspectRatio="none" aria-hidden="true">
               <g stroke="var(--hec-green)" stroke-width="3" opacity=".45">
-                <line x1="188.5" y1="0" x2="188.5" y2="40"/><line x1="579.5" y1="0" x2="579.5" y2="40"/>
-                <line x1="188.5" y1="20" x2="579.5" y2="20"/>
+                <line x1="204.5" y1="0" x2="204.5" y2="32"/><line x1="627.5" y1="0" x2="627.5" y2="32"/>
+                <line x1="204.5" y1="16" x2="627.5" y2="16"/>
               </g>
-              <g fill="var(--hec-green)" stroke="var(--tint-blue)" stroke-width="3"><circle cx="188.5" cy="20" r="7"/><circle cx="579.5" cy="20" r="7"/></g>
+              <g fill="var(--hec-green)" stroke="var(--tint-blue)" stroke-width="3"><circle cx="204.5" cy="16" r="7"/><circle cx="627.5" cy="16" r="7"/></g>
             </svg>
             <span class="chip people p1-share"><svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8.5A6.2 6.2 0 0 0 4.6 6.4M4 11.5a6.2 6.2 0 0 0 11.4 2.1"/><path d="M4.2 2.8v3.8H8M15.8 17.2v-3.8H12"/></svg>이틀마다 진행상황 공유 · 피드백</span>
           </div>
@@ -583,37 +617,33 @@ svg { display: block; overflow: visible; }
         </div>
       </div>
 
-      <!-- 4 RESULT : 하나로 합쳐져 장려상 -->
+      <!-- 4 RESULT : 네 사람이 하나로 → 시연 영상 완성 (이음매에서 위 메달로 연결) -->
       <div class="p1-col">
-        <h3>프로젝트 완성 · 장려상 수상</h3>
+        <h3>프로젝트 완성</h3>
         <div class="p1-panel">
           <div class="p1-dia-box">
-            <div class="p1-dia" style="width:268px; height:140px">
-              <svg viewBox="0 0 268 140" width="268" height="140" aria-hidden="true">
+            <div class="p1-dia" style="width:168px; height:110px">
+              <svg viewBox="0 0 168 110" width="168" height="110" aria-hidden="true">
                 <defs>
-                  <linearGradient id="p1l-arrow" gradientUnits="userSpaceOnUse" x1="124" y1="0" x2="152" y2="0"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient>
+                  <linearGradient id="p1l-arrow" gradientUnits="userSpaceOnUse" x1="92" y1="0" x2="116" y2="0"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient>
                 </defs>
                 <g fill="none" stroke="var(--hec-green)" stroke-width="3" opacity=".45">
-                  <path d="M14 16 C54 16 54 70 86 70"/><path d="M14 52 C54 52 54 70 86 70"/>
-                  <path d="M14 88 C54 88 54 70 86 70"/><path d="M14 124 C54 124 54 70 86 70"/>
+                  <path d="M14 14 C42 14 42 55 64 55"/><path d="M14 41 C42 41 42 55 64 55"/>
+                  <path d="M14 69 C42 69 42 55 64 55"/><path d="M14 96 C42 96 42 55 64 55"/>
                 </g>
                 <g fill="var(--hec-green)" stroke="var(--tint-blue)" stroke-width="3">
-                  <circle cx="11" cy="16" r="9"/><circle cx="11" cy="52" r="9"/><circle cx="11" cy="88" r="9"/><circle cx="11" cy="124" r="9"/>
+                  <circle cx="10" cy="14" r="8"/><circle cx="10" cy="41" r="8"/><circle cx="10" cy="69" r="8"/><circle cx="10" cy="96" r="8"/>
                 </g>
-                <circle cx="98" cy="70" r="24" fill="var(--tint-green)"/>
-                <circle cx="98" cy="70" r="15" fill="var(--hec-green)" stroke="#fff" stroke-width="3"/>
-                <line x1="126" y1="70" x2="152" y2="70" stroke="url(#p1l-arrow)" stroke-width="3" stroke-linecap="round"/>
-                <path d="M144 62 L153 70 L144 78" fill="none" stroke="url(#p1l-arrow)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="212" cy="70" r="56" fill="var(--tint-yellow)"/>
-                <circle cx="212" cy="70" r="45" fill="var(--hec-yellow)"/>
+                <circle cx="72" cy="55" r="18" fill="var(--tint-green)"/>
+                <circle cx="72" cy="55" r="11" fill="var(--hec-green)" stroke="var(--paper)" stroke-width="3"/>
+                <line x1="94" y1="55" x2="114" y2="55" stroke="url(#p1l-arrow)" stroke-width="3" stroke-linecap="round"/>
+                <path d="M107 48 L115 55 L107 62" fill="none" stroke="url(#p1l-arrow)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <rect x="122" y="37" width="46" height="36" rx="7" fill="var(--navy)"/>
+                <path d="M140 46 V64 L154 55 Z" fill="var(--paper)"/>
               </svg>
-              <span class="p1-lbl p1-award" style="left:212px; top:70px">장려상</span>
             </div>
           </div>
-          <div class="p1-facts">
-            <p class="p1-fact"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6.2 10.2l2.6 2.6 5-5.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>남은 3주 내 시연 영상 완성</span></p>
-            <p class="p1-fact"><i class="p1-fd"></i><span>학생 BIM 경진대회 장려상</span></p>
-          </div>
+          <p class="p1-fact"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6.2 10.2l2.6 2.6 5-5.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>남은 3주 내<br>시연 영상 완성</span></p>
         </div>
       </div>
 
