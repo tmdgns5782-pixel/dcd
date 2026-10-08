@@ -7,7 +7,7 @@
 <style>
 /* ==========================================================================
    현대엔지니어링 PT 시안 — 공통 디자인 시스템 (가로형 · 세로형 공용)
-   - CI 전용색: 현대 Blue(PMS 286C) · Green(PMS 3415C) · Yellow(PMS 130C)
+   - CI 전용색: 현대엔지니어링 공식 CI 파일(HEC영문CI.ai) 기준 Blue · Green · Yellow
    - 2026 가치체계 안내 그래픽의 하늘색 → 파랑 그래디언트를 '잇는 길(연결선)'에 사용
    - 의미 색: 사람·우리 = Green / 기술 = Blue / 현장·성과 = Yellow
    - 서체: Paperlogy(페이퍼로지)
@@ -23,9 +23,9 @@
 
 :root {
   /* CI 전용색 */
-  --hec-blue: #004098;
-  --hec-green: #009944;
-  --hec-yellow: #FABE00;
+  --hec-blue: #004B8D;
+  --hec-green: #00A94F;
+  --hec-yellow: #FDBB30;
 
   /* 가치체계 그래디언트 (잇는 길) */
   --sky: #45B9EC;
@@ -45,9 +45,9 @@
   /* 옅은 면 (의미 색 틴트) */
   --tint-blue: #EEF4FC;
   --tint-sky: #E9F6FD;
-  --tint-green: #E7F5EC;
-  --tint-yellow: #FFF5D6;
-  --gold-ink: #8A6400;  /* 노랑 면 위 글자용 (노랑 자체는 글자색으로 쓰지 않는다) */
+  --tint-green: #E5F6EC;
+  --tint-yellow: #FFF4DB;
+  --gold-ink: #8A5A00;  /* 노랑 면 위 글자용 (노랑 자체는 글자색으로 쓰지 않는다) */
 
   /* 타입 스케일 — 가로형 기준. 세로형 파일에서 덮어쓴다 */
   --fs-topic: 22px;
@@ -168,13 +168,13 @@ svg { display: block; overflow: visible; }
 .mark b { width: 14px; height: 2px; background: var(--line-2); display: block; }
 
 /* ---------- 로고 자리 ---------- */
-/* hec-pt 폴더에 logo.png(공식 CI)를 넣으면 자동으로 표시된다. 없으면 점선 자리표시 */
+/* hec-pt/logo.svg(공식 CI 국문 로고)를 빌드 때 파일 안에 넣는다. 없으면 점선 자리표시 */
 .logo {
   position: absolute;
   top: var(--pad-top);
   right: var(--pad-x);
-  width: 260px;
-  height: 64px;
+  width: 280px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -280,7 +280,7 @@ svg { display: block; overflow: visible; }
   letter-spacing: -0.03em;
   line-height: 1.3;
 }
-.key .key-text em { color: #FFD24D; }   /* 남색 위 강조 — CI 옐로우 계열 */
+.key .key-text em { color: var(--hec-yellow); }   /* 남색 위 강조 — CI 옐로우 */
 
 /* 숫자 · 짧은 텍스트 정렬 보조 */
 .num { font-variant-numeric: tabular-nums; }
@@ -309,11 +309,202 @@ svg { display: block; overflow: visible; }
     <p class="hd-lead">제가 가장 중요하게 생각하는 가치는</p>
     <h1 class="hd-title"><em>공동의 목표</em>를 공유하며<br>함께 성과를 만드는 <em>협업</em>입니다</h1>
   </header>
-  <div class="logo"><img src="logo.png" alt="현대엔지니어링" onerror="this.remove()"><span>회사 로고</span></div>
+  <div class="logo"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjMxMS44MiAyNzcuNTMgMjIwLjQyIDMyLjc3IiB3aWR0aD0iMjIwLjQyIiBoZWlnaHQ9IjMyLjc3Ij4KPHBhdGggZmlsbD0iI0ZEQjkxMiIgZD0iTSAzMTIuMzIwMzEyIDMwOS41MjM0MzggTCAzNDguNDEwMTU2IDMwOS41MjM0MzggTCAzMzAuOTIxODc1IDI3OC4wMzEyNSBaIE0gMzEyLjMyMDMxMiAzMDkuNTIzNDM4Ii8+CjxwYXRoIGZpbGw9IiMwMEE2NTAiIGQ9Ik0gMzE2LjU2MjUgMzA5LjUyMzQzOCBMIDM1Mi42NjQwNjIgMzA5LjUyMzQzOCBMIDMzNS4xNjc5NjkgMjc4LjAzMTI1IFogTSAzMTYuNTYyNSAzMDkuNTIzNDM4Ii8+CjxwYXRoIGZpbGw9IiMwMDQyODIiIGQ9Ik0gMzU5LjU4MjAzMSAyOTUuMDE1NjI1IEMgMzU5LjY0ODQzOCAyOTUuMDc4MTI1IDM1OS42NTYyNSAyOTUuMDg1OTM4IDM1OS41ODIwMzEgMjk1LjAxNTYyNSIvPgo8cGF0aCBmaWxsPSIjMDA0MjgyIiBkPSJNIDM3MC45NDUzMTIgMjkzLjk5NjA5NCBDIDM3MS4wMDc4MTIgMjkzLjYyODkwNiAzNzEuMDQyOTY5IDI5My4yNSAzNzEuMDQyOTY5IDI5Mi44NzEwOTQgQyAzNzEuMDQyOTY5IDI5Mi41OTc2NTYgMzcxLjAzMTI1IDI5Mi4zMzk4NDQgMzcxIDI5Mi4wODU5MzggTCAzNzQuMzEyNSAyOTIuMDg1OTM4IEwgMzc0LjMxMjUgMjkzLjk5NjA5NCBaIE0gMzYzLjkxNzk2OSAyOTYuNTE5NTMxIEMgMzYxLjg3ODkwNiAyOTYuNTE5NTMxIDM2MC4yMTQ4NDQgMjk0Ljg2MzI4MSAzNjAuMjE0ODQ0IDI5Mi44MjQyMTkgQyAzNjAuMjE0ODQ0IDI5MC43ODEyNSAzNjEuODc4OTA2IDI4OS4xMjEwOTQgMzYzLjkxNzk2OSAyODkuMTIxMDk0IEMgMzY1Ljk2MDkzOCAyODkuMTIxMDk0IDM2Ny42MjEwOTQgMjkwLjc4MTI1IDM2Ny42MjEwOTQgMjkyLjgyNDIxOSBDIDM2Ny42MjEwOTQgMjk0Ljg2MzI4MSAzNjUuOTYwOTM4IDI5Ni41MTk1MzEgMzYzLjkxNzk2OSAyOTYuNTE5NTMxIE0gMzc0LjMxMjUgMjg4Ljk4MDQ2OSBMIDM2OS44ODY3MTkgMjg4Ljk4MDQ2OSBDIDM2OS42MTMyODEgMjg4LjU3NDIxOSAzNjkuMzA0Njg4IDI4OC4xODc1IDM2OC45Njg3NSAyODcuODQzNzUgTCAzNzEuNTk3NjU2IDI4Ny44NDM3NSBMIDM3MS41OTc2NTYgMjg0LjczODI4MSBMIDM2NS45NTMxMjUgMjg0LjczODI4MSBMIDM2NS45NTMxMjUgMjgyLjY4NzUgTCAzNjEuOTMzNTk0IDI4Mi42ODc1IEwgMzYxLjkzMzU5NCAyODQuNzM4MjgxIEwgMzU2LjI3MzQzOCAyODQuNzM4MjgxIEwgMzU2LjI3MzQzOCAyODcuODQzNzUgTCAzNTguODcxMDk0IDI4Ny44NDM3NSBDIDM1Ny41ODk4NDQgMjg5LjEzMjgxMiAzNTYuNzk2ODc1IDI5MC45MDYyNSAzNTYuNzk2ODc1IDI5Mi44NzEwOTQgQyAzNTYuNzk2ODc1IDI5Ni43OTI5NjkgMzU5Ljk5MjE4OCAyOTkuOTg4MjgxIDM2My45MjU3ODEgMjk5Ljk4ODI4MSBDIDM2Ni4yNjk1MzEgMjk5Ljk4ODI4MSAzNjguMzM1OTM4IDI5OC44NDc2NTYgMzY5LjYzMjgxMiAyOTcuMTAxNTYyIEwgMzc0LjMxMjUgMjk3LjEwMTU2MiBMIDM3NC4zMTI1IDMwMy4wNDY4NzUgTCAzNzguMzM1OTM4IDMwMy4wNDY4NzUgTCAzNzguMzM1OTM4IDI4My40NzY1NjIgTCAzNzQuMzEyNSAyODMuNDc2NTYyIFogTSAzNzQuMzEyNSAyODguOTgwNDY5Ii8+CjxwYXRoIGZpbGw9IiMwMDQyODIiIGQ9Ik0gMzYyLjk2ODc1IDMwMS40NjQ4NDQgTCAzNTguOTQxNDA2IDMwMS40NjQ4NDQgTCAzNTguOTQxNDA2IDMwOS40NjA5MzggTCAzNzguMzM1OTM4IDMwOS40NjA5MzggTCAzNzguMzM1OTM4IDMwNi4zNjMyODEgTCAzNjIuOTY4NzUgMzA2LjM2MzI4MSBaIE0gMzYyLjk2ODc1IDMwMS40NjQ4NDQiLz4KPHBhdGggZmlsbD0iIzAwNDI4MiIgZD0iTSA0MDAuNjk1MzEyIDI5MS4yNTc4MTIgTCAzOTguNDQ5MjE5IDI5MS4yNTc4MTIgTCAzOTguNDQ5MjE5IDI4My40NzY1NjIgTCAzOTQuNDM3NSAyODMuNDc2NTYyIEwgMzk0LjQzNzUgMjk5Ljk0OTIxOSBMIDM4Ni41MTU2MjUgMjk5Ljk0OTIxOSBMIDM4Ni41MTU2MjUgMjg3LjEyNSBMIDM5MS45NTcwMzEgMjg3LjEyNSBMIDM5MS45NTcwMzEgMjg0LjAyMzQzOCBMIDM4Mi40OTIxODggMjg0LjAyMzQzOCBMIDM4Mi40OTIxODggMzAzLjA0Njg3NSBMIDM5NC40Mzc1IDMwMy4wNDY4NzUgTCAzOTQuNDM3NSAzMDkuNDY0ODQ0IEwgMzk4LjQ0OTIxOSAzMDkuNDY0ODQ0IEwgMzk4LjQ0OTIxOSAyOTQuMzU1NDY5IEwgNDAwLjY5NTMxMiAyOTQuMzU1NDY5IEwgNDAwLjY5NTMxMiAzMDkuNDY0ODQ0IEwgNDA0LjcyMjY1NiAzMDkuNDY0ODQ0IEwgNDA0LjcyMjY1NiAyODMuNDc2NTYyIEwgNDAwLjY5NTMxMiAyODMuNDc2NTYyIFogTSA0MDAuNjk1MzEyIDI5MS4yNTc4MTIiLz4KPHBhdGggZmlsbD0iIzAwNDI4MiIgZD0iTSA1MTYuOTM3NSAzMDQuMDYyNSBDIDUxNi45Mzc1IDMwMi41ODIwMzEgNTE5LjMwNDY4OCAzMDEuMzkwNjI1IDUyMi4yMjI2NTYgMzAxLjM5MDYyNSBDIDUyNS4xMzY3MTkgMzAxLjM5MDYyNSA1MjcuNTAzOTA2IDMwMi41ODIwMzEgNTI3LjUwMzkwNiAzMDQuMDYyNSBDIDUyNy41MDM5MDYgMzA1LjU0Mjk2OSA1MjUuMTM2NzE5IDMwNi43NDIxODggNTIyLjIyMjY1NiAzMDYuNzQyMTg4IEMgNTE5LjMwNDY4OCAzMDYuNzQyMTg4IDUxNi45Mzc1IDMwNS41NDI5NjkgNTE2LjkzNzUgMzA0LjA2MjUgTSA1MTIuNzA3MDMxIDMwNC4wNjI1IEMgNTEyLjcwNzAzMSAzMDcuMjI2NTYyIDUxNi45NzI2NTYgMzA5LjgwMDc4MSA1MjIuMjIyNjU2IDMwOS44MDA3ODEgQyA1MjcuNDc2NTYyIDMwOS44MDA3ODEgNTMxLjc0MjE4OCAzMDcuMjI2NTYyIDUzMS43NDIxODggMzA0LjA2MjUgQyA1MzEuNzQyMTg4IDMwMC44OTg0MzggNTI3LjQ3NjU2MiAyOTguMzIwMzEyIDUyMi4yMjI2NTYgMjk4LjMyMDMxMiBDIDUxNi45NzI2NTYgMjk4LjMyMDMxMiA1MTIuNzA3MDMxIDMwMC44OTg0MzggNTEyLjcwNzAzMSAzMDQuMDYyNSIvPgo8cGF0aCBmaWxsPSIjMDA0MjgyIiBkPSJNIDQ0My4zMzIwMzEgMjg3LjA5Mzc1IEMgNDQzLjMzMjAzMSAyODcuMDkzNzUgNDQyLjU0Njg3NSAyOTQuOTk2MDk0IDQ0OS41OTc2NTYgMzAwLjI5Njg3NSBMIDQ0Ny4zNTkzNzUgMzAzLjAxOTUzMSBDIDQ0Ny4zNTkzNzUgMzAzLjAxOTUzMSA0NDIuODQzNzUgMjk5LjkyMTg3NSA0NDEuMzM1OTM4IDI5My45OTIxODggQyA0NDEuMzM1OTM4IDI5My45OTIxODggNDQwLjg0NzY1NiAyOTguMTEzMjgxIDQzNS4zMjAzMTIgMzAyLjk5MjE4OCBMIDQzMy4wOTM3NSAzMDAuMzY3MTg4IEMgNDMzLjA5Mzc1IDMwMC4zNjcxODggNDM5LjMyMDMxMiAyOTYuNTI3MzQ0IDQzOS4zMTY0MDYgMjg3LjA5Mzc1IEwgNDM0LjI5Njg3NSAyODcuMDkzNzUgTCA0MzQuMjk2ODc1IDI4My45MjU3ODEgTCA0NDguMTA1NDY5IDI4My45MjU3ODEgTCA0NDguMTA1NDY5IDI4Ny4wOTM3NSBaIE0gNDQzLjMzMjAzMSAyODcuMDkzNzUiLz4KPHBhdGggZmlsbD0iIzAwNDI4MiIgZD0iTSA0NTUuNzczNDM4IDMwOS40NjA5MzggTCA0NTEuNzUgMzA5LjQ2MDkzOCBMIDQ1MS43NSAyODMuNDcyNjU2IEwgNDU1Ljc3MzQzOCAyODMuNDcyNjU2IFogTSA0NTUuNzczNDM4IDMwOS40NjA5MzgiLz4KPHBhdGggZmlsbD0iIzAwNDI4MiIgZD0iTSA0NzcuMjA3MDMxIDI4My40NzY1NjIgTCA0NzcuMjA3MDMxIDI5OS45MjE4NzUgTCA0NjMuOTkyMTg4IDI5OS45MjE4NzUgTCA0NjMuOTkyMTg4IDI4My45MjU3ODEgTCA0NTkuOTY4NzUgMjgzLjkyNTc4MSBMIDQ1OS45Njg3NSAzMDMuMDE5NTMxIEwgNDc3LjIwNzAzMSAzMDMuMDE5NTMxIEwgNDc3LjIwNzAzMSAzMDkuNDY0ODQ0IEwgNDgxLjIyNjU2MiAzMDkuNDY0ODQ0IEwgNDgxLjIyNjU2MiAyODMuNDc2NTYyIFogTSA0NzcuMjA3MDMxIDI4My40NzY1NjIiLz4KPHBhdGggZmlsbD0iIzAwNDI4MiIgZD0iTSA1MjcuNTA3ODEyIDI5My41MDc4MTIgTCA1MjcuNTA3ODEyIDI4My40NzI2NTYgTCA1MzEuNTM5MDYyIDI4My40NzI2NTYgTCA1MzEuNTM5MDYyIDI5OC4zMTY0MDYgTCA1MjcuNTA3ODEyIDI5OC4zMTY0MDYgTCA1MjcuNTA3ODEyIDI5Ni44NjcxODggTCA1MDkuODc1IDI5Ni44NzUgTCA1MDkuODc1IDI4OC43MTQ4NDQgTCA1MTkuMjQyMTg4IDI4OC43MTQ4NDQgTCA1MTkuMjQyMTg4IDI4Ny4yODkwNjIgTCA1MDkuODc1IDI4Ny4yODkwNjIgTCA1MDkuODc1IDI4My45MjU3ODEgTCA1MjIuOTIxODc1IDI4My45MjU3ODEgTCA1MjIuOTIxODc1IDI5Mi4wNzgxMjUgTCA1MTMuMTcxODc1IDI5Mi4wNzgxMjUgTCA1MTMuMTcxODc1IDI5My41MDc4MTIgWiBNIDUyNy41MDc4MTIgMjkzLjUwNzgxMiIvPgo8cGF0aCBmaWxsPSIjMDA0MjgyIiBkPSJNIDQ5NC4wODk4NDQgMjk3LjY0MDYyNSBDIDQ5My4yODUxNTYgMjk5LjA2NjQwNiA0OTIuNTQyOTY5IDI5OS4zNzEwOTQgNDkxLjE0MDYyNSAyOTkuMzcxMDk0IEMgNDg5Ljc2NTYyNSAyOTkuMzcxMDk0IDQ4OC43MzQzNzUgMjk5LjAyMzQzOCA0ODguMDExNzE5IDI5Ny42NTIzNDQgQyA0ODcuNjI1IDI5Ni45MTAxNTYgNDg3LjIzNDM3NSAyOTQuNjI4OTA2IDQ4Ny4yMzQzNzUgMjkzLjI1IEMgNDg3LjIzNDM3NSAyOTEuODU1NDY5IDQ4Ny4yNTM5MDYgMjkwLjIzNDM3NSA0ODguMDE1NjI1IDI4OC44MTY0MDYgQyA0ODguNzM0Mzc1IDI4Ny41IDQ4OS43NDYwOTQgMjg3LjEyNSA0OTEuMTc1NzgxIDI4Ny4xMjUgQyA0OTIuNTg1OTM4IDI4Ny4xMjUgNDkzLjQ0NTMxMiAyODcuNjAxNTYyIDQ5NC4wOTc2NTYgMjg4LjgyNDIxOSBDIDQ5NC44OTA2MjUgMjkwLjI4OTA2MiA0OTQuODU1NDY5IDI5MS44NjcxODggNDk0Ljg1NTQ2OSAyOTMuMjUgQyA0OTQuODU1NDY5IDI5NC42Mjg5MDYgNDk0Ljc5Mjk2OSAyOTYuNDAyMzQ0IDQ5NC4wODk4NDQgMjk3LjY0MDYyNSBNIDUwMS42NjAxNTYgMjgzLjQ3MjY1NiBMIDUwMS42NjAxNTYgMjkxLjE3OTY4OCBMIDQ5OC4zMzk4NDQgMjkxLjE3OTY4OCBDIDQ5OC4xMzI4MTIgMjg4LjkxNDA2MiA0OTcuNTQyOTY5IDI4Ny4yMzA0NjkgNDk2LjY2Nzk2OSAyODYuMDAzOTA2IEMgNDk1LjUzMTI1IDI4NC40MDIzNDQgNDkzLjcyMjY1NiAyODMuNDcyNjU2IDQ5MS4xNzU3ODEgMjgzLjQ3MjY1NiBDIDQ4OC42MDkzNzUgMjgzLjQ3MjY1NiA0ODYuNzAzMTI1IDI4NC4yODUxNTYgNDg1LjQ5MjE4OCAyODUuODcxMDk0IEMgNDg0LjI5Mjk2OSAyODcuNDU3MDMxIDQ4My42OTE0MDYgMjg5Ljk0MTQwNiA0ODMuNjkxNDA2IDI5My4yNjE3MTkgQyA0ODMuNjkxNDA2IDI5Ni41NzQyMTkgNDg0LjI5Mjk2OSAyOTkuMDUwNzgxIDQ4NS40OTIxODggMzAwLjYyODkwNiBDIDQ4Ni43MDMxMjUgMzAyLjIxNDg0NCA0ODguNjA5Mzc1IDMwMy4wMTk1MzEgNDkxLjE3NTc4MSAzMDMuMDE5NTMxIEMgNDkzLjcyMjY1NiAzMDMuMDE5NTMxIDQ5NS41ODk4NDQgMzAyLjIxNDg0NCA0OTYuNzI2NTYyIDMwMC42Mjg5MDYgQyA0OTcuNzMwNDY5IDI5OS4yNDYwOTQgNDk4LjI4MTI1IDI5Ny4xMzI4MTIgNDk4LjQwNjI1IDI5NC4zNDc2NTYgTCA1MDEuNjYwMTU2IDI5NC4zNTU0NjkgTCA1MDEuNjYwMTU2IDMwOS40NjA5MzggTCA1MDUuNzE0ODQ0IDMwOS40NjA5MzggTCA1MDUuNzE0ODQ0IDI4My40NzI2NTYgWiBNIDUwMS42NjAxNTYgMjgzLjQ3MjY1NiIvPgo8cGF0aCBmaWxsPSIjMDA0MjgyIiBkPSJNIDQyNi45NTcwMzEgMzAzLjAxOTUzMSBMIDQzMC42MzY3MTkgMzAzLjAxOTUzMSBMIDQzMC42MzY3MTkgMjgzLjQ3NjU2MiBMIDQyNi45NTcwMzEgMjgzLjQ3NjU2MiBaIE0gNDI2Ljk1NzAzMSAzMDMuMDE5NTMxIi8+CjxwYXRoIGZpbGw9IiMwMDQyODIiIGQ9Ik0gNDE1LjI2OTUzMSAzMDEuNDY0ODQ0IEwgNDExLjI0MjE4OCAzMDEuNDY0ODQ0IEwgNDExLjI0MjE4OCAzMDkuNDYwOTM4IEwgNDMwLjYzNjcxOSAzMDkuNDYwOTM4IEwgNDMwLjYzNjcxOSAzMDYuMzYzMjgxIEwgNDE1LjI2OTUzMSAzMDYuMzYzMjgxIFogTSA0MTUuMjY5NTMxIDMwMS40NjQ4NDQiLz4KPHBhdGggZmlsbD0iIzAwNDI4MiIgZD0iTSA0MTQuMjM4MjgxIDI5NC4xOTE0MDYgQyA0MTIuMjE4NzUgMjk0LjE5MTQwNiA0MTAuNTg1OTM4IDI5Mi41NDY4NzUgNDEwLjU4NTkzOCAyOTAuNTM1MTU2IEMgNDEwLjU4NTkzOCAyODguNTIzNDM4IDQxMi4yMTg3NSAyODYuODc4OTA2IDQxNC4yMzgyODEgMjg2Ljg3ODkwNiBDIDQxNi4yNTM5MDYgMjg2Ljg3ODkwNiA0MTcuODg2NzE5IDI4OC41MjM0MzggNDE3Ljg4NjcxOSAyOTAuNTM1MTU2IEMgNDE3Ljg4NjcxOSAyOTIuNTQ2ODc1IDQxNi4yNTM5MDYgMjk0LjE5MTQwNiA0MTQuMjM4MjgxIDI5NC4xOTE0MDYgTSA0MjIuMjg5MDYyIDI4My40NzY1NjIgTCA0MjIuMjg5MDYyIDI4OC45MjE4NzUgTCA0MjEuMTA5Mzc1IDI4OC45MjE4NzUgQyA0MjAuMzcxMDk0IDI4NS43OTY4NzUgNDE3LjU4MjAzMSAyODMuNDc2NTYyIDQxNC4yMzgyODEgMjgzLjQ3NjU2MiBDIDQxMC4zMzk4NDQgMjgzLjQ3NjU2MiA0MDcuMTcxODc1IDI4Ni42NDA2MjUgNDA3LjE3MTg3NSAyOTAuNTM1MTU2IEMgNDA3LjE3MTg3NSAyOTQuNDM3NSA0MTAuMzM5ODQ0IDI5Ny41OTc2NTYgNDE0LjIzODI4MSAyOTcuNTk3NjU2IEMgNDE3LjY0NDUzMSAyOTcuNTk3NjU2IDQyMC40OTYwOTQgMjk1LjE3OTY4OCA0MjEuMTU2MjUgMjkxLjk3MjY1NiBMIDQyMi4yODkwNjIgMjkxLjk3MjY1NiBMIDQyMi4yODkwNjIgMzAzLjAxOTUzMSBMIDQyNS45NzI2NTYgMzAzLjAxOTUzMSBMIDQyNS45NzI2NTYgMjgzLjQ3NjU2MiBaIE0gNDIyLjI4OTA2MiAyODMuNDc2NTYyIi8+Cjwvc3ZnPgo=" alt="현대엔지니어링" onerror="this.remove()"><span>회사 로고</span></div>
   <div class="body">
-    <!-- portrait 1: 이 파일만 편집. 스타일은 #p1 로 범위를 한정 -->
+    <!-- portrait 1: 협업 경험 — 세로 여정(링 + 그래디언트 길). 스타일은 #p1 로 범위를 한정 -->
 <style>
+#p1 .p1p { height: calc(100% - 16px); display: flex; flex-direction: column; gap: 36px; }
+
+/* ---- 여정 ---- */
+#p1 .p1p-journey { --x: 104px; --ring: 208px; position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; }
+#p1 .p1p-path { position: absolute; left: calc(var(--x) - 1.5px); width: 3px; top: 24px; bottom: 24px; border-radius: 2px; background: var(--grad-v); }
+#p1 .p1p-joint { position: relative; height: 0; }
+#p1 .p1p-joint i { position: absolute; left: calc(var(--x) - 7px); top: -7px; width: 14px; height: 14px; border-radius: 50%; border: 3px solid var(--paper); box-sizing: border-box; }
+#p1 .p1p-joint.j1 i { background: color-mix(in srgb, var(--sky) 70%, var(--sky-2)); }
+#p1 .p1p-joint.j2 i { background: color-mix(in srgb, var(--sky) 45%, var(--sky-2)); }
+#p1 .p1p-joint.j3 i { background: color-mix(in srgb, var(--sky) 20%, var(--sky-2)); }
+#p1 .p1p-joint i { width: 16px; height: 16px; left: calc(var(--x) - 8px); top: -8px; box-shadow: 0 0 0 1px var(--paper); }
+
+/* 시작 · 끝 (시간) */
+#p1 .p1p-edge { position: relative; z-index: 1; display: flex; align-items: center; height: 48px; }
+#p1 .p1p-time { width: calc(var(--x) * 2); display: flex; justify-content: center; flex: none; }
+#p1 .p1p-time span { display: inline-flex; align-items: center; gap: 8px; height: 46px; padding: 0 18px; border-radius: 999px; background: var(--paper); border: 2px solid var(--line-2); font-size: var(--fs-eyebrow); font-weight: 700; color: var(--ink-2); white-space: nowrap; letter-spacing: -0.01em; }
+#p1 .p1p-time svg { width: 16px; height: 16px; flex: none; }
+#p1 .p1p-time.end span { background: var(--tint-yellow); border-color: var(--tint-yellow); color: var(--gold-ink); }
+#p1 .p1p-ctx { margin-left: 40px; display: flex; align-items: center; gap: 12px; }
+#p1 .p1p-ctx .eyebrow { margin-right: 6px; color: var(--ink-3); }
+
+/* 단계 행 */
+#p1 .p1p-row { position: relative; z-index: 1; display: flex; align-items: center; gap: 40px; }
+#p1 .p1p-ring { position: relative; flex: none; width: var(--ring); height: var(--ring); display: block; }
+#p1 .p1p-ring svg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+#p1 .p1p-lb { position: absolute; transform: translate(-50%, -50%); font-size: 18px; font-weight: 700; line-height: 1.15; color: var(--ink-2); white-space: nowrap; text-align: center; letter-spacing: -0.02em; }
+#p1 .p1p-lb.core { color: var(--paper); }
+#p1 .p1p-lb.award { color: var(--navy); font-weight: 800; }
+
+#p1 .p1p-txt { flex: 1; min-width: 0; }
+#p1 .p1p-eb { display: flex; align-items: center; gap: 12px; }
+#p1 .p1p-eb b { font-size: var(--fs-eyebrow); font-weight: 800; color: var(--hec-blue); letter-spacing: 0.04em; }
+#p1 .p1p-eb s { width: 22px; height: 2px; background: var(--line-2); display: block; text-decoration: none; }
+#p1 .p1p-ttl { margin-top: 8px; font-size: var(--fs-h3); font-weight: 700; color: var(--navy); letter-spacing: -0.03em; line-height: 1.3; }
+#p1 .p1p-facts { margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+#p1 .p1p-facts li { display: flex; align-items: center; gap: 12px; min-height: 70px; padding: 0 22px; border: 2px solid var(--line); border-radius: var(--radius); font-size: var(--fs-body); font-weight: 600; color: var(--ink-2); letter-spacing: -0.02em; line-height: 1.3; }
+#p1 .p1p-facts li::before { content: ""; flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--c, var(--ink-3)); }
+#p1 .s1 { --c: var(--ink-3); }
+#p1 .s2 { --c: var(--hec-blue); }
+#p1 .s3 { --c: var(--hec-green); }
+#p1 .s4 { --c: var(--hec-yellow); }
+#p1 .s4 .p1p-facts li { background: var(--tint-yellow); border-color: var(--tint-yellow); color: var(--gold-ink); font-weight: 700; }
+
+/* SVG 도식 */
+#p1 .p1p-ring .pp { fill: var(--hec-green); stroke: var(--paper); stroke-width: 3; }
+#p1 .p1p-ring .pl { stroke: var(--hec-green); stroke-width: 3; stroke-linecap: round; fill: none; }
+#p1 .p1p-ring .pl.soft { stroke-opacity: .45; stroke-width: 2.5; }
+#p1 .p1p-ring .ar { stroke: var(--ink-3); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+#p1 .p1p-ring .ar.blue { stroke: var(--sky-2); }
+#p1 .p1p-ring .dv { stroke: var(--line-2); stroke-width: 2; stroke-dasharray: 4 6; stroke-linecap: round; }
+#p1 .p1p-ring .core { fill: var(--hec-blue); }
+#p1 .p1p-ring .halo { fill: var(--tint-blue); }
+#p1 .p1p-ring .orb { fill: none; stroke: var(--sky); stroke-width: 2; stroke-dasharray: 3 7; stroke-linecap: round; }
+#p1 .p1p-ring .tri { fill: var(--sky-2); stroke: var(--sky-2); stroke-width: 1.5; stroke-linejoin: round; }
+#p1 .p1p-ring .gl { fill: var(--paper); }
+#p1 .p1p-ring .glk { fill: none; stroke: var(--paper); stroke-width: 2.4; stroke-linecap: round; }
+#p1 .p1p-ring .medal { fill: var(--hec-yellow); }
+#p1 .p1p-ring .medal-in { fill: none; stroke: var(--paper); stroke-width: 2; stroke-opacity: .85; }
+#p1 .p1p-ring .tail { fill: var(--hec-yellow); }
+#p1 .p1p-ring .rim { fill: var(--paper); stroke: url(#p1p-rim); stroke-width: 2.75; }
+
+/* 핵심 메시지 */
+#p1 .p1p .key { flex: none; }
 </style>
+
+<div class="p1p">
+  <div class="p1p-journey">
+    <i class="p1p-path"></i>
+
+    <!-- 시작: 마감 3주 전 + 배경 -->
+    <div class="p1p-edge">
+      <div class="p1p-time"><span><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.6" fill="none" style="stroke:var(--sky-2)" stroke-width="2"/><path d="M8 4.6V8l2.4 1.6" fill="none" style="stroke:var(--sky-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>마감 3주 전</span></div>
+      <div class="p1p-ctx">
+        <span class="eyebrow">BACKGROUND</span>
+        <span class="chip tech">학생 BIM 경진대회</span>
+        <span class="chip people">4인 팀 팀장</span>
+        <span class="chip ghost">주제 미확정</span>
+      </div>
+    </div>
+
+    <!-- 01 CONFLICT -->
+    <div class="p1p-row s1">
+      <div class="p1p-ring">
+        <svg viewBox="0 0 190 190" aria-hidden="true">
+          <defs><linearGradient id="p1p-rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient></defs>
+          <circle class="rim" cx="95" cy="95" r="93.6"/>
+          <line class="dv" x1="95" y1="40" x2="95" y2="104"/>
+          <line class="pl" x1="54" y1="60" x2="54" y2="88"/>
+          <line class="pl" x1="136" y1="60" x2="136" y2="88"/>
+          <circle class="pp" cx="54" cy="60" r="11"/><circle class="pp" cx="54" cy="88" r="11"/>
+          <circle class="pp" cx="136" cy="60" r="11"/><circle class="pp" cx="136" cy="88" r="11"/>
+          <path class="ar" d="M37 74H17M23 68l-6 6 6 6"/>
+          <path class="ar" d="M153 74h20M167 68l6 6-6 6"/>
+        </svg>
+        <span class="p1p-lb" style="left:58px;top:136px">참신성</span>
+        <span class="p1p-lb" style="left:150px;top:136px">구현 가능성</span>
+      </div>
+      <div class="p1p-txt">
+        <div class="p1p-eb"><b>01</b><s></s><span class="eyebrow">CONFLICT</span></div>
+        <h3 class="p1p-ttl">서로 다른 의견</h3>
+        <ul class="p1p-facts"><li>참신성 ↔ 구현 가능성</li><li>마감 3주 전 주제 미확정</li></ul>
+      </div>
+    </div>
+
+    <div class="p1p-joint j1"><i></i></div>
+
+    <!-- 02 ALIGN -->
+    <div class="p1p-row s2">
+      <div class="p1p-ring">
+        <svg viewBox="0 0 190 190" aria-hidden="true">
+          <circle class="rim" cx="95" cy="95" r="93.6"/>
+          <circle class="halo" cx="95" cy="95" r="47"/>
+          <circle class="core" cx="95" cy="95" r="37"/>
+          <circle class="pp" cx="42.7" cy="42.7" r="11"/><circle class="pp" cx="147.3" cy="42.7" r="11"/>
+          <circle class="pp" cx="42.7" cy="147.3" r="11"/><circle class="pp" cx="147.3" cy="147.3" r="11"/>
+          <path class="ar blue" d="M54.1 54.1L62.2 62.2M55.2 62.2H62.2V55.2"/>
+          <path class="ar blue" d="M135.9 54.1L127.8 62.2M134.8 62.2H127.8V55.2"/>
+          <path class="ar blue" d="M54.1 135.9L62.2 127.8M55.2 127.8H62.2V134.8"/>
+          <path class="ar blue" d="M135.9 135.9L127.8 127.8M134.8 127.8H127.8V134.8"/>
+        </svg>
+        <span class="p1p-lb core" style="left:104px;top:104px">공통<br>기준</span>
+      </div>
+      <div class="p1p-txt">
+        <div class="p1p-eb"><b>02</b><s></s><span class="eyebrow">ALIGN</span></div>
+        <h3 class="p1p-ttl">의견 조율 · 공통 기준 마련</h3>
+        <ul class="p1p-facts"><li>경청 · 수상작 분석 · 교수님 조언</li><li>판단 기준 마련 → 방향 합의</li></ul>
+      </div>
+    </div>
+
+    <div class="p1p-joint j2"><i></i></div>
+
+    <!-- 03 ONE TEAM -->
+    <div class="p1p-row s3">
+      <div class="p1p-ring">
+        <svg viewBox="0 0 190 190" aria-hidden="true">
+          <circle class="rim" cx="95" cy="95" r="93.6"/>
+          <circle class="orb" cx="95" cy="95" r="77"/>
+          <path class="tri" d="M155.6 47.2L153 37.4L146.1 43.6Z"/>
+          <path class="tri" d="M34.4 142.8L37 152.6L43.9 146.4Z"/>
+          <path class="pl soft" d="M95 39L151 95L95 151L39 95Z M95 39V151 M39 95H151"/>
+          <circle class="pp" cx="95" cy="39" r="14"/><circle class="pp" cx="151" cy="95" r="14"/>
+          <circle class="pp" cx="95" cy="151" r="14"/><circle class="pp" cx="39" cy="95" r="14"/>
+          <circle class="gl" cx="95" cy="39" r="4"/>
+          <rect class="gl" x="147" y="91" width="8" height="8" rx="1"/>
+          <path class="gl" d="M95 146.2l4.8 8.2h-9.6z"/>
+          <path class="glk" d="M34.6 95h8.8M39 90.6v8.8"/>
+        </svg>
+      </div>
+      <div class="p1p-txt">
+        <div class="p1p-eb"><b>03</b><s></s><span class="eyebrow">ONE TEAM</span></div>
+        <h3 class="p1p-ttl">역할 분담 · 지속적인 공유</h3>
+        <ul class="p1p-facts"><li>강점 기반 역할 분담</li><li>이틀마다 진행상황 공유 · 피드백</li></ul>
+      </div>
+    </div>
+
+    <div class="p1p-joint j3"><i></i></div>
+
+    <!-- 04 RESULT -->
+    <div class="p1p-row s4">
+      <div class="p1p-ring">
+        <svg viewBox="0 0 190 190" aria-hidden="true">
+          <circle class="rim" cx="95" cy="95" r="93.6"/>
+          <path class="pl soft" d="M28 58L60 95M21 82L60 95M21 108L60 95M28 132L60 95"/>
+          <circle class="pp" cx="28" cy="58" r="8"/><circle class="pp" cx="21" cy="82" r="8"/>
+          <circle class="pp" cx="21" cy="108" r="8"/><circle class="pp" cx="28" cy="132" r="8"/>
+          <circle class="pp" cx="60" cy="95" r="15"/>
+          <path class="ar" d="M80 95H94M88 89l6 6-6 6"/>
+          <path class="tail" d="M120 120L111 150L122 144L129 153L136 126Z"/>
+          <path class="tail" d="M156 120L165 150L154 144L147 153L140 126Z"/>
+          <circle class="medal" cx="138" cy="93" r="37"/>
+          <circle class="medal-in" cx="138" cy="93" r="31"/>
+        </svg>
+        <span class="p1p-lb award" style="left:151px;top:102px">장려상</span>
+      </div>
+      <div class="p1p-txt">
+        <div class="p1p-eb"><b>04</b><s></s><span class="eyebrow">RESULT</span></div>
+        <h3 class="p1p-ttl">프로젝트 완성 · 장려상 수상</h3>
+        <ul class="p1p-facts"><li>남은 3주 내 프로젝트 완수</li><li>학생 BIM 경진대회 장려상</li></ul>
+      </div>
+    </div>
+
+    <!-- 끝: 3주 내 완수 -->
+    <div class="p1p-edge">
+      <div class="p1p-time end"><span><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" style="fill:var(--hec-yellow)"/><path d="M4.8 8.2l2.2 2.2 4.2-4.4" fill="none" style="stroke:var(--paper)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>3주 내 완수</span></div>
+    </div>
+  </div>
+
+  <div class="key">
+    <span class="key-label"><span class="mark"><i></i><b></b><i></i><b></b><i></i></span>KEY MESSAGE</span>
+    <p class="key-text">서로 다른 사람을 <em>하나의 공동 목표</em>로 연결합니다</p>
+  </div>
+</div>
   </div>
   <footer class="ft"><span>2026년 하반기 신입사원 공개채용</span><span class="pg"><b>01</b> / 03</span></footer>
 </section>
@@ -324,11 +515,197 @@ svg { display: block; overflow: visible; }
     <p class="hd-lead">현대엔지니어링 가치체계 키워드 중</p>
     <h1 class="hd-title">저는 ‘<em>우리의 기술</em>’을<br>이렇게 이해했습니다</h1>
   </header>
-  <div class="logo"><img src="logo.png" alt="현대엔지니어링" onerror="this.remove()"><span>회사 로고</span></div>
+  <div class="logo"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjMxMS44MiAyNzcuNTMgMjIwLjQyIDMyLjc3IiB3aWR0aD0iMjIwLjQyIiBoZWlnaHQ9IjMyLjc3Ij4KPHBhdGggZmlsbD0iI0ZEQjkxMiIgZD0iTSAzMTIuMzIwMzEyIDMwOS41MjM0MzggTCAzNDguNDEwMTU2IDMwOS41MjM0MzggTCAzMzAuOTIxODc1IDI3OC4wMzEyNSBaIE0gMzEyLjMyMDMxMiAzMDkuNTIzNDM4Ii8+CjxwYXRoIGZpbGw9IiMwMEE2NTAiIGQ9Ik0gMzE2LjU2MjUgMzA5LjUyMzQzOCBMIDM1Mi42NjQwNjIgMzA5LjUyMzQzOCBMIDMzNS4xNjc5NjkgMjc4LjAzMTI1IFogTSAzMTYuNTYyNSAzMDkuNTIzNDM4Ii8+CjxwYXRoIGZpbGw9IiMwMDQyODIiIGQ9Ik0gMzU5LjU4MjAzMSAyOTUuMDE1NjI1IEMgMzU5LjY0ODQzOCAyOTUuMDc4MTI1IDM1OS42NTYyNSAyOTUuMDg1OTM4IDM1OS41ODIwMzEgMjk1LjAxNTYyNSIvPgo8cGF0aCBmaWxsPSIjMDA0MjgyIiBkPSJNIDM3MC45NDUzMTIgMjkzLjk5NjA5NCBDIDM3MS4wMDc4MTIgMjkzLjYyODkwNiAzNzEuMDQyOTY5IDI5My4yNSAzNzEuMDQyOTY5IDI5Mi44NzEwOTQgQyAzNzEuMDQyOTY5IDI5Mi41OTc2NTYgMzcxLjAzMTI1IDI5Mi4zMzk4NDQgMzcxIDI5Mi4wODU5MzggTCAzNzQuMzEyNSAyOTIuMDg1OTM4IEwgMzc0LjMxMjUgMjkzLjk5NjA5NCBaIE0gMzYzLjkxNzk2OSAyOTYuNTE5NTMxIEMgMzYxLjg3ODkwNiAyOTYuNTE5NTMxIDM2MC4yMTQ4NDQgMjk0Ljg2MzI4MSAzNjAuMjE0ODQ0IDI5Mi44MjQyMTkgQyAzNjAuMjE0ODQ0IDI5MC43ODEyNSAzNjEuODc4OTA2IDI4OS4xMjEwOTQgMzYzLjkxNzk2OSAyODkuMTIxMDk0IEMgMzY1Ljk2MDkzOCAyODkuMTIxMDk0IDM2Ny42MjEwOTQgMjkwLjc4MTI1IDM2Ny42MjEwOTQgMjkyLjgyNDIxOSBDIDM2Ny42MjEwOTQgMjk0Ljg2MzI4MSAzNjUuOTYwOTM4IDI5Ni41MTk1MzEgMzYzLjkxNzk2OSAyOTYuNTE5NTMxIE0gMzc0LjMxMjUgMjg4Ljk4MDQ2OSBMIDM2OS44ODY3MTkgMjg4Ljk4MDQ2OSBDIDM2OS42MTMyODEgMjg4LjU3NDIxOSAzNjkuMzA0Njg4IDI4OC4xODc1IDM2OC45Njg3NSAyODcuODQzNzUgTCAzNzEuNTk3NjU2IDI4Ny44NDM3NSBMIDM3MS41OTc2NTYgMjg0LjczODI4MSBMIDM2NS45NTMxMjUgMjg0LjczODI4MSBMIDM2NS45NTMxMjUgMjgyLjY4NzUgTCAzNjEuOTMzNTk0IDI4Mi42ODc1IEwgMzYxLjkzMzU5NCAyODQuNzM4MjgxIEwgMzU2LjI3MzQzOCAyODQuNzM4MjgxIEwgMzU2LjI3MzQzOCAyODcuODQzNzUgTCAzNTguODcxMDk0IDI4Ny44NDM3NSBDIDM1Ny41ODk4NDQgMjg5LjEzMjgxMiAzNTYuNzk2ODc1IDI5MC45MDYyNSAzNTYuNzk2ODc1IDI5Mi44NzEwOTQgQyAzNTYuNzk2ODc1IDI5Ni43OTI5NjkgMzU5Ljk5MjE4OCAyOTkuOTg4MjgxIDM2My45MjU3ODEgMjk5Ljk4ODI4MSBDIDM2Ni4yNjk1MzEgMjk5Ljk4ODI4MSAzNjguMzM1OTM4IDI5OC44NDc2NTYgMzY5LjYzMjgxMiAyOTcuMTAxNTYyIEwgMzc0LjMxMjUgMjk3LjEwMTU2MiBMIDM3NC4zMTI1IDMwMy4wNDY4NzUgTCAzNzguMzM1OTM4IDMwMy4wNDY4NzUgTCAzNzguMzM1OTM4IDI4My40NzY1NjIgTCAzNzQuMzEyNSAyODMuNDc2NTYyIFogTSAzNzQuMzEyNSAyODguOTgwNDY5Ii8+CjxwYXRoIGZpbGw9IiMwMDQyODIiIGQ9Ik0gMzYyLjk2ODc1IDMwMS40NjQ4NDQgTCAzNTguOTQxNDA2IDMwMS40NjQ4NDQgTCAzNTguOTQxNDA2IDMwOS40NjA5MzggTCAzNzguMzM1OTM4IDMwOS40NjA5MzggTCAzNzguMzM1OTM4IDMwNi4zNjMyODEgTCAzNjIuOTY4NzUgMzA2LjM2MzI4MSBaIE0gMzYyLjk2ODc1IDMwMS40NjQ4NDQiLz4KPHBhdGggZmlsbD0iIzAwNDI4MiIgZD0iTSA0MDAuNjk1MzEyIDI5MS4yNTc4MTIgTCAzOTguNDQ5MjE5IDI5MS4yNTc4MTIgTCAzOTguNDQ5MjE5IDI4My40NzY1NjIgTCAzOTQuNDM3NSAyODMuNDc2NTYyIEwgMzk0LjQzNzUgMjk5Ljk0OTIxOSBMIDM4Ni41MTU2MjUgMjk5Ljk0OTIxOSBMIDM4Ni41MTU2MjUgMjg3LjEyNSBMIDM5MS45NTcwMzEgMjg3LjEyNSBMIDM5MS45NTcwMzEgMjg0LjAyMzQzOCBMIDM4Mi40OTIxODggMjg0LjAyMzQzOCBMIDM4Mi40OTIxODggMzAzLjA0Njg3NSBMIDM5NC40Mzc1IDMwMy4wNDY4NzUgTCAzOTQuNDM3NSAzMDkuNDY0ODQ0IEwgMzk4LjQ0OTIxOSAzMDkuNDY0ODQ0IEwgMzk4LjQ0OTIxOSAyOTQuMzU1NDY5IEwgNDAwLjY5NTMxMiAyOTQuMzU1NDY5IEwgNDAwLjY5NTMxMiAzMDkuNDY0ODQ0IEwgNDA0LjcyMjY1NiAzMDkuNDY0ODQ0IEwgNDA0LjcyMjY1NiAyODMuNDc2NTYyIEwgNDAwLjY5NTMxMiAyODMuNDc2NTYyIFogTSA0MDAuNjk1MzEyIDI5MS4yNTc4MTIiLz4KPHBhdGggZmlsbD0iIzAwNDI4MiIgZD0iTSA1MTYuOTM3NSAzMDQuMDYyNSBDIDUxNi45Mzc1IDMwMi41ODIwMzEgNTE5LjMwNDY4OCAzMDEuMzkwNjI1IDUyMi4yMjI2NTYgMzAxLjM5MDYyNSBDIDUyNS4xMzY3MTkgMzAxLjM5MDYyNSA1MjcuNTAzOTA2IDMwMi41ODIwMzEgNTI3LjUwMzkwNiAzMDQuMDYyNSBDIDUyNy41MDM5MDYgMzA1LjU0Mjk2OSA1MjUuMTM2NzE5IDMwNi43NDIxODggNTIyLjIyMjY1NiAzMDYuNzQyMTg4IEMgNTE5LjMwNDY4OCAzMDYuNzQyMTg4IDUxNi45Mzc1IDMwNS41NDI5NjkgNTE2LjkzNzUgMzA0LjA2MjUgTSA1MTIuNzA3MDMxIDMwNC4wNjI1IEMgNTEyLjcwNzAzMSAzMDcuMjI2NTYyIDUxNi45NzI2NTYgMzA5LjgwMDc4MSA1MjIuMjIyNjU2IDMwOS44MDA3ODEgQyA1MjcuNDc2NTYyIDMwOS44MDA3ODEgNTMxLjc0MjE4OCAzMDcuMjI2NTYyIDUzMS43NDIxODggMzA0LjA2MjUgQyA1MzEuNzQyMTg4IDMwMC44OTg0MzggNTI3LjQ3NjU2MiAyOTguMzIwMzEyIDUyMi4yMjI2NTYgMjk4LjMyMDMxMiBDIDUxNi45NzI2NTYgMjk4LjMyMDMxMiA1MTIuNzA3MDMxIDMwMC44OTg0MzggNTEyLjcwNzAzMSAzMDQuMDYyNSIvPgo8cGF0aCBmaWxsPSIjMDA0MjgyIiBkPSJNIDQ0My4zMzIwMzEgMjg3LjA5Mzc1IEMgNDQzLjMzMjAzMSAyODcuMDkzNzUgNDQyLjU0Njg3NSAyOTQuOTk2MDk0IDQ0OS41OTc2NTYgMzAwLjI5Njg3NSBMIDQ0Ny4zNTkzNzUgMzAzLjAxOTUzMSBDIDQ0Ny4zNTkzNzUgMzAzLjAxOTUzMSA0NDIuODQzNzUgMjk5LjkyMTg3NSA0NDEuMzM1OTM4IDI5My45OTIxODggQyA0NDEuMzM1OTM4IDI5My45OTIxODggNDQwLjg0NzY1NiAyOTguMTEzMjgxIDQzNS4zMjAzMTIgMzAyLjk5MjE4OCBMIDQzMy4wOTM3NSAzMDAuMzY3MTg4IEMgNDMzLjA5Mzc1IDMwMC4zNjcxODggNDM5LjMyMDMxMiAyOTYuNTI3MzQ0IDQzOS4zMTY0MDYgMjg3LjA5Mzc1IEwgNDM0LjI5Njg3NSAyODcuMDkzNzUgTCA0MzQuMjk2ODc1IDI4My45MjU3ODEgTCA0NDguMTA1NDY5IDI4My45MjU3ODEgTCA0NDguMTA1NDY5IDI4Ny4wOTM3NSBaIE0gNDQzLjMzMjAzMSAyODcuMDkzNzUiLz4KPHBhdGggZmlsbD0iIzAwNDI4MiIgZD0iTSA0NTUuNzczNDM4IDMwOS40NjA5MzggTCA0NTEuNzUgMzA5LjQ2MDkzOCBMIDQ1MS43NSAyODMuNDcyNjU2IEwgNDU1Ljc3MzQzOCAyODMuNDcyNjU2IFogTSA0NTUuNzczNDM4IDMwOS40NjA5MzgiLz4KPHBhdGggZmlsbD0iIzAwNDI4MiIgZD0iTSA0NzcuMjA3MDMxIDI4My40NzY1NjIgTCA0NzcuMjA3MDMxIDI5OS45MjE4NzUgTCA0NjMuOTkyMTg4IDI5OS45MjE4NzUgTCA0NjMuOTkyMTg4IDI4My45MjU3ODEgTCA0NTkuOTY4NzUgMjgzLjkyNTc4MSBMIDQ1OS45Njg3NSAzMDMuMDE5NTMxIEwgNDc3LjIwNzAzMSAzMDMuMDE5NTMxIEwgNDc3LjIwNzAzMSAzMDkuNDY0ODQ0IEwgNDgxLjIyNjU2MiAzMDkuNDY0ODQ0IEwgNDgxLjIyNjU2MiAyODMuNDc2NTYyIFogTSA0NzcuMjA3MDMxIDI4My40NzY1NjIiLz4KPHBhdGggZmlsbD0iIzAwNDI4MiIgZD0iTSA1MjcuNTA3ODEyIDI5My41MDc4MTIgTCA1MjcuNTA3ODEyIDI4My40NzI2NTYgTCA1MzEuNTM5MDYyIDI4My40NzI2NTYgTCA1MzEuNTM5MDYyIDI5OC4zMTY0MDYgTCA1MjcuNTA3ODEyIDI5OC4zMTY0MDYgTCA1MjcuNTA3ODEyIDI5Ni44NjcxODggTCA1MDkuODc1IDI5Ni44NzUgTCA1MDkuODc1IDI4OC43MTQ4NDQgTCA1MTkuMjQyMTg4IDI4OC43MTQ4NDQgTCA1MTkuMjQyMTg4IDI4Ny4yODkwNjIgTCA1MDkuODc1IDI4Ny4yODkwNjIgTCA1MDkuODc1IDI4My45MjU3ODEgTCA1MjIuOTIxODc1IDI4My45MjU3ODEgTCA1MjIuOTIxODc1IDI5Mi4wNzgxMjUgTCA1MTMuMTcxODc1IDI5Mi4wNzgxMjUgTCA1MTMuMTcxODc1IDI5My41MDc4MTIgWiBNIDUyNy41MDc4MTIgMjkzLjUwNzgxMiIvPgo8cGF0aCBmaWxsPSIjMDA0MjgyIiBkPSJNIDQ5NC4wODk4NDQgMjk3LjY0MDYyNSBDIDQ5My4yODUxNTYgMjk5LjA2NjQwNiA0OTIuNTQyOTY5IDI5OS4zNzEwOTQgNDkxLjE0MDYyNSAyOTkuMzcxMDk0IEMgNDg5Ljc2NTYyNSAyOTkuMzcxMDk0IDQ4OC43MzQzNzUgMjk5LjAyMzQzOCA0ODguMDExNzE5IDI5Ny42NTIzNDQgQyA0ODcuNjI1IDI5Ni45MTAxNTYgNDg3LjIzNDM3NSAyOTQuNjI4OTA2IDQ4Ny4yMzQzNzUgMjkzLjI1IEMgNDg3LjIzNDM3NSAyOTEuODU1NDY5IDQ4Ny4yNTM5MDYgMjkwLjIzNDM3NSA0ODguMDE1NjI1IDI4OC44MTY0MDYgQyA0ODguNzM0Mzc1IDI4Ny41IDQ4OS43NDYwOTQgMjg3LjEyNSA0OTEuMTc1NzgxIDI4Ny4xMjUgQyA0OTIuNTg1OTM4IDI4Ny4xMjUgNDkzLjQ0NTMxMiAyODcuNjAxNTYyIDQ5NC4wOTc2NTYgMjg4LjgyNDIxOSBDIDQ5NC44OTA2MjUgMjkwLjI4OTA2MiA0OTQuODU1NDY5IDI5MS44NjcxODggNDk0Ljg1NTQ2OSAyOTMuMjUgQyA0OTQuODU1NDY5IDI5NC42Mjg5MDYgNDk0Ljc5Mjk2OSAyOTYuNDAyMzQ0IDQ5NC4wODk4NDQgMjk3LjY0MDYyNSBNIDUwMS42NjAxNTYgMjgzLjQ3MjY1NiBMIDUwMS42NjAxNTYgMjkxLjE3OTY4OCBMIDQ5OC4zMzk4NDQgMjkxLjE3OTY4OCBDIDQ5OC4xMzI4MTIgMjg4LjkxNDA2MiA0OTcuNTQyOTY5IDI4Ny4yMzA0NjkgNDk2LjY2Nzk2OSAyODYuMDAzOTA2IEMgNDk1LjUzMTI1IDI4NC40MDIzNDQgNDkzLjcyMjY1NiAyODMuNDcyNjU2IDQ5MS4xNzU3ODEgMjgzLjQ3MjY1NiBDIDQ4OC42MDkzNzUgMjgzLjQ3MjY1NiA0ODYuNzAzMTI1IDI4NC4yODUxNTYgNDg1LjQ5MjE4OCAyODUuODcxMDk0IEMgNDg0LjI5Mjk2OSAyODcuNDU3MDMxIDQ4My42OTE0MDYgMjg5Ljk0MTQwNiA0ODMuNjkxNDA2IDI5My4yNjE3MTkgQyA0ODMuNjkxNDA2IDI5Ni41NzQyMTkgNDg0LjI5Mjk2OSAyOTkuMDUwNzgxIDQ4NS40OTIxODggMzAwLjYyODkwNiBDIDQ4Ni43MDMxMjUgMzAyLjIxNDg0NCA0ODguNjA5Mzc1IDMwMy4wMTk1MzEgNDkxLjE3NTc4MSAzMDMuMDE5NTMxIEMgNDkzLjcyMjY1NiAzMDMuMDE5NTMxIDQ5NS41ODk4NDQgMzAyLjIxNDg0NCA0OTYuNzI2NTYyIDMwMC42Mjg5MDYgQyA0OTcuNzMwNDY5IDI5OS4yNDYwOTQgNDk4LjI4MTI1IDI5Ny4xMzI4MTIgNDk4LjQwNjI1IDI5NC4zNDc2NTYgTCA1MDEuNjYwMTU2IDI5NC4zNTU0NjkgTCA1MDEuNjYwMTU2IDMwOS40NjA5MzggTCA1MDUuNzE0ODQ0IDMwOS40NjA5MzggTCA1MDUuNzE0ODQ0IDI4My40NzI2NTYgWiBNIDUwMS42NjAxNTYgMjgzLjQ3MjY1NiIvPgo8cGF0aCBmaWxsPSIjMDA0MjgyIiBkPSJNIDQyNi45NTcwMzEgMzAzLjAxOTUzMSBMIDQzMC42MzY3MTkgMzAzLjAxOTUzMSBMIDQzMC42MzY3MTkgMjgzLjQ3NjU2MiBMIDQyNi45NTcwMzEgMjgzLjQ3NjU2MiBaIE0gNDI2Ljk1NzAzMSAzMDMuMDE5NTMxIi8+CjxwYXRoIGZpbGw9IiMwMDQyODIiIGQ9Ik0gNDE1LjI2OTUzMSAzMDEuNDY0ODQ0IEwgNDExLjI0MjE4OCAzMDEuNDY0ODQ0IEwgNDExLjI0MjE4OCAzMDkuNDYwOTM4IEwgNDMwLjYzNjcxOSAzMDkuNDYwOTM4IEwgNDMwLjYzNjcxOSAzMDYuMzYzMjgxIEwgNDE1LjI2OTUzMSAzMDYuMzYzMjgxIFogTSA0MTUuMjY5NTMxIDMwMS40NjQ4NDQiLz4KPHBhdGggZmlsbD0iIzAwNDI4MiIgZD0iTSA0MTQuMjM4MjgxIDI5NC4xOTE0MDYgQyA0MTIuMjE4NzUgMjk0LjE5MTQwNiA0MTAuNTg1OTM4IDI5Mi41NDY4NzUgNDEwLjU4NTkzOCAyOTAuNTM1MTU2IEMgNDEwLjU4NTkzOCAyODguNTIzNDM4IDQxMi4yMTg3NSAyODYuODc4OTA2IDQxNC4yMzgyODEgMjg2Ljg3ODkwNiBDIDQxNi4yNTM5MDYgMjg2Ljg3ODkwNiA0MTcuODg2NzE5IDI4OC41MjM0MzggNDE3Ljg4NjcxOSAyOTAuNTM1MTU2IEMgNDE3Ljg4NjcxOSAyOTIuNTQ2ODc1IDQxNi4yNTM5MDYgMjk0LjE5MTQwNiA0MTQuMjM4MjgxIDI5NC4xOTE0MDYgTSA0MjIuMjg5MDYyIDI4My40NzY1NjIgTCA0MjIuMjg5MDYyIDI4OC45MjE4NzUgTCA0MjEuMTA5Mzc1IDI4OC45MjE4NzUgQyA0MjAuMzcxMDk0IDI4NS43OTY4NzUgNDE3LjU4MjAzMSAyODMuNDc2NTYyIDQxNC4yMzgyODEgMjgzLjQ3NjU2MiBDIDQxMC4zMzk4NDQgMjgzLjQ3NjU2MiA0MDcuMTcxODc1IDI4Ni42NDA2MjUgNDA3LjE3MTg3NSAyOTAuNTM1MTU2IEMgNDA3LjE3MTg3NSAyOTQuNDM3NSA0MTAuMzM5ODQ0IDI5Ny41OTc2NTYgNDE0LjIzODI4MSAyOTcuNTk3NjU2IEMgNDE3LjY0NDUzMSAyOTcuNTk3NjU2IDQyMC40OTYwOTQgMjk1LjE3OTY4OCA0MjEuMTU2MjUgMjkxLjk3MjY1NiBMIDQyMi4yODkwNjIgMjkxLjk3MjY1NiBMIDQyMi4yODkwNjIgMzAzLjAxOTUzMSBMIDQyNS45NzI2NTYgMzAzLjAxOTUzMSBMIDQyNS45NzI2NTYgMjgzLjQ3NjU2MiBaIE0gNDIyLjI4OTA2MiAyODMuNDc2NTYyIi8+Cjwvc3ZnPgo=" alt="현대엔지니어링" onerror="this.remove()"><span>회사 로고</span></div>
   <div class="body">
     <!-- portrait 2: 이 파일만 편집. 스타일은 #p2 로 범위를 한정 -->
 <style>
+#p2 .p2-wrap {
+  position: relative; height: 1326px;
+  --spx: 580px;                                                     /* 등식 축(잇는 길)의 x */
+  --green-ink: color-mix(in srgb, var(--hec-green) 70%, var(--navy));
+}
+
+/* ---- 정체성 한 줄 ---- */
+#p2 .p2-quote {
+  position: absolute; left: 0; right: 0; top: 0; height: 64px;
+  display: flex; align-items: center; gap: 26px;
+  padding: 0 28px 0 46px;
+  border-radius: 999px;
+  background: var(--tint-sky);
+  font-size: var(--fs-small); font-weight: 600; color: var(--ink-2);
+  letter-spacing: -0.02em; white-space: nowrap;
+}
+#p2 .p2-quote .p2-ql { font-size: var(--fs-eyebrow); font-weight: 700; color: var(--sky-2); letter-spacing: 0.01em; }
+#p2 .p2-quote .p2-qs { width: 2px; height: 22px; background: var(--line-2); }
+#p2 .p2-quote .p2-hl { font-weight: 800; color: var(--hec-blue); }
+#p2 .p2-quote .p2-qr { flex: none; width: 20px; height: 20px; border-radius: 50%; border: 3px solid transparent; background: linear-gradient(var(--tint-sky), var(--tint-sky)) padding-box, var(--grad-v) border-box; }
+
+/* ---- 등식 축 ---- */
+#p2 .p2-spine { position: absolute; left: calc(var(--spx) - 1.5px); top: 64px; width: 3px; height: 1104px; background: var(--grad-v); }
+#p2 .p2-tip { position: absolute; left: calc(var(--spx) - 7px); width: 14px; height: 14px; border-radius: 50%; background: var(--sky-2); box-shadow: 0 0 0 3px var(--paper); }
+#p2 .p2-op { position: absolute; left: calc(var(--spx) - 34px); width: 68px; height: 68px; }
+#p2 .p2-op svg { width: 100%; height: 100%; }
+
+/* ---- 블록 공통 ---- */
+#p2 .p2-blk { position: absolute; left: 0; right: 0; }
+#p2 .p2-fig { position: absolute; left: 0; top: 0; width: 540px; height: 100%; }
+#p2 .p2-fig > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+#p2 .p2-txt {
+  position: absolute; left: calc(var(--spx) + 44px); right: 0; top: 0; bottom: 0;
+  display: flex; flex-direction: column; justify-content: center;
+}
+#p2 .p2-eb { font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: 0.16em; }
+#p2 .p2-h { position: relative; margin-top: 4px; font-size: 76px; font-weight: 800; line-height: 1.1; letter-spacing: -0.04em; }
+#p2 .p2-node {
+  position: absolute; left: -60px; top: 50%; width: 32px; height: 32px; margin-top: -16px;
+  border-radius: 50%; border: 3px solid transparent;
+  background: linear-gradient(var(--paper), var(--paper)) padding-box, var(--grad-v) border-box;
+  display: grid; place-items: center;
+}
+#p2 .p2-node i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+#p2 .p2-def { margin-top: 12px; font-size: var(--fs-h2); font-weight: 800; color: var(--navy); letter-spacing: -0.03em; line-height: 1.3; }
+#p2 .p2-p { margin-top: 14px; font-size: var(--fs-body); font-weight: 500; color: var(--ink-2); line-height: 1.55; letter-spacing: -0.025em; }
+#p2 .p2-p strong { font-weight: 700; color: var(--ink); }
+
+/* ---- 우리 ---- */
+#p2 .p2-we { top: 96px; height: 470px; }
+#p2 .p2-we .p2-eb, #p2 .p2-we .p2-h { color: var(--hec-green); }
+#p2 .p2-we .p2-node i { background: var(--hec-green); }
+#p2 .p2-hn {
+  position: absolute; width: 104px; height: 104px; margin: -52px 0 0 -52px;
+  border-radius: 50%; border: 3px solid transparent;
+  background: linear-gradient(var(--tint-green), var(--tint-green)) padding-box, var(--grad-v) border-box;
+  display: grid; place-items: center; text-align: center;
+  font-size: 22px; font-weight: 700; color: var(--green-ink); letter-spacing: -0.03em; line-height: 1.15;
+}
+#p2 .p2-hc {
+  position: absolute; left: 270px; top: 252px; width: 172px; height: 172px; margin: -86px 0 0 -86px;
+  border-radius: 50%; border: 4px solid transparent;
+  background: linear-gradient(var(--paper), var(--paper)) padding-box, var(--grad-v) border-box;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+}
+#p2 .p2-hc strong { font-size: 26px; font-weight: 800; color: var(--navy); letter-spacing: -0.04em; line-height: 1.2; }
+#p2 .p2-hc span { margin-top: 6px; font-size: 18px; font-weight: 700; color: var(--green-ink); letter-spacing: -0.02em; }
+
+/* ---- 기술 ---- */
+#p2 .p2-tech { top: 640px; height: 430px; }
+#p2 .p2-tech .p2-eb, #p2 .p2-tech .p2-h { color: var(--hec-blue); }
+#p2 .p2-tech .p2-node i { background: var(--hec-blue); }
+#p2 .p2-tc { position: absolute; left: 0; width: 116px; height: 54px; margin-top: -27px; justify-content: center; padding: 0; font-size: 22px; }
+#p2 .p2-tp {
+  position: absolute; left: 268px; top: 215px; width: 156px; height: 156px; margin: -78px 0 0 -78px;
+  text-align: center; font-size: 24px; font-weight: 800; color: var(--navy); line-height: 1.22; letter-spacing: -0.03em;
+}
+#p2 .p2-tp small { display: block; margin: 0 auto 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--hec-yellow); }
+#p2 .p2-to { position: absolute; left: 404px; width: 136px; height: 52px; margin-top: -26px; padding: 0 18px; gap: 10px; font-size: 22px; }
+
+/* ---- 결론 ---- */
+#p2 .key { position: absolute; left: 0; right: 0; top: 1168px; height: 158px; padding: 0 48px; gap: 40px; }
+#p2 .key .key-label { font-size: 20px; letter-spacing: 0.04em; gap: 14px; }
+#p2 .key .key-text { font-size: 38px; line-height: 1.3; }
 </style>
+
+<div class="p2-wrap">
+  <p class="p2-quote"><span class="p2-qr"></span><span class="p2-ql">가치체계 정체성</span><span class="p2-qs"></span><span>“공간과 에너지를 잇는 길 위에서, <b class="p2-hl">우리의 기술</b>로 더 나은 삶을 만듭니다”</span></p>
+
+  <div class="p2-spine"></div>
+  <span class="p2-tip" style="top:57px"></span>
+
+  <!-- 우리 = 사람과 전문성의 연결 -->
+  <section class="p2-blk p2-we">
+    <div class="p2-fig">
+      <svg viewBox="0 0 540 470" aria-hidden="true">
+        <defs>
+          <linearGradient id="p2p-l0" gradientUnits="userSpaceOnUse" x1="270" y1="109" x2="270" y2="166"><stop offset="0" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--sky-2)"/></linearGradient>
+          <linearGradient id="p2p-l1" gradientUnits="userSpaceOnUse" x1="406" y1="207.8" x2="351.8" y2="225.4"><stop offset="0" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--sky-2)"/></linearGradient>
+          <linearGradient id="p2p-l2" gradientUnits="userSpaceOnUse" x1="354.1" y1="367.7" x2="320.5" y2="321.6"><stop offset="0" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--sky-2)"/></linearGradient>
+          <linearGradient id="p2p-l3" gradientUnits="userSpaceOnUse" x1="185.9" y1="367.7" x2="219.5" y2="321.6"><stop offset="0" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--sky-2)"/></linearGradient>
+          <linearGradient id="p2p-l4" gradientUnits="userSpaceOnUse" x1="134" y1="207.8" x2="188.2" y2="225.4"><stop offset="0" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--sky-2)"/></linearGradient>
+        </defs>
+        <circle cx="270" cy="252" r="195" fill="none" stroke="var(--line-2)" stroke-width="2" stroke-dasharray="1 10" stroke-linecap="round"/>
+        <g stroke-width="3" stroke-linecap="round">
+          <line x1="270" y1="109" x2="270" y2="166" stroke="url(#p2p-l0)"/>
+          <line x1="406" y1="207.8" x2="351.8" y2="225.4" stroke="url(#p2p-l1)"/>
+          <line x1="354.1" y1="367.7" x2="320.5" y2="321.6" stroke="url(#p2p-l2)"/>
+          <line x1="185.9" y1="367.7" x2="219.5" y2="321.6" stroke="url(#p2p-l3)"/>
+          <line x1="134" y1="207.8" x2="188.2" y2="225.4" stroke="url(#p2p-l4)"/>
+        </g>
+        <g fill="var(--sky-2)">
+          <circle cx="270" cy="166" r="5"/><circle cx="351.8" cy="225.4" r="5"/><circle cx="320.5" cy="321.6" r="5"/><circle cx="219.5" cy="321.6" r="5"/><circle cx="188.2" cy="225.4" r="5"/>
+        </g>
+      </svg>
+      <div class="p2-hn" style="left:270px;top:57px">설계</div>
+      <div class="p2-hn" style="left:455.5px;top:191.7px">시공</div>
+      <div class="p2-hn" style="left:384.6px;top:409.8px">품질</div>
+      <div class="p2-hn" style="left:155.4px;top:409.8px">안전</div>
+      <div class="p2-hn" style="left:84.5px;top:191.7px">협력<br>업체</div>
+      <div class="p2-hc"><strong>하나의 목표</strong><span>프로젝트 완수</span></div>
+    </div>
+    <div class="p2-txt">
+      <p class="p2-eb">PEOPLE</p>
+      <h2 class="p2-h"><span class="p2-node"><i></i></span>우리</h2>
+      <p class="p2-def">사람과 전문성의 연결</p>
+      <p class="p2-p">설계부터 협력업체까지, 서로 다른<br>전문가들이 <strong>하나의 목표</strong>인<br>프로젝트 완수로 이어집니다.</p>
+    </div>
+  </section>
+
+  <div class="p2-op" style="top:587px">
+    <svg viewBox="0 0 68 68" aria-hidden="true">
+      <defs><linearGradient id="p2p-op1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--sky-2)"/></linearGradient></defs>
+      <circle cx="34" cy="34" r="32" fill="var(--paper)" stroke="url(#p2p-op1)" stroke-width="3"/>
+      <path d="M34 22v24M22 34h24" stroke="var(--navy)" stroke-width="4" stroke-linecap="round"/>
+    </svg>
+  </div>
+
+  <!-- 기술 = 현장 문제 해결에 활용 -->
+  <section class="p2-blk p2-tech">
+    <div class="p2-fig">
+      <svg viewBox="0 0 540 430" aria-hidden="true">
+        <defs>
+          <linearGradient id="p2p-ti" gradientUnits="userSpaceOnUse" x1="116" y1="0" x2="201" y2="0"><stop offset="0" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--sky-2)"/></linearGradient>
+          <linearGradient id="p2p-to" gradientUnits="userSpaceOnUse" x1="324" y1="0" x2="404" y2="0"><stop offset="0" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--sky-2)"/></linearGradient>
+        </defs>
+        <g fill="none" stroke-width="3" stroke-linecap="round">
+          <path d="M116 85C162 85 158 175 201 175" stroke="url(#p2p-ti)"/>
+          <path d="M116 215H190" stroke="url(#p2p-ti)"/>
+          <path d="M116 345C162 345 158 255 201 255" stroke="url(#p2p-ti)"/>
+          <path d="M324.3 161C368 161 362 71 404 71" stroke="url(#p2p-to)"/>
+          <path d="M343.9 197C378 197 372 167 404 167" stroke="url(#p2p-to)"/>
+          <path d="M343.9 233C378 233 372 263 404 263" stroke="url(#p2p-to)"/>
+          <path d="M324.3 269C368 269 362 359 404 359" stroke="url(#p2p-to)"/>
+        </g>
+      </svg>
+      <span class="chip tech p2-tc" style="top:85px">AI</span>
+      <span class="chip tech p2-tc" style="top:215px">BIM</span>
+      <span class="chip tech p2-tc" style="top:345px">데이터</span>
+      <div class="ring p2-tp"><div><small></small>현장의<br>문제</div></div>
+      <span class="chip field p2-to" style="top:71px"><i class="dot field"></i>공정</span>
+      <span class="chip field p2-to" style="top:167px"><i class="dot field"></i>품질</span>
+      <span class="chip field p2-to" style="top:263px"><i class="dot field"></i>안전</span>
+      <span class="chip field p2-to" style="top:359px"><i class="dot field"></i>생산성</span>
+    </div>
+    <div class="p2-txt">
+      <p class="p2-eb">TECHNOLOGY</p>
+      <h2 class="p2-h"><span class="p2-node"><i></i></span>기술</h2>
+      <p class="p2-def">현장 문제 해결에 활용</p>
+      <p class="p2-p">AI · BIM · 데이터를 <strong>현장의 문제</strong>에<br>적용해, 공정 · 품질 · 안전 · 생산성의<br>개선으로 연결합니다.</p>
+    </div>
+  </section>
+
+  <div class="p2-op" style="top:1062px">
+    <svg viewBox="0 0 68 68" aria-hidden="true">
+      <defs><linearGradient id="p2p-op2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--sky-2)"/></linearGradient></defs>
+      <circle cx="34" cy="34" r="32" fill="var(--paper)" stroke="url(#p2p-op2)" stroke-width="3"/>
+      <path d="M22 28.5h24M22 39.5h24" stroke="var(--navy)" stroke-width="4" stroke-linecap="round"/>
+    </svg>
+  </div>
+
+  <span class="p2-tip" style="top:1161px"></span>
+  <div class="key">
+    <p class="key-label"><span class="mark"><i></i><b></b><i></i><b></b><i></i></span>‘우리’의 ‘기술’</p>
+    <p class="key-text">사람과 전문성을 <em>하나의 목표</em>로,<br>기술을 <em>현장의 가치</em>로 연결하는 것</p>
+  </div>
+</div>
   </div>
   <footer class="ft"><span>2026년 하반기 신입사원 공개채용</span><span class="pg"><b>02</b> / 03</span></footer>
 </section>
@@ -339,11 +716,166 @@ svg { display: block; overflow: visible; }
     <p class="hd-lead">입사 후</p>
     <h1 class="hd-title">기술을 실질적인 <em>현장 개선</em>으로<br>연결하는 <em>공사관리자</em>가 되겠습니다</h1>
   </header>
-  <div class="logo"><img src="logo.png" alt="현대엔지니어링" onerror="this.remove()"><span>회사 로고</span></div>
+  <div class="logo"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjMxMS44MiAyNzcuNTMgMjIwLjQyIDMyLjc3IiB3aWR0aD0iMjIwLjQyIiBoZWlnaHQ9IjMyLjc3Ij4KPHBhdGggZmlsbD0iI0ZEQjkxMiIgZD0iTSAzMTIuMzIwMzEyIDMwOS41MjM0MzggTCAzNDguNDEwMTU2IDMwOS41MjM0MzggTCAzMzAuOTIxODc1IDI3OC4wMzEyNSBaIE0gMzEyLjMyMDMxMiAzMDkuNTIzNDM4Ii8+CjxwYXRoIGZpbGw9IiMwMEE2NTAiIGQ9Ik0gMzE2LjU2MjUgMzA5LjUyMzQzOCBMIDM1Mi42NjQwNjIgMzA5LjUyMzQzOCBMIDMzNS4xNjc5NjkgMjc4LjAzMTI1IFogTSAzMTYuNTYyNSAzMDkuNTIzNDM4Ii8+CjxwYXRoIGZpbGw9IiMwMDQyODIiIGQ9Ik0gMzU5LjU4MjAzMSAyOTUuMDE1NjI1IEMgMzU5LjY0ODQzOCAyOTUuMDc4MTI1IDM1OS42NTYyNSAyOTUuMDg1OTM4IDM1OS41ODIwMzEgMjk1LjAxNTYyNSIvPgo8cGF0aCBmaWxsPSIjMDA0MjgyIiBkPSJNIDM3MC45NDUzMTIgMjkzLjk5NjA5NCBDIDM3MS4wMDc4MTIgMjkzLjYyODkwNiAzNzEuMDQyOTY5IDI5My4yNSAzNzEuMDQyOTY5IDI5Mi44NzEwOTQgQyAzNzEuMDQyOTY5IDI5Mi41OTc2NTYgMzcxLjAzMTI1IDI5Mi4zMzk4NDQgMzcxIDI5Mi4wODU5MzggTCAzNzQuMzEyNSAyOTIuMDg1OTM4IEwgMzc0LjMxMjUgMjkzLjk5NjA5NCBaIE0gMzYzLjkxNzk2OSAyOTYuNTE5NTMxIEMgMzYxLjg3ODkwNiAyOTYuNTE5NTMxIDM2MC4yMTQ4NDQgMjk0Ljg2MzI4MSAzNjAuMjE0ODQ0IDI5Mi44MjQyMTkgQyAzNjAuMjE0ODQ0IDI5MC43ODEyNSAzNjEuODc4OTA2IDI4OS4xMjEwOTQgMzYzLjkxNzk2OSAyODkuMTIxMDk0IEMgMzY1Ljk2MDkzOCAyODkuMTIxMDk0IDM2Ny42MjEwOTQgMjkwLjc4MTI1IDM2Ny42MjEwOTQgMjkyLjgyNDIxOSBDIDM2Ny42MjEwOTQgMjk0Ljg2MzI4MSAzNjUuOTYwOTM4IDI5Ni41MTk1MzEgMzYzLjkxNzk2OSAyOTYuNTE5NTMxIE0gMzc0LjMxMjUgMjg4Ljk4MDQ2OSBMIDM2OS44ODY3MTkgMjg4Ljk4MDQ2OSBDIDM2OS42MTMyODEgMjg4LjU3NDIxOSAzNjkuMzA0Njg4IDI4OC4xODc1IDM2OC45Njg3NSAyODcuODQzNzUgTCAzNzEuNTk3NjU2IDI4Ny44NDM3NSBMIDM3MS41OTc2NTYgMjg0LjczODI4MSBMIDM2NS45NTMxMjUgMjg0LjczODI4MSBMIDM2NS45NTMxMjUgMjgyLjY4NzUgTCAzNjEuOTMzNTk0IDI4Mi42ODc1IEwgMzYxLjkzMzU5NCAyODQuNzM4MjgxIEwgMzU2LjI3MzQzOCAyODQuNzM4MjgxIEwgMzU2LjI3MzQzOCAyODcuODQzNzUgTCAzNTguODcxMDk0IDI4Ny44NDM3NSBDIDM1Ny41ODk4NDQgMjg5LjEzMjgxMiAzNTYuNzk2ODc1IDI5MC45MDYyNSAzNTYuNzk2ODc1IDI5Mi44NzEwOTQgQyAzNTYuNzk2ODc1IDI5Ni43OTI5NjkgMzU5Ljk5MjE4OCAyOTkuOTg4MjgxIDM2My45MjU3ODEgMjk5Ljk4ODI4MSBDIDM2Ni4yNjk1MzEgMjk5Ljk4ODI4MSAzNjguMzM1OTM4IDI5OC44NDc2NTYgMzY5LjYzMjgxMiAyOTcuMTAxNTYyIEwgMzc0LjMxMjUgMjk3LjEwMTU2MiBMIDM3NC4zMTI1IDMwMy4wNDY4NzUgTCAzNzguMzM1OTM4IDMwMy4wNDY4NzUgTCAzNzguMzM1OTM4IDI4My40NzY1NjIgTCAzNzQuMzEyNSAyODMuNDc2NTYyIFogTSAzNzQuMzEyNSAyODguOTgwNDY5Ii8+CjxwYXRoIGZpbGw9IiMwMDQyODIiIGQ9Ik0gMzYyLjk2ODc1IDMwMS40NjQ4NDQgTCAzNTguOTQxNDA2IDMwMS40NjQ4NDQgTCAzNTguOTQxNDA2IDMwOS40NjA5MzggTCAzNzguMzM1OTM4IDMwOS40NjA5MzggTCAzNzguMzM1OTM4IDMwNi4zNjMyODEgTCAzNjIuOTY4NzUgMzA2LjM2MzI4MSBaIE0gMzYyLjk2ODc1IDMwMS40NjQ4NDQiLz4KPHBhdGggZmlsbD0iIzAwNDI4MiIgZD0iTSA0MDAuNjk1MzEyIDI5MS4yNTc4MTIgTCAzOTguNDQ5MjE5IDI5MS4yNTc4MTIgTCAzOTguNDQ5MjE5IDI4My40NzY1NjIgTCAzOTQuNDM3NSAyODMuNDc2NTYyIEwgMzk0LjQzNzUgMjk5Ljk0OTIxOSBMIDM4Ni41MTU2MjUgMjk5Ljk0OTIxOSBMIDM4Ni41MTU2MjUgMjg3LjEyNSBMIDM5MS45NTcwMzEgMjg3LjEyNSBMIDM5MS45NTcwMzEgMjg0LjAyMzQzOCBMIDM4Mi40OTIxODggMjg0LjAyMzQzOCBMIDM4Mi40OTIxODggMzAzLjA0Njg3NSBMIDM5NC40Mzc1IDMwMy4wNDY4NzUgTCAzOTQuNDM3NSAzMDkuNDY0ODQ0IEwgMzk4LjQ0OTIxOSAzMDkuNDY0ODQ0IEwgMzk4LjQ0OTIxOSAyOTQuMzU1NDY5IEwgNDAwLjY5NTMxMiAyOTQuMzU1NDY5IEwgNDAwLjY5NTMxMiAzMDkuNDY0ODQ0IEwgNDA0LjcyMjY1NiAzMDkuNDY0ODQ0IEwgNDA0LjcyMjY1NiAyODMuNDc2NTYyIEwgNDAwLjY5NTMxMiAyODMuNDc2NTYyIFogTSA0MDAuNjk1MzEyIDI5MS4yNTc4MTIiLz4KPHBhdGggZmlsbD0iIzAwNDI4MiIgZD0iTSA1MTYuOTM3NSAzMDQuMDYyNSBDIDUxNi45Mzc1IDMwMi41ODIwMzEgNTE5LjMwNDY4OCAzMDEuMzkwNjI1IDUyMi4yMjI2NTYgMzAxLjM5MDYyNSBDIDUyNS4xMzY3MTkgMzAxLjM5MDYyNSA1MjcuNTAzOTA2IDMwMi41ODIwMzEgNTI3LjUwMzkwNiAzMDQuMDYyNSBDIDUyNy41MDM5MDYgMzA1LjU0Mjk2OSA1MjUuMTM2NzE5IDMwNi43NDIxODggNTIyLjIyMjY1NiAzMDYuNzQyMTg4IEMgNTE5LjMwNDY4OCAzMDYuNzQyMTg4IDUxNi45Mzc1IDMwNS41NDI5NjkgNTE2LjkzNzUgMzA0LjA2MjUgTSA1MTIuNzA3MDMxIDMwNC4wNjI1IEMgNTEyLjcwNzAzMSAzMDcuMjI2NTYyIDUxNi45NzI2NTYgMzA5LjgwMDc4MSA1MjIuMjIyNjU2IDMwOS44MDA3ODEgQyA1MjcuNDc2NTYyIDMwOS44MDA3ODEgNTMxLjc0MjE4OCAzMDcuMjI2NTYyIDUzMS43NDIxODggMzA0LjA2MjUgQyA1MzEuNzQyMTg4IDMwMC44OTg0MzggNTI3LjQ3NjU2MiAyOTguMzIwMzEyIDUyMi4yMjI2NTYgMjk4LjMyMDMxMiBDIDUxNi45NzI2NTYgMjk4LjMyMDMxMiA1MTIuNzA3MDMxIDMwMC44OTg0MzggNTEyLjcwNzAzMSAzMDQuMDYyNSIvPgo8cGF0aCBmaWxsPSIjMDA0MjgyIiBkPSJNIDQ0My4zMzIwMzEgMjg3LjA5Mzc1IEMgNDQzLjMzMjAzMSAyODcuMDkzNzUgNDQyLjU0Njg3NSAyOTQuOTk2MDk0IDQ0OS41OTc2NTYgMzAwLjI5Njg3NSBMIDQ0Ny4zNTkzNzUgMzAzLjAxOTUzMSBDIDQ0Ny4zNTkzNzUgMzAzLjAxOTUzMSA0NDIuODQzNzUgMjk5LjkyMTg3NSA0NDEuMzM1OTM4IDI5My45OTIxODggQyA0NDEuMzM1OTM4IDI5My45OTIxODggNDQwLjg0NzY1NiAyOTguMTEzMjgxIDQzNS4zMjAzMTIgMzAyLjk5MjE4OCBMIDQzMy4wOTM3NSAzMDAuMzY3MTg4IEMgNDMzLjA5Mzc1IDMwMC4zNjcxODggNDM5LjMyMDMxMiAyOTYuNTI3MzQ0IDQzOS4zMTY0MDYgMjg3LjA5Mzc1IEwgNDM0LjI5Njg3NSAyODcuMDkzNzUgTCA0MzQuMjk2ODc1IDI4My45MjU3ODEgTCA0NDguMTA1NDY5IDI4My45MjU3ODEgTCA0NDguMTA1NDY5IDI4Ny4wOTM3NSBaIE0gNDQzLjMzMjAzMSAyODcuMDkzNzUiLz4KPHBhdGggZmlsbD0iIzAwNDI4MiIgZD0iTSA0NTUuNzczNDM4IDMwOS40NjA5MzggTCA0NTEuNzUgMzA5LjQ2MDkzOCBMIDQ1MS43NSAyODMuNDcyNjU2IEwgNDU1Ljc3MzQzOCAyODMuNDcyNjU2IFogTSA0NTUuNzczNDM4IDMwOS40NjA5MzgiLz4KPHBhdGggZmlsbD0iIzAwNDI4MiIgZD0iTSA0NzcuMjA3MDMxIDI4My40NzY1NjIgTCA0NzcuMjA3MDMxIDI5OS45MjE4NzUgTCA0NjMuOTkyMTg4IDI5OS45MjE4NzUgTCA0NjMuOTkyMTg4IDI4My45MjU3ODEgTCA0NTkuOTY4NzUgMjgzLjkyNTc4MSBMIDQ1OS45Njg3NSAzMDMuMDE5NTMxIEwgNDc3LjIwNzAzMSAzMDMuMDE5NTMxIEwgNDc3LjIwNzAzMSAzMDkuNDY0ODQ0IEwgNDgxLjIyNjU2MiAzMDkuNDY0ODQ0IEwgNDgxLjIyNjU2MiAyODMuNDc2NTYyIFogTSA0NzcuMjA3MDMxIDI4My40NzY1NjIiLz4KPHBhdGggZmlsbD0iIzAwNDI4MiIgZD0iTSA1MjcuNTA3ODEyIDI5My41MDc4MTIgTCA1MjcuNTA3ODEyIDI4My40NzI2NTYgTCA1MzEuNTM5MDYyIDI4My40NzI2NTYgTCA1MzEuNTM5MDYyIDI5OC4zMTY0MDYgTCA1MjcuNTA3ODEyIDI5OC4zMTY0MDYgTCA1MjcuNTA3ODEyIDI5Ni44NjcxODggTCA1MDkuODc1IDI5Ni44NzUgTCA1MDkuODc1IDI4OC43MTQ4NDQgTCA1MTkuMjQyMTg4IDI4OC43MTQ4NDQgTCA1MTkuMjQyMTg4IDI4Ny4yODkwNjIgTCA1MDkuODc1IDI4Ny4yODkwNjIgTCA1MDkuODc1IDI4My45MjU3ODEgTCA1MjIuOTIxODc1IDI4My45MjU3ODEgTCA1MjIuOTIxODc1IDI5Mi4wNzgxMjUgTCA1MTMuMTcxODc1IDI5Mi4wNzgxMjUgTCA1MTMuMTcxODc1IDI5My41MDc4MTIgWiBNIDUyNy41MDc4MTIgMjkzLjUwNzgxMiIvPgo8cGF0aCBmaWxsPSIjMDA0MjgyIiBkPSJNIDQ5NC4wODk4NDQgMjk3LjY0MDYyNSBDIDQ5My4yODUxNTYgMjk5LjA2NjQwNiA0OTIuNTQyOTY5IDI5OS4zNzEwOTQgNDkxLjE0MDYyNSAyOTkuMzcxMDk0IEMgNDg5Ljc2NTYyNSAyOTkuMzcxMDk0IDQ4OC43MzQzNzUgMjk5LjAyMzQzOCA0ODguMDExNzE5IDI5Ny42NTIzNDQgQyA0ODcuNjI1IDI5Ni45MTAxNTYgNDg3LjIzNDM3NSAyOTQuNjI4OTA2IDQ4Ny4yMzQzNzUgMjkzLjI1IEMgNDg3LjIzNDM3NSAyOTEuODU1NDY5IDQ4Ny4yNTM5MDYgMjkwLjIzNDM3NSA0ODguMDE1NjI1IDI4OC44MTY0MDYgQyA0ODguNzM0Mzc1IDI4Ny41IDQ4OS43NDYwOTQgMjg3LjEyNSA0OTEuMTc1NzgxIDI4Ny4xMjUgQyA0OTIuNTg1OTM4IDI4Ny4xMjUgNDkzLjQ0NTMxMiAyODcuNjAxNTYyIDQ5NC4wOTc2NTYgMjg4LjgyNDIxOSBDIDQ5NC44OTA2MjUgMjkwLjI4OTA2MiA0OTQuODU1NDY5IDI5MS44NjcxODggNDk0Ljg1NTQ2OSAyOTMuMjUgQyA0OTQuODU1NDY5IDI5NC42Mjg5MDYgNDk0Ljc5Mjk2OSAyOTYuNDAyMzQ0IDQ5NC4wODk4NDQgMjk3LjY0MDYyNSBNIDUwMS42NjAxNTYgMjgzLjQ3MjY1NiBMIDUwMS42NjAxNTYgMjkxLjE3OTY4OCBMIDQ5OC4zMzk4NDQgMjkxLjE3OTY4OCBDIDQ5OC4xMzI4MTIgMjg4LjkxNDA2MiA0OTcuNTQyOTY5IDI4Ny4yMzA0NjkgNDk2LjY2Nzk2OSAyODYuMDAzOTA2IEMgNDk1LjUzMTI1IDI4NC40MDIzNDQgNDkzLjcyMjY1NiAyODMuNDcyNjU2IDQ5MS4xNzU3ODEgMjgzLjQ3MjY1NiBDIDQ4OC42MDkzNzUgMjgzLjQ3MjY1NiA0ODYuNzAzMTI1IDI4NC4yODUxNTYgNDg1LjQ5MjE4OCAyODUuODcxMDk0IEMgNDg0LjI5Mjk2OSAyODcuNDU3MDMxIDQ4My42OTE0MDYgMjg5Ljk0MTQwNiA0ODMuNjkxNDA2IDI5My4yNjE3MTkgQyA0ODMuNjkxNDA2IDI5Ni41NzQyMTkgNDg0LjI5Mjk2OSAyOTkuMDUwNzgxIDQ4NS40OTIxODggMzAwLjYyODkwNiBDIDQ4Ni43MDMxMjUgMzAyLjIxNDg0NCA0ODguNjA5Mzc1IDMwMy4wMTk1MzEgNDkxLjE3NTc4MSAzMDMuMDE5NTMxIEMgNDkzLjcyMjY1NiAzMDMuMDE5NTMxIDQ5NS41ODk4NDQgMzAyLjIxNDg0NCA0OTYuNzI2NTYyIDMwMC42Mjg5MDYgQyA0OTcuNzMwNDY5IDI5OS4yNDYwOTQgNDk4LjI4MTI1IDI5Ny4xMzI4MTIgNDk4LjQwNjI1IDI5NC4zNDc2NTYgTCA1MDEuNjYwMTU2IDI5NC4zNTU0NjkgTCA1MDEuNjYwMTU2IDMwOS40NjA5MzggTCA1MDUuNzE0ODQ0IDMwOS40NjA5MzggTCA1MDUuNzE0ODQ0IDI4My40NzI2NTYgWiBNIDUwMS42NjAxNTYgMjgzLjQ3MjY1NiIvPgo8cGF0aCBmaWxsPSIjMDA0MjgyIiBkPSJNIDQyNi45NTcwMzEgMzAzLjAxOTUzMSBMIDQzMC42MzY3MTkgMzAzLjAxOTUzMSBMIDQzMC42MzY3MTkgMjgzLjQ3NjU2MiBMIDQyNi45NTcwMzEgMjgzLjQ3NjU2MiBaIE0gNDI2Ljk1NzAzMSAzMDMuMDE5NTMxIi8+CjxwYXRoIGZpbGw9IiMwMDQyODIiIGQ9Ik0gNDE1LjI2OTUzMSAzMDEuNDY0ODQ0IEwgNDExLjI0MjE4OCAzMDEuNDY0ODQ0IEwgNDExLjI0MjE4OCAzMDkuNDYwOTM4IEwgNDMwLjYzNjcxOSAzMDkuNDYwOTM4IEwgNDMwLjYzNjcxOSAzMDYuMzYzMjgxIEwgNDE1LjI2OTUzMSAzMDYuMzYzMjgxIFogTSA0MTUuMjY5NTMxIDMwMS40NjQ4NDQiLz4KPHBhdGggZmlsbD0iIzAwNDI4MiIgZD0iTSA0MTQuMjM4MjgxIDI5NC4xOTE0MDYgQyA0MTIuMjE4NzUgMjk0LjE5MTQwNiA0MTAuNTg1OTM4IDI5Mi41NDY4NzUgNDEwLjU4NTkzOCAyOTAuNTM1MTU2IEMgNDEwLjU4NTkzOCAyODguNTIzNDM4IDQxMi4yMTg3NSAyODYuODc4OTA2IDQxNC4yMzgyODEgMjg2Ljg3ODkwNiBDIDQxNi4yNTM5MDYgMjg2Ljg3ODkwNiA0MTcuODg2NzE5IDI4OC41MjM0MzggNDE3Ljg4NjcxOSAyOTAuNTM1MTU2IEMgNDE3Ljg4NjcxOSAyOTIuNTQ2ODc1IDQxNi4yNTM5MDYgMjk0LjE5MTQwNiA0MTQuMjM4MjgxIDI5NC4xOTE0MDYgTSA0MjIuMjg5MDYyIDI4My40NzY1NjIgTCA0MjIuMjg5MDYyIDI4OC45MjE4NzUgTCA0MjEuMTA5Mzc1IDI4OC45MjE4NzUgQyA0MjAuMzcxMDk0IDI4NS43OTY4NzUgNDE3LjU4MjAzMSAyODMuNDc2NTYyIDQxNC4yMzgyODEgMjgzLjQ3NjU2MiBDIDQxMC4zMzk4NDQgMjgzLjQ3NjU2MiA0MDcuMTcxODc1IDI4Ni42NDA2MjUgNDA3LjE3MTg3NSAyOTAuNTM1MTU2IEMgNDA3LjE3MTg3NSAyOTQuNDM3NSA0MTAuMzM5ODQ0IDI5Ny41OTc2NTYgNDE0LjIzODI4MSAyOTcuNTk3NjU2IEMgNDE3LjY0NDUzMSAyOTcuNTk3NjU2IDQyMC40OTYwOTQgMjk1LjE3OTY4OCA0MjEuMTU2MjUgMjkxLjk3MjY1NiBMIDQyMi4yODkwNjIgMjkxLjk3MjY1NiBMIDQyMi4yODkwNjIgMzAzLjAxOTUzMSBMIDQyNS45NzI2NTYgMzAzLjAxOTUzMSBMIDQyNS45NzI2NTYgMjgzLjQ3NjU2MiBaIE0gNDIyLjI4OTA2MiAyODMuNDc2NTYyIi8+Cjwvc3ZnPgo=" alt="현대엔지니어링" onerror="this.remove()"><span>회사 로고</span></div>
   <div class="body">
     <!-- portrait 3: 이 파일만 편집. 스타일은 #p3 로 범위를 한정 -->
 <style>
+#p3 .p3w { position: absolute; inset: 0 0 12px 0; display: flex; flex-direction: column; }
+#p3 .dia { position: relative; width: 1072px; height: 1180px; flex: none; }
+#p3 .dia > svg { position: absolute; left: 0; top: 0; z-index: 1; }
+#p3 .dia .ring { z-index: 2; }
+#p3 .joint { z-index: 2; }
+#p3 .ln { fill: none; stroke: url(#p3p-grad); stroke-width: 3; stroke-linecap: round; }
+#p3 .fan { fill: none; stroke: url(#p3p-fan); stroke-width: 2.5; stroke-linecap: round; }
+#p3 .d-sky { fill: var(--sky-2); }
+#p3 .d-green { fill: var(--hec-green); stroke: #fff; stroke-width: 3; }
+#p3 .d-blue { fill: var(--hec-blue); stroke: #fff; stroke-width: 3; }
+#p3 .d-yel { fill: var(--hec-yellow); stroke: #fff; stroke-width: 3; }
+
+#p3 .eb { display: flex; align-items: center; gap: 10px; font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; white-space: nowrap; }
+#p3 .eb .dot { width: 10px; height: 10px; }
+#p3 .eb.field { color: var(--gold-ink); }
+#p3 .eb.people { color: color-mix(in srgb, var(--hec-green) 72%, #000); }
+#p3 .eb.tech { color: var(--hec-blue); }
+#p3 .tt { margin-top: 8px; font-size: var(--fs-h2); font-weight: 800; color: var(--navy); letter-spacing: -0.035em; line-height: 1.25; white-space: nowrap; }
+
+/* spine rows */
+#p3 .side { position: absolute; transform: translateY(-50%); }
+#p3 .side.l { right: var(--r); }
+#p3 .side.r { left: var(--l); }
+#p3 .fd { font-size: var(--fs-body); font-weight: 700; color: var(--ink); letter-spacing: -0.02em; white-space: nowrap; }
+#p3 .fd + .fd { margin-top: 4px; font-weight: 500; color: var(--ink-2); font-size: var(--fs-small); }
+
+#p3 .node { position: absolute; }
+#p3 .ring.field { width: 172px; height: 172px; left: 450px; top: 0px; }
+#p3 .ring .nl { text-align: center; line-height: 1.15; }
+#p3 .ring .nl small { display: block; font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: 0.14em; color: var(--sky-2); margin-bottom: 4px; }
+#p3 .ring .nl b { display: block; font-size: var(--fs-h3); font-weight: 800; color: var(--navy); letter-spacing: -0.03em; }
+
+#p3 .joint { position: absolute; left: 444px; top: 244px; width: 184px; height: 54px; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 999px; border: 3px solid transparent; background: linear-gradient(#fff, #fff) padding-box, var(--grad) border-box; font-size: var(--fs-small); font-weight: 700; color: var(--navy); letter-spacing: -0.02em; white-space: nowrap; }
+#p3 .joint svg { width: 20px; height: 20px; }
+
+/* branch cards */
+#p3 .card { position: absolute; top: 412px; width: 520px; height: 368px; border-radius: var(--radius); }
+#p3 .card.people { left: 0; background: var(--tint-green); }
+#p3 .card.tech { left: 552px; background: var(--tint-blue); }
+#p3 .card .ring { position: absolute; top: 30px; width: 100px; height: 100px; }
+#p3 .card.people .ring { right: 30px; }
+#p3 .card.tech .ring { left: 30px; }
+#p3 .card .ring b { font-size: var(--fs-h3); font-weight: 800; letter-spacing: -0.03em; }
+#p3 .card.people .ring b { color: color-mix(in srgb, var(--hec-green) 80%, #000); }
+#p3 .card.tech .ring b { color: var(--hec-blue); }
+#p3 .card .txt { position: absolute; top: 30px; bottom: 30px; display: flex; flex-direction: column; }
+#p3 .card.people .txt { left: 30px; right: 156px; }
+#p3 .card.tech .txt { left: 156px; right: 30px; }
+#p3 .card ul { margin-top: 24px; display: flex; flex-direction: column; gap: 10px; }
+#p3 .card li { display: flex; align-items: baseline; gap: 12px; background: #fff; border-radius: 14px; padding: 13px 18px; font-size: var(--fs-body); font-weight: 600; color: var(--ink); letter-spacing: -0.025em; line-height: 1.35; }
+#p3 .card li::before { content: ""; flex: none; width: 9px; height: 9px; border-radius: 50%; transform: translateY(-4px); }
+#p3 .card.people li::before { background: var(--hec-green); }
+#p3 .card.tech li::before { background: var(--hec-blue); }
+#p3 .card .ref { margin-top: auto; align-self: flex-start; height: 40px; padding: 0 16px; gap: 8px; font-size: var(--fs-eyebrow); background: rgba(255,255,255,.6); }
+#p3 .card .ref .num { font-weight: 800; color: var(--ink-3); letter-spacing: 0.04em; }
+
+/* improve */
+#p3 .ring.imp { width: 204px; height: 204px; left: 434px; top: 938px; }
+#p3 .ring.imp .nl small { color: rgba(255,255,255,.78); }
+#p3 .ring.imp .nl b { color: #fff; font-size: var(--fs-h3); }
+#p3 .out { position: absolute; left: 730px; height: 54px; transform: translateY(-50%); padding: 0 20px; gap: 12px; width: 190px; font-size: var(--fs-small); font-weight: 600; }
+#p3 .out .dot { width: 12px; height: 12px; }
+#p3 .out b { font-weight: 800; }
+
+#p3 .key { margin-top: auto; }
 </style>
+<div class="p3w">
+  <div class="dia">
+    <svg width="1072" height="1180" viewBox="0 0 1072 1180" aria-hidden="true">
+      <defs>
+        <linearGradient id="p3p-grad" gradientUnits="userSpaceOnUse" x1="0" y1="172" x2="0" y2="938">
+          <stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/>
+        </linearGradient>
+        <linearGradient id="p3p-fan" gradientUnits="userSpaceOnUse" x1="638" y1="0" x2="730" y2="0">
+          <stop offset="0" style="stop-color:var(--sky-2)"/><stop offset="1" style="stop-color:var(--sky)"/>
+        </linearGradient>
+      </defs>
+      <path class="ln" d="M536,172 V244"/>
+      <path class="ln" d="M536,298 V334"/>
+      <path class="ln" d="M536,334 C536,373 440,373 440,412 V442"/>
+      <path class="ln" d="M536,334 C536,373 632,373 632,412 V442"/>
+      <path class="ln" d="M440,542 V820 C440,861 536,861 536,902"/>
+      <path class="ln" d="M632,542 V820 C632,861 536,861 536,902"/>
+      <path class="ln" d="M536,902 V938"/>
+      <path class="fan" d="M638,1040 C688.6,1040 679.4,932 730,932"/>
+      <path class="fan" d="M638,1040 C688.6,1040 679.4,1004 730,1004"/>
+      <path class="fan" d="M638,1040 C688.6,1040 679.4,1076 730,1076"/>
+      <path class="fan" d="M638,1040 C688.6,1040 679.4,1148 730,1148"/>
+      <circle class="d-sky" cx="536" cy="334" r="7"/>
+      <circle class="d-green" cx="440" cy="412" r="7"/>
+      <circle class="d-blue" cx="632" cy="412" r="7"/>
+      <circle class="d-green" cx="440" cy="780" r="7"/>
+      <circle class="d-blue" cx="632" cy="780" r="7"/>
+      <circle class="d-sky" cx="536" cy="902" r="7"/>
+      <circle class="d-yel" cx="638" cy="1040" r="8"/>
+    </svg>
+
+    <!-- STEP 1 FIELD -->
+    <div class="ring field node"><div class="nl"><small>FIELD</small><b>현장 이해</b></div></div>
+    <div class="side l" style="--r:662px; top:86px">
+      <div class="eb field"><i class="dot field"></i>STEP 01</div>
+      <div class="tt">현장을 이해한다</div>
+    </div>
+    <div class="side r" style="--l:662px; top:86px">
+      <div class="fd">공정 · 품질 · 안전</div>
+      <div class="fd">시공관리 기본기</div>
+    </div>
+
+    <!-- joint -->
+    <div class="joint"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="6" style="fill:none;stroke:var(--sky-2);stroke-width:2.4"/><path d="M13 13 L18 18" style="stroke:var(--sky-2);stroke-width:2.6;stroke-linecap:round"/></svg>문제 발견</div>
+
+    <!-- STEP 2 PEOPLE -->
+    <div class="card people">
+      <div class="ring"><b>사람</b></div>
+      <div class="txt">
+        <div class="eb people"><i class="dot people"></i>STEP 02 · PEOPLE</div>
+        <div class="tt">사람을 연결한다</div>
+        <ul>
+          <li>유관부서 · 협력업체 · 공종</li>
+          <li>목표 · 진행상황 공유</li>
+        </ul>
+        <span class="chip ghost ref"><span class="num">01</span>협업</span>
+      </div>
+    </div>
+
+    <!-- STEP 3 TECH -->
+    <div class="card tech">
+      <div class="ring"><b>기술</b></div>
+      <div class="txt">
+        <div class="eb tech"><i class="dot tech"></i>STEP 03 · TECH</div>
+        <div class="tt">기술을 연결한다</div>
+        <ul>
+          <li>BIM 간섭 · 시공성 사전 검토</li>
+          <li>AI 반복업무 효율화</li>
+        </ul>
+        <span class="chip ghost ref"><span class="num">02</span>우리의 기술</span>
+      </div>
+    </div>
+
+    <!-- STEP 4 IMPROVE -->
+    <div class="ring solid imp node"><div class="nl"><small>IMPROVE</small><b>문제 해결</b></div></div>
+    <div class="side l" style="--r:678px; top:1040px">
+      <div class="eb field"><i class="dot field"></i>STEP 04</div>
+      <div class="tt">현장의 변화를 만든다</div>
+    </div>
+    <span class="chip field out" style="top:932px"><i class="dot field"></i><span><b>공정</b> 개선</span></span>
+    <span class="chip field out" style="top:1004px"><i class="dot field"></i><span><b>품질</b> 개선</span></span>
+    <span class="chip field out" style="top:1076px"><i class="dot field"></i><span><b>안전</b> 개선</span></span>
+    <span class="chip field out" style="top:1148px"><i class="dot field"></i><span><b>생산성</b> 개선</span></span>
+  </div>
+
+  <div class="key">
+    <div class="key-label"><span class="mark"><i></i><b></b><i></i><b></b><i></i></span>KEY MESSAGE</div>
+    <p class="key-text">사람 · 전문성 · 기술을 연결해 <em>현장의 변화</em>를 만들겠습니다</p>
+  </div>
+</div>
   </div>
   <footer class="ft"><span>2026년 하반기 신입사원 공개채용</span><span class="pg"><b>03</b> / 03</span></footer>
 </section>
