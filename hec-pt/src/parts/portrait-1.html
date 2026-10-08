@@ -4,14 +4,15 @@
 
 /* ---- A. PROJECT 카드 ---- */
 #p1 .p1p-proj { flex: none; position: relative; border: 2px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--paper); }
-#p1 .p1p-proj-top { padding: 16px 34px 14px; }
+#p1 .p1p-proj-top { padding: 18px 34px 18px; display: grid; grid-template-columns: auto 1fr; column-gap: 36px; align-items: end; }
+#p1 .p1p-desc-box { padding: 2px 0 4px 30px; border-left: 2px solid var(--line); }
 #p1 .p1p-meta { display: flex; align-items: center; gap: 10px; }
 #p1 .p1p-meta .eyebrow { margin-right: 8px; }
 #p1 .p1p-tag { display: inline-flex; align-items: center; height: 34px; padding: 0 15px; border-radius: 999px; font-size: var(--fs-eyebrow); font-weight: 700; white-space: nowrap; letter-spacing: -0.01em; }
 #p1 .p1p-tag.tech { background: var(--tint-blue); color: var(--hec-blue); }
 #p1 .p1p-tag.people { background: var(--tint-green); color: #0B6B33; }
-#p1 .p1p-topic { margin-top: 8px; font-size: calc(var(--fs-h2) + 4px); font-weight: 800; color: var(--navy); letter-spacing: -0.04em; line-height: 1.25; }
-#p1 .p1p-desc { margin-top: 4px; font-size: var(--fs-small); font-weight: 500; color: var(--ink-2); letter-spacing: -0.02em; line-height: 1.45; }
+#p1 .p1p-topic { margin-top: 10px; font-size: calc(var(--fs-h2) + 4px); font-weight: 800; color: var(--navy); letter-spacing: -0.04em; line-height: 1.25; }
+#p1 .p1p-desc { margin-top: 0; font-size: var(--fs-small); font-weight: 500; color: var(--ink-2); letter-spacing: -0.02em; line-height: 1.45; }
 
 /* OUTCOME 히어로: 시연 영상 → 장려상 */
 #p1 .p1p-hero { display: flex; align-items: center; padding: 16px 34px; background: var(--tint-blue); }
@@ -36,14 +37,14 @@
 #p1 .p1p-arw i { flex: 1; height: 6px; border-radius: 3px 0 0 3px; background: var(--grad); display: block; }
 #p1 .p1p-arw svg { flex: none; width: 20px; height: 26px; margin-left: -1px; }
 
-#p1 .p1p-award { flex: none; width: 220px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-#p1 .p1p-medal { position: relative; width: 170px; height: 196px; }
+#p1 .p1p-award { flex: none; width: 220px; display: flex; flex-direction: column; align-items: center; }
+#p1 .p1p-medal { position: relative; width: 186px; height: 214px; }
 #p1 .p1p-medal svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 #p1 .p1p-medal .disc { fill: var(--hec-yellow); }
 #p1 .p1p-medal .rim2 { fill: none; stroke: var(--paper); stroke-width: 3; stroke-opacity: .9; }
 #p1 .p1p-medal .tl { fill: color-mix(in srgb, var(--hec-yellow) 78%, var(--gold-ink)); }
-#p1 .p1p-medal span { position: absolute; left: 50%; top: 41.8%; transform: translate(-50%, -50%); font-size: 40px; font-weight: 800; color: var(--navy); letter-spacing: -0.04em; white-space: nowrap; line-height: 1; }
-#p1 .p1p-comp { display: inline-flex; align-items: center; height: 36px; padding: 0 18px; border-radius: 999px; background: var(--tint-yellow); color: var(--gold-ink); font-size: var(--fs-small); font-weight: 800; white-space: nowrap; letter-spacing: -0.02em; }
+#p1 .p1p-medal span { position: absolute; left: 50%; top: 41.1%; transform: translate(-50%, -50%); font-size: 44px; font-weight: 800; color: var(--navy); letter-spacing: -0.04em; white-space: nowrap; line-height: 1; }
+#p1 .p1p-comp { position: relative; margin-top: -18px; display: inline-flex; align-items: center; height: 38px; padding: 0 18px; border-radius: 999px; border: 2px solid var(--paper); background: var(--tint-yellow); color: var(--gold-ink); font-size: var(--fs-small); font-weight: 800; white-space: nowrap; letter-spacing: -0.02em; }
 
 /* ---- B. 여정 ---- */
 #p1 .p1p-journey { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; }
@@ -138,14 +139,18 @@
   <!-- A. PROJECT + OUTCOME -->
   <div class="p1p-proj">
     <div class="p1p-proj-top">
+      <div class="p1p-proj-main">
       <div class="p1p-meta">
         <span class="eyebrow">PROJECT</span>
         <span class="p1p-tag tech">학생 BIM 경진대회</span>
         <span class="p1p-tag people">4인 팀</span>
         <span class="p1p-tag people">팀장</span>
       </div>
-      <h3 class="p1p-topic">‘유닛 모듈러 기반 사용자 맞춤형 리모델링 방법’</h3>
-      <p class="p1p-desc">사용자가 원하는 리모델링 규모에 따라 유닛 모듈러를 배치하고,<br>필요한 모듈 수와 자재 물량을 자동으로 산출하는 BIM 기반 리모델링 방법 제안</p>
+      <h3 class="p1p-topic">‘유닛 모듈러 기반 사용자<br>맞춤형 리모델링 방법’</h3>
+      </div>
+      <div class="p1p-desc-box">
+        <p class="p1p-desc">사용자가 원하는 리모델링 규모에 따라 유닛 모듈러를 배치하고, 필요한 모듈 수와 자재 물량을 자동으로 산출하는 BIM 기반 리모델링 방법 제안</p>
+      </div>
     </div>
 
     <div class="p1p-hero">
@@ -176,11 +181,11 @@
       <!-- 장려상 메달 -->
       <div class="p1p-award">
         <div class="p1p-medal">
-          <svg viewBox="0 0 170 196" aria-hidden="true">
-            <path class="tl" d="M56 130L40 190L59 181L70 194L86 142Z"/>
-            <path class="tl" d="M114 130L130 190L111 181L100 194L84 142Z"/>
-            <circle class="disc" cx="85" cy="82" r="80"/>
-            <circle class="rim2" cx="85" cy="82" r="68"/>
+          <svg viewBox="0 0 186 214" aria-hidden="true">
+            <path class="tl" d="M60 140L42 208L63 198L75 212L94 152Z"/>
+            <path class="tl" d="M126 140L144 208L123 198L111 212L92 152Z"/>
+            <circle class="disc" cx="93" cy="88" r="86"/>
+            <circle class="rim2" cx="93" cy="88" r="74"/>
           </svg>
           <span>장려상</span>
         </div>
