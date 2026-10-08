@@ -330,13 +330,24 @@ svg { display: block; overflow: visible; }
 }
 
 /* --- 01 깔때기 --- */
-#p1 .p1-fun { position: relative; flex: none; height: 252px; }
-#p1 .p1-fun > svg { position: absolute; left: 0; top: 0; width: 492px; height: 252px; }
+#p1 .p1-fun { position: relative; flex: none; height: 246px; }
+#p1 .p1-fun > svg { position: absolute; left: 0; top: 0; width: 492px; height: 246px; }
 #p1 .p1-at { position: absolute; transform: translateX(-50%); white-space: nowrap; }
 #p1 .p1-op {
-  height: 52px; padding: 0 24px; display: flex; align-items: center; border-radius: 999px; background: var(--paper);
-  border: 2px solid var(--line-2); font-size: 24px; font-weight: 700; color: var(--ink); letter-spacing: -0.02em;
+  position: absolute; width: 176px; height: 54px; display: flex; align-items: center; justify-content: center; gap: 8px;
+  border-radius: 999px; background: var(--paper); border: 2px solid var(--line-2);
+  font-size: 26px; font-weight: 700; color: var(--navy); letter-spacing: -0.02em; white-space: nowrap;
 }
+#p1 .p1-op i { width: 14px; height: 14px; border-radius: 50%; background: var(--hec-green); display: block; flex: none; }
+#p1 .p1-vs {
+  position: absolute; width: 56px; height: 56px; border-radius: 50%; background: var(--navy); border: 3px solid var(--paper);
+  display: grid; place-items: center; font-size: 21px; font-weight: 900; line-height: 1; color: var(--paper); letter-spacing: 0.02em;
+}
+#p1 .p1-tag {
+  height: 34px; padding: 0 16px 0 12px; display: flex; align-items: center; gap: 8px; border-radius: 999px; background: var(--line);
+  font-size: 20px; font-weight: 700; color: var(--ink); letter-spacing: -0.02em;
+}
+#p1 .p1-tag svg { width: 20px; height: 20px; }
 #p1 .p1-cap { font-size: 20px; font-weight: 600; line-height: 1.3; color: var(--ink-3); letter-spacing: -0.02em; }
 #p1 .p1-ftxt { font-size: 24px; font-weight: 600; line-height: 1.3; color: var(--ink); letter-spacing: -0.02em; }
 #p1 .p1-crit {
@@ -404,35 +415,37 @@ svg { display: block; overflow: visible; }
       <circle cx="585" cy="22" r="5" fill="var(--hec-green)"/>
       <circle cx="1279" cy="22" r="5" fill="var(--hec-yellow)"/>
     </svg>
-    <h3 class="p1-h" style="left:24px"><b>01</b>의견을 모아 주제를 정하다</h3>
+    <h3 class="p1-h" style="left:24px"><b>01</b>충돌을 조율해 주제를 정하다</h3>
     <h3 class="p1-h" style="left:598px"><b>02</b>강점에 맞게 역할을 나누다</h3>
     <h3 class="p1-h" style="left:1292px"><b>03</b>3주 만에 완성, 장려상</h3>
   </div>
 
   <div class="p1-cols">
 
-    <!-- 01 : 두 의견 → 깔때기 → 판단 기준 → 주제 -->
+    <!-- 01 : 두 의견 충돌(VS) → 깔때기 → 판단 기준 → 주제 -->
     <div class="p1-blk p1-b1">
       <div class="p1-fun">
-        <svg viewBox="0 0 492 252" aria-hidden="true">
+        <svg viewBox="0 0 492 246" aria-hidden="true">
           <defs>
-            <linearGradient id="p1l-fun" gradientUnits="userSpaceOnUse" x1="0" y1="86" x2="0" y2="202"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient>
+            <linearGradient id="p1l-fun" gradientUnits="userSpaceOnUse" x1="0" y1="99" x2="0" y2="196"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient>
           </defs>
-          <!-- 깔때기 -->
-          <path d="M23 86 H469 L340 202 H152 Z" fill="var(--paper)"/>
+          <!-- 깔때기 : 두 의견에서 시작해 판단 기준으로 모임 -->
+          <path d="M44 99 H448 L340 196 H152 Z" fill="var(--paper)"/>
           <g stroke="url(#p1l-fun)" stroke-width="3" stroke-linecap="round" fill="none">
-            <path d="M23 86 L152 202"/><path d="M469 86 L340 202"/>
+            <path d="M44 99 L152 196"/><path d="M448 99 L340 196"/>
           </g>
-          <!-- 맞서는 두 의견 -->
-          <g fill="none" stroke="var(--ink-3)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="148" y1="60" x2="321" y2="60"/><path d="M157 53 L148 60 L157 67"/><path d="M312 53 L321 60 L312 67"/>
+          <!-- 서로 반대로 당기는 화살표 -->
+          <g fill="none" stroke="var(--ink-2)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="25" y1="72" x2="3" y2="72"/><path d="M11 64 L3 72 L11 80"/>
+            <line x1="467" y1="72" x2="489" y2="72"/><path d="M481 64 L489 72 L481 80"/>
           </g>
         </svg>
-        <span class="p1-at p1-cap" style="left:246px; top:0">마감 3주 전까지 주제 미확정</span>
-        <span class="p1-at p1-op" style="left:78px; top:34px">참신성</span>
-        <span class="p1-at p1-op" style="left:414px; top:34px">구현 가능성</span>
-        <span class="p1-at p1-ftxt" style="left:246px; top:112px">경청 · 수상작 분석 · 교수님 조언</span>
-        <span class="p1-at p1-crit" style="left:246px; top:202px">판단 기준 마련</span>
+        <span class="p1-at p1-tag" style="left:246px; top:0"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 5.5V10l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>마감 3주 전까지 주제 미확정</span>
+        <span class="p1-op" style="left:32px; top:45px"><i></i>참신성</span>
+        <span class="p1-op" style="left:284px; top:45px"><i></i>구현 가능성</span>
+        <span class="p1-vs" style="left:218px; top:44px">VS</span>
+        <span class="p1-at p1-ftxt" style="left:246px; top:114px">경청 · 수상작 분석 · 교수님 조언</span>
+        <span class="p1-at p1-crit" style="left:246px; top:196px">판단 기준 마련</span>
       </div>
       <svg class="p1-down" viewBox="0 0 24 30" aria-hidden="true">
         <defs><linearGradient id="p1l-down" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="30"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient></defs>
