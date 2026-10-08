@@ -3,7 +3,7 @@
 #p1 .p1-wrap { display: flex; flex-direction: column; height: calc(100% - 10px); }
 
 /* 맥락 한 줄 */
-#p1 .p1-ctx { font-size: 20px; font-weight: 600; line-height: 1.3; color: var(--ink-3); letter-spacing: -0.01em; }
+#p1 .p1-ctx { font-size: 20px; font-weight: 600; line-height: 1.3; color: var(--ink-2); letter-spacing: -0.01em; }
 
 /* 머리 줄 : 하나의 그래디언트 선 위에 이음매 점 + 번호 + 덩어리 제목 */
 #p1 .p1-heads { position: relative; height: 44px; margin-top: 14px; }
@@ -43,16 +43,18 @@
 #p1 .p1-topic p { margin-top: 8px; font-size: 20px; font-weight: 500; line-height: 1.4; letter-spacing: -0.02em; color: color-mix(in srgb, var(--paper) 78%, var(--navy)); }
 
 /* --- 02 역할 트리 --- */
-#p1 .p1-b2 { padding: 22px 20px; }
+#p1 .p1-b2 { padding: 22px 20px; justify-content: flex-start; }
+#p1 .p1-bus { flex: 1; min-height: 18px; position: relative; }
+#p1 .p1-bus > svg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
 #p1 .p1-org { display: flex; flex-direction: column; }
 #p1 .p1-lead {
   align-self: center; border-radius: 18px; background: var(--navy); color: var(--paper);
-  padding: 16px 28px; text-align: center;
+  padding: 18px 30px; text-align: center;
 }
 #p1 .p1-who { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 24px; font-weight: 800; line-height: 1.3; letter-spacing: -0.02em; }
 #p1 .p1-av { width: 14px; height: 14px; border-radius: 50%; background: var(--hec-green); display: block; flex: none; }
 #p1 .p1-lead .p1-role { margin-top: 4px; font-size: 24px; font-weight: 500; line-height: 1.35; letter-spacing: -0.025em; color: color-mix(in srgb, var(--paper) 85%, var(--navy)); }
-#p1 .p1-tree { display: block; width: 620px; height: 60px; }
+#p1 .p1-tree { display: block; width: 620px; height: 64px; }
 #p1 .p1-mems { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 14px; }
 #p1 .p1-mem { border-radius: 18px; background: var(--paper); border: 2px solid var(--line); padding: 14px 12px; text-align: center; }
 #p1 .p1-mem .p1-who { color: var(--navy); }
@@ -143,13 +145,13 @@
         <p class="p1-who"><i class="p1-av"></i>팀장 · 나</p>
         <p class="p1-role">프로젝트 총괄 ·<br>Dynamo 기반 자동화 알고리즘 개발</p>
       </div>
-      <svg class="p1-tree" viewBox="0 0 620 60" aria-hidden="true">
+      <svg class="p1-tree" viewBox="0 0 620 64" aria-hidden="true">
         <defs><linearGradient id="p1l-tree" gradientUnits="userSpaceOnUse" x1="98" y1="0" x2="522" y2="0"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient></defs>
         <g stroke="url(#p1l-tree)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="310" y1="0" x2="310" y2="60"/>
-          <path d="M98.7 60 V30 H521.3 V60"/>
+          <line x1="310" y1="0" x2="310" y2="64"/>
+          <path d="M98.7 64 V32 H521.3 V64"/>
         </g>
-        <circle cx="310" cy="30" r="6" fill="var(--sky-2)" stroke="var(--tint-blue)" stroke-width="3"/>
+        <circle cx="310" cy="32" r="6" fill="var(--sky-2)" stroke="var(--tint-blue)" stroke-width="3"/>
       </svg>
       <div class="p1-mems">
         <div class="p1-mem"><p class="p1-who"><i class="p1-av"></i>팀원 A</p><p class="p1-role">유닛 모듈러 설계 ·<br>배치계획</p></div>
@@ -157,6 +159,7 @@
         <div class="p1-mem"><p class="p1-who"><i class="p1-av"></i>팀원 C</p><p class="p1-role">리모델링 적용<br>시나리오 구성 ·<br>시연 영상 제작</p></div>
       </div>
       </div>
+      <div class="p1-bus"><svg viewBox="0 0 620 20" preserveAspectRatio="none" aria-hidden="true"><g stroke="var(--hec-green)" stroke-width="3" opacity=".45"><line x1="98.7" y1="0" x2="98.7" y2="20" vector-effect="non-scaling-stroke"/><line x1="310" y1="0" x2="310" y2="20" vector-effect="non-scaling-stroke"/><line x1="521.3" y1="0" x2="521.3" y2="20" vector-effect="non-scaling-stroke"/></g></svg></div>
       <p class="p1-share"><svg viewBox="0 0 26 26" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11A8.2 8.2 0 0 0 6 8.2M5 15a8.2 8.2 0 0 0 15 2.8"/><path d="M5.4 3.6v5h5M20.6 22.4v-5h-5"/></svg><span>이틀마다 진행상황 공유 · 피드백</span></p>
     </div>
 
