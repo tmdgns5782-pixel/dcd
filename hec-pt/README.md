@@ -8,6 +8,8 @@
 | `portrait.html` | 세로형 A4 비율 (1240×1754) 3장 |
 | `pdf/` | 위 두 파일을 PDF로 저장한 결과 (제출 형식 확인용) |
 | `preview/` | 장별 PNG 미리보기 |
+| `pptx/landscape.pptx`, `pptx/portrait.pptx` | HTML과 같은 모양의 PowerPoint 파일 |
+| `fonts-ttf/` | PowerPoint용 페이퍼로지 TTF (PPTX를 열기 전에 설치) |
 
 두 HTML은 폰트까지 파일 안에 들어 있어서, 파일 하나만 있어도 Chrome에서 그대로 열립니다.
 
@@ -15,6 +17,22 @@
 
 Chrome에서 HTML을 열고 `인쇄` → 대상 `PDF로 저장` → 여백 `없음`, `배경 그래픽` 체크.
 용지 크기는 파일에 지정되어 있어 3페이지로 나뉘어 저장됩니다.
+
+## PowerPoint(PPTX)
+
+1. `fonts-ttf/`의 TTF 7개를 먼저 설치합니다. PPTX는 굵기별 글꼴 이름(`Paperlogy 5 Medium`, `Paperlogy 7 Bold`, `Paperlogy 8 ExtraBold` 등)을 그대로 씁니다.
+   설치하지 않으면 다른 글꼴로 바뀌어 모양이 달라집니다.
+2. `pptx/landscape.pptx`(16:9) 또는 `pptx/portrait.pptx`(A4 세로)를 엽니다.
+
+변환 방식 — Chrome이 그린 HTML에서 위치·크기·색·줄바꿈을 그대로 읽어 옮깁니다.
+- **글자**: 화면의 한 줄이 텍스트 상자 하나입니다. 문구를 고칠 수 있고, 줄바꿈 위치는 HTML과 같습니다.
+- **단색 상자·칩·점·카드·핵심 메시지 상자**: PowerPoint 도형이라 색과 크기를 바꿀 수 있습니다.
+- **그라데이션 원, 곡선 연결선, 아이콘, 로고**: 도형으로 똑같이 만들 수 없어서 그 부분만 고해상도(3배) PNG로 넣었습니다.
+
+다른 프로그램에서 열 때: LibreOffice는 한글과 영문·숫자 사이에 간격을 자동으로 넣어("3주" → "3 주") 글자가 조금 밀립니다.
+PowerPoint 기준으로 맞춘 파일입니다.
+
+PPTX 다시 만들기: `npm install` 후 `node tools/build.cjs && node tools/to-pptx.cjs landscape.html portrait.html`
 
 ## 디자인 기준
 
