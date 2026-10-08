@@ -1,3 +1,177 @@
 <!-- portrait 2: 이 파일만 편집. 스타일은 #p2 로 범위를 한정 -->
 <style>
+#p2 .p2-wrap { position: relative; height: 100%; --spx: 600px; --green-ink: color-mix(in srgb, var(--hec-green) 72%, var(--navy)); }
+
+/* ---- 정체성 한 줄 ---- */
+#p2 .p2-quote {
+  position: absolute; left: 0; right: 0; top: 0; height: 64px;
+  display: flex; align-items: center; gap: 20px;
+  padding: 0 28px;
+  border-radius: 999px;
+  background: var(--tint-sky);
+  font-size: var(--fs-small); font-weight: 600; color: var(--ink-2);
+  letter-spacing: -0.02em; white-space: nowrap;
+}
+#p2 .p2-quote .p2-ql { font-size: var(--fs-eyebrow); font-weight: 700; color: var(--sky-2); letter-spacing: 0.02em; }
+#p2 .p2-quote .p2-qs { width: 2px; height: 22px; background: var(--line-2); }
+#p2 .p2-quote b { font-weight: 800; color: var(--hec-blue); }
+
+/* ---- 등식 축 (잇는 길) ---- */
+#p2 .p2-spine { position: absolute; left: calc(var(--spx) - 1.5px); top: 64px; width: 3px; height: 1116px; background: var(--grad-v); border-radius: 2px; }
+#p2 .p2-op {
+  position: absolute; left: calc(var(--spx) - 32px); width: 64px; height: 64px;
+}
+#p2 .p2-op svg { width: 100%; height: 100%; }
+
+/* ---- 블록 공통 ---- */
+#p2 .p2-blk { position: absolute; left: 0; right: 0; }
+#p2 .p2-fig { position: absolute; left: 0; top: 0; width: 560px; height: 100%; }
+#p2 .p2-fig > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+#p2 .p2-txt { position: absolute; left: 644px; right: 0; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: center; }
+#p2 .p2-eb { font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: 0.16em; }
+#p2 .p2-h { position: relative; margin-top: 6px; font-size: 72px; font-weight: 800; line-height: 1.1; letter-spacing: -0.04em; }
+#p2 .p2-node {
+  position: absolute; left: -60px; top: 50%; width: 32px; height: 32px; margin-top: -16px;
+  border-radius: 50%; border: 3px solid transparent;
+  background: linear-gradient(#fff, #fff) padding-box, var(--grad-v) border-box;
+  display: grid; place-items: center;
+}
+#p2 .p2-node i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+#p2 .p2-def { margin-top: 10px; font-size: var(--fs-h2); font-weight: 800; color: var(--navy); letter-spacing: -0.03em; line-height: 1.3; }
+#p2 .p2-p { margin-top: 14px; font-size: var(--fs-body); font-weight: 500; color: var(--ink-2); line-height: 1.5; letter-spacing: -0.02em; }
+
+/* ---- 우리 ---- */
+#p2 .p2-we { top: 100px; height: 470px; }
+#p2 .p2-we .p2-eb, #p2 .p2-we .p2-h { color: var(--hec-green); }
+#p2 .p2-we .p2-node i { background: var(--hec-green); }
+#p2 .p2-hn {
+  position: absolute; width: 100px; height: 100px; margin: -50px 0 0 -50px;
+  border-radius: 50%; border: 3px solid transparent;
+  background: linear-gradient(var(--tint-green), var(--tint-green)) padding-box, var(--grad-v) border-box;
+  display: grid; place-items: center; text-align: center;
+  font-size: 21px; font-weight: 700; color: var(--green-ink); letter-spacing: -0.03em; line-height: 1.15;
+}
+#p2 .p2-hc {
+  position: absolute; left: 280px; top: 252px; width: 168px; height: 168px; margin: -84px 0 0 -84px;
+  border-radius: 50%; border: 4px solid transparent;
+  background: linear-gradient(#fff, #fff) padding-box, var(--grad-v) border-box;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+}
+#p2 .p2-hc strong { font-size: 25px; font-weight: 800; color: var(--navy); letter-spacing: -0.03em; line-height: 1.2; }
+#p2 .p2-hc span { margin-top: 4px; font-size: 18px; font-weight: 700; color: var(--hec-green); letter-spacing: -0.02em; }
+
+/* ---- 기술 ---- */
+#p2 .p2-tech { top: 660px; height: 430px; }
+#p2 .p2-tech .p2-eb, #p2 .p2-tech .p2-h { color: var(--hec-blue); }
+#p2 .p2-tech .p2-node i { background: var(--hec-blue); }
+#p2 .p2-tc { position: absolute; left: 0; width: 120px; height: 52px; margin-top: -26px; justify-content: center; padding: 0; }
+#p2 .p2-tp {
+  position: absolute; left: 280px; top: 215px; width: 150px; height: 150px; margin: -75px 0 0 -75px;
+  text-align: center; font-size: 23px; font-weight: 800; color: var(--navy); line-height: 1.2; letter-spacing: -0.03em;
+}
+#p2 .p2-to { position: absolute; left: 420px; width: 140px; height: 50px; margin-top: -25px; padding: 0 18px; gap: 10px; }
+
+/* ---- 결론 ---- */
+#p2 .key { position: absolute; left: 0; right: 0; top: 1180px; height: 148px; padding: 0 44px; gap: 36px; }
+#p2 .key .key-text { font-size: 34px; }
 </style>
+
+<div class="p2-wrap">
+  <p class="p2-quote"><span class="p2-ql">가치체계 정체성</span><span class="p2-qs"></span><span>“공간과 에너지를 잇는 길 위에서, <b>우리의 기술</b>로 더 나은 삶을 만듭니다”</span></p>
+
+  <div class="p2-spine"></div>
+
+  <!-- 우리 -->
+  <section class="p2-blk p2-we">
+    <div class="p2-fig">
+      <svg viewBox="0 0 560 470" aria-hidden="true">
+        <defs>
+          <linearGradient id="p2p-l0" gradientUnits="userSpaceOnUse" x1="280" y1="102" x2="280" y2="168"><stop offset="0" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--sky-2)"/></linearGradient>
+          <linearGradient id="p2p-l1" gradientUnits="userSpaceOnUse" x1="422.7" y1="205.6" x2="359.9" y2="226"><stop offset="0" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--sky-2)"/></linearGradient>
+          <linearGradient id="p2p-l2" gradientUnits="userSpaceOnUse" x1="368.2" y1="373.4" x2="329.4" y2="320"><stop offset="0" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--sky-2)"/></linearGradient>
+          <linearGradient id="p2p-l3" gradientUnits="userSpaceOnUse" x1="191.8" y1="373.4" x2="230.6" y2="320"><stop offset="0" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--sky-2)"/></linearGradient>
+          <linearGradient id="p2p-l4" gradientUnits="userSpaceOnUse" x1="137.3" y1="205.6" x2="200.1" y2="226"><stop offset="0" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--sky-2)"/></linearGradient>
+        </defs>
+        <circle cx="280" cy="252" r="200" fill="none" stroke="var(--line)" stroke-width="2" stroke-dasharray="2 9" stroke-linecap="round"/>
+        <g stroke-width="3" stroke-linecap="round">
+          <line x1="280" y1="102" x2="280" y2="168" stroke="url(#p2p-l0)"/>
+          <line x1="422.7" y1="205.6" x2="359.9" y2="226" stroke="url(#p2p-l1)"/>
+          <line x1="368.2" y1="373.4" x2="329.4" y2="320" stroke="url(#p2p-l2)"/>
+          <line x1="191.8" y1="373.4" x2="230.6" y2="320" stroke="url(#p2p-l3)"/>
+          <line x1="137.3" y1="205.6" x2="200.1" y2="226" stroke="url(#p2p-l4)"/>
+        </g>
+        <g fill="var(--sky-2)">
+          <circle cx="280" cy="168" r="5"/><circle cx="359.9" cy="226" r="5"/><circle cx="329.4" cy="320" r="5"/><circle cx="230.6" cy="320" r="5"/><circle cx="200.1" cy="226" r="5"/>
+        </g>
+      </svg>
+      <div class="p2-hn" style="left:280px;top:52px">설계</div>
+      <div class="p2-hn" style="left:470.2px;top:190.2px">시공</div>
+      <div class="p2-hn" style="left:397.6px;top:413.8px">품질</div>
+      <div class="p2-hn" style="left:162.4px;top:413.8px">안전</div>
+      <div class="p2-hn" style="left:89.8px;top:190.2px">협력<br>업체</div>
+      <div class="p2-hc"><strong>하나의 목표</strong><span>프로젝트 완수</span></div>
+    </div>
+    <div class="p2-txt">
+      <p class="p2-eb">PEOPLE</p>
+      <h2 class="p2-h"><span class="p2-node"><i></i></span>우리</h2>
+      <p class="p2-def">사람과 전문성의 연결</p>
+      <p class="p2-p">서로 다른 전문가들이<br>하나의 목표, 프로젝트 완수로<br>이어집니다.</p>
+    </div>
+  </section>
+
+  <div class="p2-op" style="top:583px">
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <defs><linearGradient id="p2p-op1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--sky-2)"/></linearGradient></defs>
+      <circle cx="32" cy="32" r="30" fill="#fff" stroke="url(#p2p-op1)" stroke-width="3"/>
+      <path d="M32 21v22M21 32h22" stroke="var(--navy)" stroke-width="3.5" stroke-linecap="round"/>
+    </svg>
+  </div>
+
+  <!-- 기술 -->
+  <section class="p2-blk p2-tech">
+    <div class="p2-fig">
+      <svg viewBox="0 0 560 430" aria-hidden="true">
+        <defs>
+          <linearGradient id="p2p-ti" gradientUnits="userSpaceOnUse" x1="120" y1="0" x2="215" y2="0"><stop offset="0" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--sky-2)"/></linearGradient>
+          <linearGradient id="p2p-to" gradientUnits="userSpaceOnUse" x1="336" y1="0" x2="420" y2="0"><stop offset="0" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--sky-2)"/></linearGradient>
+        </defs>
+        <g fill="none" stroke-width="3" stroke-linecap="round">
+          <path d="M120 105C168 105 168 177 215 177" stroke="url(#p2p-ti)"/>
+          <path d="M120 215H205" stroke="url(#p2p-ti)"/>
+          <path d="M120 325C168 325 168 253 215 253" stroke="url(#p2p-ti)"/>
+          <path d="M336 165C380 165 380 89 420 89" stroke="url(#p2p-to)"/>
+          <path d="M353 198C390 198 390 173 420 173" stroke="url(#p2p-to)"/>
+          <path d="M353 232C390 232 390 257 420 257" stroke="url(#p2p-to)"/>
+          <path d="M336 265C380 265 380 341 420 341" stroke="url(#p2p-to)"/>
+        </g>
+      </svg>
+      <span class="chip tech p2-tc" style="top:105px">AI</span>
+      <span class="chip tech p2-tc" style="top:215px">BIM</span>
+      <span class="chip tech p2-tc" style="top:325px">데이터</span>
+      <div class="ring p2-tp">현장의<br>문제</div>
+      <span class="chip field p2-to" style="top:89px"><i class="dot field"></i>공정</span>
+      <span class="chip field p2-to" style="top:173px"><i class="dot field"></i>품질</span>
+      <span class="chip field p2-to" style="top:257px"><i class="dot field"></i>안전</span>
+      <span class="chip field p2-to" style="top:341px"><i class="dot field"></i>생산성</span>
+    </div>
+    <div class="p2-txt">
+      <p class="p2-eb">TECHNOLOGY</p>
+      <h2 class="p2-h"><span class="p2-node"><i></i></span>기술</h2>
+      <p class="p2-def">현장 문제 해결에 활용</p>
+      <p class="p2-p">AI · BIM · 데이터를 현장의 문제에<br>적용해 공정 · 품질 · 안전 ·<br>생산성의 성과로 잇습니다.</p>
+    </div>
+  </section>
+
+  <div class="p2-op" style="top:1103px">
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <defs><linearGradient id="p2p-op2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--sky-2)"/></linearGradient></defs>
+      <circle cx="32" cy="32" r="30" fill="#fff" stroke="url(#p2p-op2)" stroke-width="3"/>
+      <path d="M21 27h22M21 37h22" stroke="var(--navy)" stroke-width="3.5" stroke-linecap="round"/>
+    </svg>
+  </div>
+
+  <div class="key">
+    <p class="key-label"><span class="mark"><i></i><b></b><i></i><b></b><i></i></span>‘우리’의 ‘기술’</p>
+    <p class="key-text">사람과 전문성을 <em>하나의 목표</em>로,<br>기술을 <em>현장의 가치</em>로 연결하는 것</p>
+  </div>
+</div>
