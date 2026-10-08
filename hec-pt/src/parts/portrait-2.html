@@ -9,8 +9,8 @@
 /* ---- 정체성 한 줄 ---- */
 #p2 .p2-quote {
   position: absolute; left: 0; right: 0; top: 0; height: 64px;
-  display: flex; align-items: center; gap: 18px;
-  padding: 0 28px 0 26px;
+  display: flex; align-items: center; gap: 26px;
+  padding: 0 28px 0 46px;
   border-radius: 999px;
   background: var(--tint-sky);
   font-size: var(--fs-small); font-weight: 600; color: var(--ink-2);
@@ -18,11 +18,12 @@
 }
 #p2 .p2-quote .p2-ql { font-size: var(--fs-eyebrow); font-weight: 700; color: var(--sky-2); letter-spacing: 0.01em; }
 #p2 .p2-quote .p2-qs { width: 2px; height: 22px; background: var(--line-2); }
-#p2 .p2-quote b { font-weight: 800; color: var(--hec-blue); }
+#p2 .p2-quote .p2-hl { font-weight: 800; color: var(--hec-blue); }
+#p2 .p2-quote .p2-qr { flex: none; width: 20px; height: 20px; border-radius: 50%; border: 3px solid transparent; background: linear-gradient(var(--tint-sky), var(--tint-sky)) padding-box, var(--grad-v) border-box; }
 
 /* ---- 등식 축 ---- */
 #p2 .p2-spine { position: absolute; left: calc(var(--spx) - 1.5px); top: 64px; width: 3px; height: 1104px; background: var(--grad-v); }
-#p2 .p2-tip { position: absolute; left: calc(var(--spx) - 6px); width: 12px; height: 12px; border-radius: 50%; background: var(--sky-2); }
+#p2 .p2-tip { position: absolute; left: calc(var(--spx) - 7px); width: 14px; height: 14px; border-radius: 50%; background: var(--sky-2); box-shadow: 0 0 0 3px var(--paper); }
 #p2 .p2-op { position: absolute; left: calc(var(--spx) - 34px); width: 68px; height: 68px; }
 #p2 .p2-op svg { width: 100%; height: 100%; }
 
@@ -68,7 +69,7 @@
 #p2 .p2-hc span { margin-top: 6px; font-size: 18px; font-weight: 700; color: var(--green-ink); letter-spacing: -0.02em; }
 
 /* ---- 기술 ---- */
-#p2 .p2-tech { top: 650px; height: 430px; }
+#p2 .p2-tech { top: 640px; height: 430px; }
 #p2 .p2-tech .p2-eb, #p2 .p2-tech .p2-h { color: var(--hec-blue); }
 #p2 .p2-tech .p2-node i { background: var(--hec-blue); }
 #p2 .p2-tc { position: absolute; left: 0; width: 116px; height: 54px; margin-top: -27px; justify-content: center; padding: 0; font-size: 22px; }
@@ -82,14 +83,14 @@
 /* ---- 결론 ---- */
 #p2 .key { position: absolute; left: 0; right: 0; top: 1168px; height: 158px; padding: 0 48px; gap: 40px; }
 #p2 .key .key-label { font-size: 20px; letter-spacing: 0.04em; gap: 14px; }
-#p2 .key .key-text { font-size: 36px; line-height: 1.32; }
+#p2 .key .key-text { font-size: 38px; line-height: 1.3; }
 </style>
 
 <div class="p2-wrap">
-  <p class="p2-quote"><span class="mark"><i></i><b></b><i></i><b></b><i></i></span><span class="p2-ql">가치체계 정체성</span><span class="p2-qs"></span><span>“공간과 에너지를 잇는 길 위에서, <b>우리의 기술</b>로 더 나은 삶을 만듭니다”</span></p>
+  <p class="p2-quote"><span class="p2-qr"></span><span class="p2-ql">가치체계 정체성</span><span class="p2-qs"></span><span>“공간과 에너지를 잇는 길 위에서, <b class="p2-hl">우리의 기술</b>로 더 나은 삶을 만듭니다”</span></p>
 
   <div class="p2-spine"></div>
-  <span class="p2-tip" style="top:58px"></span>
+  <span class="p2-tip" style="top:57px"></span>
 
   <!-- 우리 = 사람과 전문성의 연결 -->
   <section class="p2-blk p2-we">
@@ -125,11 +126,11 @@
       <p class="p2-eb">PEOPLE</p>
       <h2 class="p2-h"><span class="p2-node"><i></i></span>우리</h2>
       <p class="p2-def">사람과 전문성의 연결</p>
-      <p class="p2-p">설계부터 협력업체까지,<br>서로 다른 전문가들이<br><strong>하나의 목표</strong>인 프로젝트 완수로<br>이어집니다.</p>
+      <p class="p2-p">설계부터 협력업체까지, 서로 다른<br>전문가들이 <strong>하나의 목표</strong>인<br>프로젝트 완수로 이어집니다.</p>
     </div>
   </section>
 
-  <div class="p2-op" style="top:579px">
+  <div class="p2-op" style="top:587px">
     <svg viewBox="0 0 68 68" aria-hidden="true">
       <defs><linearGradient id="p2p-op1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--sky-2)"/></linearGradient></defs>
       <circle cx="34" cy="34" r="32" fill="var(--paper)" stroke="url(#p2p-op1)" stroke-width="3"/>
@@ -168,11 +169,11 @@
       <p class="p2-eb">TECHNOLOGY</p>
       <h2 class="p2-h"><span class="p2-node"><i></i></span>기술</h2>
       <p class="p2-def">현장 문제 해결에 활용</p>
-      <p class="p2-p">AI · BIM · 데이터를<br><strong>현장의 문제</strong>를 푸는 데 활용해<br>공정 · 품질 · 안전 · 생산성을<br>높입니다.</p>
+      <p class="p2-p">AI · BIM · 데이터를 <strong>현장의 문제</strong>에<br>적용해, 공정 · 품질 · 안전 · 생산성의<br>개선으로 연결합니다.</p>
     </div>
   </section>
 
-  <div class="p2-op" style="top:1090px">
+  <div class="p2-op" style="top:1062px">
     <svg viewBox="0 0 68 68" aria-hidden="true">
       <defs><linearGradient id="p2p-op2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--sky-2)"/></linearGradient></defs>
       <circle cx="34" cy="34" r="32" fill="var(--paper)" stroke="url(#p2p-op2)" stroke-width="3"/>
@@ -180,6 +181,7 @@
     </svg>
   </div>
 
+  <span class="p2-tip" style="top:1161px"></span>
   <div class="key">
     <p class="key-label"><span class="mark"><i></i><b></b><i></i><b></b><i></i></span>‘우리’의 ‘기술’</p>
     <p class="key-text">사람과 전문성을 <em>하나의 목표</em>로,<br>기술을 <em>현장의 가치</em>로 연결하는 것</p>

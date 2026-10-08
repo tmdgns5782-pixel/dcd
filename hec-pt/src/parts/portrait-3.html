@@ -2,7 +2,9 @@
 <style>
 #p3 .p3w { position: absolute; inset: 0 0 12px 0; display: flex; flex-direction: column; }
 #p3 .dia { position: relative; width: 1072px; height: 1150px; flex: none; }
-#p3 .dia > svg { position: absolute; left: 0; top: 0; }
+#p3 .dia > svg { position: absolute; left: 0; top: 0; z-index: 1; }
+#p3 .dia .ring { z-index: 2; }
+#p3 .joint { z-index: 2; }
 #p3 .ln { fill: none; stroke: url(#p3p-grad); stroke-width: 3; stroke-linecap: round; }
 #p3 .fan { fill: none; stroke: url(#p3p-fan); stroke-width: 2.5; stroke-linecap: round; }
 #p3 .d-sky { fill: var(--sky-2); }
@@ -25,29 +27,29 @@
 #p3 .fd + .fd { margin-top: 4px; font-weight: 500; color: var(--ink-2); font-size: var(--fs-small); }
 
 #p3 .node { position: absolute; }
-#p3 .ring.field { width: 150px; height: 150px; left: 461px; top: 0px; }
+#p3 .ring.field { width: 172px; height: 172px; left: 450px; top: 0px; }
 #p3 .ring .nl { text-align: center; line-height: 1.15; }
 #p3 .ring .nl small { display: block; font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: 0.14em; color: var(--sky-2); margin-bottom: 4px; }
 #p3 .ring .nl b { display: block; font-size: var(--fs-h3); font-weight: 800; color: var(--navy); letter-spacing: -0.03em; }
 
-#p3 .joint { position: absolute; left: 448px; top: 212px; width: 176px; height: 52px; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 999px; border: 3px solid transparent; background: linear-gradient(#fff, #fff) padding-box, var(--grad) border-box; font-size: var(--fs-small); font-weight: 700; color: var(--navy); letter-spacing: -0.02em; white-space: nowrap; }
+#p3 .joint { position: absolute; left: 444px; top: 244px; width: 184px; height: 54px; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 999px; border: 3px solid transparent; background: linear-gradient(#fff, #fff) padding-box, var(--grad) border-box; font-size: var(--fs-small); font-weight: 700; color: var(--navy); letter-spacing: -0.02em; white-space: nowrap; }
 #p3 .joint svg { width: 20px; height: 20px; }
 
 /* branch cards */
-#p3 .card { position: absolute; top: 360px; width: 520px; height: 392px; border-radius: var(--radius); }
+#p3 .card { position: absolute; top: 406px; width: 520px; height: 352px; border-radius: var(--radius); }
 #p3 .card.people { left: 0; background: var(--tint-green); }
 #p3 .card.tech { left: 552px; background: var(--tint-blue); }
-#p3 .card .ring { position: absolute; top: 30px; width: 96px; height: 96px; }
+#p3 .card .ring { position: absolute; top: 30px; width: 100px; height: 100px; }
 #p3 .card.people .ring { right: 30px; }
 #p3 .card.tech .ring { left: 30px; }
 #p3 .card .ring b { font-size: var(--fs-h3); font-weight: 800; letter-spacing: -0.03em; }
 #p3 .card.people .ring b { color: color-mix(in srgb, var(--hec-green) 80%, #000); }
 #p3 .card.tech .ring b { color: var(--hec-blue); }
 #p3 .card .txt { position: absolute; top: 30px; bottom: 30px; display: flex; flex-direction: column; }
-#p3 .card.people .txt { left: 30px; right: 152px; }
-#p3 .card.tech .txt { left: 152px; right: 30px; }
-#p3 .card ul { margin-top: 26px; display: flex; flex-direction: column; gap: 14px; }
-#p3 .card li { display: flex; align-items: baseline; gap: 12px; font-size: var(--fs-body); font-weight: 600; color: var(--ink); letter-spacing: -0.025em; line-height: 1.35; }
+#p3 .card.people .txt { left: 30px; right: 156px; }
+#p3 .card.tech .txt { left: 156px; right: 30px; }
+#p3 .card ul { margin-top: 24px; display: flex; flex-direction: column; gap: 10px; }
+#p3 .card li { display: flex; align-items: baseline; gap: 12px; background: #fff; border-radius: 14px; padding: 13px 18px; font-size: var(--fs-body); font-weight: 600; color: var(--ink); letter-spacing: -0.025em; line-height: 1.35; }
 #p3 .card li::before { content: ""; flex: none; width: 9px; height: 9px; border-radius: 50%; transform: translateY(-4px); }
 #p3 .card.people li::before { background: var(--hec-green); }
 #p3 .card.tech li::before { background: var(--hec-blue); }
@@ -55,10 +57,10 @@
 #p3 .card .ref .num { font-weight: 800; color: var(--ink-3); letter-spacing: 0.04em; }
 
 /* improve */
-#p3 .ring.imp { width: 176px; height: 176px; left: 448px; top: 864px; }
+#p3 .ring.imp { width: 204px; height: 204px; left: 434px; top: 906px; }
 #p3 .ring.imp .nl small { color: rgba(255,255,255,.78); }
 #p3 .ring.imp .nl b { color: #fff; font-size: var(--fs-h3); }
-#p3 .out { position: absolute; left: 712px; height: 50px; transform: translateY(-50%); padding: 0 22px 0 18px; gap: 12px; font-size: var(--fs-small); font-weight: 600; }
+#p3 .out { position: absolute; left: 730px; height: 54px; transform: translateY(-50%); padding: 0 22px 0 18px; gap: 12px; font-size: var(--fs-small); font-weight: 600; }
 #p3 .out .dot { width: 12px; height: 12px; }
 #p3 .out b { font-weight: 800; }
 
@@ -68,40 +70,40 @@
   <div class="dia">
     <svg width="1072" height="1150" viewBox="0 0 1072 1150" aria-hidden="true">
       <defs>
-        <linearGradient id="p3p-grad" gradientUnits="userSpaceOnUse" x1="0" y1="150" x2="0" y2="864">
+        <linearGradient id="p3p-grad" gradientUnits="userSpaceOnUse" x1="0" y1="172" x2="0" y2="906">
           <stop offset="0" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--sky-2)"/>
         </linearGradient>
-        <linearGradient id="p3p-fan" gradientUnits="userSpaceOnUse" x1="624" y1="0" x2="712" y2="0">
+        <linearGradient id="p3p-fan" gradientUnits="userSpaceOnUse" x1="638" y1="0" x2="730" y2="0">
           <stop offset="0" stop-color="var(--sky-2)"/><stop offset="1" stop-color="var(--hec-yellow)"/>
         </linearGradient>
       </defs>
-      <path class="ln" d="M536,150 V212"/>
-      <path class="ln" d="M536,264 V298"/>
-      <path class="ln" d="M536,298 C536,324 442,324 442,350 V390"/>
-      <path class="ln" d="M536,298 C536,324 630,324 630,350 V390"/>
-      <path class="ln" d="M442,486 V778 C442,806 536,806 536,834"/>
-      <path class="ln" d="M630,486 V778 C630,806 536,806 536,834"/>
-      <path class="ln" d="M536,834 V864"/>
-      <path class="fan" d="M624,952 C672.4,952 663.6,859 712,859"/>
-      <path class="fan" d="M624,952 C672.4,952 663.6,921 712,921"/>
-      <path class="fan" d="M624,952 C672.4,952 663.6,983 712,983"/>
-      <path class="fan" d="M624,952 C672.4,952 663.6,1045 712,1045"/>
-      <circle class="d-sky" cx="536" cy="298" r="7"/>
-      <circle class="d-green" cx="442" cy="360" r="7"/>
-      <circle class="d-blue" cx="630" cy="360" r="7"/>
-      <circle class="d-green" cx="442" cy="752" r="7"/>
-      <circle class="d-blue" cx="630" cy="752" r="7"/>
-      <circle class="d-sky" cx="536" cy="834" r="7"/>
-      <circle class="d-yel" cx="624" cy="952" r="8"/>
+      <path class="ln" d="M536,172 V244"/>
+      <path class="ln" d="M536,298 V334"/>
+      <path class="ln" d="M536,334 C536,370 440,370 440,406 V436"/>
+      <path class="ln" d="M536,334 C536,370 632,370 632,406 V436"/>
+      <path class="ln" d="M440,536 V794 C440,832 536,832 536,870"/>
+      <path class="ln" d="M632,536 V794 C632,832 536,832 536,870"/>
+      <path class="ln" d="M536,870 V906"/>
+      <path class="fan" d="M638,1008 C688.6,1008 679.4,900 730,900"/>
+      <path class="fan" d="M638,1008 C688.6,1008 679.4,972 730,972"/>
+      <path class="fan" d="M638,1008 C688.6,1008 679.4,1044 730,1044"/>
+      <path class="fan" d="M638,1008 C688.6,1008 679.4,1116 730,1116"/>
+      <circle class="d-sky" cx="536" cy="334" r="7"/>
+      <circle class="d-green" cx="440" cy="406" r="7"/>
+      <circle class="d-blue" cx="632" cy="406" r="7"/>
+      <circle class="d-green" cx="440" cy="758" r="7"/>
+      <circle class="d-blue" cx="632" cy="758" r="7"/>
+      <circle class="d-sky" cx="536" cy="870" r="7"/>
+      <circle class="d-yel" cx="638" cy="1008" r="8"/>
     </svg>
 
     <!-- STEP 1 FIELD -->
     <div class="ring field node"><div class="nl"><small>FIELD</small><b>현장</b></div></div>
-    <div class="side l" style="--r:651px; top:75px">
+    <div class="side l" style="--r:662px; top:86px">
       <div class="eb field"><i class="dot field"></i>STEP 01</div>
       <div class="tt">현장을 이해한다</div>
     </div>
-    <div class="side r" style="--l:651px; top:75px">
+    <div class="side r" style="--l:662px; top:86px">
       <div class="fd">공정 · 품질 · 안전</div>
       <div class="fd">시공관리 기본기</div>
     </div>
@@ -139,14 +141,14 @@
 
     <!-- STEP 4 IMPROVE -->
     <div class="ring solid imp node"><div class="nl"><small>IMPROVE</small><b>문제 해결</b></div></div>
-    <div class="side l" style="--r:664px; top:952px">
+    <div class="side l" style="--r:678px; top:1008px">
       <div class="eb field"><i class="dot field"></i>STEP 04</div>
-      <div class="tt">현장의 변화를<br>만든다</div>
+      <div class="tt">현장의 변화를 만든다</div>
     </div>
-    <span class="chip field out" style="top:859px"><i class="dot field"></i><span><b>공정</b> 개선</span></span>
-    <span class="chip field out" style="top:921px"><i class="dot field"></i><span><b>품질</b> 개선</span></span>
-    <span class="chip field out" style="top:983px"><i class="dot field"></i><span><b>안전</b> 개선</span></span>
-    <span class="chip field out" style="top:1045px"><i class="dot field"></i><span><b>생산성</b> 개선</span></span>
+    <span class="chip field out" style="top:900px"><i class="dot field"></i><span><b>공정</b> 개선</span></span>
+    <span class="chip field out" style="top:972px"><i class="dot field"></i><span><b>품질</b> 개선</span></span>
+    <span class="chip field out" style="top:1044px"><i class="dot field"></i><span><b>안전</b> 개선</span></span>
+    <span class="chip field out" style="top:1116px"><i class="dot field"></i><span><b>생산성</b> 개선</span></span>
   </div>
 
   <div class="key">

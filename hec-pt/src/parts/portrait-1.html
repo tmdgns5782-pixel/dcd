@@ -1,9 +1,9 @@
 <!-- portrait 1: 협업 경험 — 세로 여정(링 + 그래디언트 길). 스타일은 #p1 로 범위를 한정 -->
 <style>
-#p1 .p1p { height: 100%; padding-bottom: 12px; display: flex; flex-direction: column; gap: 36px; }
+#p1 .p1p { height: calc(100% - 12px); display: flex; flex-direction: column; gap: 36px; }
 
 /* ---- 여정 ---- */
-#p1 .p1p-journey { --x: 98px; --ring: 196px; position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; }
+#p1 .p1p-journey { --x: 104px; --ring: 208px; position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; }
 #p1 .p1p-path { position: absolute; left: calc(var(--x) - 1.5px); width: 3px; top: 24px; bottom: 24px; border-radius: 2px; background: var(--grad-v); }
 #p1 .p1p-joint { position: relative; height: 0; }
 #p1 .p1p-joint i { position: absolute; left: calc(var(--x) - 7px); top: -7px; width: 14px; height: 14px; border-radius: 50%; border: 3px solid var(--paper); box-sizing: border-box; }
@@ -24,7 +24,7 @@
 /* 단계 행 */
 #p1 .p1p-row { position: relative; z-index: 1; display: flex; align-items: center; gap: 40px; }
 #p1 .p1p-ring { position: relative; flex: none; width: var(--ring); height: var(--ring); display: block; }
-#p1 .p1p-ring svg { position: absolute; left: 0; top: 0; width: 190px; height: 190px; }
+#p1 .p1p-ring svg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
 #p1 .p1p-lb { position: absolute; transform: translate(-50%, -50%); font-size: 18px; font-weight: 700; line-height: 1.15; color: var(--ink-2); white-space: nowrap; text-align: center; letter-spacing: -0.02em; }
 #p1 .p1p-lb.core { color: var(--paper); }
 #p1 .p1p-lb.award { color: var(--navy); font-weight: 800; }
@@ -35,7 +35,7 @@
 #p1 .p1p-eb s { width: 22px; height: 2px; background: var(--line-2); display: block; text-decoration: none; }
 #p1 .p1p-ttl { margin-top: 6px; font-size: var(--fs-h3); font-weight: 700; color: var(--navy); letter-spacing: -0.03em; line-height: 1.3; }
 #p1 .p1p-facts { margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-#p1 .p1p-facts li { display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 0 20px; border: 2px solid var(--line); border-radius: 16px; font-size: var(--fs-small); font-weight: 600; color: var(--ink-2); letter-spacing: -0.02em; line-height: 1.3; }
+#p1 .p1p-facts li { display: flex; align-items: center; gap: 12px; min-height: 66px; padding: 0 20px; border: 2px solid var(--line); border-radius: 16px; font-size: var(--fs-body); font-weight: 600; color: var(--ink-2); letter-spacing: -0.02em; line-height: 1.3; }
 #p1 .p1p-facts li::before { content: ""; flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--c, var(--ink-3)); }
 #p1 .s1 { --c: var(--ink-3); }
 #p1 .s2 { --c: var(--hec-blue); }
@@ -58,7 +58,7 @@
 #p1 .p1p-ring .medal { fill: var(--hec-yellow); }
 #p1 .p1p-ring .medal-in { fill: none; stroke: var(--paper); stroke-width: 2; stroke-opacity: .85; }
 #p1 .p1p-ring .tail { fill: var(--hec-yellow); }
-#p1 .p1p-ring .rim { fill: var(--paper); stroke: url(#p1p-rim); stroke-width: 3; }
+#p1 .p1p-ring .rim { fill: var(--paper); stroke: url(#p1p-rim); stroke-width: 2.75; }
 
 /* 핵심 메시지 */
 #p1 .p1p .key { flex: none; }
@@ -70,7 +70,7 @@
 
     <!-- 시작: 마감 3주 전 + 배경 -->
     <div class="p1p-edge">
-      <div class="p1p-time"><span><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.6" fill="none" stroke="var(--sky-2)" stroke-width="2"/><path d="M8 4.6V8l2.4 1.6" fill="none" stroke="var(--sky-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>마감 3주 전</span></div>
+      <div class="p1p-time"><span><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.6" fill="none" style="stroke:var(--sky-2)" stroke-width="2"/><path d="M8 4.6V8l2.4 1.6" fill="none" style="stroke:var(--sky-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>마감 3주 전</span></div>
       <div class="p1p-ctx">
         <span class="eyebrow">BACKGROUND</span>
         <span class="chip tech">학생 BIM 경진대회</span>
@@ -83,9 +83,9 @@
     <div class="p1p-row s1">
       <div class="p1p-ring">
         <svg viewBox="0 0 190 190" aria-hidden="true">
-          <defs><linearGradient id="p1p-rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--sky-2)"/></linearGradient></defs>
-          <circle class="rim" cx="95" cy="95" r="93.5"/>
-          <line class="dv" x1="95" y1="42" x2="95" y2="138"/>
+          <defs><linearGradient id="p1p-rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient></defs>
+          <circle class="rim" cx="95" cy="95" r="93.6"/>
+          <line class="dv" x1="95" y1="40" x2="95" y2="104"/>
           <line class="pl" x1="54" y1="60" x2="54" y2="88"/>
           <line class="pl" x1="136" y1="60" x2="136" y2="88"/>
           <circle class="pp" cx="54" cy="60" r="11"/><circle class="pp" cx="54" cy="88" r="11"/>
@@ -93,8 +93,8 @@
           <path class="ar" d="M37 74H17M23 68l-6 6 6 6"/>
           <path class="ar" d="M153 74h20M167 68l6 6-6 6"/>
         </svg>
-        <span class="p1p-lb" style="left:54px;top:124px">참신성</span>
-        <span class="p1p-lb" style="left:136px;top:124px">구현 가능성</span>
+        <span class="p1p-lb" style="left:58px;top:136px">참신성</span>
+        <span class="p1p-lb" style="left:150px;top:136px">구현 가능성</span>
       </div>
       <div class="p1p-txt">
         <div class="p1p-eb"><b>01</b><s></s><span class="eyebrow">CONFLICT</span></div>
@@ -109,7 +109,7 @@
     <div class="p1p-row s2">
       <div class="p1p-ring">
         <svg viewBox="0 0 190 190" aria-hidden="true">
-          <circle class="rim" cx="95" cy="95" r="93.5"/>
+          <circle class="rim" cx="95" cy="95" r="93.6"/>
           <circle class="halo" cx="95" cy="95" r="47"/>
           <circle class="core" cx="95" cy="95" r="37"/>
           <circle class="pp" cx="42.7" cy="42.7" r="11"/><circle class="pp" cx="147.3" cy="42.7" r="11"/>
@@ -119,7 +119,7 @@
           <path class="ar blue" d="M54.1 135.9L62.2 127.8M55.2 127.8H62.2V134.8"/>
           <path class="ar blue" d="M135.9 135.9L127.8 127.8M134.8 127.8H127.8V134.8"/>
         </svg>
-        <span class="p1p-lb core" style="left:95px;top:95px">공통<br>기준</span>
+        <span class="p1p-lb core" style="left:104px;top:104px">공통<br>기준</span>
       </div>
       <div class="p1p-txt">
         <div class="p1p-eb"><b>02</b><s></s><span class="eyebrow">ALIGN</span></div>
@@ -134,10 +134,10 @@
     <div class="p1p-row s3">
       <div class="p1p-ring">
         <svg viewBox="0 0 190 190" aria-hidden="true">
-          <circle class="rim" cx="95" cy="95" r="93.5"/>
+          <circle class="rim" cx="95" cy="95" r="93.6"/>
           <circle class="orb" cx="95" cy="95" r="77"/>
-          <path class="ar blue" d="M163.5 60.5l3.2 8.6 8.6-3.4"/>
-          <path class="ar blue" d="M26.5 129.5l-3.2-8.6-8.6 3.4"/>
+          <path class="ar blue" d="M153.3 37.5L154 45.5L146.3 43.4"/>
+          <path class="ar blue" d="M36.7 152.5L36 144.5L43.7 146.6"/>
           <path class="pl soft" d="M95 39L151 95L95 151L39 95Z M95 39V151 M39 95H151"/>
           <circle class="pp" cx="95" cy="39" r="14"/><circle class="pp" cx="151" cy="95" r="14"/>
           <circle class="pp" cx="95" cy="151" r="14"/><circle class="pp" cx="39" cy="95" r="14"/>
@@ -160,7 +160,7 @@
     <div class="p1p-row s4">
       <div class="p1p-ring">
         <svg viewBox="0 0 190 190" aria-hidden="true">
-          <circle class="rim" cx="95" cy="95" r="93.5"/>
+          <circle class="rim" cx="95" cy="95" r="93.6"/>
           <path class="pl soft" d="M28 58L60 95M21 82L60 95M21 108L60 95M28 132L60 95"/>
           <circle class="pp" cx="28" cy="58" r="8"/><circle class="pp" cx="21" cy="82" r="8"/>
           <circle class="pp" cx="21" cy="108" r="8"/><circle class="pp" cx="28" cy="132" r="8"/>
@@ -171,7 +171,7 @@
           <circle class="medal" cx="138" cy="93" r="37"/>
           <circle class="medal-in" cx="138" cy="93" r="31"/>
         </svg>
-        <span class="p1p-lb award" style="left:138px;top:93px">장려상</span>
+        <span class="p1p-lb award" style="left:151px;top:102px">장려상</span>
       </div>
       <div class="p1p-txt">
         <div class="p1p-eb"><b>04</b><s></s><span class="eyebrow">RESULT</span></div>
@@ -182,7 +182,7 @@
 
     <!-- 끝: 3주 내 완수 -->
     <div class="p1p-edge">
-      <div class="p1p-time end"><span><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="var(--hec-yellow)"/><path d="M4.8 8.2l2.2 2.2 4.2-4.4" fill="none" stroke="var(--paper)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>3주 내 완수</span></div>
+      <div class="p1p-time end"><span><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" style="fill:var(--hec-yellow)"/><path d="M4.8 8.2l2.2 2.2 4.2-4.4" fill="none" style="stroke:var(--paper)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>3주 내 완수</span></div>
     </div>
   </div>
 
