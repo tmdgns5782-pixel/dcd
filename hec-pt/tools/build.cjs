@@ -37,6 +37,11 @@ for (const file of targets) {
     const uri = `data:${mime};base64,${fs.readFileSync(logo).toString('base64')}`;
     html = html.split('src="logo.png"').join(`src="${uri}"`);
   }
+  // assets/ 아래 이미지(영상 썸네일 등)도 파일 안에 넣어, HTML 하나만으로 열리게 한다
+  html = html.replace(/src="(assets\/[^"]+\.(png|jpe?g|svg))"/g, (_, rel, ext) => {
+    const mime = ext === 'svg' ? 'image/svg+xml' : ext === 'png' ? 'image/png' : 'image/jpeg';
+    return `src="data:${mime};base64,${fs.readFileSync(path.join(ROOT, rel)).toString('base64')}"`;
+  });
   const outArg = process.env.OUT;
   const out = outArg ? path.resolve(outArg) : path.join(ROOT, path.basename(file));
   fs.writeFileSync(out, html);

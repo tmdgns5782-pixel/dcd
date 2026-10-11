@@ -20,8 +20,15 @@ const FORMATS = {
   portrait: { pxPerIn: 150, layout: 'HEC_A4' },
 };
 
-const FACE = { 300: 'Paperlogy 3 Light', 400: 'Paperlogy 4 Regular', 500: 'Paperlogy 5 Medium', 600: 'Paperlogy 6 SemiBold', 700: 'Paperlogy 7 Bold', 800: 'Paperlogy 8 ExtraBold', 900: 'Paperlogy 9 Black' };
-const faceFor = (w) => FACE[Math.min(900, Math.max(300, Math.round(w / 100) * 100))];
+const FAMILIES = {
+  Paperlogy: { 300: ['Paperlogy 3 Light'], 400: ['Paperlogy 4 Regular'], 500: ['Paperlogy 5 Medium'], 600: ['Paperlogy 6 SemiBold'], 700: ['Paperlogy 7 Bold'], 800: ['Paperlogy 8 ExtraBold'], 900: ['Paperlogy 9 Black'] },
+  // Windows에 설치되는 Pretendard 정적 글꼴 이름. Bold는 'Pretendard' 계열의 굵게(b=1)
+  Pretendard: { 300: ['Pretendard Light'], 400: ['Pretendard'], 500: ['Pretendard Medium'], 600: ['Pretendard SemiBold'], 700: ['Pretendard', true], 800: ['Pretendard ExtraBold'], 900: ['Pretendard Black'] },
+};
+let FACE = FAMILIES.Paperlogy;
+const pick = (w) => FACE[Math.min(900, Math.max(300, Math.round(w / 100) * 100))];
+const faceFor = (w) => pick(w)[0];
+const boldFor = (w) => !!pick(w)[1];
 
 // ---------------------------------------------------------------- 페이지 안에서 실행
 function prepare() {
@@ -322,7 +329,9 @@ async function convert(file) {
   const ptPerPx = 72 / fmt.pxPerIn;
   pres.defineLayout({ name: fmt.layout, width: first.w * k, height: first.h * k });
   pres.layout = fmt.layout;
-  pres.theme = { headFontFace: FACE[800], bodyFontFace: FACE[500] };
+  const family = await page.evaluate(() => getComputedStyle(document.body).fontFamily.split(',')[0].replace(/["']/g, '').trim());
+  FACE = FAMILIES[family] || FAMILIES.Paperlogy;
+  pres.theme = { headFontFace: FACE[800][0], bodyFontFace: FACE[500][0] };
   pres.title = name === 'portrait' ? '현대엔지니어링 PT · 세로형' : '현대엔지니어링 PT · 가로형';
 
   const stats = { shapes: 0, images: 0, lines: 0 };
@@ -331,6 +340,8 @@ async function convert(file) {
     await page.evaluate((i) => document.querySelectorAll('.slide').forEach((s, j) => { s.style.display = j === i ? '' : 'none'; }), si);
     const data = await page.evaluate(extract, si);
     const slide = pres.addSlide();
+    const notes = await page.evaluate((i) => document.querySelectorAll('.slide')[i].getAttribute('data-notes'), si);
+    if (notes) slide.addNotes(notes);
     slide.background = { color: 'FFFFFF' };
     const S = await page.evaluate((i) => { const r = document.querySelectorAll('.slide')[i].getBoundingClientRect(); return { x: r.left, y: r.top }; }, si);
 
@@ -375,7 +386,7 @@ async function convert(file) {
       const runs = ln.runs.map((r) => ({
         text: r.text,
         options: {
-          fontFace: faceFor(r.style.weight), fontSize: +(r.style.size * ptPerPx).toFixed(2), color: r.style.color,
+          fontFace: faceFor(r.style.weight), bold: boldFor(r.style.weight) || undefined, fontSize: +(r.style.size * ptPerPx).toFixed(2), color: r.style.color,
           transparency: r.style.alpha < 0.999 ? Math.round((1 - r.style.alpha) * 100) : undefined,
           charSpacing: r.style.ls ? +(r.style.ls * ptPerPx).toFixed(2) : undefined, lang: 'ko-KR',
         },
@@ -414,7 +425,7 @@ async function fixEastAsianFonts(file) {
     // pptxgenjs는 ea 글꼴에 중국어 문자셋(-122)을 붙인다 → 한국어(-127)로
     xml = xml.replace(/(<a:ea typeface="[^"]+" pitchFamily="\d+") charset="-122"/g, '$1 charset="-127"');
     // 테마의 동아시아 기본 글꼴도 페이퍼로지로
-    xml = xml.replace(/<a:ea typeface=""\/>/g, `<a:ea typeface="${FACE[500]}"/>`);
+    xml = xml.replace(/<a:ea typeface=""\/>/g, `<a:ea typeface="${FACE[500][0]}"/>`);
     zip.file(n, xml);
   }
   fs.writeFileSync(file, await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' }));
