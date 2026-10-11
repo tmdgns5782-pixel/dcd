@@ -1,8 +1,8 @@
 <!-- landscape 3 (v7): 이 파일만 편집. 스타일은 #p3 로 범위를 한정 -->
 <style>
 #p3 .p3l { height: calc(100% - 10px); display: flex; flex-direction: column; }
-#p3 .p3l .stage { position: relative; width: 1728px; height: 520px; flex: none; margin: auto 0; }
-#p3 .p3l .stage > svg { position: absolute; left: 0; top: 0; width: 1728px; height: 520px; }
+#p3 .p3l .stage { position: relative; width: 1728px; height: 590px; flex: none; margin-top: 4px; }
+#p3 .p3l .stage > svg { position: absolute; left: 0; top: 0; width: 1728px; height: 590px; }
 #p3 .p3l .a { position: absolute; }
 
 /* flow line */
@@ -31,7 +31,7 @@
 #p3 .p3l .ls li::before { content: ""; width: 10px; height: 2px; background: var(--line-2); flex: none; }
 
 /* STEP 04 focal box */
-#p3 .p3l .focus { left: 1160px; top: 118px; width: 568px; padding: 28px 32px; border-radius: var(--radius);
+#p3 .p3l .focus { left: 1160px; top: 142px; width: 568px; padding: 28px 32px; border-radius: var(--radius);
   background: var(--navy); color: var(--paper); }
 #p3 .p3l .focus .no b, #p3 .p3l .focus .no span { color: var(--sky); }
 #p3 .p3l .focus .tt { color: var(--paper); }
@@ -42,34 +42,34 @@
 #p3 .p3l .focus .ls b { font-weight: 700; }
 
 /* outcomes row */
-#p3 .p3l .out { left: 1160px; top: 370px; width: 568px; display: flex; justify-content: space-between; }
+#p3 .p3l .out { left: 1160px; top: 392px; width: 568px; display: flex; justify-content: space-between; }
 #p3 .p3l .out li { display: flex; align-items: center; gap: 8px; font-size: 21px; font-weight: 600; color: var(--ink);
   letter-spacing: -0.02em; white-space: nowrap; }
 #p3 .p3l .out li + li { padding-left: 16px; border-left: 1px solid var(--line); }
 #p3 .p3l .out svg.ic { color: var(--navy); }
 
 /* slim key */
-#p3 .p3l .key { flex: none; padding: 16px 32px; gap: 18px; }
+#p3 .p3l .key { flex: none; margin-top: auto; padding: 16px 32px; gap: 18px; }
 #p3 .p3l .key .key-text { font-size: 28px; white-space: nowrap; }
 </style>
 
 <div class="p3l">
   <div class="stage">
-    <svg viewBox="0 0 1728 520" aria-hidden="true">
+    <svg viewBox="0 0 1728 590" aria-hidden="true">
       <!-- 현장 → 문제 발견 → (위: 사람) → 문제 해결 → STEP 04 -->
-      <path class="ln main" d="M440 228 H1150"/>
+      <path class="ln main" d="M440 250 H1150"/>
       <!-- 아래 갈래: 기술 -->
-      <path class="ln main" d="M500 228 C540 228 532 318 572 318 H990 C1030 318 1022 228 1062 228"/>
-      <path class="ah" d="M1160 228 l-11 -6 v12 z"/>
-      <circle class="d-fld" cx="440" cy="228" r="7"/>
-      <circle class="d-ring" cx="500" cy="228" r="6"/>
-      <circle class="d-ppl" cx="572" cy="228" r="7"/>
-      <circle class="d-tch" cx="572" cy="318" r="7"/>
-      <circle class="d-ring" cx="1062" cy="228" r="6"/>
+      <path class="ln main" d="M500 250 C544 250 528 356 572 356 H990 C1034 356 1018 250 1062 250"/>
+      <path class="ah" d="M1160 250 l-11 -6 v12 z"/>
+      <circle class="d-fld" cx="440" cy="250" r="7"/>
+      <circle class="d-ring" cx="500" cy="250" r="6"/>
+      <circle class="d-ppl" cx="572" cy="250" r="7"/>
+      <circle class="d-tch" cx="572" cy="356" r="7"/>
+      <circle class="d-ring" cx="1062" cy="250" r="6"/>
     </svg>
 
     <!-- STEP 01 -->
-    <div class="a" style="left:0; top:48px">
+    <div class="a" style="left:0; top:72px">
       <div class="no"><b>STEP 01</b><span>FIELD</span></div>
       <div class="tt"><svg class="ic" viewBox="0 0 24 24"><path d="M12 4a9 9 0 0 1 5.656 16h-11.312a9 9 0 0 1 5.656 -16z"/><path d="M20 9h-8.8a1 1 0 0 0 -.968 1.246c.507 2 1.596 3.418 3.268 4.254c2 1 4.333 1.5 7 1.5"/></svg>현장을 이해하겠습니다.</div>
       <ul class="ls">
@@ -78,10 +78,10 @@
         <li>작업일보를 통한 일일 작업 현황 파악</li>
       </ul>
     </div>
-    <div class="a fl" style="left:500px; top:190px">문제 발견</div>
+    <div class="a fl" style="left:500px; top:212px">문제 발견</div>
 
     <!-- STEP 02 -->
-    <div class="a" style="left:560px; top:16px">
+    <div class="a" style="left:560px; top:30px">
       <div class="no"><b>STEP 02</b><span>PEOPLE</span></div>
       <div class="tt"><svg class="ic" viewBox="0 0 24 24"><path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0 -3 -3.85"/></svg>사람을 연결하겠습니다.</div>
       <ul class="ls">
@@ -91,7 +91,7 @@
     </div>
 
     <!-- STEP 03 -->
-    <div class="a" style="left:560px; top:344px">
+    <div class="a" style="left:560px; top:384px">
       <div class="no"><b>STEP 03</b><span>TECH</span></div>
       <div class="tt"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5"/><path d="M12 12l8 -4.5"/><path d="M12 12l0 9"/><path d="M12 12l-8 -4.5"/></svg>기술을 연결하겠습니다.</div>
       <ul class="ls">
@@ -99,7 +99,7 @@
         <li>AI 기반 반복 업무 자동화 방안 발굴</li>
       </ul>
     </div>
-    <div class="a fl" style="left:1062px; top:190px">문제 해결</div>
+    <div class="a fl" style="left:1062px; top:212px">문제 해결</div>
 
     <!-- STEP 04 (초점) -->
     <div class="a focus">
