@@ -8,7 +8,7 @@
 #p3 .p3l .stage { position: relative; width: 1728px; height: 592px; flex: none; }
 #p3 .p3l .stage > svg { position: absolute; left: 0; top: 0; width: 1728px; height: 592px; }
 #p3 .p3l .key { margin-top: auto; gap: 22px; }
-#p3 .p3l .key .key-text { font-size: 32px; white-space: nowrap; }
+#p3 .p3l .key .key-text { white-space: nowrap; }
 
 /* SVG strokes */
 #p3 .p3l .ln { fill: none; stroke-width: 3; stroke-linecap: round; }
@@ -78,7 +78,7 @@
 #p3 .p3l .band .r1 { grid-row: 1; } #p3 .p3l .band .r2 { grid-row: 2; }
 #p3 .p3l .band .r3 { grid-row: 3; margin-top: 10px; } #p3 .p3l .band .r4 { grid-row: 4; }
 #p3 .p3l .cn { grid-column: 2; display: flex; align-items: center; padding: 0 16px 0 18px; }
-#p3 .p3l .cn i { flex: 1; height: 0; border-top: 2px dotted var(--line-2); }
+#p3 .p3l .cn i { flex: 1; height: 0; border-top: 2px dotted var(--sky); }
 #p3 .p3l .cn svg { width: 14px; height: 14px; color: var(--sky-2); margin-left: 2px; }
 
 /* outcomes */
@@ -87,7 +87,7 @@
   font-size: calc(var(--fs-small) + 2px); font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
 #p3 .p3l .oc .bd { width: 44px; height: 44px; border-radius: 50%; background: var(--paper);
   border: 2px solid var(--hec-yellow); display: grid; place-items: center; flex: none; }
-#p3 .p3l .oc .ic { width: 26px; height: 26px; stroke-width: 1.8; }
+#p3 .p3l .oc .ic { width: 28px; height: 28px; stroke-width: 1.8; }
 </style>
 
 <div class="p3l">
@@ -107,10 +107,10 @@
       <!-- 문제 해결 → 변화 -->
       <path class="ln trunk" d="M990 295 H1094"/>
       <!-- 변화 → 4개 개선 -->
-      <path class="ln fan" d="M1310 295 C1414 295 1404 85 1508 85"/>
-      <path class="ln fan" d="M1310 295 C1414 295 1404 225 1508 225"/>
-      <path class="ln fan" d="M1310 295 C1414 295 1404 365 1508 365"/>
-      <path class="ln fan" d="M1310 295 C1414 295 1404 505 1508 505"/>
+      <path class="ln fan" d="M1310 295 C1468 295 1436 50 1508 50"/>
+      <path class="ln fan" d="M1310 295 C1468 295 1436 215 1508 215"/>
+      <path class="ln fan" d="M1310 295 C1468 295 1436 380 1508 380"/>
+      <path class="ln fan" d="M1310 295 C1468 295 1436 545 1508 545"/>
       <circle class="jd ppl" cx="862" cy="210" r="6"/>
       <circle class="jd tch" cx="862" cy="380" r="6"/>
     </svg>
@@ -185,10 +185,10 @@
     </div>
 
     <!-- 4개 개선 -->
-    <div class="a oc" style="top:56px"><span class="bd"><svg class="ic" viewBox="0 0 24 24"><path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4"/><path d="M18 18m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496v1.504l1 1"/></svg></span>공정 개선</div>
-    <div class="a oc" style="top:196px"><span class="bd"><svg class="ic" viewBox="0 0 24 24"><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"/><path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z"/><path d="M9 14l2 2l4 -4"/></svg></span>품질 개선</div>
-    <div class="a oc" style="top:336px"><span class="bd"><svg class="ic" viewBox="0 0 24 24"><path d="M11.46 20.846a12 12 0 0 1 -7.96 -14.846a12 12 0 0 0 8.5 -3a12 12 0 0 0 8.5 3a12 12 0 0 1 -.09 7.06"/><path d="M15 19l2 2l4 -4"/></svg></span>안전 개선</div>
-    <div class="a oc" style="top:476px"><span class="bd"><svg class="ic" viewBox="0 0 24 24"><path d="M6 21h6"/><path d="M9 21v-18l-6 6h18"/><path d="M9 3l10 6"/><path d="M17 9v4a2 2 0 1 1 -2 2"/></svg></span>생산성 개선</div>
+    <div class="a oc" style="top:21px"><span class="bd"><svg class="ic" viewBox="0 0 24 24"><path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4"/><path d="M18 18m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496v1.504l1 1"/></svg></span>공정 개선</div>
+    <div class="a oc" style="top:186px"><span class="bd"><svg class="ic" viewBox="0 0 24 24"><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"/><path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z"/><path d="M9 14l2 2l4 -4"/></svg></span>품질 개선</div>
+    <div class="a oc" style="top:351px"><span class="bd"><svg class="ic" viewBox="0 0 24 24"><path d="M11.46 20.846a12 12 0 0 1 -7.96 -14.846a12 12 0 0 0 8.5 -3a12 12 0 0 0 8.5 3a12 12 0 0 1 -.09 7.06"/><path d="M15 19l2 2l4 -4"/></svg></span>안전 개선</div>
+    <div class="a oc" style="top:516px"><span class="bd"><svg class="ic" viewBox="0 0 24 24"><path d="M6 21h6"/><path d="M9 21v-18l-6 6h18"/><path d="M9 3l10 6"/><path d="M17 9v4a2 2 0 1 1 -2 2"/></svg></span>생산성 개선</div>
   </div>
 
   <div class="key">
