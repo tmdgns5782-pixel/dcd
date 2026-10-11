@@ -1,147 +1,228 @@
-<!-- landscape 2: 이 파일만 편집. 스타일은 #p2 로 범위를 한정 -->
+<!-- 시안 A · 2쪽 — 에디토리얼 스플릿. 이 파일만 편집. 스타일은 #p2 로 범위를 한정 -->
 <style>
-#p2 .p2 { position: relative; height: calc(100% - 10px); }
+/* ===== 판형: 1쪽과 같다. 왼쪽 남색 패널(656px) + 오른쪽 흰 지면 =====
+   패널 글줄 x 80 – 592 · 지면 x 736 – 1840 · 위 64 · 본문 아래 968 · 바닥글 1014 */
+#p2 {
+  --pw: 656px;
+  --rx: 736px;
+  --deep: #081A3A;
+  --on-navy: rgba(255, 255, 255, .74);
+  --on-navy-2: rgba(255, 255, 255, .5);
+  --sky-ink: #6CC6F0;
+  padding: 0;
+  display: block;
+}
+#p2 .logo { display: none; }
 
-/* 단 머리 (현대엔지니어링 / MY VALUES) */
-#p2 .p2-tier { position: absolute; left: 0; right: 0; display: flex; justify-content: center; align-items: center; gap: 14px; height: 30px; font-size: var(--fs-small); font-weight: 600; color: var(--ink-2); letter-spacing: -0.02em; white-space: nowrap; }
-#p2 .p2-tier .p2-tag { display: flex; align-items: center; gap: 12px; font-size: var(--fs-eyebrow); font-weight: 700; color: var(--sky-2); letter-spacing: 0.02em; }
-#p2 .p2-tier .p2-tag.en { letter-spacing: 0.12em; }
-#p2 .p2-tier .p2-tag::after { content: ""; width: 24px; height: 2px; background: var(--line-2); }
-#p2 .p2-tier b { font-weight: 800; color: var(--navy); }
-#p2 .p2-tier em { font-weight: 800; color: var(--hec-blue); }
+/* --- 패널 = 머리글 (1쪽과 동일) --- */
+#p2 .hd {
+  position: absolute; left: 0; top: 0; bottom: 0; width: var(--pw);
+  padding: 168px 64px 0 80px;
+  background:
+    radial-gradient(120% 60% at 100% 0%, rgba(69, 185, 236, .16) 0%, rgba(69, 185, 236, 0) 60%),
+    linear-gradient(170deg, #0F2B5B 0%, var(--navy) 46%, var(--deep) 100%);
+}
+#p2 .hd-meta {
+  padding: 0; flex-wrap: wrap; gap: 14px 14px;
+  font-size: 20px; font-weight: 500; line-height: 1.4; color: var(--on-navy); letter-spacing: -0.01em;
+}
+#p2 .hd-meta .mark b { background: rgba(255, 255, 255, .28); }
+#p2 .hd-meta .mark i:nth-of-type(2) { background: var(--sky-2); }
+#p2 .hd-no { font-size: 20px; color: var(--sky-ink); letter-spacing: 0.04em; }
+#p2 .hd-meta::after { content: ""; order: 1; flex: 1; height: 1px; margin-left: 10px; background: rgba(255, 255, 255, .18); }
+#p2 .hd-meta > span:last-child { order: 2; flex-basis: 100%; }
+#p2 .hd-lead {
+  padding: 0; margin-top: 104px;
+  font-size: 28px; font-weight: 500; line-height: 1.4; color: var(--on-navy); letter-spacing: -0.02em;
+}
+#p2 .hd-title {
+  margin-top: 16px;
+  font-size: 58px; font-weight: 800; line-height: 1.24; color: #fff; letter-spacing: -0.04em;
+  max-width: 440px;   /* ‘현대엔지니어링의 / ‘우리의 기술’과 / 맞닿아 있습니다.’ 세 줄로 끊는다 */
+}
+#p2 .hd-title em { color: var(--sky-ink); }
 
-/* 열 */
-#p2 .p2-col { position: absolute; top: 46px; width: 800px; }
-#p2 .p2-hd { height: 60px; display: flex; align-items: center; justify-content: center; gap: 20px; }
-#p2 .p2-kw { display: flex; align-items: center; gap: 12px; font-size: 40px; font-weight: 800; line-height: 1.1; letter-spacing: -0.035em; }
-#p2 .p2-kw .dot { width: 14px; height: 14px; }
-#p2 .g .p2-kw { color: var(--hec-green); }
-#p2 .b .p2-kw { color: var(--hec-blue); }
-#p2 .p2-def { display: flex; flex-direction: column; padding-left: 20px; border-left: 2px solid var(--line); }
-#p2 .p2-eb { font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: 0.14em; line-height: 1.2; }
-#p2 .g .p2-eb { color: var(--hec-green); }
-#p2 .b .p2-eb { color: var(--hec-blue); }
-#p2 .p2-def b { font-size: 28px; font-weight: 800; line-height: 1.25; color: var(--navy); letter-spacing: -0.035em; }
+/* --- 바닥글 --- */
+#p2 .ft { position: absolute; left: 80px; right: 80px; bottom: 40px; font-size: 18px; }
+#p2 .ft > span:first-child { color: var(--on-navy-2); }
 
-#p2 .p2-hub { position: relative; margin-top: 8px; width: 800px; height: 240px; }
-#p2 .p2-svg { position: absolute; left: 0; top: 0; }
-#p2 .p2-n { position: absolute; transform: translate(-50%, -50%); }
-#p2 .p2-chip { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 38px; padding: 0 16px; border: 1px solid var(--line-2); border-radius: 999px; background: var(--paper); font-size: 20px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; }
-#p2 .p2-chip .dot { width: 9px; height: 9px; }
-#p2 .p2-chip.g { color: var(--navy); }
-#p2 .p2-chip.b { color: var(--hec-blue); width: 224px; }
-#p2 .p2-orbit { fill: none; stroke: var(--line-2); stroke-width: 2; stroke-dasharray: 1 9; stroke-linecap: round; }
-#p2 .p2-jd { stroke: var(--paper); stroke-width: 2.5; }
-#p2 .p2-jd.g { fill: var(--hec-green); }
-#p2 .p2-jd.b { fill: var(--hec-blue); }
-#p2 .p2-up { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-#p2 .p2-up.g { stroke: var(--hec-green); }
-#p2 .p2-up.b { stroke: var(--hec-blue); }
-#p2 .p2-core { width: 128px; height: 128px; text-align: center; align-content: center; }
-#p2 .p2-core small { display: block; font-size: 19px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
-#p2 .p2-core.g small { color: var(--hec-green); }
-#p2 .p2-core.b small { color: var(--hec-blue); }
-#p2 .p2-core strong { display: block; margin-top: 3px; font-size: 24px; font-weight: 800; line-height: 1.15; color: var(--navy); letter-spacing: -0.04em; }
+/* --- 본문 판: 슬라이드 좌표 그대로 --- */
+#p2 .body { position: absolute; inset: 0; margin: 0; }
 
-/* 나의 가치 카드 */
-#p2 .p2-card { margin-top: 56px; height: 162px; padding: 14px 28px; border-radius: var(--radius); background: var(--paper); display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 28px; }
-#p2 .p2-cl-l { display: flex; flex-direction: column; gap: 10px; }
-#p2 .p2-grid { display: grid; grid-template-columns: auto auto; justify-content: start; gap: 8px; }
-#p2 .g .p2-card { border: 1.5px solid color-mix(in srgb, var(--hec-green) 45%, var(--paper)); }
-#p2 .b .p2-card { border: 1.5px solid color-mix(in srgb, var(--hec-blue) 40%, var(--paper)); }
-#p2 .p2-ct { font-size: 26px; font-weight: 800; line-height: 1.25; color: var(--navy); letter-spacing: -0.035em; }
-#p2 .p2-row { display: flex; align-items: center; gap: 10px; }
-#p2 .p2-vsx { font-size: 19px; font-weight: 800; color: var(--ink-3); letter-spacing: 0.04em; padding: 0 4px; }
-#p2 .p2-cap { font-size: 20px; font-weight: 600; color: var(--ink-2); letter-spacing: -0.02em; }
-#p2 .p2-pill { display: inline-flex; align-items: center; gap: 9px; height: 38px; padding: 0 16px; border: 1px solid var(--line-2); border-radius: 999px; background: var(--paper); font-size: 20px; font-weight: 700; color: var(--navy); letter-spacing: -0.02em; white-space: nowrap; }
-#p2 .p2-pill .dot { width: 9px; height: 9px; }
-#p2 .p2-to { align-self: stretch; display: flex; align-items: center; gap: 14px; padding-left: 28px; border-left: 1px solid var(--line); font-size: 23px; font-weight: 700; line-height: 1.4; color: var(--navy); letter-spacing: -0.03em; }
-#p2 .p2-to em { font-weight: 800; }
-#p2 .g .p2-to em { color: var(--hec-green); }
-#p2 .b .p2-to em { color: var(--hec-blue); }
-#p2 .p2-ic { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: var(--paper); }
-#p2 .g .p2-ic { background: var(--hec-green); }
-#p2 .b .p2-ic { background: var(--hec-blue); }
-#p2 .p2-arr { width: 17px; height: 17px; display: block; }
+/* 패널 위 흰 CI */
+#p2 .p2-ci { position: absolute; left: 80px; top: 64px; height: 36px; width: auto; display: block; }
 
-/* 연산자 + / = */
-#p2 .p2-op { position: absolute; transform: translate(-50%, -50%); border-radius: 50%; display: grid; place-items: center; background: var(--paper); }
-#p2 .p2-plus { width: 52px; height: 52px; border: 2px solid var(--line-2); }
-#p2 .p2-eq { width: 36px; height: 36px; border: 2px solid var(--sky-2); }
-#p2 .p2-conv { position: absolute; left: 0; top: 572px; }
-#p2 .p2-cl { fill: none; stroke-width: 2; stroke-linecap: round; }
+/* 패널 아래 핵심 메시지 (인용문) — 위에 '선정 이유' 라벨 */
+#p2 .p2-quote { position: absolute; left: 80px; width: 512px; bottom: 112px; margin: 0; }
+#p2 .p2-quote .rule { display: block; width: 100%; height: 1px; background: rgba(255, 255, 255, .18); }
+#p2 .p2-qhd { display: flex; align-items: center; gap: 16px; margin-top: 32px; height: 32px; }
+#p2 .p2-qm { display: block; flex: none; width: 40px; height: 32px; }
+#p2 .p2-qhd span { font-size: 20px; font-weight: 800; line-height: 1; color: var(--sky-ink); letter-spacing: 0.04em; }
+#p2 .p2-quote p {
+  margin-top: 20px;
+  font-size: 28px; font-weight: 600; line-height: 1.5; color: #fff; letter-spacing: -0.03em;
+}
+#p2 .p2-quote p em { color: var(--hec-yellow); font-weight: 800; }
 
-/* 선정 이유 */
-#p2 .key { position: absolute; left: 0; right: 0; top: 630px; height: 76px; padding: 0 40px; }
-#p2 .key .key-label { font-size: 20px; letter-spacing: 0.04em; }
-#p2 .key .key-text { font-size: 28px; white-space: nowrap; }
+/* ===== 오른쪽 지면 ===== */
+#p2 .p2-r { position: absolute; left: var(--rx); top: 64px; width: 1104px; height: 904px; }
+#p2 .p2-r > * { position: absolute; }
+
+/* 열 머리: 굵은 이름 ———— / 설명 */
+#p2 .p2-ch { top: 0; display: flex; flex-direction: column; gap: 10px; }
+#p2 .p2-ch .k { display: flex; align-items: center; gap: 12px; height: 28px; font-size: 20px; font-weight: 800; line-height: 1; color: var(--navy); letter-spacing: -0.02em; white-space: nowrap; }
+#p2 .p2-ch .k.en { letter-spacing: 0.06em; }
+#p2 .p2-ch .k .rule { flex: 1; height: 1px; background: var(--line); margin-left: 4px; }
+#p2 .p2-ch p { font-size: 22px; font-weight: 600; line-height: 1.3; color: var(--ink-3); letter-spacing: -0.02em; white-space: nowrap; }
+#p2 .p2-ch p b { font-weight: 800; color: var(--navy); }
+#p2 .p2-ch p em { font-weight: 800; color: var(--hec-blue); }
+
+/* 소구역 머리: 링 노드 + 제목 (1쪽 .p1-h 와 같은 체계) */
+#p2 .p2-h { display: flex; align-items: center; gap: 12px; height: 32px; font-size: 26px; font-weight: 800; line-height: 1; color: var(--navy); letter-spacing: -0.035em; white-space: nowrap; }
+#p2 .p2-node { flex: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; background: linear-gradient(#fff, #fff) padding-box, var(--grad-v) border-box; display: grid; place-items: center; }
+#p2 .p2-node i { width: 9px; height: 9px; border-radius: 50%; display: block; background: var(--sky-2); }
+#p2 .p2-node.g i { background: var(--hec-green); }
+#p2 .p2-node.b i { background: var(--hec-blue); }
+
+/* --- 나의 가치관 카드 --- */
+#p2 .p2-vc {
+  left: 0; width: 432px; height: 280px; padding: 28px 24px 26px; border-radius: 16px; background: var(--paper); border: 1px solid var(--line);
+  display: flex; flex-direction: column;
+}
+#p2 .p2-ops { display: flex; align-items: center; gap: 10px; margin-top: 22px; }
+#p2 .p2-op {
+  flex: none; height: 40px; display: flex; align-items: center; gap: 9px; padding: 0 16px 0 14px;
+  border-radius: 999px; background: var(--paper); border: 1px solid var(--line-2);
+  font-size: 20px; font-weight: 700; line-height: 1; color: var(--navy); letter-spacing: -0.02em; white-space: nowrap;
+}
+#p2 .p2-op i { width: 9px; height: 9px; border-radius: 50%; display: block; flex: none; }
+#p2 .g .p2-op i { background: var(--hec-green); }
+#p2 .b .p2-op i { background: var(--hec-blue); }
+#p2 .p2-vs {
+  flex: none; width: 36px; height: 36px; border-radius: 50%; background: var(--navy);
+  display: grid; place-items: center; font-size: 17px; font-weight: 800; line-height: 1; color: #fff; letter-spacing: 0.02em;
+}
+#p2 .p2-cap { margin-top: 12px; font-size: 20px; font-weight: 600; line-height: 1.3; color: var(--ink-3); letter-spacing: -0.02em; white-space: nowrap; }
+#p2 .p2-grid { display: grid; grid-template-columns: auto auto; justify-content: start; gap: 10px; margin-top: 22px; }
+#p2 .p2-res {
+  margin-top: auto; padding-top: 18px; border-top: 1px solid var(--line); display: flex; align-items: center; gap: 10px;
+  font-size: 22px; font-weight: 700; line-height: 1.3; color: var(--navy); letter-spacing: -0.03em; white-space: nowrap;
+}
+#p2 .p2-res svg { flex: none; width: 22px; height: 22px; }
+#p2 .g .p2-res svg { color: var(--hec-green); }
+#p2 .b .p2-res svg { color: var(--hec-blue); }
+#p2 .p2-res em { font-weight: 800; }
+#p2 .g .p2-res em { color: var(--hec-green); }
+#p2 .b .p2-res em { color: var(--hec-blue); }
+
+/* --- 연결점 원 (가운데 열) --- */
+#p2 .p2-hub {
+  left: 460px; width: 144px; height: 144px; border-radius: 50%; background: var(--paper);
+  border: 3px solid currentColor; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+}
+#p2 .p2-hub.g { color: var(--hec-green); }
+#p2 .p2-hub.b { color: var(--hec-blue); }
+#p2 .p2-hub small { display: block; font-size: 18px; font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; white-space: nowrap; }
+#p2 .p2-hub strong { display: block; margin-top: 4px; font-size: 24px; font-weight: 800; line-height: 1.18; color: var(--navy); letter-spacing: -0.04em; white-space: nowrap; }
+
+/* + · = 표식 */
+#p2 .p2-opn {
+  left: 516px; width: 32px; height: 32px; border-radius: 50%; background: var(--paper); border: 2px solid var(--sky-2);
+  display: grid; place-items: center;
+}
+#p2 .p2-opn svg { width: 14px; height: 14px; }
+
+/* --- 회사 키워드 카드 --- */
+#p2 .p2-kc {
+  left: 632px; width: 472px; height: 280px; padding: 0 28px; border-radius: 16px;
+  display: flex; flex-direction: column; justify-content: center; gap: 26px;
+}
+#p2 .p2-kc.g { background: var(--tint-green); }
+#p2 .p2-kc.b { background: var(--tint-blue); }
+#p2 .p2-kw { display: flex; align-items: center; gap: 20px; }
+#p2 .p2-kw > b { font-size: 44px; font-weight: 800; line-height: 1; letter-spacing: -0.04em; }
+#p2 .g .p2-kw > b { color: var(--hec-green); }
+#p2 .b .p2-kw > b { color: var(--hec-blue); }
+#p2 .p2-kw .bar { width: 1px; height: 52px; background: var(--line-2); flex: none; }
+#p2 .p2-kw .def { display: flex; flex-direction: column; gap: 6px; }
+#p2 .p2-kw .def small { font-size: 17px; font-weight: 800; line-height: 1; letter-spacing: 0.14em; }
+#p2 .g .p2-kw .def small { color: var(--hec-green); }
+#p2 .b .p2-kw .def small { color: var(--hec-blue); }
+#p2 .p2-kw .def strong { font-size: 24px; font-weight: 800; line-height: 1.2; color: var(--navy); letter-spacing: -0.035em; white-space: nowrap; }
+#p2 .p2-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+#p2 .g .p2-chips { max-width: 340px; }
+#p2 .p2-kc .p2-op { border-color: transparent; box-shadow: 0 1px 2px rgba(11, 33, 71, .06); }
+
+/* 연결선 */
+#p2 .p2-wire { left: -80px; top: 0; width: 1184px; height: 904px; }
 </style>
 
-<div class="p2">
-  <p class="p2-tier" style="top:0"><span class="p2-tag">현대엔지니어링</span><span>저는 ‘<em>우리의 기술</em>’을 이렇게 이해했습니다</span></p>
+<img class="p2-ci" src="assets/ci-eng-logotype-white.png" alt="HYUNDAI ENGINEERING">
 
-  <section class="p2-col g" style="left:0px">
-      <div class="p2-hd"><span class="p2-kw"><i class="dot people"></i>우리</span><span class="p2-def"><span class="p2-eb">OUR</span><b>사람과 전문성의 연결</b></span></div>
-      <div class="p2-hub">
-        <svg class="p2-svg" width="800" height="296" viewBox="0 0 800 296" aria-hidden="true">
-          <defs><linearGradient id="p2l-u0" gradientUnits="userSpaceOnUse" x1="400" y1="22" x2="400" y2="124"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient><linearGradient id="p2l-u1" gradientUnits="userSpaceOnUse" x1="639.7" y1="92.5" x2="400" y2="124"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient><linearGradient id="p2l-u2" gradientUnits="userSpaceOnUse" x1="548.1" y1="206.5" x2="400" y2="124"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient><linearGradient id="p2l-u3" gradientUnits="userSpaceOnUse" x1="251.9" y1="206.5" x2="400" y2="124"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient><linearGradient id="p2l-u4" gradientUnits="userSpaceOnUse" x1="160.3" y1="92.5" x2="400" y2="124"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient></defs>
-          <ellipse cx="400" cy="124" rx="252" ry="102" class="p2-orbit"/>
-          <line x1="400" y1="22" x2="400" y2="124" stroke="url(#p2l-u0)" stroke-width="2" stroke-linecap="round"/><line x1="639.7" y1="92.5" x2="400" y2="124" stroke="url(#p2l-u1)" stroke-width="2" stroke-linecap="round"/><line x1="548.1" y1="206.5" x2="400" y2="124" stroke="url(#p2l-u2)" stroke-width="2" stroke-linecap="round"/><line x1="251.9" y1="206.5" x2="400" y2="124" stroke="url(#p2l-u3)" stroke-width="2" stroke-linecap="round"/><line x1="160.3" y1="92.5" x2="400" y2="124" stroke="url(#p2l-u4)" stroke-width="2" stroke-linecap="round"/>
-          <circle cx="400" cy="49" r="4.5" class="p2-jd g"/><circle cx="474.4" cy="114.2" r="4.5" class="p2-jd g"/><circle cx="465.5" cy="160.5" r="4.5" class="p2-jd g"/><circle cx="334.5" cy="160.5" r="4.5" class="p2-jd g"/><circle cx="325.6" cy="114.2" r="4.5" class="p2-jd g"/>
-          <line x1="400" y1="294" x2="400" y2="202" class="p2-up g"/><path d="M392,210 L400,200 L408,210" class="p2-up g"/>
-        </svg>
-        <span class="p2-n p2-chip g" style="left:400px;top:22px"><i class="dot people"></i>설계</span>
-        <span class="p2-n p2-chip g" style="left:639.7px;top:92.5px"><i class="dot people"></i>시공</span>
-        <span class="p2-n p2-chip g" style="left:548.1px;top:206.5px"><i class="dot people"></i>유관부서</span>
-        <span class="p2-n p2-chip g" style="left:251.9px;top:206.5px"><i class="dot people"></i>발주처</span>
-        <span class="p2-n p2-chip g" style="left:160.3px;top:92.5px"><i class="dot people"></i>협력업체</span>
-        <div class="p2-n ring p2-core g" style="left:400px;top:124px"><small>하나의 목표</small><strong>프로젝트<br>완수</strong></div>
-      </div>
-      <div class="p2-card">
-        <div class="p2-cl-l"><h3 class="p2-ct">사람의 연결</h3><div class="p2-row"><span class="p2-pill"><i class="dot people"></i>참신성</span><span class="p2-vsx">VS</span><span class="p2-pill"><i class="dot people"></i>구현 가능성</span></div><p class="p2-cap">서로 다른 의견</p></div>
-        <p class="p2-to"><span class="p2-ic"><svg class="p2-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></svg></span><span>공동의 기준으로 조율해<br><em>하나의 목표</em>로</span></p>
-      </div>
-    </section>
-
-  <div class="p2-op p2-plus" style="left:864px;top:236px"><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path d="M11 2v18M2 11h18" style="stroke:var(--navy)" stroke-width="2.5" stroke-linecap="round"/></svg></div>
-
-  <section class="p2-col b" style="left:928px">
-      <div class="p2-hd"><span class="p2-kw"><i class="dot tech"></i>기술</span><span class="p2-def"><span class="p2-eb">TECHNOLOGY</span><b>미래 가치를 만드는 원동력</b></span></div>
-      <div class="p2-hub">
-        <svg class="p2-svg" width="800" height="296" viewBox="0 0 800 296" aria-hidden="true">
-          <defs><linearGradient id="p2l-t0" gradientUnits="userSpaceOnUse" x1="194" y1="54" x2="400" y2="120"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient><linearGradient id="p2l-t1" gradientUnits="userSpaceOnUse" x1="606" y1="54" x2="400" y2="120"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient><linearGradient id="p2l-t2" gradientUnits="userSpaceOnUse" x1="194" y1="186" x2="400" y2="120"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient><linearGradient id="p2l-t3" gradientUnits="userSpaceOnUse" x1="606" y1="186" x2="400" y2="120"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient></defs>
-          <ellipse cx="400" cy="120" rx="291.3" ry="93.3" class="p2-orbit"/>
-          <line x1="194" y1="54" x2="400" y2="120" stroke="url(#p2l-t0)" stroke-width="2" stroke-linecap="round"/><line x1="606" y1="54" x2="400" y2="120" stroke="url(#p2l-t1)" stroke-width="2" stroke-linecap="round"/><line x1="194" y1="186" x2="400" y2="120" stroke="url(#p2l-t2)" stroke-width="2" stroke-linecap="round"/><line x1="606" y1="186" x2="400" y2="120" stroke="url(#p2l-t3)" stroke-width="2" stroke-linecap="round"/>
-          <circle cx="328.6" cy="97.1" r="4.5" class="p2-jd b"/><circle cx="471.4" cy="97.1" r="4.5" class="p2-jd b"/><circle cx="328.6" cy="142.9" r="4.5" class="p2-jd b"/><circle cx="471.4" cy="142.9" r="4.5" class="p2-jd b"/>
-          <line x1="400" y1="294" x2="400" y2="198" class="p2-up b"/><path d="M392,206 L400,196 L408,206" class="p2-up b"/>
-        </svg>
-        <span class="p2-n p2-chip b" style="left:194px;top:54px"><i class="dot tech"></i>에너지 원천기술</span>
-        <span class="p2-n p2-chip b" style="left:606px;top:54px"><i class="dot tech"></i>글로벌 EPC 역량</span>
-        <span class="p2-n p2-chip b" style="left:194px;top:186px"><i class="dot tech"></i>첨단 산업건축 기술</span>
-        <span class="p2-n p2-chip b" style="left:606px;top:186px"><i class="dot tech"></i>스마트건설 기술</span>
-        <div class="p2-n ring p2-core b" style="left:400px;top:120px"><small>기술의 연결</small><strong>미래 가치<br>창출</strong></div>
-      </div>
-      <div class="p2-card">
-        <div class="p2-cl-l"><h3 class="p2-ct">강점의 연결</h3><div class="p2-grid"><span class="p2-pill"><i class="dot tech"></i>Dynamo 자동화</span><span class="p2-pill"><i class="dot tech"></i>모듈러 설계</span><span class="p2-pill"><i class="dot tech"></i>BIM 모델링</span><span class="p2-pill"><i class="dot tech"></i>시나리오 구성</span></div></div>
-        <p class="p2-to"><span class="p2-ic"><svg class="p2-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></svg></span><span>각자의 강점을 모아<br><em>하나의 성과</em>로</span></p>
-      </div>
-    </section>
-
-  <p class="p2-tier" style="top:367px"><span class="p2-tag en">MY VALUES</span><span><b>나의 가치관</b> · 공동의 목표를 공유하는 협업</span></p>
-
-  <svg class="p2-conv" width="1728" height="58" viewBox="0 0 1728 58" aria-hidden="true">
-      <defs>
-        <linearGradient id="p2l-cl" gradientUnits="userSpaceOnUse" x1="400" y1="0" x2="864" y2="0"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient>
-        <linearGradient id="p2l-cr" gradientUnits="userSpaceOnUse" x1="1328" y1="0" x2="864" y2="0"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient>
-      </defs>
-      <path d="M400,0 V16 Q400,30 414,30 H842" stroke="url(#p2l-cl)" class="p2-cl"/>
-      <path d="M1328,0 V16 Q1328,30 1314,30 H886" stroke="url(#p2l-cr)" class="p2-cl"/>
-      <line x1="864" y1="52" x2="864" y2="58" style="stroke:var(--sky-2)" class="p2-cl"/>
-    </svg>
-    <div class="p2-op p2-eq" style="left:864px;top:602px"><svg width="16" height="12" viewBox="0 0 16 12" aria-hidden="true"><path d="M1 3h14M1 9h14" style="stroke:var(--navy)" stroke-width="2.5" stroke-linecap="round"/></svg></div>
-
-  <div class="key">
-    <div class="key-label"><span class="mark"><i></i><b></b><i></i><b></b><i></i></span>선정 이유</div>
-    <p class="key-text">서로 다른 사람과 전문성이 <em>하나의 목표</em>로 연결될 때, 기술은 더 큰 가능성을 발휘하고 <em>새로운 미래 가치</em>를 만들어간다고 믿습니다.</p>
+<figure class="p2-quote">
+  <i class="rule" aria-hidden="true"></i>
+  <div class="p2-qhd">
+    <svg class="p2-qm" viewBox="0 0 40 32" aria-hidden="true"><path d="M0 32V19.5C0 8.6 5.2 2.1 15.6 0l1.9 4.6C12 6.3 9.3 9.7 9 14.6h8.2V32H0zm22.8 0V19.5C22.8 8.6 28 2.1 38.4 0l1.6 4.6c-5.5 1.7-8.2 5.1-8.5 10H39.7V32H22.8z" fill="var(--hec-yellow)"/></svg>
+    <span>선정 이유</span>
   </div>
+  <p>서로 다른 사람과 전문성이<br><em>하나의 목표</em>로 연결될 때,<br>기술은 더 큰 가능성을 발휘하고<br><em>새로운 미래 가치</em>를<br>만들어간다고 믿습니다.</p>
+</figure>
+
+<div class="p2-r">
+
+  <!-- 연결선: 가치관 → 연결점 → 키워드, 두 연결점 + → = → 선정 이유 -->
+  <svg class="p2-wire" viewBox="-80 0 1184 904" aria-hidden="true">
+    <defs>
+      <linearGradient id="p2a-h" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1104" y2="0"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient>
+      <linearGradient id="p2a-v" gradientUnits="userSpaceOnUse" x1="0" y1="340" x2="0" y2="556"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient>
+      <linearGradient id="p2a-r" gradientUnits="userSpaceOnUse" x1="532" y1="0" x2="-40" y2="0"><stop offset="0" style="stop-color:var(--sky-2)"/><stop offset="1" style="stop-color:var(--sky)"/></linearGradient>
+    </defs>
+    <g fill="none" stroke="url(#p2a-h)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="438" y1="268" x2="453" y2="268"/><path d="M447 262 L454 268 L447 274"/>
+      <line x1="610" y1="268" x2="625" y2="268"/><path d="M619 262 L626 268 L619 274"/>
+      <line x1="438" y1="628" x2="453" y2="628"/><path d="M447 622 L454 628 L447 634"/>
+      <line x1="610" y1="628" x2="625" y2="628"/><path d="M619 622 L626 628 L619 634"/>
+    </g>
+    <g fill="none" stroke="url(#p2a-v)" stroke-width="2.5" stroke-linecap="round">
+      <line x1="532" y1="346" x2="532" y2="426"/><line x1="532" y1="470" x2="532" y2="550"/>
+    </g>
+    <line x1="532" y1="706" x2="532" y2="750" stroke="var(--sky-2)" stroke-width="2.5" stroke-linecap="round"/>
+    <g fill="none" stroke="url(#p2a-r)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M532 794 V824 Q532 840 516 840 H-62"/><path d="M-55 834 L-62 840 L-55 846"/>
+    </g>
+  </svg>
+
+  <!-- 열 머리 -->
+  <div class="p2-ch" style="left:0; width:432px"><p class="k en">MY VALUES<i class="rule"></i></p><p><b>나의 가치관</b> · 공동의 목표를 공유하는 협업</p></div>
+  <div class="p2-ch" style="left:632px; width:472px"><p class="k">현대엔지니어링<i class="rule"></i></p><p>저는 ‘<em>우리의 기술</em>’을 이렇게 이해했습니다</p></div>
+
+  <!-- 짝 1: 사람의 연결 → 하나의 목표 → 우리 -->
+  <div class="p2-vc g" style="top:128px">
+    <h3 class="p2-h"><span class="p2-node g"><i></i></span>사람의 연결</h3>
+    <div class="p2-ops"><span class="p2-op"><i></i>참신성</span><span class="p2-vs">VS</span><span class="p2-op"><i></i>구현 가능성</span></div>
+    <p class="p2-cap">서로 다른 의견</p>
+    <p class="p2-res"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></svg><span>공동의 기준으로 조율해 <em>하나의 목표</em>로</span></p>
+  </div>
+  <div class="p2-hub g" style="top:196px"><small>하나의 목표</small><strong>프로젝트<br>완수</strong></div>
+  <div class="p2-kc g" style="top:128px">
+    <div class="p2-kw"><b>우리</b><i class="bar"></i><span class="def"><small>OUR</small><strong>사람과 전문성의 연결</strong></span></div>
+    <div class="p2-chips"><span class="p2-op"><i></i>설계</span><span class="p2-op"><i></i>시공</span><span class="p2-op"><i></i>협력업체</span><span class="p2-op"><i></i>발주처</span><span class="p2-op"><i></i>유관부서</span></div>
+  </div>
+
+  <span class="p2-opn" style="top:432px"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M7 1v12M1 7h12" stroke="var(--navy)" stroke-width="2.4" stroke-linecap="round"/></svg></span>
+
+  <!-- 짝 2: 강점의 연결 → 미래 가치 창출 → 기술 -->
+  <div class="p2-vc b" style="top:488px">
+    <h3 class="p2-h"><span class="p2-node b"><i></i></span>강점의 연결</h3>
+    <div class="p2-grid"><span class="p2-op"><i></i>Dynamo 자동화</span><span class="p2-op"><i></i>모듈러 설계</span><span class="p2-op"><i></i>BIM 모델링</span><span class="p2-op"><i></i>시나리오 구성</span></div>
+    <p class="p2-res"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></svg><span>각자의 강점을 모아 <em>하나의 성과</em>로</span></p>
+  </div>
+  <div class="p2-hub b" style="top:556px"><small>기술의 연결</small><strong>미래 가치<br>창출</strong></div>
+  <div class="p2-kc b" style="top:488px">
+    <div class="p2-kw"><b>기술</b><i class="bar"></i><span class="def"><small>TECHNOLOGY</small><strong>미래 가치를 만드는 원동력</strong></span></div>
+    <div class="p2-chips"><span class="p2-op"><i></i>에너지 원천기술</span><span class="p2-op"><i></i>글로벌 EPC 역량</span><span class="p2-op"><i></i>첨단 산업건축 기술</span><span class="p2-op"><i></i>스마트건설 기술</span></div>
+  </div>
+
+  <span class="p2-opn" style="top:756px"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M1 4.5h12M1 9.5h12" stroke="var(--navy)" stroke-width="2.4" stroke-linecap="round"/></svg></span>
+
 </div>
