@@ -24,7 +24,8 @@ const { chromium } = require('playwright');
     await page.goto('file://' + abs);
     await page.evaluate(() => { document.documentElement.classList.add('static'); document.documentElement.style.setProperty('--s', 1); });
     await page.evaluate(() => document.fonts.ready);
-    const fontsOk = await page.evaluate(() => document.fonts.check('700 20px Paperlogy'));
+    const family = await page.evaluate(() => getComputedStyle(document.body).fontFamily.split(',')[0].replace(/["']/g, '').trim());
+    const fontsOk = await page.evaluate((f) => document.fonts.check(`700 20px "${f}"`), family);
     const slides = await page.$$('.slide');
     for (let i = 0; i < slides.length; i++) {
       const out = path.join(prevDir, `${name}-${i + 1}.png`);
@@ -50,7 +51,7 @@ const { chromium } = require('playwright');
       });
       return res;
     });
-    console.log(fontsOk ? 'fonts: Paperlogy loaded' : 'fonts: WARNING Paperlogy NOT loaded');
+    console.log(fontsOk ? `fonts: ${family} loaded` : `fonts: WARNING ${family} NOT loaded`);
     console.log(issues.length ? 'overflow:\n  ' + issues.join('\n  ') : 'overflow: none');
     if (!pngOnly) {
       await page.emulateMedia({ media: 'print' });

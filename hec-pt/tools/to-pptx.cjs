@@ -23,7 +23,7 @@ const FORMATS = {
 const FAMILIES = {
   Paperlogy: { 300: ['Paperlogy 3 Light'], 400: ['Paperlogy 4 Regular'], 500: ['Paperlogy 5 Medium'], 600: ['Paperlogy 6 SemiBold'], 700: ['Paperlogy 7 Bold'], 800: ['Paperlogy 8 ExtraBold'], 900: ['Paperlogy 9 Black'] },
   // Windows에 설치되는 Pretendard 정적 글꼴 이름. Bold는 'Pretendard' 계열의 굵게(b=1)
-  Pretendard: { 300: ['Pretendard Light'], 400: ['Pretendard'], 500: ['Pretendard Medium'], 600: ['Pretendard SemiBold'], 700: ['Pretendard', true], 800: ['Pretendard ExtraBold'], 900: ['Pretendard Black'] },
+  Pretendard: { 300: ['Pretendard Light'], 400: ['Pretendard'], 500: ['Pretendard Medium'], 600: ['Pretendard SemiBold'], 700: ['Pretendard', true], 800: ['Pretendard ExtraBold'], 900: ['Pretendard ExtraBold'] },
 };
 let FACE = FAMILIES.Paperlogy;
 const pick = (w) => FACE[Math.min(900, Math.max(300, Math.round(w / 100) * 100))];
