@@ -57,7 +57,8 @@
 #p2 .p2-hero { grid-column: 3; grid-row: 1 / 6; }
 
 /* ===== 1단 : 나의 가치관 (두 경험) ===== */
-#p2 .p2-pair { flex: none; margin-top: 28px; display: flex; align-items: center; justify-content: center; gap: 12px; }
+#p2 .p2-mid { flex: none; margin: auto 0; }
+#p2 .p2-pair { display: flex; align-items: center; justify-content: center; gap: 12px; }
 #p2 .p2-op {
   flex: none; width: 168px; height: 44px; display: flex; align-items: center; justify-content: center; gap: 8px;
   border-radius: 999px; background: var(--paper); border: 1.5px solid var(--line-2);
@@ -70,13 +71,13 @@
   display: grid; place-items: center; font-size: 17px; font-weight: 800; line-height: 1; color: var(--paper); letter-spacing: 0.02em;
 }
 /* 두 의견을 묶는 괄호 + 캡션 */
-#p2 .p2-brk { flex: none; margin: 0 136px; display: flex; align-items: flex-end; gap: 12px; height: 34px; }
+#p2 .p2-brk { margin: 0 133px; display: flex; align-items: flex-end; gap: 12px; height: 34px; }
 #p2 .p2-brk::before, #p2 .p2-brk::after { content: ""; flex: 1; height: 20px; margin-bottom: 13px; border: 2px solid var(--line-2); border-top: 0; }
 #p2 .p2-brk::before { border-right: 0; border-radius: 0 0 0 10px; }
 #p2 .p2-brk::after { border-left: 0; border-radius: 0 0 10px 0; }
 #p2 .p2-brk span { font-size: 20px; font-weight: 600; line-height: 26px; color: var(--ink-2); letter-spacing: -0.02em; white-space: nowrap; }
 
-#p2 .p2-skills { flex: none; margin-top: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+#p2 .p2-skills { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 #p2 .p2-sk {
   height: 44px; padding: 0 18px; display: flex; align-items: center; gap: 10px;
   border-radius: 999px; background: var(--paper); border: 1.5px solid var(--line-2);
@@ -86,7 +87,7 @@
 
 /* 결과 : 하나의 목표로 / 하나의 성과로 (1쪽 .p1-topic 의 흰 패널) */
 #p2 .p2-res {
-  flex: none; margin-top: auto; height: 72px; padding: 0 24px; display: flex; align-items: center; gap: 14px;
+  flex: none; height: 72px; padding: 0 24px; display: flex; align-items: center; gap: 14px;
   border-radius: var(--r-in); background: var(--paper);
   box-shadow: 0 1px 2px rgba(11,33,71,.05), 0 8px 24px rgba(11,33,71,.07);
   font-size: 24px; font-weight: 700; line-height: 1.3; color: var(--navy); letter-spacing: -0.035em; white-space: nowrap;
@@ -118,8 +119,8 @@
   box-shadow: 0 1px 2px rgba(11,33,71,.05), 0 4px 12px rgba(11,33,71,.05);
   font-size: 20px; font-weight: 700; color: var(--navy); letter-spacing: -0.02em; white-space: nowrap;
 }
-#p2 .g .p2-chip { width: 168px; }
-#p2 .b .p2-chip { width: 236px; color: var(--hec-blue); }
+#p2 .p2-chip { width: 236px; }
+#p2 .b .p2-chip { color: var(--hec-blue); }
 #p2 .p2-chip i { width: 9px; height: 9px; border-radius: 50%; display: block; flex: none; }
 #p2 .g .p2-chip i { background: var(--hec-green); }
 #p2 .b .p2-chip i { background: var(--hec-blue); }
@@ -145,11 +146,12 @@
 /* ===== 3단 : 선정 이유 — 남색 그라데이션 초점 카드 (핵심 메시지) ===== */
 #p2 .p2-hero.key {
   flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 0;
-  padding: 40px 36px; border-radius: var(--r-card);
-  background: radial-gradient(120% 70% at 100% 0%, var(--navy-2) 0%, var(--navy) 62%);
+  padding: 40px 36px 61px; border-radius: var(--r-card);
+  background: radial-gradient(120% 90% at 100% 0%, var(--navy-2) 0%, var(--navy) 60%);
 }
-#p2 .p2-hero .key-label { font-size: 20px; letter-spacing: 0.04em; }
-#p2 .p2-hero .key-text { margin: auto 0; font-size: 32px; font-weight: 700; line-height: 1.5; letter-spacing: -0.035em; }
+#p2 .p2-emb { flex: none; width: 240px; height: 152px; margin-top: 34px; }
+#p2 .p2-hero .key-label { margin-top: auto; font-size: 22px; letter-spacing: 0.04em; }
+#p2 .p2-hero .key-text { margin-top: 20px; font-size: 36px; font-weight: 700; line-height: 1.5; letter-spacing: -0.035em; }
 </style>
 
 <div class="p2-wrap">
@@ -161,15 +163,17 @@
   <!-- 1단 · 1행 : 사람의 연결 -->
   <section class="p2-tile p2-v1 g">
     <div class="p2-ch"><span class="p2-no">01</span><h3>사람의 연결</h3></div>
-    <div class="p2-pair"><span class="p2-op"><i></i>참신성</span><span class="p2-vs">VS</span><span class="p2-op"><i></i>구현 가능성</span></div>
-    <p class="p2-brk"><span>서로 다른 의견</span></p>
+    <div class="p2-mid">
+      <div class="p2-pair"><span class="p2-op"><i></i>참신성</span><span class="p2-vs">VS</span><span class="p2-op"><i></i>구현 가능성</span></div>
+      <p class="p2-brk"><span>서로 다른 의견</span></p>
+    </div>
     <p class="p2-res"><span class="p2-ic"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></svg></span><span>공동의 기준으로 조율해 <em>하나의 목표</em>로</span></p>
   </section>
 
   <!-- 1단 · 2행 : 강점의 연결 -->
   <section class="p2-tile p2-v2 b">
     <div class="p2-ch"><span class="p2-no">02</span><h3>강점의 연결</h3></div>
-    <div class="p2-skills">
+    <div class="p2-mid p2-skills">
       <span class="p2-sk"><i></i>Dynamo 자동화</span>
       <span class="p2-sk"><i></i>모듈러 설계</span>
       <span class="p2-sk"><i></i>BIM 모델링</span>
@@ -226,6 +230,16 @@
 
   <!-- 3단 : 선정 이유 (남색 그라데이션 초점 카드 = 핵심 메시지) -->
   <section class="key p2-hero">
+    <!-- 우리(초록) ∩ 기술(파랑) → 겹친 자리가 미래 가치(금색) -->
+    <svg class="p2-emb" viewBox="0 0 240 152" aria-hidden="true">
+      <defs>
+        <clipPath id="p2b-clipA"><circle cx="76" cy="76" r="72"/></clipPath>
+        <linearGradient id="p2b-gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFD873"/><stop offset=".55" stop-color="#FDBB30"/><stop offset="1" stop-color="#E89B12"/></linearGradient>
+      </defs>
+      <circle cx="76" cy="76" r="72" fill="rgba(0,169,79,.14)" stroke="var(--hec-green)" stroke-width="2.5"/>
+      <circle cx="164" cy="76" r="72" fill="rgba(69,185,236,.12)" stroke="var(--sky)" stroke-width="2.5"/>
+      <circle cx="164" cy="76" r="72" fill="url(#p2b-gold)" clip-path="url(#p2b-clipA)"/>
+    </svg>
     <div class="key-label"><span class="mark"><i></i><b></b><i></i><b></b><i></i></span>선정 이유</div>
     <p class="key-text">서로 다른 사람과 전문성이<br><em>하나의 목표</em>로 연결될 때,<br>기술은 더 큰 가능성을<br>발휘하고 <em>새로운 미래 가치</em>를<br>만들어간다고 믿습니다.</p>
   </section>
