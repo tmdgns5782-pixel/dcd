@@ -1,21 +1,22 @@
-<!-- landscape 3 (v5): 이 파일만 편집. 스타일은 #p3 로 범위를 한정 -->
+<!-- landscape 3 (v6): 이 파일만 편집. 스타일은 #p3 로 범위를 한정 -->
 <style>
 #p3 .p3l { height: calc(100% - 10px); display: flex; flex-direction: column;
   --g-ink: var(--hec-green);
-  --t-title: calc(var(--fs-h3) + 2px);      /* 30px 블록 제목 */
-  --t-body: calc(var(--fs-small) + 1px);    /* 23px 본문 */
-  --t-cap: 20px; }
+  --t-eb: calc(var(--fs-small) - 1px);     /* 21px 영문 소제목 */
+  --t-title: calc(var(--fs-h3) + 4px);      /* 32px 블록 제목 */
+  --t-body: calc(var(--fs-small) + 2px);    /* 24px 본문 */
+  --t-label: calc(var(--fs-small) + 2px); } /* 24px 노드 라벨 */
 #p3 .p3l .stage { position: relative; width: 1728px; height: 592px; flex: none; }
 #p3 .p3l .stage > svg { position: absolute; left: 0; top: 0; width: 1728px; height: 592px; }
 #p3 .p3l .key { margin-top: auto; gap: 22px; }
 #p3 .p3l .key .key-text { white-space: nowrap; }
 
 /* SVG strokes */
-#p3 .p3l .ln { fill: none; stroke-width: 3; stroke-linecap: round; }
+#p3 .p3l .ln { fill: none; stroke-width: 3.5; stroke-linecap: round; }
 #p3 .p3l .ln.trunk { stroke: url(#p3l-grad); }
 #p3 .p3l .ln.ppl { stroke: var(--hec-green); }
 #p3 .p3l .ln.tch { stroke: var(--hec-blue); }
-#p3 .p3l .ln.fan { stroke: url(#p3l-grad); stroke-width: 2.5; }
+#p3 .p3l .ln.fan { stroke: url(#p3l-grad); stroke-width: 3; }
 #p3 .p3l .g0 { stop-color: var(--sky); }
 #p3 .p3l .g1 { stop-color: var(--sky-2); }
 #p3 .p3l .jd.ppl { fill: var(--hec-green); }
@@ -27,20 +28,20 @@
 #p3 .p3l svg.ic { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 
 /* text blocks */
-#p3 .p3l .eb { display: flex; align-items: center; gap: 10px; font-size: var(--fs-eyebrow); font-weight: 700;
-  letter-spacing: 0.16em; text-transform: uppercase; line-height: 1.3; white-space: nowrap; color: var(--ink-2); }
-#p3 .p3l .eb .dot { width: 10px; height: 10px; }
-#p3 .p3l .eb b { font-weight: 800; color: var(--navy); letter-spacing: 0.1em; }
+#p3 .p3l .eb { display: flex; align-items: center; gap: 10px; font-size: var(--t-eb); font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase; line-height: 1.25; white-space: nowrap; color: var(--ink-2); }
+#p3 .p3l .eb .dot { width: 12px; height: 12px; }
+#p3 .p3l .eb b { font-weight: 800; color: var(--navy); letter-spacing: 0.08em; }
 #p3 .p3l .eb.people { color: var(--g-ink); }
 #p3 .p3l .eb.tech { color: var(--hec-blue); }
 #p3 .p3l .ttl { margin-top: 6px; font-size: var(--t-title); font-weight: 800; color: var(--navy);
-  letter-spacing: -0.03em; line-height: 1.3; white-space: nowrap; }
+  letter-spacing: -0.03em; line-height: 1.25; white-space: nowrap; }
 #p3 .p3l .dl { margin-top: 8px; display: grid; gap: 2px; }
 #p3 .p3l .li { display: flex; align-items: center; gap: 12px; font-size: var(--t-body); font-weight: 600;
-  color: var(--ink-2); line-height: 1.4; letter-spacing: -0.02em; white-space: nowrap; }
-#p3 .p3l .li::before { content: ""; width: 14px; height: 2px; border-radius: 2px; background: var(--line-2); flex: none; }
+  color: var(--ink-2); line-height: 1.35; letter-spacing: -0.02em; white-space: nowrap; }
+#p3 .p3l .li::before { content: ""; width: 14px; height: 3px; border-radius: 2px; background: var(--ink-3); flex: none; }
 #p3 .p3l .li b { font-weight: 800; color: var(--navy); }
-#p3 .p3l .li .to { color: var(--sky-2); font-weight: 700; }
+#p3 .p3l .li .to { color: var(--sky-2); font-weight: 800; }
 
 /* nodes */
 #p3 .p3l .node { display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -51,24 +52,24 @@
 #p3 .p3l .n-field .ic { width: 52px; height: 52px; stroke-width: 1.8; }
 #p3 .p3l .n-field .nm { font-size: 44px; color: var(--navy); }
 #p3 .p3l .n-ppl, #p3 .p3l .n-tch { width: 100px; height: 100px; left: 562px; border: 3px solid; }
-#p3 .p3l .n-ppl { top: 160px; background: var(--tint-green); border-color: var(--hec-green); color: var(--g-ink); }
-#p3 .p3l .n-tch { top: 330px; background: var(--tint-blue); border-color: var(--hec-blue); color: var(--hec-blue); }
-#p3 .p3l .n-ppl .ic, #p3 .p3l .n-tch .ic { width: 30px; height: 30px; }
-#p3 .p3l .n-ppl .nm, #p3 .p3l .n-tch .nm { font-size: 26px; margin-top: 2px; }
-#p3 .p3l .n-imp { width: 220px; height: 220px; left: 1090px; top: 185px; color: var(--paper);
+#p3 .p3l .n-ppl { top: 163px; background: var(--tint-green); border-color: var(--hec-green); color: var(--g-ink); }
+#p3 .p3l .n-tch { top: 327px; background: var(--tint-blue); border-color: var(--hec-blue); color: var(--hec-blue); }
+#p3 .p3l .n-ppl .ic, #p3 .p3l .n-tch .ic { width: 32px; height: 32px; stroke-width: 2.1; }
+#p3 .p3l .n-ppl .nm, #p3 .p3l .n-tch .nm { font-size: 27px; margin-top: 1px; }
+#p3 .p3l .n-imp { width: 244px; height: 244px; left: 1083px; top: 146px; color: var(--paper);
   background: linear-gradient(160deg, var(--sky-2) 0%, var(--hec-blue) 48%, var(--navy) 100%); }
-#p3 .p3l .n-imp .ic { width: 50px; height: 50px; stroke-width: 1.8; }
-#p3 .p3l .n-imp .nm { font-size: 44px; }
+#p3 .p3l .n-imp .ic { width: 54px; height: 54px; stroke-width: 1.9; }
+#p3 .p3l .n-imp .nm { font-size: 48px; }
 
 /* joints: 문제 발견 · 문제 해결 */
-#p3 .p3l .joint { width: 64px; height: 64px; top: 263px; color: var(--hec-blue); }
-#p3 .p3l .joint .ic { width: 28px; height: 28px; stroke-width: 2.2; }
-#p3 .p3l .ms { transform: translateX(-50%); top: 342px; height: 42px; padding: 0 18px; border-radius: 999px;
-  display: inline-flex; align-items: center; background: var(--tint-sky); font-size: var(--fs-small); font-weight: 800;
+#p3 .p3l .joint { width: 72px; height: 72px; top: 259px; color: var(--hec-blue); }
+#p3 .p3l .joint .ic { width: 32px; height: 32px; stroke-width: 2.3; }
+#p3 .p3l .ms { transform: translateX(-50%); top: 343px; height: 44px; padding: 0 18px; border-radius: 999px;
+  display: inline-flex; align-items: center; background: var(--tint-sky); font-size: var(--t-label); font-weight: 800;
   color: var(--navy); letter-spacing: -0.02em; white-space: nowrap; }
 
 /* STEP 03 → STEP 04 band (rows aligned so the two items visibly continue) */
-#p3 .p3l .band { left: 562px; top: 446px; width: 1166px; display: grid;
+#p3 .p3l .band { left: 562px; top: 441px; width: 1166px; display: grid;
   grid-template-columns: max-content 1fr 728px; column-gap: 0; align-items: center; }
 #p3 .p3l .band .c1 { grid-column: 1; }
 #p3 .p3l .band .c3 { grid-column: 3; }
@@ -76,18 +77,18 @@
 #p3 .p3l .band .li { margin-top: 2px; }
 #p3 .p3l .band .ttl + .ttl { margin-top: 6px; }
 #p3 .p3l .band .r1 { grid-row: 1; } #p3 .p3l .band .r2 { grid-row: 2; }
-#p3 .p3l .band .r3 { grid-row: 3; margin-top: 10px; } #p3 .p3l .band .r4 { grid-row: 4; }
-#p3 .p3l .cn { grid-column: 2; display: flex; align-items: center; padding: 0 16px 0 18px; }
-#p3 .p3l .cn i { flex: 1; height: 0; border-top: 2px dotted var(--sky); }
-#p3 .p3l .cn svg { width: 14px; height: 14px; color: var(--sky-2); margin-left: 2px; }
+#p3 .p3l .band .r3 { grid-row: 3; margin-top: 8px; } #p3 .p3l .band .r4 { grid-row: 4; }
+#p3 .p3l .cn { grid-column: 2; display: flex; align-items: center; padding: 0 12px 0 20px; }
+#p3 .p3l .cn i { flex: 1; height: 0; border-top: 3px dotted var(--sky-2); }
+#p3 .p3l .cn svg { width: 22px; height: 22px; color: var(--sky-2); stroke-width: 2.8; margin-left: -4px; }
 
 /* outcomes */
-#p3 .p3l .oc { left: 1508px; width: 220px; height: 58px; padding: 0 18px 0 7px; gap: 12px; border-radius: 999px;
+#p3 .p3l .oc { left: 1500px; width: 228px; height: 60px; padding: 0 18px 0 7px; gap: 12px; border-radius: 999px;
   display: flex; align-items: center; background: var(--tint-yellow); color: var(--gold-ink);
-  font-size: calc(var(--fs-small) + 2px); font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
-#p3 .p3l .oc .bd { width: 44px; height: 44px; border-radius: 50%; background: var(--paper);
+  font-size: var(--fs-body); font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
+#p3 .p3l .oc .bd { width: 46px; height: 46px; border-radius: 50%; background: var(--paper);
   border: 2px solid var(--hec-yellow); display: grid; place-items: center; flex: none; }
-#p3 .p3l .oc .ic { width: 28px; height: 28px; stroke-width: 1.8; }
+#p3 .p3l .oc .ic { width: 30px; height: 30px; stroke-width: 2; }
 </style>
 
 <div class="p3l">
@@ -98,21 +99,21 @@
           <stop offset="0" class="g0"/><stop offset="1" class="g1"/>
         </linearGradient>
       </defs>
-      <circle class="halo" cx="1200" cy="295" r="130"/>
+      <circle class="halo" cx="1205" cy="268" r="140"/>
       <!-- trunk: 현장 → 문제 발견 -->
       <path class="ln trunk" d="M236 295 H340"/>
       <!-- PEOPLE (위) · TECH (아래) 두 갈래 → 문제 해결 -->
-      <path class="ln ppl" d="M372 295 C468 295 466 210 562 210 M662 210 H862 C930 210 920 295 990 295"/>
-      <path class="ln tch" d="M372 295 C468 295 466 380 562 380 M662 380 H862 C930 380 920 295 990 295"/>
+      <path class="ln ppl" d="M376 295 C468 295 466 213 562 213 M662 213 H840 C908 213 900 295 970 295"/>
+      <path class="ln tch" d="M376 295 C468 295 466 377 562 377 M662 377 H840 C908 377 900 295 970 295"/>
       <!-- 문제 해결 → 변화 -->
-      <path class="ln trunk" d="M990 295 H1094"/>
+      <path class="ln trunk" d="M970 295 H1004 C1046 295 1040 268 1088 268"/>
       <!-- 변화 → 4개 개선 -->
-      <path class="ln fan" d="M1310 295 C1468 295 1436 50 1508 50"/>
-      <path class="ln fan" d="M1310 295 C1468 295 1436 215 1508 215"/>
-      <path class="ln fan" d="M1310 295 C1468 295 1436 380 1508 380"/>
-      <path class="ln fan" d="M1310 295 C1468 295 1436 545 1508 545"/>
-      <circle class="jd ppl" cx="862" cy="210" r="6"/>
-      <circle class="jd tch" cx="862" cy="380" r="6"/>
+      <path class="ln fan" d="M1327 268 C1470 268 1430 47 1500 47"/>
+      <path class="ln fan" d="M1327 268 C1470 268 1430 204 1500 204"/>
+      <path class="ln fan" d="M1327 268 C1470 268 1430 361 1500 361"/>
+      <path class="ln fan" d="M1327 268 C1470 268 1430 518 1500 518"/>
+      <circle class="jd ppl" cx="840" cy="213" r="7"/>
+      <circle class="jd tch" cx="840" cy="377" r="7"/>
     </svg>
 
     <!-- STEP 01 FIELD -->
@@ -131,7 +132,7 @@
     </div>
 
     <!-- 문제 발견 -->
-    <div class="a node ring joint" style="left:308px">
+    <div class="a node ring joint" style="left:304px">
       <svg class="ic" viewBox="0 0 24 24"><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"/><path d="M21 21l-6 -6"/></svg>
     </div>
     <div class="a ms" style="left:340px">문제 발견</div>
@@ -157,10 +158,10 @@
     </div>
 
     <!-- 문제 해결 -->
-    <div class="a node ring joint" style="left:958px">
+    <div class="a node ring joint" style="left:934px">
       <svg class="ic" viewBox="0 0 24 24"><path d="M5 12l5 5l10 -10"/></svg>
     </div>
-    <div class="a ms" style="left:990px">문제 해결</div>
+    <div class="a ms" style="left:970px">문제 해결</div>
 
     <!-- 변화 -->
     <div class="a node n-imp">
@@ -185,10 +186,10 @@
     </div>
 
     <!-- 4개 개선 -->
-    <div class="a oc" style="top:21px"><span class="bd"><svg class="ic" viewBox="0 0 24 24"><path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4"/><path d="M18 18m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496v1.504l1 1"/></svg></span>공정 개선</div>
-    <div class="a oc" style="top:186px"><span class="bd"><svg class="ic" viewBox="0 0 24 24"><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"/><path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z"/><path d="M9 14l2 2l4 -4"/></svg></span>품질 개선</div>
-    <div class="a oc" style="top:351px"><span class="bd"><svg class="ic" viewBox="0 0 24 24"><path d="M11.46 20.846a12 12 0 0 1 -7.96 -14.846a12 12 0 0 0 8.5 -3a12 12 0 0 0 8.5 3a12 12 0 0 1 -.09 7.06"/><path d="M15 19l2 2l4 -4"/></svg></span>안전 개선</div>
-    <div class="a oc" style="top:516px"><span class="bd"><svg class="ic" viewBox="0 0 24 24"><path d="M6 21h6"/><path d="M9 21v-18l-6 6h18"/><path d="M9 3l10 6"/><path d="M17 9v4a2 2 0 1 1 -2 2"/></svg></span>생산성 개선</div>
+    <div class="a oc" style="top:17px"><span class="bd"><svg class="ic" viewBox="0 0 24 24"><path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4"/><path d="M18 18m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496v1.504l1 1"/></svg></span>공정 개선</div>
+    <div class="a oc" style="top:174px"><span class="bd"><svg class="ic" viewBox="0 0 24 24"><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"/><path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z"/><path d="M9 14l2 2l4 -4"/></svg></span>품질 개선</div>
+    <div class="a oc" style="top:331px"><span class="bd"><svg class="ic" viewBox="0 0 24 24"><path d="M11.46 20.846a12 12 0 0 1 -7.96 -14.846a12 12 0 0 0 8.5 -3a12 12 0 0 0 8.5 3a12 12 0 0 1 -.09 7.06"/><path d="M15 19l2 2l4 -4"/></svg></span>안전 개선</div>
+    <div class="a oc" style="top:488px"><span class="bd"><svg class="ic" viewBox="0 0 24 24"><path d="M6 21h6"/><path d="M9 21v-18l-6 6h18"/><path d="M9 3l10 6"/><path d="M17 9v4a2 2 0 1 1 -2 2"/></svg></span>생산성 개선</div>
   </div>
 
   <div class="key">
