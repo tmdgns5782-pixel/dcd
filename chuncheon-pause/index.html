@@ -374,15 +374,16 @@ ul.commas.sm li { font-size: 22px; padding-left: 28px; }
 /* 10 기대효과 */
 .two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 48px; }
 .verify { list-style: none; display: flex; flex-direction: column; }
-.verify li { display: flex; flex-direction: column; gap: 2px; padding: 10px 0; border-top: 1.5px solid var(--rule); }
+.verify li { display: flex; flex-direction: column; gap: 2px; padding: 8px 0; border-top: 1.5px solid var(--rule); }
 .verify li:last-child { border-bottom: 1.5px solid var(--rule); }
 .verify b { font-size: 25px; color: var(--ink); }
 .verify span { font-size: 19px; color: var(--olive-soft); }
 .sources { display: flex; flex-direction: column; border: 1.5px solid var(--rule); border-radius: 14px; }
-.sources > div { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; align-items: baseline; padding: 10px 22px; }
+.sources > div { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; align-items: baseline; padding: 7px 22px; }
 .sources > div + div { border-top: 1.5px solid var(--rule); }
 .sources .k { font-size: 17px; font-weight: 800; letter-spacing: .08em; color: var(--olive-soft); }
 .sources p { font-size: 20px; color: var(--olive); }
+.src-list { list-style: none; display: flex; flex-direction: column; gap: 2px; font-size: 17px; line-height: 1.45; color: var(--olive); }
 
 /* ───────── 인쇄 → PDF (크롬에서 Ctrl+P, 여백 없음) ───────── */
 @media print {
@@ -410,7 +411,6 @@ ul.commas.sm li { font-size: 22px; padding-left: 28px; }
 <main class="deck" id="deck">
 
   <section class="guide" aria-label="작성 가이드">
-    <p><i class="g-fill">노란 칸</i> 직접 채울 곳</p>
     <p><i class="g-tag">점선 태그</i> 가설·검증 필요 표시</p>
     <p><i class="g-photo">사진</i> AI 생성 이미지 · images 폴더에서 같은 이름으로 교체 가능</p>
     <p>슬라이드를 누르면 그 장부터 발표 · ← → 이동 · N 멘트 · Esc 종료</p>
@@ -434,14 +434,14 @@ ul.commas.sm li { font-size: 22px; padding-left: 28px; }
           </div>
           <footer class="cover-foot">
             <span>관광레저상품론</span>
-            <span>관광경영학과</span>
-            <span>학번 <em class="fill">[학번]</em></span>
-            <span>이름 <em class="fill">[이름]</em></span>
+            <span>강원대학교 관광경영학과</span>
+            <span>202313296</span>
+            <span>이세진</span>
           </footer>
         </div>
       </section>
     </div>
-    <p class="notes"><b>발표 멘트</b>안녕하세요, 관광경영학과 [이름]입니다. 제가 기획한 관광상품은 「춘천, 쉼표 하나」입니다. 바쁜 일상 속에서 잠시 쉼표를 찍듯, 춘천의 호수와 자연 속에서 하루 동안 온전히 쉬어 가는 감성 힐링 당일 여행입니다.</p>
+    <p class="notes"><b>발표 멘트</b>안녕하세요, 강원대학교 관광경영학과 이세진입니다. 제가 기획한 관광상품은 「춘천, 쉼표 하나」입니다. 바쁜 일상 속에서 잠시 쉼표를 찍듯, 춘천의 호수와 자연 속에서 하루 동안 온전히 쉬어 가는 감성 힐링 당일 여행입니다.</p>
   </article>
 
   <!-- 02 기획 배경 -->
@@ -511,7 +511,7 @@ ul.commas.sm li { font-size: 22px; padding-left: 28px; }
               </article>
             </div>
           </div>
-          <footer class="foot"><span>자원 정보 출처 <em class="fill">[춘천시 관광 정보 등]</em> · 조사일 <em class="fill">[2026.__.__]</em></span><span class="pg">03 / 10</span></footer>
+          <footer class="foot"><span>출처 서울신문(2025.03.07) · 한국교육신문 · ktriptips.com · 헤럴드경제(2026.09.13) · 조사일 2026.10.19</span><span class="pg">03 / 10</span></footer>
         </div>
       </section>
     </div>
@@ -545,12 +545,12 @@ ul.commas.sm li { font-size: 22px; padding-left: 28px; }
               <span class="chip">편리한 일정</span><span class="chip">자연 속 휴식</span><span class="chip">감성적인 공간</span>
             </div>
             <div class="evidence">
-              <div><span class="k">확인된 사실</span><p><em class="fill">[조사 후 기입 · 후기·설문에서 확인한 내용]</em></p></div>
-              <div><span class="k">해석</span><p><em class="fill">[사실을 바탕으로 한 판단]</em></p></div>
+              <div><span class="k">확인된 사실</span><p>국내여행 1인당 연 6.5회·10.2일, 전체 패키지 구매 비율 76.0% → 79.5%</p></div>
+              <div><span class="k">해석</span><p>짧은 여행을 자주 떠나고, 일정이 짜인 상품을 고르는 경향이 커지고 있다.</p></div>
               <div><span class="k">가설</span><p>20~30대 직장인은 짧고 여유로운 당일 휴식형 여행을 원할 수 있다.</p></div>
             </div>
           </div>
-          <footer class="foot"><span>조사 자료 <em class="fill">[자료명]</em> · 출처 <em class="fill">[기관·URL]</em> · 조사일 <em class="fill">[2026.__.__]</em></span><span class="pg">04 / 10</span></footer>
+          <footer class="foot"><span>출처 문화체육관광부·한국문화관광연구원 「2025년 국민여행조사」(2026.06.30 발표) · 조사일 2026.10.19</span><span class="pg">04 / 10</span></footer>
         </div>
       </section>
     </div>
@@ -570,7 +570,7 @@ ul.commas.sm li { font-size: 22px; padding-left: 28px; }
               <span class="label">발굴 방법</span>
               <div class="method"><b>브레인스토밍</b><span>고객 문제의 해결책을 제한 없이 나열</span></div>
               <div class="method"><b>SCAMPER</b><span>기존 여행을 결합·제거·변형해 보기</span></div>
-              <div class="method"><b>관광 후기 분석</b><span>반복되는 불편 찾기 <em class="fill">[조사 후 결과 기입]</em></span></div>
+              <div class="method"><b>관광 후기 분석</b><span>반복되는 불편과 만족 요인 찾기</span></div>
             </div>
             <ol class="ideas">
               <li><span class="no">01</span><div><b>의암호 느린 산책</b><p class="meta"><span><i>문제</i>빽빽한 일정의 피로</span><span><i>위험</i>날씨·계절 영향</span></p></div></li>
@@ -585,7 +585,7 @@ ul.commas.sm li { font-size: 22px; padding-left: 28px; }
               <li class="pick"><span class="no">10</span><div><b>나만의 춘천 쉼표 여행</b><p class="meta"><span><i>문제</i>여행 계획 부담</span><span><i>위험</i>선택지 과다</span></p></div><span class="tag solid">평가 후보</span></li>
             </ol>
           </div>
-          <footer class="foot"><span>초기 발산 단계에서는 아이디어를 탈락시키지 않음 · 아이디어별 문제·위험은 초안</span><span class="pg">05 / 10</span></footer>
+          <footer class="foot"><span>초기 발산 단계에서는 아이디어를 탈락시키지 않고 고객 문제와 위험을 함께 기록</span><span class="pg">05 / 10</span></footer>
         </div>
       </section>
     </div>
@@ -637,7 +637,7 @@ ul.commas.sm li { font-size: 22px; padding-left: 28px; }
               </div>
             </aside>
           </div>
-          <footer class="foot"><span>※ 점수는 기획 예시이며 실제 조사·검토 후 수정 필요 · 안전 검토는 초안</span><span class="pg">06 / 10</span></footer>
+          <footer class="foot"><span>※ 점수는 기획 단계의 예시이며 실제 조사·검토 후 수정 필요</span><span class="pg">06 / 10</span></footer>
         </div>
       </section>
     </div>
@@ -705,12 +705,12 @@ ul.commas.sm li { font-size: 22px; padding-left: 28px; }
                 <ul class="commas sm"><li>소규모 사전 예약형</li><li>1일 약 6시간 (11:00–17:00)</li><li>가격·인원·이동 방식 추후 검증</li></ul>
               </div>
               <div class="op">
-                <div class="row-head"><span class="label">포함 · 선택 서비스</span><span class="tag">초안</span></div>
+                <div class="row-head"><span class="label">포함 · 선택 서비스</span><span class="tag">제안</span></div>
                 <p><b>기본</b>일정 안내 · 산책 가이드 · 카페 티타임</p>
                 <p><b>선택</b>로컬 식사 메뉴 · 독서·사진 키트</p>
               </div>
               <div class="op">
-                <div class="row-head"><span class="label">안전 · 우천 대안</span><span class="tag">초안</span></div>
+                <div class="row-head"><span class="label">안전 · 우천 대안</span><span class="tag">제안</span></div>
                 <p><b>안전</b>수변 산책로 안전 안내</p>
                 <p><b>우천</b>산책 → 실내 카페·휴식 공간으로 대체</p>
               </div>
@@ -757,7 +757,7 @@ ul.commas.sm li { font-size: 22px; padding-left: 28px; }
         <div class="pad">
           <p class="eyebrow">Expected Effects &amp; Next Steps</p>
           <h2 class="title">춘천에서의 하루가 일상에 작은 쉼표가 되기를.</h2>
-          <div class="body">
+          <div class="body" style="gap:20px">
             <div class="two">
               <div>
                 <div class="row-head"><span class="label">기대효과</span><span class="tag">가설</span></div>
@@ -774,9 +774,9 @@ ul.commas.sm li { font-size: 22px; padding-left: 28px; }
               </div>
             </div>
             <div class="sources">
-              <div><span class="k">자료 출처</span><p><em class="fill">[자료명 · 기관 · URL]</em></p></div>
-              <div><span class="k">조사일</span><p><em class="fill">[2026.__.__]</em></p></div>
-              <div><span class="k">AI 활용 범위</span><p><em class="fill">[구성안·사진 생성(ChatGPT), 디자인 초안(Claude), 내용은 직접 확인]</em></p></div>
+              <div><span class="k">자료 출처</span><ul class="src-list"><li>문화체육관광부·한국문화관광연구원 「2025년 국민여행조사」 (2026.06.30)</li><li>서울신문 (2025.03.07) · 한국교육신문 — 의암호</li><li>ktriptips.com — 공지천 · 헤럴드경제 (2026.09.13) — 닭갈비·막국수</li><li>관광레저상품론 과제 안내문 — 평가 기준 · 고객 여정</li></ul></div>
+              <div><span class="k">조사일</span><p>2026.10.19</p></div>
+              <div><span class="k">AI 활용 범위</span><p>ChatGPT (발표 구성안 정리 · 사진 생성)</p></div>
             </div>
           </div>
           <footer class="foot"><span>관광레저상품론 · 관광상품 기획 사전 제안서</span><span class="pg">10 / 10</span></footer>
