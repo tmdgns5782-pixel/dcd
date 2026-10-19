@@ -1,6 +1,5 @@
 // Slide content and layout for the 온석터널 briefing. px on a 1280x720 canvas, fonts in pt.
 // Sections and speaker notes follow the 현장시나리오 #3-2 훈련개요 브리핑 script (4 min).
-const { tunnelArtSvg } = require("./lib");
 
 const X0 = 72, X1 = 1208, W = X1 - X0;
 const lineH = (s, lh) => s * (4 / 3) * lh;
@@ -10,7 +9,6 @@ const rect = (x, y, w, h, o = {}) => ({ t: "rect", x, y, w, h, ...o });
 const oval = (x, y, w, h, o = {}) => ({ t: "ellipse", x, y, w, h, ...o });
 const text = (x, y, w, h, body, o = {}) => (Array.isArray(body) ? { t: "text", x, y, w, h, runs: body, ...o } : { t: "text", x, y, w, h, runs: [{ text: body }], ...o });
 const icon = (n, x, y, size, c) => ({ t: "icon", n, x, y, w: size, h: size, c });
-const img = (svg, x, y, w, h, name) => ({ t: "img", svg, x, y, w, h, name });
 const poly = (pts, o = {}) => ({ t: "line", pts, ...o });
 
 // The six parts of the script, used for the agenda, the section tags and the PPTX sections.
@@ -56,16 +54,27 @@ const content = (n, title, els, notes) => ({ layout: "CONTENT", section: `${part
 // ---- slides ------------------------------------------------------------------------------
 const slides = [];
 
+// Info band at the foot of the cover and closing slides: label over value, columns split by hairlines.
+function infoBand(cols) {
+  const els = [rect(X0, 512, W, 112, { fill: "white", alpha: 0.06, r: 18, name: "Info band" })];
+  let x = 104;
+  cols.forEach(([lab, val, w], i) => {
+    if (i > 0) els.push(poly([[x - 24, 540], [x - 24, 596]], { c: "blue", lw: 1.5 }));
+    els.push(text(x, 534, w, 24, lab, { s: 13, f: "sb", c: "amber", v: "m" }));
+    els.push(text(x, 562, w, 34, val, { s: 17, f: "b", c: "white", v: "m" }));
+    x += w + 48;
+  });
+  return els;
+}
+
 // 1. Cover
 slides.push({
   layout: "COVER", section: "표지",
   title: "온석터널\n훈련개요 브리핑",
   els: [
-    img(tunnelArtSvg(720, 720), 560, 0, 720, 720, "Tunnel artwork"),
-    text(X0, 194, 520, 30, "2026 재난대응 안전한국훈련", { s: 16, f: "sb", c: "amber", v: "m" }),
-    text(X0, 428, 600, 30, "도로 분야 복합재난 대응훈련  |  국도32호선 온석터널", { s: 17, f: "m", c: "mist", v: "m" }),
-    text(X0, 546, 480, 34, "2026. 10. 22. (목)", { s: 20, f: "b", c: "amber", v: "m" }),
-    text(X0, 586, 600, 28, "예산국토관리사무소  시설안전관리과장  최병목", { s: 16, f: "m", c: "white", v: "m" }),
+    text(X0, 148, 600, 30, "2026 재난대응 안전한국훈련", { s: 16, f: "sb", c: "amber", v: "m" }),
+    text(X0, 400, 800, 32, "도로 분야 복합재난 대응훈련", { s: 20, f: "m", c: "mist", v: "m" }),
+    ...infoBand([["일시", "2026. 10. 22. (목) 14:00 ~ 16:00", 384], ["장소", "국도32호선 온석터널 서산방향", 300], ["발표 · 예산국토관리사무소", "시설안전관리과장 최병목", 296]]),
   ],
   notes: "(사회자 소개 후) 안녕하십니까? 예산국토관리사무소 시설안전관리과장 최병목입니다.",
 });
@@ -477,11 +486,9 @@ slides.push({
 slides.push({
   layout: "CLOSING", section: "마무리", title: "감사합니다",
   els: [
-    img(tunnelArtSvg(720, 720), 560, 0, 720, 720, "Tunnel artwork"),
-    text(X0, 228, 520, 30, "현장에서 작동하는 협조체계", { s: 16, f: "sb", c: "amber", v: "m" }),
-    text(X0, 384, 520, 76, "훈련에 참여해주신 유관기관 및\n관계자 여러분께 감사드립니다.", { s: 19, f: "m", c: "mist", lh: 1.5 }),
-    text(X0, 548, 480, 30, "2026 재난대응 안전한국훈련", { s: 16, f: "b", c: "amber", v: "m" }),
-    text(X0, 586, 600, 28, "예산국토관리사무소  시설안전관리과", { s: 16, f: "m", c: "white", v: "m" }),
+    text(X0, 196, 600, 30, "현장에서 작동하는 협조체계", { s: 16, f: "sb", c: "amber", v: "m" }),
+    text(X0, 358, 900, 40, "훈련에 참여해주신 유관기관 및 관계자 여러분께 감사드립니다.", { s: 20, f: "m", c: "mist", v: "m" }),
+    ...infoBand([["훈련", "2026 재난대응 안전한국훈련 · 온석터널", 456], ["주관", "예산국토관리사무소 시설안전관리과", 456]]),
   ],
   notes: "이상으로 훈련개요 브리핑을 마치겠습니다. 감사합니다.",
 });
@@ -490,8 +497,8 @@ slides.push({
 const FOOTER = "2026 재난대응 안전한국훈련  |  온석터널 훈련개요 브리핑";
 const NUM = { x: X1 - 100, y: 676, w: 100, h: 20, s: 10, f: "sb", c: "muted" };
 const layouts = {
-  COVER: { bg: "navy", title: { x: X0, y: 236, w: 560, h: 180, s: 54, f: "bk", c: "white", lh: 1.15, ls: -1 } },
-  CLOSING: { bg: "navy", title: { x: X0, y: 270, w: 520, h: 96, s: 60, f: "bk", c: "white", lh: 1.15, ls: -1 } },
+  COVER: { bg: "navy", title: { x: X0, y: 188, w: W, h: 196, s: 64, f: "bk", c: "white", lh: 1.15, ls: -1 } },
+  CLOSING: { bg: "navy", title: { x: X0, y: 236, w: W, h: 110, s: 72, f: "bk", c: "white", lh: 1.15, ls: -1 } },
   AGENDA: {
     bg: "white", title: { x: X0, y: 300, w: 340, h: 70, s: 44, f: "eb", c: "white", lh: 1.15, ls: -0.5 },
     els: [rect(0, 0, 448, 720, { fill: "navy" }), text(520, 676, 600, 20, FOOTER, { s: 10, f: "r", c: "muted", v: "m" })],
