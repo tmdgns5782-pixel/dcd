@@ -1,0 +1,953 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>춘천, 쉼표 하나</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+@font-face { font-family: "Paperlogy"; font-weight: 300; font-style: normal; font-display: swap; src: url("fonts/Paperlogy-3Light.woff2") format("woff2"); }
+@font-face { font-family: "Paperlogy"; font-weight: 400; font-style: normal; font-display: swap; src: url("fonts/Paperlogy-4Regular.woff2") format("woff2"); }
+@font-face { font-family: "Paperlogy"; font-weight: 500; font-style: normal; font-display: swap; src: url("fonts/Paperlogy-5Medium.woff2") format("woff2"); }
+@font-face { font-family: "Paperlogy"; font-weight: 600; font-style: normal; font-display: swap; src: url("fonts/Paperlogy-6SemiBold.woff2") format("woff2"); }
+@font-face { font-family: "Paperlogy"; font-weight: 700; font-style: normal; font-display: swap; src: url("fonts/Paperlogy-7Bold.woff2") format("woff2"); }
+@font-face { font-family: "Paperlogy"; font-weight: 800; font-style: normal; font-display: swap; src: url("fonts/Paperlogy-8ExtraBold.woff2") format("woff2"); }
+
+/* 레이아웃: 슬라이드마다 1920×1080 캔버스. 검토할 때는 세로로 쌓고, 발표할 때는 한 장씩 화면에 맞춤 */
+:root {
+  /* 슬라이드 팔레트 — 아이보리 배경 + 올리브그린 글씨. 테마와 상관없이 고정 */
+  --ivory: #F5F1E6;
+  --ivory-deep: #ECE6D5;
+  --paper: #FBF9F3;
+  --ink: #2E3A1B;
+  --olive: #45512A;
+  --olive-soft: #646D40;
+  --sage: #B5C092;
+  --sage-soft: #DDE3C7;
+  --sage-deep: #737F4A;
+  --rule: #D5CEB8;
+  --straw: #F1E5BD;
+  --letterbox: #0E100A;
+  --font: "Paperlogy", "Pretendard Variable", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+
+  /* 슬라이드 바깥 화면 */
+  --bg: #E3DECE;
+  --fg: #2E3A1B;
+  --muted: #5C6540;
+  --card: #EFEADC;
+  --edge: rgba(46, 58, 27, .14);
+  --btn: #2E3A1B;
+  --btn-fg: #F5F1E6;
+  --stage-shadow: 0 1px 2px rgba(46, 58, 27, .08), 0 18px 40px -18px rgba(46, 58, 27, .35);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #13160E; --fg: #E7E9DA; --muted: #A8AF8C; --card: #1C2015; --edge: rgba(231, 233, 218, .12);
+    --btn: #C9D2AE; --btn-fg: #13160E;
+    --stage-shadow: 0 0 0 1px rgba(231, 233, 218, .06), 0 18px 40px -18px rgba(0, 0, 0, .6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #13160E; --fg: #E7E9DA; --muted: #A8AF8C; --card: #1C2015; --edge: rgba(231, 233, 218, .12);
+  --btn: #C9D2AE; --btn-fg: #13160E;
+  --stage-shadow: 0 0 0 1px rgba(231, 233, 218, .06), 0 18px 40px -18px rgba(0, 0, 0, .6);
+  color-scheme: dark;
+}
+
+/* ───────── 화면(검토 모드) ───────── */
+html, body { background: var(--bg); color: var(--fg); }
+body { margin: 0; font-family: var(--font); -webkit-font-smoothing: antialiased; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+
+.topbar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding-block: 12px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: color-mix(in srgb, var(--bg) 90%, transparent);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--edge);
+}
+.brand { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+.brand b { font-size: 18px; font-weight: 800; letter-spacing: -.02em; white-space: nowrap; }
+.brand span { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.actions { display: flex; gap: 8px; flex-shrink: 0; }
+.actions button {
+  font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+  padding: 9px 14px; border-radius: 999px; border: 1px solid var(--edge);
+  background: transparent; color: var(--fg);
+}
+.actions button[aria-pressed="false"] { color: var(--muted); }
+.actions button.primary { background: var(--btn); color: var(--btn-fg); border-color: transparent; }
+.actions button:focus-visible, .stage:focus-visible { outline: 3px solid var(--sage-deep); outline-offset: 3px; }
+
+.deck {
+  --s: .6;
+  display: flex; flex-direction: column; gap: 44px;
+  max-width: 1240px; margin: 0 auto;
+  padding-block: 28px 96px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.guide {
+  display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: center;
+  font-size: 13.5px; color: var(--muted); line-height: 1.5;
+}
+.guide p { margin: 0; display: flex; align-items: center; gap: 8px; }
+.guide i { font-style: normal; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 4px; color: var(--ink); }
+.guide .g-fill { background: var(--straw); }
+.guide .g-tag { border: 1.5px dashed var(--muted); color: var(--fg); border-radius: 999px; }
+.guide .g-photo { background: var(--sage-soft); }
+
+.item { display: flex; flex-direction: column; gap: 12px; }
+.item-head { display: flex; justify-content: space-between; gap: 12px; font-size: 13.5px; color: var(--muted); }
+.item-head b { color: var(--fg); font-weight: 700; margin-right: 8px; font-variant-numeric: tabular-nums; }
+.stage {
+  position: relative; width: 100%; max-width: 100%; aspect-ratio: 16 / 9;
+  overflow: hidden; border-radius: 6px; background: var(--ivory);
+  box-shadow: var(--stage-shadow); cursor: zoom-in;
+}
+.notes {
+  margin: 0; padding: 14px 18px; border-radius: 8px;
+  background: var(--card); border: 1px solid var(--edge);
+  font-size: 15px; line-height: 1.8; color: var(--fg);
+}
+.notes b { display: block; font-size: 12px; letter-spacing: .1em; color: var(--muted); margin-bottom: 2px; }
+body.hide-notes .notes { display: none; }
+
+/* ───────── 발표 모드 ───────── */
+body.presenting { overflow: hidden; }
+body.presenting .topbar, body.presenting .guide, body.presenting .item-head, body.presenting .notes { display: none; }
+body.presenting .deck { position: fixed; inset: 0; z-index: 20; max-width: none; margin: 0; padding: 0; display: block; background: var(--letterbox); }
+body.presenting .item { display: none; }
+body.presenting .item.current { display: grid; place-items: center; position: absolute; inset: 0; animation: fadein .22s ease-out; }
+body.presenting .stage { width: calc(1920px * var(--s)); height: calc(1080px * var(--s)); aspect-ratio: auto; border-radius: 0; box-shadow: none; cursor: default; }
+body.presenting.show-pnotes .item.current .notes {
+  display: block; position: fixed; z-index: 25; max-height: 32vh; overflow: auto;
+  left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px));
+  bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+  background: rgba(14, 16, 10, .9); color: #E7E9DA; border-color: rgba(231, 233, 218, .15); font-size: 18px;
+}
+body.presenting.show-pnotes .item.current .notes b { color: #A8AF8C; }
+.hud { display: none; }
+body.presenting .hud {
+  display: block; position: fixed; z-index: 26; left: 0; right: 0; bottom: 0;
+  height: calc(4px + env(safe-area-inset-bottom, 0px)); pointer-events: none;
+}
+.hud span { display: block; height: 4px; width: 0; background: var(--sage); transition: width .25s ease; }
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { body.presenting .item.current { animation: none; } .hud span { transition: none; } }
+
+@media (max-width: 560px) {
+  .brand span { display: none; }
+  .actions button { padding: 8px 12px; font-size: 13px; }
+  .deck { gap: 32px; }
+}
+
+/* ───────── 슬라이드 공통 (1920×1080 기준 px) ───────── */
+.slide {
+  position: absolute; left: 0; top: 0; width: 1920px; height: 1080px;
+  transform: scale(var(--s)); transform-origin: 0 0;
+  overflow: hidden; background: var(--ivory); color: var(--olive);
+  font-family: var(--font); font-size: 28px; line-height: 1.5; letter-spacing: -.01em;
+  font-variant-numeric: tabular-nums; word-break: keep-all; overflow-wrap: break-word;
+}
+.slide *, .slide *::before, .slide *::after { box-sizing: border-box; }
+.slide :where(h1, h2, h3, p, ul, ol, figure, blockquote, dl, dd) { margin: 0; padding: 0; }
+.slide b { font-weight: 700; }
+
+.pad { position: relative; height: 1080px; display: flex; flex-direction: column; padding: 88px 112px 56px; min-width: 0; }
+.eyebrow { display: flex; align-items: center; gap: 16px; font-size: 21px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; color: var(--olive-soft); }
+.eyebrow::before { content: ""; width: 40px; height: 2px; background: var(--sage-deep); }
+.title { margin-top: 16px; font-size: 68px; font-weight: 700; line-height: 1.18; letter-spacing: -.03em; color: var(--ink); text-wrap: balance; }
+.body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 28px; margin-top: 36px; }
+.lead { font-size: 30px; line-height: 1.65; color: var(--olive); }
+.foot {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 24px;
+  margin-top: 28px; padding-top: 18px; border-top: 1.5px solid var(--rule);
+  font-size: 19px; color: var(--olive-soft); letter-spacing: .01em;
+}
+.foot .pg { font-weight: 700; color: var(--ink); letter-spacing: .06em; white-space: nowrap; }
+.label { font-size: 19px; font-weight: 700; letter-spacing: .14em; color: var(--olive-soft); }
+.row-head { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.tag {
+  display: inline-flex; align-items: center; white-space: nowrap;
+  font-size: 17px; font-weight: 700; letter-spacing: .04em; line-height: 1;
+  padding: 7px 13px; border-radius: 999px;
+  border: 1.5px dashed var(--olive-soft); color: var(--olive);
+}
+.tag.solid { border: 1.5px solid var(--sage); background: var(--sage-soft); color: var(--ink); }
+.fill { font-style: normal; background: var(--straw); color: var(--ink); padding: 1px 8px; border-radius: 4px; box-shadow: inset 0 -2px 0 var(--sage); }
+
+ul.commas { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+ul.commas li { position: relative; padding-left: 36px; font-size: 27px; line-height: 1.5; color: var(--olive); }
+ul.commas li::before { content: ","; position: absolute; left: 6px; top: -.38em; font-size: 1.7em; font-weight: 800; line-height: 1; color: var(--sage-deep); }
+ul.commas.sm li { font-size: 22px; padding-left: 28px; }
+
+.split { display: grid; grid-template-columns: minmax(0, 1fr) 760px; }
+.split.left { grid-template-columns: 600px minmax(0, 1fr); }
+.split.left.wide { grid-template-columns: 760px minmax(0, 1fr); }
+.split.narrow { grid-template-columns: minmax(0, 1fr) 680px; }
+.split > .photo { height: 1080px; }
+
+/* 사진 자리: images 폴더에 data-src 이름으로 사진을 넣으면 자동으로 바뀜 */
+.photo { position: relative; overflow: hidden; background: var(--ivory-deep) center / cover no-repeat; }
+.photo svg.scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.photo figcaption {
+  position: absolute; left: 18px; bottom: 18px; display: flex; align-items: center; gap: 8px;
+  padding: 7px 14px; border-radius: 999px; background: rgba(251, 249, 243, .9);
+  font-size: 17px; font-weight: 500; color: var(--ink); line-height: 1.2;
+}
+.photo figcaption::before { content: "사진"; font-weight: 800; color: var(--sage-deep); }
+.photo.loaded svg.scene, .photo.loaded figcaption { display: none; }
+
+/* 01 표지 */
+.cover .pad { padding: 96px 112px 80px; justify-content: space-between; }
+.cover-top { display: flex; justify-content: space-between; align-items: center; position: relative; }
+.cover-top .doc { font-size: 21px; color: var(--olive-soft); letter-spacing: .04em; }
+.cover-main { position: relative; }
+.cover h1 { font-size: 208px; font-weight: 800; line-height: 1.06; letter-spacing: -.05em; color: var(--ink); }
+.cover h1 .c { color: var(--sage-deep); }
+.cover-sub { margin-top: 40px; font-size: 40px; line-height: 1.5; color: var(--olive); letter-spacing: -.02em; }
+.cover-meta { margin-top: 28px; display: flex; gap: 14px; flex-wrap: wrap; font-size: 21px; font-weight: 600; letter-spacing: .08em; color: var(--olive-soft); }
+.cover-meta span + span::before { content: "·"; margin-right: 14px; color: var(--sage-deep); }
+.cover-foot { position: relative; display: flex; padding-top: 26px; border-top: 1.5px solid var(--rule); font-size: 24px; color: var(--olive); }
+.cover-foot span { padding: 0 30px; border-left: 1.5px solid var(--rule); }
+.cover-foot span:first-child { padding-left: 0; border-left: 0; }
+.giant-comma {
+  position: absolute; right: 120px; top: -440px; pointer-events: none; user-select: none;
+  font-size: 1180px; font-weight: 800; line-height: 1; color: var(--sage-soft);
+}
+
+/* 02 기획 배경 */
+.shift { display: grid; grid-template-columns: 1fr 64px 1fr; align-items: stretch; }
+.shift > div { display: flex; flex-direction: column; gap: 6px; padding: 22px 26px; border-radius: 14px; }
+.shift .from { border: 1.5px dashed var(--rule); }
+.shift .to { background: var(--sage-soft); }
+.shift b { font-size: 29px; font-weight: 700; color: var(--ink); }
+.shift .from b { color: var(--olive); }
+.shift small { font-size: 21px; color: var(--olive); }
+.shift .arrow { align-self: center; text-align: center; font-size: 40px; color: var(--sage-deep); }
+.hypo { display: flex; flex-direction: column; gap: 12px; padding: 26px 30px; border-radius: 14px; background: var(--paper); border: 1.5px solid var(--rule); }
+.hypo p { font-size: 28px; font-weight: 600; line-height: 1.5; color: var(--ink); }
+.hypo small { font-size: 20px; color: var(--olive-soft); }
+
+/* 03 지역 */
+.res-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px; }
+.res { display: flex; flex-direction: column; gap: 8px; }
+.res .photo { height: 280px; border-radius: 14px; margin-bottom: 14px; }
+.res h3 { font-size: 38px; font-weight: 800; letter-spacing: -.03em; color: var(--ink); }
+.res .what { font-size: 25px; color: var(--olive); }
+.res .use { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding-top: 14px; border-top: 1.5px solid var(--rule); }
+.res .use p { font-size: 23px; color: var(--olive); }
+.res .use b { margin-right: 8px; color: var(--ink); }
+
+/* 04 고객 */
+.target p { margin-top: 10px; font-size: 33px; font-weight: 500; line-height: 1.45; color: var(--ink); }
+.target b { font-weight: 800; box-shadow: inset 0 -14px 0 var(--sage-soft); }
+.probs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.prob { display: flex; flex-direction: column; gap: 10px; padding: 22px 24px; border-radius: 14px; background: var(--paper); border: 1.5px solid var(--rule); }
+.prob .h { font-size: 17px; font-weight: 800; letter-spacing: .12em; color: var(--sage-deep); }
+.prob p { font-size: 27px; font-weight: 600; line-height: 1.42; color: var(--ink); }
+.needs { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.needs .label { margin-right: 6px; }
+.chip { padding: 10px 22px; border-radius: 999px; background: var(--sage-soft); font-size: 25px; font-weight: 600; color: var(--ink); }
+.evidence { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1.5px solid var(--rule); border-radius: 14px; }
+.evidence > div { display: flex; flex-direction: column; gap: 8px; padding: 18px 22px; }
+.evidence > div + div { border-left: 1.5px solid var(--rule); }
+.evidence .k { font-size: 17px; font-weight: 800; letter-spacing: .1em; color: var(--olive-soft); }
+.evidence p { font-size: 22px; line-height: 1.5; color: var(--olive); }
+
+/* 05 아이디어 */
+.methods { display: grid; grid-template-columns: auto repeat(3, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
+.methods > .label { align-self: center; margin-right: 8px; }
+.method { display: flex; flex-direction: column; gap: 4px; padding: 16px 22px; border-radius: 12px; background: var(--paper); border: 1.5px solid var(--rule); }
+.method b { font-size: 26px; color: var(--ink); }
+.method span { font-size: 20px; color: var(--olive); }
+.ideas { list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(5, auto); grid-auto-flow: column; column-gap: 40px; }
+.ideas li { display: grid; grid-template-columns: 70px minmax(0, 1fr) auto; align-items: center; gap: 0 10px; padding: 16px 20px; border-top: 1.5px solid var(--rule); }
+.ideas li:nth-child(5), .ideas li:nth-child(10) { border-bottom: 1.5px solid var(--rule); }
+.ideas li.pick { background: var(--sage-soft); }
+.ideas .no { font-size: 30px; font-weight: 800; letter-spacing: -.02em; color: var(--sage-deep); }
+.ideas b { display: block; font-size: 29px; font-weight: 700; line-height: 1.3; letter-spacing: -.02em; color: var(--ink); }
+.ideas .meta { display: flex; gap: 24px; margin-top: 6px; font-size: 20px; line-height: 1.4; color: var(--olive); white-space: nowrap; }
+.ideas .meta i { font-style: normal; margin-right: 8px; font-size: 15px; font-weight: 800; letter-spacing: .1em; color: var(--olive-soft); }
+
+/* 06 평가 */
+.eval { display: grid; grid-template-columns: minmax(0, 1fr) 540px; gap: 48px; }
+.eval-main { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.eval-main .sub { font-size: 25px; color: var(--olive); }
+.score { width: 100%; border-collapse: separate; border-spacing: 0; }
+.score th, .score td { height: 62px; padding: 0 18px; border-bottom: 1.5px solid var(--rule); text-align: center; font-size: 30px; font-weight: 600; color: var(--olive); }
+.score thead th { height: 96px; font-size: 26px; font-weight: 800; color: var(--ink); vertical-align: middle; }
+.score thead th small { display: block; margin-bottom: 4px; font-size: 16px; font-weight: 700; letter-spacing: .12em; color: var(--olive-soft); }
+.score th:first-child { width: 380px; padding-left: 4px; text-align: left; }
+.score tbody th { font-size: 25px; font-weight: 500; color: var(--olive); }
+.score tbody th small { margin-left: 10px; font-size: 19px; font-weight: 700; color: var(--olive-soft); }
+.score td small { margin-left: 6px; font-size: 17px; font-weight: 500; color: var(--olive-soft); }
+.score .win { background: var(--sage-soft); color: var(--ink); font-weight: 800; }
+.score .win small { color: var(--olive); }
+.score thead .win { border-radius: 14px 14px 0 0; }
+.score tfoot .win { border-radius: 0 0 14px 14px; }
+.score tfoot th, .score tfoot td { height: 92px; border-bottom: 0; font-size: 46px; font-weight: 800; color: var(--olive-soft); }
+.score tfoot th { font-size: 26px; color: var(--ink); }
+.score tfoot .win { color: var(--ink); }
+.rank { display: inline-block; margin-left: 10px; padding: 4px 10px; border-radius: 999px; background: var(--ink); color: var(--ivory); font-size: 16px; font-weight: 700; vertical-align: 4px; letter-spacing: .04em; }
+.eval-side { display: flex; flex-direction: column; gap: 22px; }
+.box { display: flex; flex-direction: column; gap: 10px; padding: 24px 28px; border-radius: 14px; background: var(--paper); border: 1.5px solid var(--rule); }
+.box > p { font-size: 22px; line-height: 1.5; color: var(--olive); }
+.box .formula { font-size: 31px; font-weight: 800; color: var(--ink); letter-spacing: -.01em; }
+.box .ex { font-size: 20px; color: var(--olive-soft); }
+.box .ex b { color: var(--ink); }
+.box .row-head { margin-bottom: 4px; }
+.checks { list-style: none; display: flex; flex-direction: column; }
+.checks li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 14px 0; border-top: 1.5px solid var(--rule); }
+.checks b { font-size: 23px; color: var(--ink); }
+.checks p { grid-column: 1 / -1; font-size: 20px; color: var(--olive); }
+.st { align-self: center; padding: 5px 12px; border-radius: 999px; font-size: 16px; font-weight: 800; letter-spacing: .04em; line-height: 1.1; }
+.st.pass { background: var(--sage-soft); color: var(--ink); }
+.st.cond { background: var(--straw); color: var(--ink); }
+
+/* 07 콘셉트 */
+.title.big { font-size: 100px; letter-spacing: -.045em; line-height: 1.1; }
+.concept { font-size: 32px; line-height: 2; font-weight: 500; color: var(--ink); letter-spacing: -.02em; }
+.concept .seg { background: linear-gradient(transparent 60%, var(--sage-soft) 60%); }
+.concept sup { margin-right: 6px; font-size: 15px; font-weight: 800; letter-spacing: .08em; color: var(--sage-deep); vertical-align: 14px; line-height: 0; }
+.reasons { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 14px; }
+.reason { display: flex; flex-direction: column; gap: 10px; padding: 20px 22px; border-radius: 14px; background: var(--paper); border: 1.5px solid var(--rule); }
+.reason b { font-size: 25px; line-height: 1.35; color: var(--ink); }
+.reason p { font-size: 19px; line-height: 1.45; color: var(--olive-soft); }
+.alts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.alt { display: flex; flex-direction: column; gap: 6px; padding: 18px 22px; border-radius: 14px; border: 1.5px dashed var(--rule); }
+.alt .k { font-size: 17px; font-weight: 800; letter-spacing: .12em; color: var(--sage-deep); }
+.alt b { font-size: 24px; color: var(--ink); }
+.alt p { font-size: 20px; line-height: 1.45; color: var(--olive); }
+
+/* 08 프로그램 */
+.prog-top { display: grid; grid-template-columns: minmax(0, 1fr) 720px; gap: 56px; }
+.timeline { list-style: none; position: relative; display: flex; flex-direction: column; justify-content: space-between; }
+.timeline::before { content: ""; position: absolute; left: 145px; top: 30px; bottom: 30px; width: 2px; background: var(--sage); }
+.timeline li { display: grid; grid-template-columns: 120px 52px 240px minmax(0, 1fr); align-items: center; height: 66px; }
+.timeline li::before { content: ""; grid-column: 2; grid-row: 1; justify-self: center; position: relative; z-index: 1; width: 18px; height: 18px; border-radius: 50%; background: var(--ivory); border: 3px solid var(--sage-deep); }
+.timeline li:first-child::before, .timeline li:last-child::before { background: var(--sage-deep); }
+.timeline time { grid-column: 1; grid-row: 1; font-size: 32px; font-weight: 800; color: var(--ink); }
+.timeline b { grid-column: 3; grid-row: 1; font-size: 30px; color: var(--ink); }
+.timeline span { grid-column: 4; grid-row: 1; font-size: 25px; color: var(--olive); }
+.gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: 232px 168px; gap: 14px; }
+.gallery .photo { border-radius: 14px; }
+.gallery .g1 { grid-column: 1 / -1; }
+.ops { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.op { display: flex; flex-direction: column; gap: 10px; padding: 22px 26px; border-radius: 14px; background: var(--paper); border: 1.5px solid var(--rule); }
+.op .row-head { margin-bottom: 2px; }
+.op p { font-size: 22px; line-height: 1.5; color: var(--olive); }
+.op p b { margin-right: 10px; color: var(--ink); }
+
+/* 09 고객 여정 */
+.journey { list-style: none; position: relative; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 18px; padding-top: 52px; }
+.journey::before { content: ""; position: absolute; left: 30px; right: 18px; top: 21px; height: 2px; background: var(--sage); }
+.journey::after { content: ""; position: absolute; right: 2px; top: 14px; border-left: 16px solid var(--sage); border-top: 8px solid transparent; border-bottom: 8px solid transparent; }
+.journey li { position: relative; display: flex; flex-direction: column; gap: 10px; padding: 26px 22px 28px; border-radius: 14px; background: var(--paper); border: 1.5px solid var(--rule); }
+.journey li::before { content: ""; position: absolute; top: -42px; left: 22px; width: 18px; height: 18px; border-radius: 50%; background: var(--ivory); border: 3px solid var(--sage-deep); }
+.journey li.core { background: var(--sage-soft); border-color: var(--sage); }
+.journey li.core::before { background: var(--sage-deep); }
+.journey .no { font-size: 19px; font-weight: 800; letter-spacing: .12em; color: var(--sage-deep); }
+.journey h3 { font-size: 50px; font-weight: 800; letter-spacing: -.03em; line-height: 1.15; color: var(--ink); }
+.journey .k { margin-top: 6px; font-size: 16px; font-weight: 800; letter-spacing: .12em; color: var(--olive-soft); }
+.journey .act { font-size: 27px; font-weight: 700; line-height: 1.35; color: var(--ink); }
+.journey hr { width: 100%; margin: 8px 0 0; border: 0; border-top: 1.5px dashed var(--rule); }
+.journey li.core hr { border-top-color: var(--sage); }
+.journey .q { font-size: 23px; line-height: 1.5; color: var(--olive); }
+.journey .tag { position: absolute; top: 22px; right: 18px; }
+
+/* 10 기대효과 */
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 48px; }
+.verify { list-style: none; display: flex; flex-direction: column; }
+.verify li { display: flex; flex-direction: column; gap: 2px; padding: 10px 0; border-top: 1.5px solid var(--rule); }
+.verify li:last-child { border-bottom: 1.5px solid var(--rule); }
+.verify b { font-size: 25px; color: var(--ink); }
+.verify span { font-size: 19px; color: var(--olive-soft); }
+.sources { display: flex; flex-direction: column; border: 1.5px solid var(--rule); border-radius: 14px; }
+.sources > div { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; align-items: baseline; padding: 10px 22px; }
+.sources > div + div { border-top: 1.5px solid var(--rule); }
+.sources .k { font-size: 17px; font-weight: 800; letter-spacing: .08em; color: var(--olive-soft); }
+.sources p { font-size: 21px; color: var(--olive); }
+
+/* ───────── 인쇄 → PDF (크롬에서 Ctrl+P, 여백 없음) ───────── */
+@media print {
+  @page { size: 1920px 1080px; margin: 0; }
+  html, body { background: var(--ivory); }
+  .topbar, .guide, .item-head, .notes, .hud { display: none !important; }
+  .deck { display: block; max-width: none; margin: 0; padding: 0; gap: 0; }
+  .item { display: block; break-after: page; }
+  .stage { width: 1920px; height: 1080px; aspect-ratio: auto; border-radius: 0; box-shadow: none; }
+  .slide { transform: none; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><b>춘천, 쉼표 하나</b><span>관광레저상품론 중간과제 발표 초안 · 10장</span></div>
+  <div class="actions">
+    <button id="toggle-notes" type="button" aria-pressed="true">발표 멘트</button>
+    <button id="start" type="button" class="primary">발표 시작</button>
+  </div>
+</header>
+
+<main class="deck" id="deck">
+
+  <section class="guide" aria-label="작성 가이드">
+    <p><i class="g-fill">노란 칸</i> 직접 채울 곳</p>
+    <p><i class="g-tag">점선 태그</i> 가설·검증 필요 표시</p>
+    <p><i class="g-photo">사진</i> images 폴더에 같은 이름의 사진을 넣으면 자동 교체</p>
+    <p>슬라이드를 누르면 그 장부터 발표 · ← → 이동 · N 멘트 · Esc 종료</p>
+  </section>
+
+  <!-- 01 표지 -->
+  <article class="item" id="s1">
+    <div class="item-head"><span><b>01</b>표지</span><span>상품명과 슬로건</span></div>
+    <div class="stage" tabindex="0" role="button" aria-label="1번 슬라이드부터 발표">
+      <section class="slide cover" aria-label="표지">
+        <div class="giant-comma" aria-hidden="true">,</div>
+        <div class="pad">
+          <div class="cover-top">
+            <p class="eyebrow">Chuncheon, a moment to pause</p>
+            <span class="doc">관광레저상품 기획 사전 제안서</span>
+          </div>
+          <div class="cover-main">
+            <h1>춘천<span class="c">,</span><br>쉼표 하나</h1>
+            <p class="cover-sub">바쁜 일상에 잠시 쉼표를 찍는<br>춘천 감성 힐링 당일 여행</p>
+            <p class="cover-meta"><span>ONE DAY</span><span>11:00 – 17:00</span><span>의암호</span><span>공지천</span><span>로컬 카페</span></p>
+          </div>
+          <footer class="cover-foot">
+            <span>관광레저상품론</span>
+            <span>관광경영학과</span>
+            <span>학번 <em class="fill">[학번]</em></span>
+            <span>이름 <em class="fill">[이름]</em></span>
+          </footer>
+        </div>
+      </section>
+    </div>
+    <p class="notes"><b>발표 멘트</b>안녕하세요, 관광경영학과 [이름]입니다. 제가 기획한 관광상품은 「춘천, 쉼표 하나」입니다. 바쁜 일상 속에서 잠시 쉼표를 찍듯, 춘천의 호수와 자연 속에서 하루 동안 온전히 쉬어 가는 감성 힐링 당일 여행입니다.</p>
+  </article>
+
+  <!-- 02 기획 배경 -->
+  <article class="item" id="s2">
+    <div class="item-head"><span><b>02</b>기획 배경</span><span>왜 필요한가?</span></div>
+    <div class="stage" tabindex="0" role="button" aria-label="2번 슬라이드부터 발표">
+      <section class="slide split" aria-label="관광상품 기획 배경">
+        <div class="pad">
+          <p class="eyebrow">Planning Background</p>
+          <h2 class="title">여행에도, 쉼표가 필요하다.</h2>
+          <div class="body">
+            <p class="lead">여행은 일상에서 벗어나기 위한 시간이지만, 빽빽한 관광 일정과 잦은 이동으로 오히려 피로를 느낄 수 있다.</p>
+            <div class="shift">
+              <div class="from"><span class="label">지금의 여행</span><b>관광지 방문 중심</b><small>빽빽한 일정 · 잦은 이동</small></div>
+              <div class="arrow" aria-hidden="true">→</div>
+              <div class="to"><span class="label">기획 방향</span><b>자연 속 휴식 중심</b><small>여유롭게 머무르기</small></div>
+            </div>
+            <p class="lead">이에 관광지 방문 중심의 여행에서 벗어나, 자연 속에서 여유롭게 머무르는 휴식 중심의 관광상품을 기획하고자 한다.</p>
+            <div class="hypo">
+              <div><span class="tag">조사 전 가설</span></div>
+              <p>여행자는 빽빽한 일정과 잦은 이동 때문에 여행 중에도 충분히 쉬지 못한다.</p>
+              <small>p.4 고객 분석에서 구체화 · p.10에서 검증 계획 제시</small>
+            </div>
+          </div>
+          <footer class="foot"><span>관광레저상품론 · 관광상품 기획 사전 제안서</span><span class="pg">02 / 10</span></footer>
+        </div>
+        <figure class="photo" data-scene="lake" data-src="images/02-lake.jpg"><figcaption>잔잔한 호수 풍경 (의암호)</figcaption></figure>
+      </section>
+    </div>
+    <p class="notes"><b>발표 멘트</b>여행은 일상에서 벗어나기 위한 시간이지만, 빽빽한 일정과 잦은 이동 때문에 다녀온 뒤 오히려 피곤함을 느낄 수 있습니다. 그래서 많이 보는 여행이 아니라, 자연 속에 머무르며 쉬는 휴식 중심의 상품을 기획했습니다. 다만 이 고객 문제는 아직 조사 전 가설이고, 마지막 장에서 어떻게 검증할지 말씀드리겠습니다.</p>
+  </article>
+
+  <!-- 03 지역 선정 -->
+  <article class="item" id="s3">
+    <div class="item-head"><span><b>03</b>지역 분석</span><span>왜 춘천인가?</span></div>
+    <div class="stage" tabindex="0" role="button" aria-label="3번 슬라이드부터 발표">
+      <section class="slide" aria-label="관광지역 선정 및 자원 분석">
+        <div class="pad">
+          <p class="eyebrow">Why Chuncheon?</p>
+          <h2 class="title">왜 춘천인가?</h2>
+          <div class="body">
+            <p class="lead">춘천은 호수와 자연경관, 지역 카페 및 로컬 음식 등 휴식형 관광상품에 활용할 수 있는 자원을 갖추고 있다.</p>
+            <div class="res-grid">
+              <article class="res">
+                <figure class="photo" data-scene="lake" data-src="images/03-uiamho.jpg"><figcaption>의암호</figcaption></figure>
+                <h3>의암호</h3>
+                <p class="what">호수 경관과 산책</p>
+                <div class="use"><span class="label">프로그램 연결</span><p><b>11:30</b>의암호 산책</p></div>
+              </article>
+              <article class="res">
+                <figure class="photo" data-scene="stream" data-src="images/03-gongjicheon.jpg"><figcaption>공지천</figcaption></figure>
+                <h3>공지천</h3>
+                <p class="what">수변 휴식 공간</p>
+                <div class="use"><span class="label">프로그램 연결</span><p><b>15:30</b>자유시간 · 수변 휴식</p></div>
+              </article>
+              <article class="res">
+                <figure class="photo" data-scene="window" data-src="images/03-cafe.jpg"><figcaption>로컬 카페</figcaption></figure>
+                <h3>로컬 카페</h3>
+                <p class="what">감성적인 휴식</p>
+                <div class="use"><span class="label">프로그램 연결</span><p><b>14:00</b>감성 카페 티타임</p></div>
+              </article>
+              <article class="res">
+                <figure class="photo" data-scene="table" data-src="images/03-food.jpg"><figcaption>지역 음식</figcaption></figure>
+                <h3>지역 음식</h3>
+                <p class="what">춘천만의 미식 경험</p>
+                <div class="use"><span class="label">프로그램 연결</span><p><b>12:30</b>로컬 식사</p></div>
+              </article>
+            </div>
+          </div>
+          <footer class="foot"><span>자원 정보 출처 <em class="fill">[춘천시 관광 정보 등]</em> · 조사일 <em class="fill">[2026.__.__]</em></span><span class="pg">03 / 10</span></footer>
+        </div>
+      </section>
+    </div>
+    <p class="notes"><b>발표 멘트</b>지역은 춘천으로 정했습니다. 춘천에는 의암호와 공지천 같은 수변 자원, 로컬 카페, 지역 음식처럼 휴식형 상품에 바로 활용할 수 있는 자원이 모여 있습니다. 각 자원 아래에는 실제 프로그램의 어느 시간에 쓰이는지 연결해 두었습니다.</p>
+  </article>
+
+  <!-- 04 타깃 고객 -->
+  <article class="item" id="s4">
+    <div class="item-head"><span><b>04</b>고객 분석</span><span>누구를 위한 상품인가?</span></div>
+    <div class="stage" tabindex="0" role="button" aria-label="4번 슬라이드부터 발표">
+      <section class="slide split left" aria-label="타깃 고객 및 고객 문제 분석">
+        <figure class="photo" data-scene="path" data-src="images/04-person.jpg"><figcaption>쉬어 가는 20~30대 여행자</figcaption></figure>
+        <div class="pad">
+          <p class="eyebrow">Target &amp; Customer Needs</p>
+          <h2 class="title">누구에게 쉼표가 필요할까?</h2>
+          <div class="body">
+            <div class="target">
+              <span class="label">핵심 타깃</span>
+              <p>짧은 여행을 통해 휴식과 재충전을 원하는 <b>20~30대 직장인</b></p>
+            </div>
+            <div>
+              <div class="row-head"><span class="label">고객 문제</span><span class="tag">조사 전 가설</span></div>
+              <div class="probs">
+                <div class="prob"><span class="h">가설 1</span><p>복잡한 여행 계획에 대한 부담</p></div>
+                <div class="prob"><span class="h">가설 2</span><p>이동과 관광 일정으로 인한 피로</p></div>
+                <div class="prob"><span class="h">가설 3</span><p>충분한 자유시간과 휴식 공간 부족</p></div>
+              </div>
+            </div>
+            <div class="needs">
+              <span class="label">고객 욕구</span>
+              <span class="chip">편리한 일정</span><span class="chip">자연 속 휴식</span><span class="chip">감성적인 공간</span>
+            </div>
+            <div class="evidence">
+              <div><span class="k">확인된 사실</span><p><em class="fill">[조사 후 기입 · 후기·설문에서 확인한 내용]</em></p></div>
+              <div><span class="k">해석</span><p><em class="fill">[사실을 바탕으로 한 판단]</em></p></div>
+              <div><span class="k">가설</span><p>20~30대 직장인은 짧고 여유로운 당일 휴식형 여행을 원할 수 있다.</p></div>
+            </div>
+          </div>
+          <footer class="foot"><span>조사 자료 <em class="fill">[자료명]</em> · 출처 <em class="fill">[기관·URL]</em> · 조사일 <em class="fill">[2026.__.__]</em></span><span class="pg">04 / 10</span></footer>
+        </div>
+      </section>
+    </div>
+    <p class="notes"><b>발표 멘트</b>핵심 타깃은 짧은 여행으로 휴식과 재충전을 원하는 20~30대 직장인입니다. 이들의 문제를 세 가지 가설로 정리했습니다. 여행 계획이 복잡하고, 이동과 일정으로 지치고, 정작 쉴 시간과 공간이 부족하다는 것입니다. 여기서 편리한 일정, 자연 속 휴식, 감성적인 공간이라는 욕구를 도출했고, 아래에는 확인된 사실과 해석, 가설을 나눠 적었습니다.</p>
+  </article>
+
+  <!-- 05 아이디어 발굴 -->
+  <article class="item" id="s5">
+    <div class="item-head"><span><b>05</b>아이디어 발굴</span><span>3가지 방법, 10개 아이디어</span></div>
+    <div class="stage" tabindex="0" role="button" aria-label="5번 슬라이드부터 발표">
+      <section class="slide" aria-label="아이디어 발굴 방법 및 10개 아이디어">
+        <div class="pad">
+          <p class="eyebrow">Idea Generation</p>
+          <h2 class="title">하나의 쉼표를 만들기 위한 10가지 생각</h2>
+          <div class="body">
+            <div class="methods">
+              <span class="label">발굴 방법</span>
+              <div class="method"><b>브레인스토밍</b><span>고객 문제의 해결책을 제한 없이 나열</span></div>
+              <div class="method"><b>SCAMPER</b><span>기존 여행을 결합·제거·변형해 보기</span></div>
+              <div class="method"><b>관광 후기 분석</b><span>반복되는 불편 찾기 <em class="fill">[조사 후 결과 기입]</em></span></div>
+            </div>
+            <ol class="ideas">
+              <li><span class="no">01</span><div><b>의암호 느린 산책</b><p class="meta"><span><i>문제</i>빽빽한 일정의 피로</span><span><i>위험</i>날씨·계절 영향</span></p></div></li>
+              <li><span class="no">02</span><div><b>호수 뷰 티타임</b><p class="meta"><span><i>문제</i>쉴 공간 부족</span><span><i>위험</i>카페 좌석 확보</span></p></div></li>
+              <li><span class="no">03</span><div><b>춘천 감성 사진 기록</b><p class="meta"><span><i>문제</i>여행의 기억을 남기고 싶음</span><span><i>위험</i>흔한 체험</span></p></div></li>
+              <li><span class="no">04</span><div><b>자연 속 독서 피크닉</b><p class="meta"><span><i>문제</i>조용히 쉬고 싶음</span><span><i>위험</i>우천 시 대체 장소</span></p></div></li>
+              <li class="pick"><span class="no">05</span><div><b>디지털 디톡스 여행</b><p class="meta"><span><i>문제</i>일상 알림·업무 피로</span><span><i>위험</i>참여 의향 불확실</span></p></div><span class="tag solid">평가 후보</span></li>
+              <li class="pick"><span class="no">06</span><div><b>로컬 카페 휴식 패스</b><p class="meta"><span><i>문제</i>쉴 곳 찾기 번거로움</span><span><i>위험</i>제휴 카페 확보</span></p></div><span class="tag solid">평가 후보</span></li>
+              <li><span class="no">07</span><div><b>선택형 호수 산책 코스</b><p class="meta"><span><i>문제</i>체력·취향 차이</span><span><i>위험</i>코스별 안전 안내</span></p></div></li>
+              <li><span class="no">08</span><div><b>소규모 일몰 감상</b><p class="meta"><span><i>문제</i>조용한 저녁 경험 부족</span><span><i>위험</i>귀가 시간·교통</span></p></div></li>
+              <li><span class="no">09</span><div><b>동선 최소화 힐링 패키지</b><p class="meta"><span><i>문제</i>잦은 이동의 피로</span><span><i>위험</i>이동 수단·비용</span></p></div></li>
+              <li class="pick"><span class="no">10</span><div><b>나만의 춘천 쉼표 여행</b><p class="meta"><span><i>문제</i>여행 계획 부담</span><span><i>위험</i>선택지 과다</span></p></div><span class="tag solid">평가 후보</span></li>
+            </ol>
+          </div>
+          <footer class="foot"><span>초기 발산 단계에서는 아이디어를 탈락시키지 않음 · 아이디어별 문제·위험은 초안</span><span class="pg">05 / 10</span></footer>
+        </div>
+      </section>
+    </div>
+    <p class="notes"><b>발표 멘트</b>아이디어는 브레인스토밍, SCAMPER, 관광 후기 분석 세 가지 방법으로 발굴했습니다. 초기 단계에서는 성급하게 탈락시키지 않고 10개를 모두 남겼고, 아이디어마다 해결하려는 고객 문제와 확인해야 할 위험을 함께 적었습니다. 이 중 초록색으로 표시한 세 개를 평가 후보로 올렸습니다.</p>
+  </article>
+
+  <!-- 06 아이디어 평가 -->
+  <article class="item" id="s6">
+    <div class="item-head"><span><b>06</b>아이디어 평가</span><span>평가 기준, 후보 비교</span></div>
+    <div class="stage" tabindex="0" role="button" aria-label="6번 슬라이드부터 발표">
+      <section class="slide" aria-label="아이디어 평가 기준 및 비교">
+        <div class="pad">
+          <p class="eyebrow">Idea Evaluation</p>
+          <h2 class="title">어떤 아이디어가 가장 적합할까?</h2>
+          <div class="body eval">
+            <div class="eval-main">
+              <p class="sub">제시된 6가지 평가 기준을 적용해 후보 3개를 비교했다.</p>
+              <table class="score">
+                <thead>
+                  <tr><th>평가 항목 <small style="display:inline;margin-left:8px">배점</small></th><th class="win"><small>10</small>쉼표 여행<span class="rank">1위</span></th><th><small>06</small>카페 패스</th><th><small>05</small>디지털 디톡스</th></tr>
+                </thead>
+                <tbody>
+                  <tr><th>고객 문제 적합성<small>25</small></th><td class="win">20<small>4</small></td><td>20<small>4</small></td><td>20<small>4</small></td></tr>
+                  <tr><th>차별성<small>20</small></th><td class="win">16<small>4</small></td><td>12<small>3</small></td><td>20<small>5</small></td></tr>
+                  <tr><th>실행 가능성<small>20</small></th><td class="win">16<small>4</small></td><td>20<small>5</small></td><td>12<small>3</small></td></tr>
+                  <tr><th>수익 가능성<small>15</small></th><td class="win">12<small>4</small></td><td>12<small>4</small></td><td>9<small>3</small></td></tr>
+                  <tr><th>지역 적합성<small>10</small></th><td class="win">10<small>5</small></td><td>8<small>4</small></td><td>8<small>4</small></td></tr>
+                  <tr><th>지속가능성·접근성<small>10</small></th><td class="win">8<small>4</small></td><td>8<small>4</small></td><td>8<small>4</small></td></tr>
+                </tbody>
+                <tfoot>
+                  <tr><th>총점<small style="margin-left:10px;font-size:19px;color:var(--olive-soft)">100</small></th><td class="win">82</td><td>80</td><td>77</td></tr>
+                </tfoot>
+              </table>
+            </div>
+            <aside class="eval-side">
+              <div class="box">
+                <span class="label">평가 방식</span>
+                <p>항목마다 1~5점(작은 숫자)으로 평가한 뒤 배점에 맞춰 환산</p>
+                <p class="formula">배점 × 평가점수 ÷ 5</p>
+                <p class="ex">예) 고객 문제 적합성 25 × 4 ÷ 5 = <b>20</b></p>
+              </div>
+              <div class="box">
+                <div class="row-head"><span class="label">안전·법규·환경 검토</span><span class="tag">점수와 별도</span></div>
+                <ul class="checks">
+                  <li><b>쉼표 여행</b><span class="st cond">조건부 보완</span><p>수변 산책로 안전 안내 · 우천 대안 필요</p></li>
+                  <li><b>카페 패스</b><span class="st pass">통과</span><p>제휴 조건·정산 방식만 확인</p></li>
+                  <li><b>디지털 디톡스</b><span class="st cond">조건부 보완</span><p>기기 보관 시 비상 연락 방법 필요</p></li>
+                </ul>
+              </div>
+            </aside>
+          </div>
+          <footer class="foot"><span>※ 점수는 기획 예시이며 실제 조사·검토 후 수정 필요 · 안전 검토는 초안</span><span class="pg">06 / 10</span></footer>
+        </div>
+      </section>
+    </div>
+    <p class="notes"><b>발표 멘트</b>후보 세 개는 과제에서 제시된 6가지 기준으로 비교했습니다. 항목마다 1점에서 5점으로 평가한 뒤 배점에 맞춰 환산했습니다. 그 결과 '나만의 춘천 쉼표 여행'이 82점으로 가장 높았습니다. 이 점수는 기획 단계의 예시이고, 안전·법규·환경 검토는 점수와 별도로 기록했습니다.</p>
+  </article>
+
+  <!-- 07 최종 콘셉트 -->
+  <article class="item" id="s7">
+    <div class="item-head"><span><b>07</b>최종 선정·콘셉트</span><span>어떤 상품을 만들 것인가?</span></div>
+    <div class="stage" tabindex="0" role="button" aria-label="7번 슬라이드부터 발표">
+      <section class="slide split left wide" aria-label="최종 아이디어 선정 및 상품 콘셉트">
+        <figure class="photo" data-scene="dusk" data-src="images/07-concept.jpg"><figcaption>춘천 호수의 오후 (대표 이미지)</figcaption></figure>
+        <div class="pad">
+          <p class="eyebrow">Final Concept</p>
+          <h2 class="title big">춘천, 쉼표 하나</h2>
+          <div class="body">
+            <blockquote class="concept">“<span class="seg"><sup>고객</sup>짧은 휴식을 원하는 20~30대 여행객</span>에게 <span class="seg"><sup>경험</sup>춘천의 호수 산책과 로컬 카페, 선택형 휴식 체험</span>을 제공하는 <span class="seg"><sup>상품</sup>감성 힐링 당일 관광상품</span>”</blockquote>
+            <div>
+              <span class="label">최종 선정 이유</span>
+              <div class="reasons">
+                <div class="reason"><b>춘천의 자연자원 활용</b><p>지역 적합성 10 / 10 (후보 중 최고)</p></div>
+                <div class="reason"><b>휴식 중심의 차별화된 경험</b><p>방문 중심의 기존 여행과 구별 (p.2)</p></div>
+                <div class="reason"><b>개인 취향에 따른 선택형 일정</b><p>계획 부담(가설 1)에 대응 (p.4)</p></div>
+              </div>
+            </div>
+            <div class="alts">
+              <div class="alt"><span class="k">예비안</span><b>로컬 카페 휴식 패스 · 80점</b><p>실행 가능성 최고(20), 차별성 보완 필요</p></div>
+              <div class="alt"><span class="k">보류안</span><b>디지털 디톡스 여행 · 77점</b><p>참여 의향과 운영 방식 추가 검증 필요</p></div>
+            </div>
+          </div>
+          <footer class="foot"><span>관광레저상품론 · 관광상품 기획 사전 제안서</span><span class="pg">07 / 10</span></footer>
+        </div>
+      </section>
+    </div>
+    <p class="notes"><b>발표 멘트</b>최종 상품은 「춘천, 쉼표 하나」입니다. 한 문장으로 정리하면, 짧은 휴식을 원하는 20~30대 여행객에게 춘천의 호수 산책과 로컬 카페, 선택형 휴식 체험을 제공하는 감성 힐링 당일 관광상품입니다. 선정 이유는 춘천의 자연자원 활용, 휴식 중심의 차별성, 취향에 따른 선택형 일정 세 가지입니다. 실행 가능성이 가장 높았던 카페 패스는 예비안으로, 디지털 디톡스는 참여 의향 검증이 필요해 보류안으로 두었습니다.</p>
+  </article>
+
+  <!-- 08 프로그램 구성 -->
+  <article class="item" id="s8">
+    <div class="item-head"><span><b>08</b>상품 구성</span><span>고객이 무엇을 경험하는가?</span></div>
+    <div class="stage" tabindex="0" role="button" aria-label="8번 슬라이드부터 발표">
+      <section class="slide" aria-label="관광상품 프로그램 구성">
+        <div class="pad">
+          <p class="eyebrow">One Day Program</p>
+          <h2 class="title">춘천에서 보내는 쉼표 같은 하루</h2>
+          <div class="body">
+            <div class="prog-top">
+              <ol class="timeline">
+                <li><time>11:00</time><b>집결 및 안내</b><span>편안한 여행 시작</span></li>
+                <li><time>11:30</time><b>의암호 산책</b><span>자연 속 여유</span></li>
+                <li><time>12:30</time><b>로컬 식사</b><span>지역 미식</span></li>
+                <li><time>14:00</time><b>감성 카페</b><span>티타임과 휴식</span></li>
+                <li><time>15:30</time><b>자유시간</b><span>사진·독서·휴식</span></li>
+                <li><time>17:00</time><b>일정 종료</b><span>여행 마무리</span></li>
+              </ol>
+              <div class="gallery">
+                <figure class="photo g1" data-scene="lake" data-src="images/08-walk.jpg"><figcaption>의암호 산책</figcaption></figure>
+                <figure class="photo" data-scene="table" data-src="images/08-meal.jpg"><figcaption>로컬 식사</figcaption></figure>
+                <figure class="photo" data-scene="window" data-src="images/08-cafe.jpg"><figcaption>감성 카페</figcaption></figure>
+              </div>
+            </div>
+            <div class="ops">
+              <div class="op">
+                <div class="row-head"><span class="label">운영 가설</span><span class="tag">추후 검증</span></div>
+                <ul class="commas sm"><li>소규모 사전 예약형</li><li>1일 약 6시간 (11:00–17:00)</li><li>가격·인원·이동 방식 추후 검증</li></ul>
+              </div>
+              <div class="op">
+                <div class="row-head"><span class="label">포함 · 선택 서비스</span><span class="tag">초안</span></div>
+                <p><b>기본</b>일정 안내 · 산책 가이드 · 카페 티타임</p>
+                <p><b>선택</b>로컬 식사 메뉴 · 독서·사진 키트</p>
+              </div>
+              <div class="op">
+                <div class="row-head"><span class="label">안전 · 우천 대안</span><span class="tag">초안</span></div>
+                <p><b>안전</b>수변 산책로 안전 안내</p>
+                <p><b>우천</b>산책 → 실내 카페·휴식 공간으로 대체</p>
+              </div>
+            </div>
+          </div>
+          <footer class="foot"><span>관광레저상품론 · 관광상품 기획 사전 제안서</span><span class="pg">08 / 10</span></footer>
+        </div>
+      </section>
+    </div>
+    <p class="notes"><b>발표 멘트</b>하루 일정은 11시 집결부터 17시 종료까지 약 6시간입니다. 의암호 산책, 로컬 식사, 감성 카페, 자유시간 순서로, 이동은 줄이고 머무는 시간은 늘렸습니다. 운영은 소규모 사전 예약형을 가정했고, 가격과 인원, 이동 방식은 추후 검증할 예정입니다. 비가 오면 산책을 실내 휴식 프로그램으로 대체합니다.</p>
+  </article>
+
+  <!-- 09 고객 여정 -->
+  <article class="item" id="s9">
+    <div class="item-head"><span><b>09</b>고객 여정</span><span>어떻게 이용하는가?</span></div>
+    <div class="stage" tabindex="0" role="button" aria-label="9번 슬라이드부터 발표">
+      <section class="slide" aria-label="고객 여정 및 이용 경험">
+        <div class="pad">
+          <p class="eyebrow">Customer Journey</p>
+          <h2 class="title">여행을 발견하는 순간부터 추억까지</h2>
+          <div class="body" style="justify-content:center;gap:56px">
+            <ol class="journey">
+              <li><span class="no">01</span><h3>발견</h3><span class="k">고객 행동</span><p class="act">SNS 홍보로 상품을 알게 됨</p><hr><span class="k">확인할 사항</span><p class="q">핵심 가치가 짧게 전달되는가?</p></li>
+              <li><span class="no">02</span><h3>탐색</h3><span class="k">고객 행동</span><p class="act">가격·일정 확인</p><hr><span class="k">확인할 사항</span><p class="q">필요한 정보가 충분한가?</p></li>
+              <li><span class="no">03</span><h3>예약</h3><span class="k">고객 행동</span><p class="act">날짜·옵션 선택</p><hr><span class="k">확인할 사항</span><p class="q">예약·취소 절차가 분명한가?</p></li>
+              <li class="core"><span class="tag solid">상품 핵심</span><span class="no">04</span><h3>체험</h3><span class="k">고객 행동</span><p class="act">산책·카페·휴식</p><hr><span class="k">확인할 사항</span><p class="q">안내와 실제 경험이 일치하는가?</p></li>
+              <li><span class="no">05</span><h3>만족</h3><span class="k">고객 행동</span><p class="act">만족도 평가</p><hr><span class="k">확인할 사항</span><p class="q">불편을 수집하고 대응하는가?</p></li>
+              <li><span class="no">06</span><h3>공유</h3><span class="k">고객 행동</span><p class="act">후기·재방문</p><hr><span class="k">확인할 사항</span><p class="q">공유나 재방문 이유가 있는가?</p></li>
+            </ol>
+            <p class="lead">고객은 상품을 발견하고 정보를 탐색한 뒤 예약·체험·평가·공유하는 과정을 거친다.</p>
+          </div>
+          <footer class="foot"><span>고객 여정 6단계 · 단계별 확인 질문은 과제 안내서 기준</span><span class="pg">09 / 10</span></footer>
+        </div>
+      </section>
+    </div>
+    <p class="notes"><b>발표 멘트</b>고객 여정은 발견, 탐색, 예약, 체험, 만족, 공유의 6단계로 정리했습니다. 단계마다 고객이 하는 행동과 기획자가 확인해야 할 질문을 함께 적었습니다. 특히 상품의 핵심인 체험 단계에서는 안내한 내용과 실제 경험이 일치하는지가 가장 중요하다고 봤습니다.</p>
+  </article>
+
+  <!-- 10 기대효과·검증 -->
+  <article class="item" id="s10">
+    <div class="item-head"><span><b>10</b>기대효과·검증</span><span>무엇을 확인해야 하는가?</span></div>
+    <div class="stage" tabindex="0" role="button" aria-label="10번 슬라이드부터 발표">
+      <section class="slide split narrow" aria-label="기대효과 및 향후 검증 계획">
+        <div class="pad">
+          <p class="eyebrow">Expected Effects &amp; Next Steps</p>
+          <h2 class="title">춘천에서의 하루가 일상에 작은 쉼표가 되기를.</h2>
+          <div class="body">
+            <div class="two">
+              <div>
+                <div class="row-head"><span class="label">기대효과</span><span class="tag">가설</span></div>
+                <ul class="commas"><li>관광객에게 휴식 중심의 여행 경험 제공</li><li>춘천 지역 관광자원과 로컬 상권 연계</li><li>취향에 따른 선택형 관광상품 개발</li></ul>
+              </div>
+              <div>
+                <div class="row-head"><span class="label">향후 검증</span></div>
+                <ul class="verify">
+                  <li><b>관광객 설문 및 인터뷰</b><span>→ 고객 문제 가설 1~3 · 수요</span></li>
+                  <li><b>유사 상품과 가격 비교</b><span>→ 수익 가능성 · 가격 범위</span></li>
+                  <li><b>협력업체·이동 동선 확인</b><span>→ 실행 가능성</span></li>
+                  <li><b>안전·접근성·우천 대안 검토</b><span>→ 안전·법규·환경</span></li>
+                </ul>
+              </div>
+            </div>
+            <div class="sources">
+              <div><span class="k">자료 출처</span><p><em class="fill">[자료명 · 기관 · URL]</em></p></div>
+              <div><span class="k">조사일</span><p><em class="fill">[2026.__.__]</em></p></div>
+              <div><span class="k">AI 활용 범위</span><p><em class="fill">[구성안·디자인 초안 작성에 활용, 내용·수치는 직접 확인]</em></p></div>
+            </div>
+          </div>
+          <footer class="foot"><span>관광레저상품론 · 관광상품 기획 사전 제안서</span><span class="pg">10 / 10</span></footer>
+        </div>
+        <figure class="photo" data-scene="dusk" data-src="images/10-sunset.jpg"><figcaption>의암호 노을</figcaption></figure>
+      </section>
+    </div>
+    <p class="notes"><b>발표 멘트</b>이 상품을 통해 관광객에게는 휴식 중심의 여행 경험을, 춘천에는 자연자원과 로컬 상권을 잇는 상품을 기대합니다. 다만 이 효과들은 아직 가설이기 때문에 설문과 인터뷰, 유사 상품 가격 비교, 협력업체와 동선 확인, 안전·우천 대안 검토로 검증하겠습니다. 춘천에서의 하루가 일상에 작은 쉼표가 되기를 바라며 발표를 마치겠습니다. 감사합니다.</p>
+  </article>
+
+</main>
+
+<div class="hud" aria-hidden="true"><span></span></div>
+
+<script>
+(() => {
+  document.documentElement.lang = 'ko';
+  const deck = document.getElementById('deck');
+  const items = [...deck.querySelectorAll('.item')];
+  const firstStage = deck.querySelector('.stage');
+  const bar = document.querySelector('.hud span');
+  let cur = 0;
+  let presenting = false;
+
+  /* 사진 자리 — 사진이 없을 때 보여 줄 풍경 그림(시드 고정), 사진이 있으면 사진으로 교체 */
+  const PAL = {
+    lake:   { sky: ['#E6EBD8', '#F5F2E6'], sun: ['#FBF7EA', 250, 92, 24], ridges: ['#CDD5B7', '#A7B488', '#76855A'], water: ['#C3CFB0', '#E4E8D5'], rip: '#F6F3E8', h: 188 },
+    stream: { sky: ['#DCE4DE', '#EEF0E6'], sun: null, ridges: ['#C2CDB4', '#97A67F', '#67764B'], water: ['#AFC1B6', '#D8E1D7'], rip: '#EEF2EA', h: 200 },
+    dusk:   { sky: ['#E8C7A2', '#F4E2C6'], sun: ['#FBEAD0', 210, 150, 36], ridges: ['#C2AE90', '#928A6A', '#5C5D3E'], water: ['#D6B897', '#EAD3B6'], rip: '#F7E8D2', h: 196 },
+    mist:   { sky: ['#EBECE2', '#F6F4EC'], sun: ['#FAF8F0', 110, 80, 22], ridges: ['#DDE2D1', '#C6CEB3', '#A6B18C'], water: ['#DEE3D4', '#EFF1E8'], rip: '#F8F7F0', h: 192 }
+  };
+  const rng = (seed) => () => {
+    seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const ridge = (r, base, amp, h) => {
+    const ph = [r() * 6.28, r() * 6.28, r() * 6.28];
+    const f = [0.012 + r() * 0.006, 0.03 + r() * 0.01, 0.07 + r() * 0.02];
+    let d = `M0 ${h} `;
+    for (let x = 0; x <= 400; x += 8) {
+      const y = base - amp * (0.55 * Math.sin(x * f[0] + ph[0]) + 0.3 * Math.sin(x * f[1] + ph[1]) + 0.15 * Math.sin(x * f[2] + ph[2]));
+      d += `L${x} ${y.toFixed(1)} `;
+    }
+    return d + `L400 ${h} Z`;
+  };
+  const open = (id, sky) => `<svg class="scene" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="${id}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky[0]}"/><stop offset="1" stop-color="${sky[1]}"/></linearGradient></defs><rect width="400" height="300" fill="url(#${id}s)"/>`;
+
+  function landscape(kind, seed) {
+    const r = rng(seed), id = 'sc' + seed;
+    const p = PAL[kind === 'window' ? 'lake' : kind] || PAL.lake;
+    let s = open(id, p.sky);
+    s += `<defs><linearGradient id="${id}w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.water[0]}"/><stop offset="1" stop-color="${p.water[1]}"/></linearGradient></defs>`;
+    if (p.sun) s += `<circle cx="${p.sun[1]}" cy="${p.sun[2]}" r="${p.sun[3]}" fill="${p.sun[0]}"/>`;
+    const bases = [p.h - 80, p.h - 48, p.h - 18], amps = [26, 18, 10];
+    p.ridges.forEach((c, k) => { s += `<path d="${ridge(r, bases[k], amps[k], p.h)}" fill="${c}"/>`; });
+    s += `<rect y="${p.h}" width="400" height="${300 - p.h}" fill="url(#${id}w)"/>`;
+    for (let k = 0; k < 9; k++) {
+      const y = p.h + 10 + r() * (300 - p.h - 16), x = r() * 360, w = 20 + r() * 70;
+      s += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="1.6" rx=".8" fill="${p.rip}" opacity=".75"/>`;
+    }
+    if (p.sun) for (let k = 0; k < 4; k++) {
+      const w = 46 - k * 9;
+      s += `<rect x="${(p.sun[1] - w / 2).toFixed(1)}" y="${p.h + 8 + k * 9}" width="${w}" height="2" rx="1" fill="${p.sun[0]}" opacity="${(0.9 - k * 0.15).toFixed(2)}"/>`;
+    }
+    if (kind === 'stream') for (let k = 0; k < 14; k++) {
+      const x = 8 + k * 7 + r() * 4, top = 210 + r() * 30;
+      s += `<path d="M${x.toFixed(1)} 300 Q${(x + 3).toFixed(1)} ${(top + 40).toFixed(1)} ${(x + 6 + r() * 6).toFixed(1)} ${top.toFixed(1)}" stroke="#6F7D4C" stroke-width="2" fill="none" opacity=".7"/>`;
+    }
+    if (kind === 'window') {
+      s += '<g fill="none" stroke="#3E4826" stroke-width="12" opacity=".88"><rect x="6" y="6" width="388" height="288"/><line x1="200" y1="6" x2="200" y2="262"/><line x1="6" y1="118" x2="394" y2="118"/></g>';
+      s += '<rect y="256" width="400" height="44" fill="#8A7457"/><rect y="256" width="400" height="5" fill="#76624A"/>';
+      s += '<ellipse cx="300" cy="258" rx="30" ry="5" fill="#E8E1D0"/><path d="M276 226 h48 v22 a10 10 0 0 1 -10 10 h-28 a10 10 0 0 1 -10 -10z" fill="#F3EEE2"/><path d="M324 232 a9 9 0 0 1 0 16" stroke="#F3EEE2" stroke-width="4" fill="none"/>';
+    }
+    return s + '</svg>';
+  }
+  function tableScene(seed) {
+    let s = open('sc' + seed, ['#ECE5D2', '#E4DBC4']);
+    for (let y = 12; y < 300; y += 14) s += `<rect y="${y}" width="400" height="1" fill="#D8CDB2" opacity=".55"/>`;
+    s += '<circle cx="165" cy="158" r="94" fill="#F7F3EA" stroke="#D8CDB3" stroke-width="2"/><circle cx="165" cy="158" r="60" fill="#D7BE8C"/>';
+    s += '<circle cx="146" cy="140" r="17" fill="#B5C092"/><circle cx="184" cy="170" r="13" fill="#8E7A4E"/><circle cx="170" cy="128" r="8" fill="#A3B07F"/>';
+    s += '<circle cx="320" cy="86" r="44" fill="#F7F3EA" stroke="#D8CDB3" stroke-width="2"/><circle cx="320" cy="86" r="29" fill="#AAB886"/>';
+    s += '<circle cx="322" cy="226" r="36" fill="#F7F3EA" stroke="#D8CDB3" stroke-width="2"/><circle cx="322" cy="226" r="23" fill="#7B5E3E"/>';
+    s += '<rect x="30" y="40" width="7" height="150" rx="3.5" fill="#B49A72" transform="rotate(-14 33 115)"/><rect x="44" y="40" width="7" height="150" rx="3.5" fill="#B49A72" transform="rotate(-10 47 115)"/>';
+    return s + '</svg>';
+  }
+  function pathScene(seed) {
+    const r = rng(seed), p = PAL.mist, h = 170;
+    let s = open('sc' + seed, p.sky);
+    s += `<circle cx="232" cy="74" r="20" fill="${p.sun[0]}"/>`;
+    s += `<path d="${ridge(r, h - 50, 20, h)}" fill="#DCE1CF"/><path d="${ridge(r, h - 22, 12, h)}" fill="#C3CBAE"/>`;
+    s += `<rect y="${h}" width="400" height="${300 - h}" fill="#B9C49A"/><rect y="${h + 40}" width="400" height="${260 - h}" fill="#A9B68A"/>`;
+    s += '<path d="M190 170 L210 170 L310 300 L90 300 Z" fill="#EEE8D6"/>';
+    s += '<circle cx="203" cy="190" r="4.5" fill="#3E4826"/><rect x="199" y="195" width="8" height="16" rx="3" fill="#3E4826"/>';
+    return s + '</svg>';
+  }
+  deck.querySelectorAll('.photo').forEach((fig, i) => {
+    const seed = 101 + i * 977, kind = fig.dataset.scene || 'lake';
+    const svg = kind === 'table' ? tableScene(seed) : kind === 'path' ? pathScene(seed) : landscape(kind, seed);
+    fig.insertAdjacentHTML('afterbegin', svg);
+    const src = fig.dataset.src;
+    if (!src) return;
+    const img = new Image();
+    img.onload = () => { fig.style.backgroundImage = `url("${src}")`; fig.classList.add('loaded'); };
+    img.src = src;
+  });
+
+  /* 크기 맞춤 */
+  function fit() {
+    const s = presenting
+      ? Math.min(window.innerWidth / 1920, window.innerHeight / 1080)
+      : firstStage.clientWidth / 1920;
+    if (s > 0) deck.style.setProperty('--s', s.toFixed(5));
+  }
+  if ('ResizeObserver' in window) new ResizeObserver(() => { if (!presenting) fit(); }).observe(firstStage);
+  window.addEventListener('resize', fit);
+  fit();
+
+  /* 발표 모드 */
+  function show(i) {
+    cur = Math.max(0, Math.min(items.length - 1, i));
+    items.forEach((it, k) => it.classList.toggle('current', k === cur));
+    bar.style.width = ((cur + 1) / items.length * 100) + '%';
+  }
+  function start(i) {
+    presenting = true;
+    document.body.classList.add('presenting');
+    show(i);
+    fit();
+    try { const p = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+  }
+  function stop() {
+    presenting = false;
+    document.body.classList.remove('presenting', 'show-pnotes');
+    items.forEach((it) => it.classList.remove('current'));
+    try { if (document.fullscreenElement) { const p = document.exitFullscreen(); if (p && p.catch) p.catch(() => {}); } } catch (e) {}
+    fit();
+    items[cur].scrollIntoView({ block: 'start' });
+  }
+
+  document.getElementById('start').addEventListener('click', () => start(0));
+  const notesBtn = document.getElementById('toggle-notes');
+  notesBtn.addEventListener('click', () => {
+    const hidden = document.body.classList.toggle('hide-notes');
+    notesBtn.setAttribute('aria-pressed', String(!hidden));
+  });
+
+  items.forEach((it, k) => {
+    const stage = it.querySelector('.stage');
+    stage.addEventListener('click', (e) => {
+      if (!presenting) { start(k); return; }
+      const rect = stage.getBoundingClientRect();
+      show(cur + ((e.clientX - rect.left) < rect.width * 0.3 ? -1 : 1));
+    });
+    stage.addEventListener('keydown', (e) => {
+      if (!presenting && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); start(k); }
+    });
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (!presenting) return;
+    const next = ['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'];
+    const prev = ['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'];
+    if (next.includes(e.key)) { e.preventDefault(); show(cur + 1); }
+    else if (prev.includes(e.key)) { e.preventDefault(); show(cur - 1); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(items.length - 1);
+    else if (e.key === 'Escape') stop();
+    else if (e.key === 'n' || e.key === 'N') document.body.classList.toggle('show-pnotes');
+  });
+
+  let tx = null;
+  deck.addEventListener('touchstart', (e) => { if (presenting) tx = e.touches[0].clientX; }, { passive: true });
+  deck.addEventListener('touchend', (e) => {
+    if (!presenting || tx === null) return;
+    const dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 50) show(cur + (dx < 0 ? 1 : -1));
+    tx = null;
+  });
+})();
+</script>
+</body>
+</html>
