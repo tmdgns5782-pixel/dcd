@@ -28,6 +28,8 @@
   --rule: #D5CEB8;
   --straw: #F1E5BD;
   --letterbox: #0E100A;
+  --shade: rgba(28, 34, 16, .74);
+  --on-photo: #FBF9F3;
   --font: "Paperlogy", "Pretendard Variable", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
 
   /* 슬라이드 바깥 화면 */
@@ -202,6 +204,11 @@ ul.commas.sm li { font-size: 22px; padding-left: 28px; }
 }
 .photo figcaption::before { content: "사진"; font-weight: 800; color: var(--sage-deep); }
 .photo.loaded svg.scene, .photo.loaded figcaption { display: none; }
+.photo.loaded[data-credit]::after {
+  content: attr(data-credit); position: absolute; top: 14px; right: 16px; z-index: 2;
+  font-size: 14px; font-weight: 500; letter-spacing: .04em; color: var(--on-photo); opacity: .9;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .5);
+}
 
 /* 01 표지 */
 .cover .pad { padding: 96px 112px 80px; justify-content: space-between; }
@@ -326,7 +333,7 @@ ul.commas.sm li { font-size: 22px; padding-left: 28px; }
 .alt p { font-size: 20px; line-height: 1.45; color: var(--olive); }
 
 /* 08 프로그램 */
-.prog-top { display: grid; grid-template-columns: minmax(0, 1fr) 720px; gap: 56px; }
+.prog-top { display: grid; grid-template-columns: minmax(0, 1fr) 860px; gap: 48px; }
 .timeline { list-style: none; position: relative; display: flex; flex-direction: column; justify-content: space-between; }
 .timeline::before { content: ""; position: absolute; left: 145px; top: 30px; bottom: 30px; width: 2px; background: var(--sage); }
 .timeline li { display: grid; grid-template-columns: 120px 52px 240px minmax(0, 1fr); align-items: center; height: 66px; }
@@ -335,9 +342,12 @@ ul.commas.sm li { font-size: 22px; padding-left: 28px; }
 .timeline time { grid-column: 1; grid-row: 1; font-size: 32px; font-weight: 800; color: var(--ink); }
 .timeline b { grid-column: 3; grid-row: 1; font-size: 30px; color: var(--ink); }
 .timeline span { grid-column: 4; grid-row: 1; font-size: 25px; color: var(--olive); }
-.gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: 232px 168px; gap: 14px; }
-.gallery .photo { border-radius: 14px; }
-.gallery .g1 { grid-column: 1 / -1; }
+.gallery { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.gallery .photo { min-height: 396px; border-radius: 14px; }
+.gallery figcaption { display: none; }
+.tile-label { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; display: flex; flex-direction: column; gap: 2px; padding: 64px 18px 16px; background: linear-gradient(transparent, var(--shade)); color: var(--on-photo); }
+.tile-label b { font-size: 19px; font-weight: 800; letter-spacing: .08em; }
+.tile-label span { font-size: 25px; font-weight: 700; letter-spacing: -.02em; }
 .ops { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
 .op { display: flex; flex-direction: column; gap: 10px; padding: 22px 26px; border-radius: 14px; background: var(--paper); border: 1.5px solid var(--rule); }
 .op .row-head { margin-bottom: 2px; }
@@ -372,7 +382,7 @@ ul.commas.sm li { font-size: 22px; padding-left: 28px; }
 .sources > div { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; align-items: baseline; padding: 10px 22px; }
 .sources > div + div { border-top: 1.5px solid var(--rule); }
 .sources .k { font-size: 17px; font-weight: 800; letter-spacing: .08em; color: var(--olive-soft); }
-.sources p { font-size: 21px; color: var(--olive); }
+.sources p { font-size: 20px; color: var(--olive); }
 
 /* ───────── 인쇄 → PDF (크롬에서 Ctrl+P, 여백 없음) ───────── */
 @media print {
@@ -402,7 +412,7 @@ ul.commas.sm li { font-size: 22px; padding-left: 28px; }
   <section class="guide" aria-label="작성 가이드">
     <p><i class="g-fill">노란 칸</i> 직접 채울 곳</p>
     <p><i class="g-tag">점선 태그</i> 가설·검증 필요 표시</p>
-    <p><i class="g-photo">사진</i> images 폴더에 같은 이름의 사진을 넣으면 자동 교체</p>
+    <p><i class="g-photo">사진</i> AI 생성 이미지 · images 폴더에서 같은 이름으로 교체 가능</p>
     <p>슬라이드를 누르면 그 장부터 발표 · ← → 이동 · N 멘트 · Esc 종료</p>
   </section>
 
@@ -458,7 +468,7 @@ ul.commas.sm li { font-size: 22px; padding-left: 28px; }
           </div>
           <footer class="foot"><span>관광레저상품론 · 관광상품 기획 사전 제안서</span><span class="pg">02 / 10</span></footer>
         </div>
-        <figure class="photo" data-scene="lake" data-src="images/02-lake.jpg"><figcaption>잔잔한 호수 풍경 (의암호)</figcaption></figure>
+        <figure class="photo" data-credit="AI 생성 이미지" data-scene="lake" data-src="images/02-lake.jpg"><figcaption>잔잔한 호수 풍경 (의암호)</figcaption></figure>
       </section>
     </div>
     <p class="notes"><b>발표 멘트</b>여행은 일상에서 벗어나기 위한 시간이지만, 빽빽한 일정과 잦은 이동 때문에 다녀온 뒤 오히려 피곤함을 느낄 수 있습니다. 그래서 많이 보는 여행이 아니라, 자연 속에 머무르며 쉬는 휴식 중심의 상품을 기획했습니다. 다만 이 고객 문제는 아직 조사 전 가설이고, 마지막 장에서 어떻게 검증할지 말씀드리겠습니다.</p>
@@ -476,25 +486,25 @@ ul.commas.sm li { font-size: 22px; padding-left: 28px; }
             <p class="lead">춘천은 호수와 자연경관, 지역 카페 및 로컬 음식 등 휴식형 관광상품에 활용할 수 있는 자원을 갖추고 있다.</p>
             <div class="res-grid">
               <article class="res">
-                <figure class="photo" data-scene="lake" data-src="images/03-uiamho.jpg"><figcaption>의암호</figcaption></figure>
+                <figure class="photo" data-credit="AI 생성 이미지" data-scene="lake" data-src="images/03-uiamho.jpg"><figcaption>의암호</figcaption></figure>
                 <h3>의암호</h3>
                 <p class="what">호수 경관과 산책</p>
                 <div class="use"><span class="label">프로그램 연결</span><p><b>11:30</b>의암호 산책</p></div>
               </article>
               <article class="res">
-                <figure class="photo" data-scene="stream" data-src="images/03-gongjicheon.jpg"><figcaption>공지천</figcaption></figure>
+                <figure class="photo" data-credit="AI 생성 이미지" data-scene="stream" data-src="images/03-gongjicheon.jpg"><figcaption>공지천</figcaption></figure>
                 <h3>공지천</h3>
                 <p class="what">수변 휴식 공간</p>
                 <div class="use"><span class="label">프로그램 연결</span><p><b>15:30</b>자유시간 · 수변 휴식</p></div>
               </article>
               <article class="res">
-                <figure class="photo" data-scene="window" data-src="images/03-cafe.jpg"><figcaption>로컬 카페</figcaption></figure>
+                <figure class="photo" data-credit="AI 생성 이미지" data-scene="window" data-src="images/03-cafe.jpg"><figcaption>로컬 카페</figcaption></figure>
                 <h3>로컬 카페</h3>
                 <p class="what">감성적인 휴식</p>
                 <div class="use"><span class="label">프로그램 연결</span><p><b>14:00</b>감성 카페 티타임</p></div>
               </article>
               <article class="res">
-                <figure class="photo" data-scene="table" data-src="images/03-food.jpg"><figcaption>지역 음식</figcaption></figure>
+                <figure class="photo" data-credit="AI 생성 이미지" data-scene="table" data-src="images/03-food.jpg"><figcaption>지역 음식</figcaption></figure>
                 <h3>지역 음식</h3>
                 <p class="what">춘천만의 미식 경험</p>
                 <div class="use"><span class="label">프로그램 연결</span><p><b>12:30</b>로컬 식사</p></div>
@@ -513,7 +523,7 @@ ul.commas.sm li { font-size: 22px; padding-left: 28px; }
     <div class="item-head"><span><b>04</b>고객 분석</span><span>누구를 위한 상품인가?</span></div>
     <div class="stage" tabindex="0" role="button" aria-label="4번 슬라이드부터 발표">
       <section class="slide split left" aria-label="타깃 고객 및 고객 문제 분석">
-        <figure class="photo" data-scene="path" data-src="images/04-person.jpg"><figcaption>쉬어 가는 20~30대 여행자</figcaption></figure>
+        <figure class="photo" data-credit="AI 생성 이미지" data-scene="path" data-src="images/04-person.jpg"><figcaption>쉬어 가는 20~30대 여행자</figcaption></figure>
         <div class="pad">
           <p class="eyebrow">Target &amp; Customer Needs</p>
           <h2 class="title">누구에게 쉼표가 필요할까?</h2>
@@ -639,7 +649,7 @@ ul.commas.sm li { font-size: 22px; padding-left: 28px; }
     <div class="item-head"><span><b>07</b>최종 선정·콘셉트</span><span>어떤 상품을 만들 것인가?</span></div>
     <div class="stage" tabindex="0" role="button" aria-label="7번 슬라이드부터 발표">
       <section class="slide split left wide" aria-label="최종 아이디어 선정 및 상품 콘셉트">
-        <figure class="photo" data-scene="dusk" data-src="images/07-concept.jpg"><figcaption>춘천 호수의 오후 (대표 이미지)</figcaption></figure>
+        <figure class="photo" data-credit="AI 생성 이미지" data-scene="dusk" data-src="images/07-concept.jpg"><figcaption>춘천 호수의 오후 (대표 이미지)</figcaption></figure>
         <div class="pad">
           <p class="eyebrow">Final Concept</p>
           <h2 class="title big">춘천, 쉼표 하나</h2>
@@ -684,9 +694,9 @@ ul.commas.sm li { font-size: 22px; padding-left: 28px; }
                 <li><time>17:00</time><b>일정 종료</b><span>여행 마무리</span></li>
               </ol>
               <div class="gallery">
-                <figure class="photo g1" data-scene="lake" data-src="images/08-walk.jpg"><figcaption>의암호 산책</figcaption></figure>
-                <figure class="photo" data-scene="table" data-src="images/08-meal.jpg"><figcaption>로컬 식사</figcaption></figure>
-                <figure class="photo" data-scene="window" data-src="images/08-cafe.jpg"><figcaption>감성 카페</figcaption></figure>
+                <figure class="photo" data-credit="AI 생성 이미지" data-scene="lake" data-src="images/08-walk.jpg" data-pos="18% center"><figcaption>의암호 산책</figcaption><span class="tile-label"><b>11:30</b><span>의암호 산책</span></span></figure>
+                <figure class="photo" data-credit="AI 생성 이미지" data-scene="table" data-src="images/08-meal.jpg" data-pos="66% center"><figcaption>로컬 식사</figcaption><span class="tile-label"><b>12:30</b><span>로컬 식사</span></span></figure>
+                <figure class="photo" data-credit="AI 생성 이미지" data-scene="window" data-src="images/08-cafe.jpg" data-pos="35% center"><figcaption>감성 카페</figcaption><span class="tile-label"><b>14:00</b><span>감성 카페</span></span></figure>
               </div>
             </div>
             <div class="ops">
@@ -766,12 +776,12 @@ ul.commas.sm li { font-size: 22px; padding-left: 28px; }
             <div class="sources">
               <div><span class="k">자료 출처</span><p><em class="fill">[자료명 · 기관 · URL]</em></p></div>
               <div><span class="k">조사일</span><p><em class="fill">[2026.__.__]</em></p></div>
-              <div><span class="k">AI 활용 범위</span><p><em class="fill">[구성안·디자인 초안 작성에 활용, 내용·수치는 직접 확인]</em></p></div>
+              <div><span class="k">AI 활용 범위</span><p><em class="fill">[구성안·사진 생성(ChatGPT), 디자인 초안(Claude), 내용은 직접 확인]</em></p></div>
             </div>
           </div>
           <footer class="foot"><span>관광레저상품론 · 관광상품 기획 사전 제안서</span><span class="pg">10 / 10</span></footer>
         </div>
-        <figure class="photo" data-scene="dusk" data-src="images/10-sunset.jpg"><figcaption>의암호 노을</figcaption></figure>
+        <figure class="photo" data-credit="AI 생성 이미지" data-scene="dusk" data-src="images/10-sunset.jpg"><figcaption>의암호 노을</figcaption></figure>
       </section>
     </div>
     <p class="notes"><b>발표 멘트</b>이 상품을 통해 관광객에게는 휴식 중심의 여행 경험을, 춘천에는 자연자원과 로컬 상권을 잇는 상품을 기대합니다. 다만 이 효과들은 아직 가설이기 때문에 설문과 인터뷰, 유사 상품 가격 비교, 협력업체와 동선 확인, 안전·우천 대안 검토로 검증하겠습니다. 춘천에서의 하루가 일상에 작은 쉼표가 되기를 바라며 발표를 마치겠습니다. 감사합니다.</p>
@@ -868,6 +878,7 @@ ul.commas.sm li { font-size: 22px; padding-left: 28px; }
     const seed = 101 + i * 977, kind = fig.dataset.scene || 'lake';
     const svg = kind === 'table' ? tableScene(seed) : kind === 'path' ? pathScene(seed) : landscape(kind, seed);
     fig.insertAdjacentHTML('afterbegin', svg);
+    if (fig.dataset.pos) fig.style.backgroundPosition = fig.dataset.pos;
     const src = fig.dataset.src;
     if (!src) return;
     const img = new Image();
