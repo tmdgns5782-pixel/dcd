@@ -45,15 +45,8 @@ const NATURAL_LH = 1060 / 900;
 const hex = (c) => (COLORS[c] ? COLORS[c].hex : c);
 
 // ---- icons -------------------------------------------------------------------------------
-const CUSTOM_ICONS = {
-  // Tunnel portal: the deck's motif.
-  arch: (c, sw = 3) =>
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#${c}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 21V11.5a7.5 7.5 0 0 1 15 0V21"/></svg>`,
-};
-
 function iconSvg(name, color, size = 24) {
   const c = hex(color);
-  if (CUSTOM_ICONS[name]) return CUSTOM_ICONS[name](c).replace(/width="24" height="24"/, `width="${size}" height="${size}"`);
   const Comp = lu[name];
   if (!Comp) throw new Error(`unknown icon ${name}`);
   let svg = renderToStaticMarkup(React.createElement(Comp, { size, color: `#${c}` }));
@@ -109,21 +102,4 @@ function tunnelArtSvg(W = 720, H = 720) {
   return out;
 }
 
-// Faint portal outline used as a watermark in the corner of dark key cards.
-function archWatermarkSvg(W = 240, H = 200, color = "FFFFFF", opacity = 0.08) {
-  const R = 150, cx = W - 40, base = H + 20, shoulder = 150;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}"><path d="M${cx - R} ${base} L${cx - R} ${shoulder} A${R} ${R} 0 0 1 ${cx + R} ${shoulder} L${cx + R} ${base}" fill="none" stroke="#${color}" stroke-opacity="${opacity}" stroke-width="26"/><path d="M${cx - R + 60} ${base} L${cx - R + 60} ${shoulder} A${R - 60} ${R - 60} 0 0 1 ${cx + R - 60} ${shoulder} L${cx + R - 60} ${base}" fill="none" stroke="#${color}" stroke-opacity="${opacity * 0.7}" stroke-width="12"/></svg>`;
-}
-
-// Concentric portals rising from the bottom edge (agenda slide).
-function portalBleedSvg(W, H, color = "0D1F3C") {
-  const cx = W / 2, base = H + 4;
-  let out = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
-  [[W / 2 - 20, 30, 0.07], [W / 2 - 80, 18, 0.05], [W / 2 - 128, 10, 0.04]].forEach(([R, sw, op]) => {
-    const shoulder = R + sw;
-    out += `<path d="M${cx - R} ${base} L${cx - R} ${shoulder} A${R} ${R} 0 0 1 ${cx + R} ${shoulder} L${cx + R} ${base}" fill="none" stroke="#${color}" stroke-opacity="${op}" stroke-width="${sw}"/>`;
-  });
-  return out + `</svg>`;
-}
-
-module.exports = { portalBleedSvg, COLORS, THEME, WEIGHTS, NATURAL_LH, hex, iconSvg, tunnelArtSvg, archWatermarkSvg };
+module.exports = { COLORS, THEME, WEIGHTS, NATURAL_LH, hex, iconSvg, tunnelArtSvg };

@@ -58,7 +58,10 @@ async function renderPPTX(slides, layouts, outFile) {
   // ---- layouts ----
   for (const [name, L] of Object.entries(layouts)) {
     const objects = [];
-    for (const e of L.els || []) objects.push({ text: { text: e.runs.map((r) => r.text).join(""), options: textOpts(e) } });
+    for (const e of L.els || []) {
+      if (e.t === "rect") objects.push({ rect: { x: IN(e.x), y: IN(e.y), w: IN(e.w), h: IN(e.h), fill: { color: col(e.fill) } } });
+      else objects.push({ text: { text: e.runs.map((r) => r.text).join(""), options: textOpts(e) } });
+    }
     const T = L.title;
     objects.push({
       placeholder: {
