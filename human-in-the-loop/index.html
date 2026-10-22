@@ -15,420 +15,450 @@
 @font-face { font-family: "Paperlogy"; font-weight: 800; font-style: normal; font-display: swap; src: url("fonts/Paperlogy-8ExtraBold.woff2") format("woff2"); }
 @font-face { font-family: "Paperlogy"; font-weight: 900; font-style: normal; font-display: swap; src: url("fonts/Paperlogy-9Black.woff2") format("woff2"); }
 
-/* Layout: 1920×1080 캔버스, 좌우 96px 여백의 12단 그리드. 카드 대신 타이포 · 여백 · 헤어라인으로 짠다.
-   모티프는 디자인 툴 캔버스 — 선택 박스와 멀티 커서. 잉크 = 사람('나'), 인디고 = AI(선택). */
+/* Layout: 1920×1080 캔버스, 좌우 120px 여백. 회색 바탕 위 흰 타일(벤토) + 하얀 히어로 장면의 입체 오브젝트.
+   색: 잉크 + 회색 단계 + 블루 한 가지. 은색 구 = 사람, 파란 구 = AI. 빨강은 '넘침·한계'에만. */
 :root {
-  --paper: #F1F1EE;
-  --ink: #0E0E10;
-  --ai: #3D35FF;
-  --ai-on-ink: #8F8AFF;
-  --gray: #74747A;
-  --stage: #060607;
+  --ink: #191F28;
+  --g700: #4E5968;
+  --g600: #6B7684;
+  --g500: #8B95A1;
+  --g300: #D1D6DB;
+  --g200: #E5E8EB;
+  --g100: #F2F4F6;
+  --white: #FFFFFF;
+  --blue: #3182F6;
+  --blue-d: #1B64DA;
+  --blue-t: #E8F3FF;
+  --red: #F04452;
+  --red-t: #FFEEF0;
+  --stage: #0B0C0E;
   --font: "Paperlogy", "Pretendard Variable", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   color-scheme: dark;
 }
 
 html, body { height: 100%; }
-body { margin: 0; background: var(--stage); color: var(--paper); font-family: var(--font); overflow: hidden; -webkit-font-smoothing: antialiased; }
+body { margin: 0; background: var(--stage); color: var(--white); font-family: var(--font); overflow: hidden; -webkit-font-smoothing: antialiased; }
 button { font: inherit; color: inherit; }
 
 /* ---------- 앱 셸 ---------- */
 .app { height: 100%; display: grid; grid-template-rows: minmax(0, 1fr) auto; }
 .stage { min-height: 0; padding-block: 18px 6px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 #deck { position: relative; height: 100%; container-type: size; }
-.frame { overflow: hidden; background: var(--paper); }
+.frame { overflow: hidden; background: var(--white); }
 .deck-mode .frame {
   position: absolute; left: 50%; top: 50%;
-  width: min(100cqw, calc(100cqh * 16 / 9)); aspect-ratio: 16 / 9; translate: -50% -50%;
+  width: min(100cqw, calc(100cqh * 16 / 9)); aspect-ratio: 16 / 9; translate: -50% -50%; border-radius: 8px;
   visibility: hidden; opacity: 0; transition: opacity .4s ease, visibility 0s linear .4s;
 }
 .deck-mode .frame.is-active { visibility: visible; opacity: 1; transition: opacity .4s ease; }
 .grid-mode#deck { overflow-y: auto; container-type: normal; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 40px 20px; align-content: start; padding-bottom: 24px; }
-.grid-mode .frame { position: relative; aspect-ratio: 16 / 9; cursor: pointer; overflow: visible; outline: 2px solid transparent; outline-offset: 4px; }
-.grid-mode .frame > .slide { overflow: hidden; }
-.grid-mode .frame::after { content: attr(data-label); position: absolute; left: 0; top: calc(100% + 8px); font-size: 13px; color: #8D8D93; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-.grid-mode .frame.is-active { outline-color: var(--ai-on-ink); }
-.grid-mode .frame:focus-visible { outline-color: var(--paper); }
+.grid-mode .frame { position: relative; aspect-ratio: 16 / 9; cursor: pointer; overflow: visible; border-radius: 10px; outline: 2px solid transparent; outline-offset: 4px; }
+.grid-mode .frame > .slide { overflow: hidden; border-radius: 10px; }
+.grid-mode .frame::after { content: attr(data-label); position: absolute; left: 0; top: calc(100% + 8px); font-size: 13px; color: #8B95A1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.grid-mode .frame.is-active { outline-color: var(--blue); }
+.grid-mode .frame:focus-visible { outline-color: var(--white); }
 
 .bar {
   position: relative; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px;
   padding-block: 8px calc(10px + env(safe-area-inset-bottom, 0px));
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
-  font-size: 14px; color: #A6A6AC;
+  font-size: 14px; color: #A9B0B8;
 }
 .bar-l { display: flex; gap: 12px; align-items: baseline; min-width: 0; overflow: hidden; }
-.bar-l b { font-weight: 800; color: var(--paper); white-space: nowrap; }
-.bar-l span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; color: #6F6F75; }
+.bar-l b { font-weight: 800; color: var(--white); white-space: nowrap; }
+.bar-l span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; color: #6B7684; }
 .bar-c { display: flex; align-items: center; gap: 4px; }
 .bar-r { display: flex; justify-content: flex-end; align-items: center; gap: 4px; }
-#count { min-width: 72px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--paper); }
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 38px; min-width: 38px; padding: 0 10px; border-radius: 8px; border: 0; background: transparent; cursor: pointer; }
-.btn:hover { background: rgba(241, 241, 238, .08); }
-.btn:focus-visible { outline: 2px solid var(--ai-on-ink); outline-offset: 2px; }
-.btn[aria-pressed="true"] { background: var(--paper); color: var(--ink); }
-.btn svg { width: 18px; height: 18px; }
-.progress { position: absolute; left: 0; right: 0; top: 0; height: 2px; background: rgba(241, 241, 238, .06); }
-.progress i { display: block; height: 100%; width: 0; background: var(--ai-on-ink); transition: width .4s ease; }
-.keys { color: #55555B; font-size: 12px; margin-right: 8px; }
+#count { min-width: 72px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--white); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 38px; min-width: 38px; padding: 0 10px; border-radius: 10px; border: 0; background: transparent; cursor: pointer; }
+.btn:hover { background: rgba(255, 255, 255, .08); }
+.btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.btn[aria-pressed="true"] { background: var(--white); color: var(--ink); }
+.btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.progress { position: absolute; left: 0; right: 0; top: 0; height: 2px; background: rgba(255, 255, 255, .06); }
+.progress i { display: block; height: 100%; width: 0; background: var(--blue); transition: width .4s ease; }
+.keys { color: #4E5968; font-size: 12px; margin-right: 8px; }
 @media (max-width: 760px) { .bar-l span, .keys, .btn .lbl { display: none; } }
 @media (max-width: 520px) { .bar { grid-template-columns: auto 1fr; } .bar-l { display: none; } }
 .defs { position: absolute; width: 0; height: 0; overflow: hidden; }
 
 /* ---------- 슬라이드 공통 ---------- */
 .slide {
-  --bg: var(--paper); --fg: var(--ink); --fg2: var(--gray); --line: rgba(14, 14, 16, .14);
-  --sel: var(--ai); --sel-fg: #FFFFFF; --tile: rgba(14, 14, 16, .09);
   position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden;
-  background: var(--bg); color: var(--fg); font-family: var(--font); font-weight: 400;
-  letter-spacing: -0.015em; word-break: keep-all; overflow-wrap: break-word;
+  background: var(--g100); color: var(--ink); font-family: var(--font); font-weight: 500;
+  letter-spacing: -0.02em; word-break: keep-all; overflow-wrap: break-word;
 }
-.slide.ink, .ink-scope { --bg: var(--ink); --fg: var(--paper); --fg2: #8D8D93; --line: rgba(241, 241, 238, .15); --sel: var(--ai-on-ink); --sel-fg: var(--ink); --tile: rgba(241, 241, 238, .1); color: var(--fg); }
-.slide.field { --bg: var(--ai); --fg: #FFFFFF; --fg2: rgba(255, 255, 255, .7); --line: rgba(255, 255, 255, .32); --sel: var(--ink); --sel-fg: #FFFFFF; --tile: rgba(255, 255, 255, .14); }
-.ink-half { position: absolute; top: 0; bottom: 0; left: 960px; right: 0; background: var(--bg); }
-:where(.slide) :where(p, h1, h2, h3, ul, ol, blockquote) { margin: 0; }
+.slide.glow { background: radial-gradient(1100px 780px at var(--gx, 76%) var(--gy, 56%), #E1EDFF 0%, #FFFFFF 62%); }
+:where(.slide) :where(p, h1, h2, h3, ul, ol) { margin: 0; }
 .slide *, .slide *::before, .slide *::after { box-sizing: border-box; }
-.grain::after { content: ""; position: absolute; inset: 0; background-image: var(--grain); opacity: .2; mix-blend-mode: overlay; pointer-events: none; z-index: 5; }
-.canvas { background-image: radial-gradient(circle, rgba(14, 14, 16, .17) 1.3px, transparent 1.6px); background-size: 32px 32px; background-position: 16px 16px; }
 
-.s-meta { position: absolute; left: 96px; right: 96px; top: 46px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: baseline; font-size: 17px; color: var(--fg2); z-index: 6; }
-.s-meta b { font-weight: 800; color: var(--fg); margin-right: 12px; }
-.m-c { font-weight: 600; letter-spacing: .02em; }
-.m-r { text-align: right; font-weight: 700; color: var(--fg); font-variant-numeric: tabular-nums; }
-.m-r i { font-style: normal; font-weight: 400; color: var(--fg2); }
-.split .m-c { visibility: hidden; }
-.split .m-r { color: var(--paper); }
+.meta { position: absolute; left: 120px; right: 120px; top: 46px; display: flex; justify-content: space-between; font-size: 17px; font-weight: 700; color: var(--g500); }
+.meta i { font-style: normal; font-weight: 500; color: var(--g300); }
+.meta .no { font-variant-numeric: tabular-nums; }
 
-.kicker { font-size: 20px; font-weight: 600; color: var(--fg2); letter-spacing: .01em; }
-.kicker b { color: var(--fg); font-weight: 800; margin-right: 10px; }
-.hl { background: var(--sel); color: var(--sel-fg); padding: 0 .08em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.hd { position: absolute; left: 120px; right: 120px; top: 118px; }
+.t { margin-top: 22px; font-size: 72px; font-weight: 800; line-height: 1.2; letter-spacing: -0.05em; text-wrap: balance; }
+.s { margin-top: 14px; font-size: 28px; font-weight: 500; color: var(--g600); letter-spacing: -0.03em; }
+.blue { color: var(--blue); }
 
-/* 선택 박스 (디자인 툴의 선택 핸들) */
-.sb { position: relative; display: inline-block; border: 2px solid var(--sel); padding: 0 .05em; }
-.sb > i, .drag > i, .cap-frame > i { position: absolute; width: 14px; height: 14px; background: var(--bg); border: 2px solid var(--sel); }
-.sb > i:nth-of-type(1), .drag > i:nth-of-type(1), .cap-frame > i:nth-of-type(1) { left: -8px; top: -8px; }
-.sb > i:nth-of-type(2), .drag > i:nth-of-type(2), .cap-frame > i:nth-of-type(2) { right: -8px; top: -8px; }
-.sb > i:nth-of-type(3), .drag > i:nth-of-type(3), .cap-frame > i:nth-of-type(3) { left: -8px; bottom: -8px; }
-.sb > i:nth-of-type(4), .drag > i:nth-of-type(4), .cap-frame > i:nth-of-type(4) { right: -8px; bottom: -8px; }
-.sb > em, .drag > em, .cap-frame > em { position: absolute; left: -2px; bottom: calc(100% + 12px); font: 700 18px/1.1 var(--font); letter-spacing: 0; background: var(--sel); color: var(--sel-fg); padding: 5px 10px 4px; border-radius: 4px; white-space: nowrap; }
-.sb.by-hu, .cap-frame { --sel: var(--fg); --sel-fg: var(--bg); }
+.pill { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px 9px; border-radius: 999px; font-size: 20px; font-weight: 700; line-height: 1.1; white-space: nowrap; letter-spacing: -0.01em; }
+.pill.bt { background: var(--blue-t); color: var(--blue-d); }
+.pill.gy { background: var(--g100); color: var(--g700); }
+.pill.wh { background: var(--white); color: var(--g700); }
+.pill.bl { background: var(--blue); color: var(--white); }
+.pill.dk { background: var(--ink); color: var(--white); }
+.pill.rd { background: var(--red-t); color: var(--red); }
+.pill.float { gap: 0; position: absolute; background: var(--white); color: var(--ink); font-size: 26px; padding: 16px 26px 15px; box-shadow: 0 14px 40px rgba(25, 31, 40, .12); }
+.pill.float b { color: var(--blue); font-weight: 800; }
 
-/* 멀티 커서 */
-.cur { position: absolute; z-index: 4; pointer-events: none; display: block; line-height: 1; letter-spacing: 0; }
-.cur svg { display: block; width: 34px; height: 40px; overflow: visible; fill: currentColor; stroke: #FFFFFF; stroke-width: 1.8; stroke-linejoin: round; }
-.cur b { position: absolute; left: 26px; top: 32px; font: 700 18px/1.1 var(--font); letter-spacing: -0.01em; padding: 6px 11px 5px; border-radius: 2px 12px 12px 12px; white-space: nowrap; }
-.cur.hu { color: var(--fg); }
-.cur.hu b { background: var(--fg); color: var(--bg); }
-.cur.ai { color: var(--sel); }
-.cur.ai b { background: var(--sel); color: var(--sel-fg); }
-.cur.lg svg { width: 46px; height: 54px; }
-.cur.lg b { left: 36px; top: 44px; font-size: 22px; padding: 7px 14px 6px; }
-.cur.ghost { opacity: .5; }
-.cur.ghost svg { fill: none; stroke: var(--fg2); stroke-dasharray: 3 3; }
-.cur.ghost b { background: transparent; color: var(--fg2); border: 2px dashed var(--fg2); }
-.cur.dim { opacity: .55; }
-.tag { display: inline-block; font: 700 17px/1.1 var(--font); padding: 5px 10px 4px; border-radius: 2px 10px 10px 10px; white-space: nowrap; vertical-align: .18em; letter-spacing: 0; }
-.tag.hu { background: var(--fg); color: var(--bg); }
-.tag.ai { background: var(--sel); color: var(--sel-fg); }
+.tile { background: var(--white); border-radius: 40px; padding: 44px 48px; box-shadow: 0 10px 40px rgba(25, 31, 40, .05); }
+.tile.bluet { background: linear-gradient(160deg, #4C93FF 0%, #3182F6 45%, #1B64DA 100%); color: var(--white); box-shadow: 0 24px 60px rgba(49, 130, 246, .28); }
+.tile.dark { background: var(--ink); color: var(--white); }
+.tile.tint { background: var(--blue-t); box-shadow: none; }
+.k { font-size: 21px; font-weight: 700; color: var(--blue); letter-spacing: -0.01em; }
+.bluet .k, .dark .k { color: rgba(255, 255, 255, .72); }
+
+/* 입체 오브젝트 */
+.sp { position: absolute; width: var(--s); height: var(--s); border-radius: 50%; }
+.sp.b { background: radial-gradient(circle at 32% 28%, #FFFFFF 0%, #D5E6FF 9%, #7DB2FF 30%, #3182F6 56%, #1A4FC2 82%, #0E2E7A 100%); box-shadow: inset calc(var(--s) * -.08) calc(var(--s) * -.1) calc(var(--s) * .24) rgba(8, 28, 90, .35), 0 calc(var(--s) * .18) calc(var(--s) * .34) rgba(49, 130, 246, .3); }
+.sp.s { background: radial-gradient(circle at 34% 30%, #FFFFFF 0%, #F1F3F6 35%, #C5CDD8 75%, #8F9BAE 100%); box-shadow: inset calc(var(--s) * -.06) calc(var(--s) * -.08) calc(var(--s) * .2) rgba(25, 31, 40, .12), 0 calc(var(--s) * .16) calc(var(--s) * .3) rgba(25, 31, 40, .16); }
+.sp.ghost { border: 3px dashed #B0B8C1; }
+.orbit { position: absolute; border-radius: 50%; border: 3px solid rgba(49, 130, 246, .28); }
+.floor { position: absolute; border-radius: 50%; background: radial-gradient(ellipse, rgba(25, 31, 40, .18), transparent 70%); }
+.ic { position: relative; width: var(--s); height: var(--s); border-radius: calc(var(--s) * .3); display: grid; place-items: center; flex: none; color: var(--white);
+  background: linear-gradient(145deg, #74B4FF 0%, #3182F6 48%, #1856C8 100%);
+  box-shadow: inset 0 calc(var(--s) * .05) calc(var(--s) * .08) rgba(255, 255, 255, .5), inset 0 calc(var(--s) * -.06) calc(var(--s) * .1) rgba(10, 40, 120, .35), 0 calc(var(--s) * .14) calc(var(--s) * .28) rgba(49, 130, 246, .3); }
+.ic.k { background: linear-gradient(145deg, #5B6675 0%, #2B3340 50%, #191F28 100%); box-shadow: inset 0 calc(var(--s) * .05) calc(var(--s) * .08) rgba(255, 255, 255, .25), 0 calc(var(--s) * .14) calc(var(--s) * .28) rgba(25, 31, 40, .25); }
+.ic.s { color: var(--blue); background: linear-gradient(145deg, #FFFFFF 0%, #EEF1F5 55%, #D3D9E1 100%); box-shadow: inset 0 calc(var(--s) * .05) calc(var(--s) * .08) rgba(255, 255, 255, .9), inset 0 calc(var(--s) * -.06) calc(var(--s) * .1) rgba(25, 31, 40, .08), 0 calc(var(--s) * .14) calc(var(--s) * .28) rgba(25, 31, 40, .12); }
+.ic.r { background: linear-gradient(145deg, #FF8A94 0%, #F04452 50%, #C8283A 100%); box-shadow: inset 0 calc(var(--s) * .05) calc(var(--s) * .08) rgba(255, 255, 255, .45), 0 calc(var(--s) * .14) calc(var(--s) * .28) rgba(240, 68, 82, .3); }
+.ic svg { width: 46%; height: 46%; fill: none; stroke: currentColor; stroke-width: 2.3; stroke-linecap: round; stroke-linejoin: round; }
+.ic .ai { font-size: calc(var(--s) * .36); font-weight: 900; letter-spacing: -0.04em; line-height: 1; }
+.ico { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 
 /* ---------- 01 표지 ---------- */
-.cv-top { position: absolute; left: 96px; right: 96px; top: 50px; display: flex; justify-content: space-between; font-size: 20px; font-weight: 800; line-height: 1.45; }
-.cv-top span { font-weight: 400; color: var(--fg2); }
-.cv-top .r { text-align: right; }
-.cv-title { position: absolute; left: 88px; top: 196px; font-size: 270px; font-weight: 900; line-height: 1; letter-spacing: -0.065em; }
-.cv-title .pin { position: relative; display: inline-block; }
-.cv-q { position: absolute; left: 96px; bottom: 104px; }
-.cv-q p { font-size: 46px; letter-spacing: -0.035em; line-height: 1.3; }
-.cv-q .q1 { font-weight: 800; }
-.cv-q .q2 { font-weight: 300; }
-.cv-team { position: absolute; right: 96px; bottom: 112px; font-size: 20px; color: var(--fg2); text-align: right; line-height: 1.6; }
-.cv-team b { color: var(--fg); font-weight: 800; }
-.cv-vert { position: absolute; right: 52px; top: 330px; writing-mode: vertical-rl; font-size: 14px; font-weight: 700; letter-spacing: .32em; color: var(--fg2); }
+.cv-lab { position: absolute; left: 124px; top: 150px; }
+.cv-t { position: absolute; left: 114px; top: 222px; font-size: 196px; font-weight: 900; line-height: 1.04; letter-spacing: -0.06em; }
+.cv-s { position: absolute; left: 124px; bottom: 176px; font-size: 44px; line-height: 1.4; letter-spacing: -0.04em; }
+.cv-s b { font-weight: 800; }
+.cv-s span { color: var(--g600); font-weight: 500; }
+.cv-team { position: absolute; left: 124px; bottom: 100px; font-size: 22px; color: var(--g500); }
+.cv-team b { color: var(--ink); font-weight: 800; margin-right: 10px; }
 
 /* ---------- 02 목차 ---------- */
-.toc-h { position: absolute; left: 96px; top: 150px; font-size: 150px; font-weight: 900; letter-spacing: -0.065em; line-height: 1; }
-.toc-sub { position: absolute; left: 96px; bottom: 96px; font-size: 26px; line-height: 1.55; color: var(--fg2); }
-.toc-sub b { color: var(--fg); font-weight: 700; }
-.toc { position: absolute; left: 816px; right: 96px; top: 160px; list-style: none; padding: 0; border-top: 2px solid var(--fg); }
-.toc li { display: grid; grid-template-columns: 96px 1fr 170px 40px; align-items: baseline; padding: 21px 0 19px; border-bottom: 1px solid var(--line); cursor: pointer; }
-.toc li:hover .t { color: var(--ai); }
-.toc .n { font-size: 30px; font-weight: 300; color: var(--fg2); font-variant-numeric: tabular-nums; }
-.toc .t { font-size: 38px; font-weight: 800; letter-spacing: -0.04em; }
-.toc .e { font-size: 14px; font-weight: 700; letter-spacing: .18em; color: var(--fg2); }
-.toc .p { font-size: 18px; color: var(--fg2); text-align: right; font-variant-numeric: tabular-nums; }
+.toc-l { position: absolute; left: 120px; top: 118px; bottom: 90px; width: 520px; display: flex; flex-direction: column; }
+.toc-l h2 { margin-top: 22px; font-size: 150px; font-weight: 900; letter-spacing: -0.065em; line-height: 1; }
+.toc-l p { margin-top: auto; font-size: 28px; line-height: 1.55; color: var(--g600); letter-spacing: -0.03em; }
+.toc-l p b { color: var(--ink); font-weight: 800; }
+.toc-g { position: absolute; left: 700px; right: 120px; top: 150px; bottom: 90px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, 1fr); gap: 20px; }
+.toc-g .tile { padding: 30px 36px; display: grid; grid-template-columns: 70px 1fr auto; grid-template-rows: auto auto; column-gap: 8px; align-content: center; cursor: pointer; border-radius: 32px; }
+.toc-g .tile:hover { box-shadow: 0 0 0 3px var(--blue); }
+.toc-g .n { grid-row: 1 / 3; font-size: 36px; font-weight: 900; color: var(--blue); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.toc-g .ttl { font-size: 32px; font-weight: 800; letter-spacing: -0.045em; }
+.toc-g .e { grid-column: 2; font-size: 15px; font-weight: 700; letter-spacing: .14em; color: var(--g500); margin-top: 8px; }
+.toc-g .p { grid-row: 1 / 3; grid-column: 3; align-self: center; font-size: 20px; font-weight: 700; color: var(--g300); font-variant-numeric: tabular-nums; }
 
-/* ---------- 03 한 문장 ---------- */
-.ov-k { position: absolute; left: 96px; top: 168px; }
-.ov-s { position: absolute; left: 96px; top: 222px; width: 1700px; text-wrap: pretty; font-size: 64px; font-weight: 300; line-height: 1.34; letter-spacing: -0.045em; }
-.ov-s b { font-weight: 800; }
-.strip { position: absolute; left: 120px; right: 120px; top: 790px; height: 132px; display: grid; grid-template-columns: repeat(4, 1fr); }
-.strip > .sp { padding: 22px 28px 0; display: flex; flex-direction: column; gap: 12px; border-left: 1px solid var(--line); }
-.strip > .sp:first-child { border-left: 0; }
-.strip span { font-size: 17px; font-weight: 700; color: var(--fg2); font-variant-numeric: tabular-nums; letter-spacing: .04em; }
-.strip b { font-size: 42px; font-weight: 800; letter-spacing: -0.045em; }
-.drag { position: absolute; inset: -6px -10px -10px -10px; border: 2px solid var(--sel); background: color-mix(in srgb, var(--sel) 8%, transparent); pointer-events: none; }
-
-/* ---------- 공통 헤드 ---------- */
-.hd { position: absolute; left: 96px; right: 96px; top: 150px; }
-.h-xl { font-size: 92px; font-weight: 900; letter-spacing: -0.06em; line-height: 1.1; text-wrap: balance; }
-.h-sub { font-size: 34px; font-weight: 300; color: var(--fg2); margin-top: 18px; letter-spacing: -0.03em; }
+/* ---------- 03 한눈에 ---------- */
+.steps { position: absolute; left: 120px; right: 120px; top: 392px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 56px; }
+.step { position: relative; height: 176px; border-radius: 36px; padding: 0 36px; display: flex; align-items: center; gap: 24px; }
+.step .no { font-size: 18px; font-weight: 700; color: var(--g500); }
+.step b { display: block; margin-top: 4px; font-size: 36px; font-weight: 800; letter-spacing: -0.045em; }
+.step:not(:last-child)::after { content: ""; position: absolute; right: -36px; top: 50%; width: 16px; height: 16px; border-top: 4px solid var(--g300); border-right: 4px solid var(--g300); transform: translateY(-50%) rotate(45deg); }
+.capsule { position: absolute; left: 120px; right: 120px; top: 590px; height: 72px; border-radius: 999px; background: linear-gradient(90deg, #4C93FF, #3182F6 50%, #1B64DA); box-shadow: 0 18px 40px rgba(49, 130, 246, .28), inset 0 3px 6px rgba(255, 255, 255, .35); color: var(--white); display: grid; place-items: center; font-size: 28px; font-weight: 800; letter-spacing: -0.03em; }
+.ov-b { position: absolute; left: 120px; right: 120px; top: 690px; bottom: 90px; display: grid; grid-template-columns: 2.1fr 1fr 1fr; gap: 24px; }
+.ov-b .tile { display: flex; flex-direction: column; }
+.ov-b .sent { margin-top: 14px; font-size: 24px; line-height: 1.6; letter-spacing: -0.03em; color: var(--g700); }
+.ov-b .sent b { color: var(--ink); font-weight: 800; }
+.res { justify-content: space-between; }
+.res .ic { --s: 76px; }
+.res b { font-size: 40px; font-weight: 800; letter-spacing: -0.05em; }
+.res p { font-size: 20px; color: var(--g600); margin-top: 6px; }
 
 /* ---------- 04 현상 ---------- */
-.rows { position: absolute; left: 96px; right: 96px; top: 420px; border-top: 2px solid var(--fg); }
-.row { display: grid; grid-template-columns: 200px 520px 470px 1fr; column-gap: 40px; align-items: center; padding: 34px 0; border-bottom: 1px solid var(--line); }
-.lvl { display: flex; flex-direction: column; gap: 12px; font-size: 18px; font-weight: 700; color: var(--fg2); }
-.lvl b { font-size: 22px; color: var(--fg); font-weight: 800; }
-.meter { display: flex; gap: 6px; }
-.meter i { width: 40px; height: 6px; background: var(--line); }
-.meter i.on { background: var(--sel); }
-.row h3 { font-size: 52px; font-weight: 800; letter-spacing: -0.05em; }
-.row .say { font-size: 40px; font-weight: 300; letter-spacing: -0.04em; }
-.row .say .hl { font-weight: 800; }
-.row .d { font-size: 21px; line-height: 1.6; color: var(--fg2); }
+.lv3 { position: absolute; left: 120px; right: 120px; top: 410px; bottom: 90px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.lv3 .tile { display: flex; flex-direction: column; }
+.lv3 .top { display: flex; justify-content: space-between; align-items: flex-start; }
+.lv3 .ic { --s: 112px; }
+.lv3 h3 { margin-top: 40px; font-size: 44px; font-weight: 800; letter-spacing: -0.05em; }
+.lv3 .say { margin-top: 10px; font-size: 32px; font-weight: 500; letter-spacing: -0.04em; color: var(--g700); }
+.lv3 .say b { color: var(--blue); font-weight: 800; }
+.lv3 .d { margin-top: 18px; font-size: 21px; line-height: 1.6; color: var(--g600); }
+.meter { margin-top: auto; display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 700; color: var(--g500); }
+.meter i { width: 46px; height: 8px; border-radius: 4px; background: var(--g200); }
+.meter i.on { background: var(--blue); }
+.meter span { margin-left: 8px; }
+.lv3 .bluet .say, .lv3 .bluet .d, .lv3 .bluet .meter { color: rgba(255, 255, 255, .82); }
+.lv3 .bluet .say b { color: var(--white); }
+.lv3 .bluet .meter i { background: rgba(255, 255, 255, .3); }
+.lv3 .bluet .meter i.on { background: var(--white); }
 
 /* ---------- 05 유형 ---------- */
-.cols4 { position: absolute; left: 96px; right: 96px; top: 336px; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr); }
-.cols4 > article { position: relative; padding: 30px 34px 0; border-left: 1px solid var(--line); display: flex; flex-direction: column; }
-.cols4 > article:first-child { border-left: 0; padding-left: 0; }
-.cols4 > article.ink-col { background: var(--bg); border-left: 0; }
-.grp { font-size: 18px; font-weight: 700; color: var(--fg2); letter-spacing: .02em; display: flex; justify-content: space-between; align-items: center; }
-.dg { position: relative; height: 232px; margin-top: 18px; }
-.tile { position: absolute; top: 82px; width: 64px; height: 64px; border-radius: 12px; background: var(--tile); }
-.dg .sb { position: absolute; top: 74px; left: 104px; width: 80px; height: 80px; padding: 0; }
-.dg .sb > em { font-size: 15px; padding: 4px 8px 3px; bottom: calc(100% + 10px); }
-.abbr { font-size: 66px; font-weight: 900; letter-spacing: -0.04em; line-height: 1; margin-top: 18px; }
-.cols4 h3 { font-size: 30px; font-weight: 800; letter-spacing: -0.04em; margin-top: 14px; }
-.cols4 .en { font-size: 18px; color: var(--fg2); margin-top: 6px; }
-.cols4 .desc { font-size: 22px; line-height: 1.6; margin-top: 20px; }
-.now { font-size: 15px; font-weight: 800; letter-spacing: .02em; color: var(--sel-fg); background: var(--sel); padding: 4px 9px 3px; border-radius: 3px; }
+.legend { position: absolute; right: 120px; top: 312px; display: flex; gap: 24px; font-size: 20px; font-weight: 700; color: var(--g700); }
+.legend span { display: inline-flex; align-items: center; gap: 10px; }
+.legend .sp { position: relative; display: inline-block; --s: 26px; }
+.spec { position: absolute; left: 120px; right: 120px; top: 398px; display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 24px; font-size: 19px; font-weight: 700; color: var(--g600); }
+.spec span { padding-bottom: 12px; border-bottom: 4px solid var(--g300); }
+.spec span:nth-child(2) { border-color: #93BFFA; }
+.spec span:nth-child(3) { border-color: var(--blue); }
+.t4 { position: absolute; left: 120px; right: 120px; top: 460px; bottom: 90px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+.t4 .tile { position: relative; display: flex; flex-direction: column; padding: 36px 40px; }
+.comp { position: relative; height: 170px; }
+.t4 .ab { margin-top: 20px; font-size: 54px; font-weight: 900; letter-spacing: -0.045em; line-height: 1; }
+.t4 h3 { margin-top: 12px; font-size: 26px; font-weight: 800; letter-spacing: -0.045em; }
+.t4 .en { margin-top: 4px; font-size: 17px; color: var(--g500); }
+.t4 .d { margin-top: 16px; font-size: 21px; line-height: 1.58; color: var(--g700); }
+.t4 .dark .en { color: rgba(255, 255, 255, .5); }
+.t4 .dark .d { color: rgba(255, 255, 255, .82); }
+.t4 .now { position: absolute; right: 30px; top: 30px; }
+.tagmini { position: absolute; font-size: 15px; font-weight: 700; color: var(--g500); white-space: nowrap; }
 
-/* ---------- 06 · 11 좌우 분할 ---------- */
-.half { position: absolute; top: 150px; bottom: 96px; width: 768px; display: flex; flex-direction: column; }
-.half.l { left: 96px; }
-.half.r { left: 1056px; }
-.half .h-half { font-size: 76px; font-weight: 900; letter-spacing: -0.06em; line-height: 1.1; }
-.case-k { margin-top: 64px; font-size: 19px; font-weight: 700; color: var(--fg2); letter-spacing: .02em; }
-.case-n { margin-top: 12px; font-size: 54px; font-weight: 800; letter-spacing: -0.05em; }
-.case-n small { font-size: 22px; font-weight: 300; color: var(--fg2); letter-spacing: 0; margin-left: 12px; }
-.nums { margin-top: 34px; display: grid; grid-template-columns: 1.25fr 1fr 1fr; border-top: 1px solid var(--line); }
-.nums div { padding-top: 22px; }
-.nums b { display: block; font-size: 104px; font-weight: 900; letter-spacing: -0.06em; line-height: 1; font-variant-numeric: tabular-nums; }
-.nums b small { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin-left: 6px; }
-.nums span { display: block; margin-top: 14px; font-size: 19px; color: var(--fg2); line-height: 1.5; }
-.big-pct { margin-top: 34px; display: flex; align-items: flex-end; gap: 28px; border-top: 1px solid var(--line); padding-top: 22px; }
-.big-pct b { font-size: 200px; font-weight: 900; letter-spacing: -0.07em; line-height: .86; color: var(--sel); }
-.big-pct span { font-size: 23px; line-height: 1.5; padding-bottom: 8px; }
-.case-d { margin-top: 30px; font-size: 23px; line-height: 1.7; color: var(--fg2); }
-.who-list { margin-top: auto; display: grid; gap: 12px; padding-top: 22px; border-top: 1px solid var(--line); font-size: 21px; }
-.who-list p { display: flex; align-items: center; gap: 14px; }
-.who-list .tag { min-width: 44px; text-align: center; }
+/* ---------- 06 사례 ---------- */
+.bento6 { position: absolute; left: 120px; right: 120px; top: 318px; bottom: 90px; display: grid; grid-template-columns: 1fr 1fr 1fr 1.3fr; grid-template-rows: 1fr 1fr; gap: 24px; }
+.bento6 .tile { display: flex; flex-direction: column; padding: 38px 42px; }
+.bento6 .wide { grid-column: 1 / 4; }
+.bento6 .n { font-size: 54px; font-weight: 900; letter-spacing: -0.05em; margin-top: 8px; }
+.bento6 .n small { font-size: 22px; font-weight: 600; color: var(--g500); letter-spacing: 0; margin-left: 12px; }
+.bento6 .d { margin-top: auto; font-size: 23px; line-height: 1.55; color: var(--g600); }
+.who { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+.who .pill { font-size: 18px; }
+.bento6 .num { margin-top: auto; font-size: 104px; font-weight: 900; letter-spacing: -0.06em; line-height: 1; color: var(--blue); }
+.bento6 .num small { font-size: 32px; font-weight: 800; color: var(--ink); margin-left: 6px; letter-spacing: -0.03em; }
+.bento6 .lb { margin-top: 14px; font-size: 21px; color: var(--g600); line-height: 1.45; }
+.bento6 .bluet { grid-column: 4; grid-row: 1 / 3; }
+.bento6 .huge { margin-top: auto; font-size: 220px; font-weight: 900; letter-spacing: -0.07em; line-height: .85; }
+.bento6 .bluet .d { margin-top: 24px; color: rgba(255, 255, 255, .88); }
+.bento6 .bluet .who .pill { background: rgba(255, 255, 255, .18); color: var(--white); }
 
 /* ---------- 07 왜 ---------- */
-.why-h { position: absolute; left: 96px; right: 96px; top: 150px; display: flex; align-items: baseline; gap: 24px; }
-.why-h h2 { font-size: 56px; font-weight: 900; letter-spacing: -0.055em; }
-.why-h p { font-size: 26px; font-weight: 300; color: var(--fg2); }
-.whys { position: absolute; left: 96px; right: 96px; top: 278px; border-top: 2px solid var(--fg); }
-.whys > div { display: grid; grid-template-columns: 1060px 1fr; align-items: center; padding: 30px 0; border-bottom: 1px solid var(--line); }
-.whys .say { font-size: 104px; font-weight: 900; letter-spacing: -0.065em; line-height: 1.05; }
-.whys .say span { font-weight: 300; }
-.whys h3 { font-size: 25px; font-weight: 800; letter-spacing: -0.03em; }
-.whys .d { font-size: 20px; line-height: 1.6; color: var(--fg2); margin-top: 10px; }
-.why-c { position: absolute; left: 96px; right: 96px; bottom: 92px; font-size: 32px; font-weight: 300; letter-spacing: -0.035em; }
-.why-c b { font-weight: 800; }
+.why3 { position: absolute; left: 120px; right: 120px; top: 370px; height: 440px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.why3 .tile { display: flex; flex-direction: column; }
+.why3 .ic { --s: 96px; }
+.why3 .say { margin-top: auto; font-size: 46px; font-weight: 800; letter-spacing: -0.055em; }
+.why3 h3 { margin-top: 10px; font-size: 22px; font-weight: 700; color: var(--blue); letter-spacing: -0.02em; }
+.why3 .d { margin-top: 12px; font-size: 20px; line-height: 1.6; color: var(--g600); }
+.banner { position: absolute; left: 120px; right: 120px; top: 834px; bottom: 90px; border-radius: 40px; padding: 0 60px; display: flex; align-items: center; justify-content: space-between; overflow: hidden; }
+.banner p { font-size: 40px; font-weight: 500; letter-spacing: -0.045em; }
+.banner p b { font-weight: 900; }
+.banner .sp { position: relative; flex: none; }
 
 /* ---------- 08 인지 증강 ---------- */
-.aug-l { position: absolute; left: 96px; top: 150px; bottom: 96px; width: 780px; display: flex; flex-direction: column; }
-.aug-t { font-size: 160px; font-weight: 900; letter-spacing: -0.07em; line-height: 1; margin-top: 26px; }
-.aug-en { font-size: 38px; font-weight: 300; color: var(--fg2); margin-top: 18px; letter-spacing: -0.02em; }
-.aug-q { margin-top: auto; font-size: 30px; line-height: 1.55; font-weight: 400; letter-spacing: -0.03em; text-wrap: balance; }
-.aug-q b { font-weight: 800; }
-.aug-cite { margin-top: 18px; font-size: 18px; color: var(--fg2); }
-.todo { position: absolute; left: 1020px; right: 96px; top: 178px; }
-.todo-h { display: flex; justify-content: space-between; font-size: 18px; font-weight: 700; color: var(--fg2); padding-bottom: 16px; border-bottom: 2px solid var(--fg); letter-spacing: .02em; }
-.todo ul { list-style: none; padding: 0; }
-.todo li { position: relative; display: grid; grid-template-columns: 52px 1fr auto; align-items: center; height: 84px; border-bottom: 1px solid var(--line); font-size: 36px; letter-spacing: -0.04em; }
-.box { width: 32px; height: 32px; border-radius: 6px; border: 2.5px solid var(--fg); display: grid; place-items: center; }
-.box svg { width: 20px; height: 20px; color: var(--sel-fg); }
-.done .box { background: var(--sel); border-color: var(--sel); }
-.done .txt { color: var(--fg2); text-decoration: line-through; text-decoration-thickness: 2px; font-weight: 300; }
-.mine .txt { font-weight: 800; }
-.todo-f { margin-top: 26px; font-size: 22px; color: var(--fg2); }
-.todo-f b { color: var(--fg); font-weight: 700; }
+.aug-l { position: absolute; left: 120px; top: 118px; bottom: 90px; width: 700px; display: flex; flex-direction: column; }
+.aug-l h2 { margin-top: 26px; font-size: 140px; font-weight: 900; letter-spacing: -0.065em; line-height: 1; }
+.aug-l .en { margin-top: 16px; font-size: 34px; font-weight: 400; color: var(--g500); letter-spacing: -0.02em; }
+.aug-l .q { margin-top: auto; font-size: 30px; line-height: 1.55; letter-spacing: -0.04em; color: var(--g700); }
+.aug-l .q b { color: var(--ink); font-weight: 800; }
+.aug-l .q .blue { font-weight: 800; }
+.aug-l .cite { margin-top: 16px; font-size: 18px; color: var(--g500); }
+.aug-deco { position: absolute; left: 520px; top: 430px; }
+.check { position: absolute; left: 900px; right: 120px; top: 150px; bottom: 90px; display: flex; flex-direction: column; box-shadow: 0 30px 80px rgba(25, 31, 40, .1); }
+.check-h { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 20px; border-bottom: 2px solid var(--g200); }
+.check-h b { font-size: 30px; font-weight: 800; letter-spacing: -0.04em; }
+.check-h span { font-size: 18px; color: var(--g500); font-weight: 600; }
+.check ul { list-style: none; padding: 0; }
+.check li { display: grid; grid-template-columns: 58px 1fr auto; align-items: center; height: 78px; border-bottom: 1px solid var(--g200); font-size: 32px; letter-spacing: -0.045em; }
+.check li:last-child { border-bottom: 0; }
+.ck { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; }
+.ck .ico { width: 22px; height: 22px; stroke-width: 3.2; }
+.done .ck { background: var(--blue); color: var(--white); }
+.done .tx { color: var(--g500); font-weight: 500; }
+.mine .ck { border: 3px solid var(--g300); }
+.mine .tx { font-weight: 800; }
+.check li .pill { font-size: 17px; padding: 8px 14px 7px; }
+.check-f { margin-top: auto; display: flex; align-items: center; gap: 12px; font-size: 21px; font-weight: 600; color: var(--g600); }
+.check-f b { color: var(--ink); font-weight: 800; }
+.check-f .ico { color: var(--blue); }
 
-/* ---------- 09 인지적 과부하 ---------- */
-.th-l { position: absolute; left: 96px; top: 150px; bottom: 96px; width: 700px; display: flex; flex-direction: column; }
-.th-t { font-size: 128px; font-weight: 900; letter-spacing: -0.07em; line-height: 1.02; margin-top: 24px; }
-.th-en { font-size: 34px; font-weight: 300; color: var(--fg2); margin-top: 16px; }
-.def { margin-top: 48px; padding-top: 22px; border-top: 2px solid var(--fg); }
-.def .src { display: flex; justify-content: space-between; font-size: 17px; font-weight: 700; color: var(--fg2); letter-spacing: .02em; }
-.def p { margin-top: 14px; font-size: 30px; font-weight: 600; line-height: 1.5; letter-spacing: -0.035em; }
-.th-apply { margin-top: auto; font-size: 21px; line-height: 1.7; color: var(--fg2); }
-.th-apply b { color: var(--fg); font-weight: 700; }
-.cap-frame { position: absolute; left: 900px; top: 236px; width: 640px; height: 500px; border: 2px solid var(--fg); }
-.words { position: absolute; left: 936px; top: 262px; width: 1200px; font-size: 102px; font-weight: 900; line-height: 1.04; letter-spacing: -0.06em; white-space: nowrap; }
-.words.out { color: var(--sel); }
-.words.in { color: var(--fg); clip-path: inset(0 596px calc(100% - 474px) 0); }
-.over { position: absolute; right: 380px; top: 198px; font-size: 20px; font-weight: 800; color: var(--sel); display: flex; align-items: center; gap: 8px; }
-.over svg { width: 24px; height: 24px; }
+/* ---------- 09 과부하 ---------- */
+.th-l { position: absolute; left: 120px; top: 118px; bottom: 90px; width: 760px; display: flex; flex-direction: column; }
+.th-l h2 { margin-top: 24px; font-size: 104px; font-weight: 900; letter-spacing: -0.065em; line-height: 1.05; }
+.th-l .en { margin-top: 12px; font-size: 30px; font-weight: 400; color: var(--g500); }
+.def { margin-top: 40px; padding: 36px 42px; }
+.def .src { display: flex; justify-content: space-between; font-size: 18px; font-weight: 700; color: var(--g500); }
+.def .src b { color: var(--blue); font-weight: 800; }
+.def p:not(.src) { margin-top: 14px; font-size: 30px; font-weight: 700; line-height: 1.5; letter-spacing: -0.045em; }
+.th-l .apply { margin-top: auto; font-size: 22px; line-height: 1.7; color: var(--g600); }
+.th-l .apply b { color: var(--ink); font-weight: 700; }
+.ov-v { position: absolute; left: 960px; right: 120px; top: 150px; bottom: 90px; }
+.jar { position: absolute; left: 50%; bottom: 96px; translate: -50% 0; width: 560px; padding: 34px 26px 26px; border: 4px solid var(--g300); border-top: 0; border-radius: 0 0 44px 44px; display: flex; flex-direction: column; gap: 14px; }
+.chipi { height: 74px; border-radius: 22px; display: grid; place-items: center; font-size: 30px; font-weight: 800; letter-spacing: -0.04em; }
+.jar .chipi { background: var(--blue-t); color: var(--blue-d); }
+.limit { position: absolute; left: 50%; translate: -50% 0; bottom: 494px; width: 640px; border-top: 4px dashed var(--red); }
+.limit .pill { position: absolute; right: -12px; top: -22px; }
+.spill { position: absolute; left: 50%; translate: -50% 0; bottom: 530px; width: 560px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.spill .chipi { width: 100%; background: var(--red); color: var(--white); box-shadow: 0 16px 34px rgba(240, 68, 82, .3); }
+.spill .chipi:nth-child(1) { rotate: -5deg; translate: -40px 0; width: 82%; }
+.spill .chipi:nth-child(2) { rotate: 3deg; translate: 50px 0; width: 86%; }
+.spill .chipi:nth-child(3) { rotate: -2deg; }
+.cap-l { position: absolute; left: 0; right: 0; bottom: 40px; text-align: center; font-size: 20px; font-weight: 700; color: var(--g500); }
 
-/* ---------- 10 인지적 구두쇠 ---------- */
-.ms-top { position: absolute; left: 96px; right: 96px; top: 150px; display: grid; grid-template-columns: 820px 1fr; gap: 80px; align-items: end; }
-.ms-top .th-t { font-size: 120px; }
+/* ---------- 10 구두쇠 ---------- */
+.ms-top { position: absolute; left: 120px; right: 120px; top: 118px; display: grid; grid-template-columns: 760px 1fr; gap: 40px; align-items: end; }
+.ms-top h2 { margin-top: 24px; font-size: 104px; font-weight: 900; letter-spacing: -0.065em; line-height: 1.05; }
+.ms-top .en { margin-top: 12px; font-size: 30px; font-weight: 400; color: var(--g500); }
 .ms-top .def { margin-top: 0; }
-.cmp { position: absolute; left: 96px; right: 96px; top: 520px; display: grid; grid-template-columns: 260px 1fr 1fr; column-gap: 40px; }
-.cmp .ch { font-size: 17px; font-weight: 700; color: var(--fg2); padding-bottom: 14px; border-bottom: 2px solid var(--fg); letter-spacing: .02em; }
-.cmp .ch.ai { color: var(--sel); }
-.cmp .w { font-size: 74px; font-weight: 900; letter-spacing: -0.06em; line-height: 1; padding: 18px 0; border-bottom: 1px solid var(--line); }
-.cmp .me, .cmp .ai-t { display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--line); }
-.cmp .me { font-size: 23px; color: var(--fg2); text-decoration: line-through; text-decoration-thickness: 1.5px; }
-.cmp .ai-t { font-size: 27px; font-weight: 700; letter-spacing: -0.03em; }
-.ms-ans { position: absolute; left: 96px; right: 96px; bottom: 92px; font-size: 36px; font-weight: 300; letter-spacing: -0.04em; }
-.ms-ans b { font-weight: 800; }
+.cmp { position: absolute; left: 120px; right: 120px; top: 452px; padding: 20px 48px; }
+.cmp-r { display: grid; grid-template-columns: 280px 1fr 64px 1fr; align-items: center; height: 118px; border-bottom: 1px solid var(--g200); }
+.cmp-r:last-child { border-bottom: 0; }
+.cmp-r .st { display: flex; align-items: center; gap: 22px; font-size: 44px; font-weight: 900; letter-spacing: -0.05em; }
+.cmp-r .st .ic { --s: 68px; }
+.cmp-r .me { display: flex; align-items: center; gap: 12px; font-size: 23px; color: var(--g500); }
+.cmp-r .me .ico { color: var(--g300); }
+.cmp-r .arr { color: var(--g300); }
+.cmp-r .arr .ico { width: 32px; height: 32px; }
+.cmp-r .ai { display: flex; align-items: center; gap: 12px; font-size: 26px; font-weight: 800; letter-spacing: -0.04em; }
+.cmp-r .ai .ico { color: var(--blue); }
+.ms-ban { position: absolute; left: 120px; right: 120px; top: 862px; bottom: 90px; border-radius: 32px; display: flex; align-items: center; padding: 0 48px; gap: 12px; font-size: 32px; font-weight: 500; letter-spacing: -0.04em; }
+.ms-ban b { font-weight: 900; }
 
 /* ---------- 11 대응 평가 ---------- */
-.rv-k { margin-top: auto; font-size: 19px; font-weight: 700; color: var(--fg2); padding-bottom: 14px; border-bottom: 2px solid var(--fg); display: flex; justify-content: space-between; }
-.rv-i { padding: 30px 0; border-bottom: 1px solid var(--line); }
-.rv-i:last-child { border-bottom: 0; }
-.rv-i h3 { font-size: 38px; font-weight: 800; letter-spacing: -0.045em; display: flex; justify-content: space-between; align-items: baseline; gap: 20px; }
-.rv-i h3 .go { font-size: 18px; font-weight: 800; color: var(--sel); white-space: nowrap; letter-spacing: 0; }
-.rv-i p { font-size: 22px; line-height: 1.6; color: var(--fg2); margin-top: 8px; }
+.rv2 { position: absolute; left: 120px; right: 120px; top: 390px; bottom: 90px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.rv2 .tile { display: flex; flex-direction: column; padding: 40px 48px; }
+.rv-h { display: flex; align-items: center; gap: 20px; padding-bottom: 18px; border-bottom: 2px solid var(--g200); }
+.rv-h .ic { --s: 64px; }
+.rv-h b { font-size: 32px; font-weight: 800; letter-spacing: -0.045em; }
+.rv-i { display: grid; grid-template-columns: 44px 1fr auto; column-gap: 12px; padding: 20px 0; border-bottom: 1px solid var(--g200); }
+.rv-i:last-child { border-bottom: 0; padding-bottom: 0; }
+.rv-i .ico { margin-top: 6px; }
+.good .rv-i .ico { color: var(--blue); }
+.bad .rv-i .ico { color: var(--red); }
+.rv-i h3 { font-size: 28px; font-weight: 800; letter-spacing: -0.045em; }
+.rv-i p { grid-column: 2; margin-top: 8px; font-size: 21px; line-height: 1.55; color: var(--g600); }
+.rv-i .pill { grid-column: 3; grid-row: 1 / 3; align-self: center; font-size: 18px; }
 
 /* ---------- 12 투트랙 ---------- */
-.tt-h { position: absolute; left: 96px; top: 150px; font-size: 104px; font-weight: 900; letter-spacing: -0.065em; line-height: 1.06; }
-.tt-sub { position: absolute; right: 96px; top: 162px; width: 470px; font-size: 24px; line-height: 1.6; color: var(--fg2); text-align: right; }
-.tt-sub b { color: var(--fg); font-weight: 800; }
-.map { position: absolute; left: 96px; right: 96px; top: 520px; height: 450px; }
-.map svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.map .ln { stroke: var(--fg); stroke-width: 2.5; fill: none; }
-.map .ld { stroke: var(--fg); stroke-width: 1.5; stroke-dasharray: 3 5; fill: none; }
-.map .dot { fill: var(--fg); }
-.map .ring { fill: var(--bg); stroke: var(--fg); stroke-width: 2.5; }
-.mp { position: absolute; }
-.mp.node { top: 132px; translate: -50% 0; text-align: center; font-size: 40px; font-weight: 800; letter-spacing: -0.045em; white-space: nowrap; }
-.mp.edge { translate: -50% -100%; font-size: 19px; font-weight: 600; color: var(--fg2); white-space: nowrap; }
-.mp.track { left: 0; font-size: 15px; font-weight: 800; letter-spacing: .2em; color: var(--fg2); }
-.mp.track b { display: block; margin-top: 8px; font-size: 26px; letter-spacing: -0.03em; color: var(--fg); font-weight: 800; }
-.mp.st { translate: -50% 0; text-align: center; white-space: nowrap; }
-.mp.st span { font-size: 16px; font-weight: 800; letter-spacing: .14em; color: var(--fg2); }
-.mp.st b { display: block; margin-top: 6px; font-size: 32px; font-weight: 800; letter-spacing: -0.04em; }
-.mp.st p { margin-top: 4px; font-size: 19px; color: var(--fg2); }
+.tt { position: absolute; left: 120px; right: 120px; top: 400px; bottom: 90px; }
+.tt svg.lines { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.tt .ln { stroke: var(--g300); stroke-width: 3; stroke-dasharray: 2 10; stroke-linecap: round; fill: none; }
+.tt .ar { stroke: var(--g500); stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.tt .lnb { stroke: var(--blue); stroke-width: 2.5; stroke-dasharray: 2 8; stroke-linecap: round; fill: none; }
+.node { position: absolute; translate: -50% 0; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.node > b { font-size: 30px; font-weight: 800; letter-spacing: -0.04em; white-space: nowrap; }
+.node .sp, .node .ic { position: relative; }
+.edge { position: absolute; translate: -50% -50%; }
+.trk { position: absolute; translate: -50% 0; padding: 26px 34px; border-radius: 32px; text-align: center; }
+.trk .k { font-size: 17px; letter-spacing: .02em; }
+.trk b { display: block; margin-top: 8px; font-size: 30px; font-weight: 800; letter-spacing: -0.045em; white-space: nowrap; }
+.trk b span { color: var(--blue); margin-right: 10px; }
 
 /* ---------- 13–15 전략 ---------- */
-.st-l { position: absolute; left: 96px; top: 150px; bottom: 96px; width: 700px; display: flex; flex-direction: column; }
-.st-t { font-size: 104px; font-weight: 900; letter-spacing: -0.065em; line-height: 1.04; margin-top: 26px; }
-.st-t.lat { font-size: 140px; letter-spacing: -0.06em; }
-.st-en { font-size: 22px; font-weight: 400; color: var(--fg2); margin-top: 16px; }
-.st-c { margin-top: 36px; font-size: 28px; line-height: 1.6; letter-spacing: -0.035em; }
-.st-c b { font-weight: 800; }
-.acts { margin-top: auto; border-top: 2px solid var(--fg); }
-.acts > div { display: grid; grid-template-columns: 48px 1fr; padding: 20px 0; border-bottom: 1px solid var(--line); }
-.acts > div:last-child { border-bottom: 0; padding-bottom: 0; }
-.acts .n { font-size: 20px; font-weight: 300; color: var(--fg2); font-variant-numeric: tabular-nums; padding-top: 4px; }
-.acts h3 { font-size: 27px; font-weight: 800; letter-spacing: -0.04em; }
-.acts p { font-size: 20px; line-height: 1.6; color: var(--fg2); margin-top: 6px; }
+.st-l { position: absolute; left: 120px; top: 118px; bottom: 90px; width: 680px; display: flex; flex-direction: column; }
+.st-chips { display: flex; gap: 10px; }
+.st-l h2 { margin-top: 26px; font-size: 96px; font-weight: 900; letter-spacing: -0.065em; line-height: 1.08; }
+.st-l h2.lat { font-size: 124px; letter-spacing: -0.05em; }
+.st-l .en { margin-top: 12px; font-size: 22px; color: var(--g500); }
+.st-l .c { margin-top: 30px; font-size: 27px; line-height: 1.6; letter-spacing: -0.04em; color: var(--g700); }
+.st-l .c b { color: var(--ink); font-weight: 800; }
+.acts { margin-top: auto; display: grid; gap: 16px; }
+.act { display: grid; grid-template-columns: 52px 1fr; gap: 18px; padding: 26px 30px; border-radius: 28px; }
+.act .no { width: 52px; height: 52px; border-radius: 50%; background: var(--blue-t); color: var(--blue-d); display: grid; place-items: center; font-size: 22px; font-weight: 900; }
+.act h3 { font-size: 25px; font-weight: 800; letter-spacing: -0.04em; }
+.act p { margin-top: 6px; font-size: 19px; line-height: 1.55; color: var(--g600); }
 
-/* 상세페이지 목업 + AI 인식 박스 */
-.pdp { position: absolute; left: 912px; right: 96px; top: 168px; height: 818px; background: #FAFAF8; border: 1px solid var(--line); border-radius: 18px; }
-.pdp-img { position: absolute; left: 40px; top: 56px; width: 360px; height: 360px; border-radius: 12px; background: linear-gradient(160deg, #E3E3DF, #D3D3CE); display: grid; place-items: center; font-size: 17px; color: var(--fg2); font-weight: 600; }
-.pdp-info { position: absolute; left: 448px; right: 44px; top: 66px; display: flex; flex-direction: column; align-items: flex-start; gap: 46px; }
-.pdp-brand { font-size: 16px; font-weight: 800; letter-spacing: .2em; color: var(--fg2); }
+.pdp { position: absolute; left: 880px; right: 120px; top: 150px; bottom: 90px; padding: 0; overflow: hidden; }
+.pdp-img { position: absolute; left: 48px; top: 64px; width: 360px; height: 360px; border-radius: 28px; background: radial-gradient(circle at 50% 55%, #FFFFFF 0%, #EEF2F7 55%, #DCE3EC 100%); }
+.pdp-img .sp { --s: 150px; left: 105px; top: 90px; }
+.pdp-img .floor { left: 95px; top: 262px; width: 170px; height: 30px; }
+.pdp-img span { position: absolute; left: 0; right: 0; bottom: 18px; text-align: center; font-size: 15px; font-weight: 600; color: var(--g500); }
+.pdp-info { position: absolute; left: 456px; right: 40px; top: 64px; display: flex; flex-direction: column; align-items: flex-start; gap: 46px; }
+.pdp-brand { font-size: 16px; font-weight: 800; letter-spacing: .2em; color: var(--g500); }
 .pdp-name { font-size: 38px; font-weight: 800; letter-spacing: -0.05em; line-height: 1.2; }
 .pdp-price { font-size: 38px; font-weight: 900; letter-spacing: -0.04em; line-height: 1.2; }
-.pdp-row { font-size: 20px; color: var(--fg2); }
-.pdp .pdp-copy { position: absolute; left: 40px; top: 476px; font-size: 40px; font-weight: 800; letter-spacing: -0.05em; }
-.pdp-rev { position: absolute; left: 40px; right: 40px; top: 600px; }
-.pdp-rev .k { font-size: 16px; font-weight: 800; letter-spacing: .14em; color: var(--fg2); }
-.pdp-rev p { margin-top: 30px; font-size: 25px; line-height: 2.3; font-weight: 500; letter-spacing: -0.03em; }
-.det { position: relative; outline: 2px solid var(--sel); outline-offset: 6px; }
-.det > em { position: absolute; left: -8px; bottom: calc(100% + 8px); font: 600 15px/1.1 var(--mono); background: var(--sel); color: var(--sel-fg); padding: 4px 8px 3px; border-radius: 3px; white-space: nowrap; letter-spacing: 0; }
-.det.mute { outline: 2px dashed var(--fg2); }
-.det.mute > em { font-family: var(--font); font-weight: 700; background: #FAFAF8; color: var(--fg2); border: 1.5px dashed var(--fg2); }
-.seg { position: relative; border-bottom: 3px solid var(--sel); padding-bottom: 2px; }
-.seg::before { content: attr(data-k); position: absolute; left: 0; top: -30px; font-size: 15px; font-weight: 800; color: var(--sel); white-space: nowrap; line-height: 1; letter-spacing: 0; }
+.pdp-row { font-size: 20px; color: var(--g600); }
+.det { position: relative; outline: 2.5px solid var(--blue); outline-offset: 7px; border-radius: 4px; }
+.det > em { position: absolute; left: -9px; bottom: calc(100% + 10px); font: 600 15px/1.1 var(--mono); background: var(--blue); color: var(--white); padding: 5px 9px 4px; border-radius: 6px; white-space: nowrap; letter-spacing: 0; }
+.pdp .pdp-copy { position: absolute; left: 48px; top: 484px; font-size: 40px; font-weight: 800; letter-spacing: -0.05em; outline: 2.5px dashed var(--g300); }
+.pdp .pdp-copy > em { font-family: var(--font); font-weight: 700; background: var(--g100); color: var(--g600); }
+.pdp-rev { position: absolute; left: 48px; right: 48px; bottom: 44px; padding: 26px 30px 22px; border-radius: 24px; background: var(--g100); }
+.pdp-rev .rk { display: flex; justify-content: space-between; font-size: 17px; font-weight: 700; color: var(--g500); }
+.pdp-rev p:not(.rk) { margin-top: 26px; font-size: 24px; line-height: 2.3; font-weight: 600; letter-spacing: -0.035em; }
+.seg { position: relative; border-bottom: 3px solid var(--blue); padding-bottom: 2px; }
+.seg::before { content: attr(data-k); position: absolute; left: 0; top: -30px; font-size: 15px; font-weight: 800; color: var(--blue); white-space: nowrap; line-height: 1; letter-spacing: 0; }
 
-/* 폰 목업 */
-.phone { position: absolute; left: 1372px; top: 150px; width: 452px; height: 846px; border-radius: 60px; background: var(--ink); padding: 14px; }
-.screen { width: 100%; height: 100%; border-radius: 47px; background: #FAFAF8; padding: 30px 28px; display: flex; flex-direction: column; gap: 20px; overflow: hidden; color: var(--ink); }
-.sbar { display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 700; padding: 0 10px; }
-.sbar i { width: 70px; height: 20px; border-radius: 10px; background: var(--ink); }
-.scr-h { font-size: 30px; font-weight: 900; letter-spacing: -0.05em; }
-.scr-h small { display: block; font-size: 16px; font-weight: 500; color: var(--gray); letter-spacing: 0; margin-top: 4px; }
-.pc { display: grid; grid-template-columns: 84px 1fr; gap: 16px; align-items: center; }
-.pc .th { width: 84px; height: 84px; border-radius: 12px; background: linear-gradient(160deg, #E3E3DF, #D3D3CE); }
-.pc b { display: block; font-size: 22px; font-weight: 800; letter-spacing: -0.04em; }
-.pc span { display: block; font-size: 16px; color: var(--gray); margin-top: 4px; }
-.pc .match { display: inline-block; margin-top: 8px; font-size: 15px; font-weight: 800; color: #FFFFFF; background: var(--ai); padding: 4px 8px 3px; border-radius: 3px; }
-.reason { border: 2px solid var(--ai); border-radius: 14px; padding: 18px 18px 16px; }
-.reason .q { font-size: 17px; font-weight: 800; color: var(--ai); }
-.reason p { margin-top: 10px; font-size: 18px; line-height: 1.6; }
-.reason p.q { margin-top: 0; }
-.reason p b { font-weight: 800; }
-.reason ul { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 6px; font-size: 16px; color: var(--gray); }
-.reason li::before { content: "✓ "; color: var(--ai); font-weight: 800; }
-.adline { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 800; color: var(--gray); letter-spacing: .06em; }
-.adline::before, .adline::after { content: ""; flex: 1; border-top: 1.5px dashed rgba(14, 14, 16, .25); }
-.pc.ad { opacity: .75; }
-.ask { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1.5px solid rgba(14, 14, 16, .18); border-radius: 999px; padding: 10px 10px 10px 20px; font-size: 16px; color: var(--gray); }
-.ask i { width: 38px; height: 38px; border-radius: 50%; background: var(--ai); color: #FFFFFF; display: grid; place-items: center; flex: none; }
-.ask svg { width: 18px; height: 18px; }
-.pc .adtag { display: inline-block; margin-top: 8px; font-size: 13px; font-weight: 800; color: var(--ink); border: 1.5px solid var(--ink); padding: 3px 7px 2px; border-radius: 3px; }
-.note { position: absolute; left: 930px; width: 400px; display: grid; text-align: right; }
-.note b { font-size: 24px; font-weight: 800; letter-spacing: -0.03em; }
-.note span { font-size: 18px; color: var(--fg2); margin-top: 6px; line-height: 1.5; }
-.note::after { content: ""; position: absolute; left: calc(100% + 14px); top: 15px; width: 64px; border-top: 1.5px solid var(--fg); }
-.note::before { content: ""; position: absolute; left: calc(100% + 74px); top: 10px; width: 11px; height: 11px; border-radius: 50%; background: var(--fg); }
+.phone { position: absolute; left: 1324px; top: 140px; width: 476px; height: 860px; border-radius: 64px; background: var(--white); padding: 14px; box-shadow: 0 0 0 2px var(--g200), 0 40px 90px rgba(25, 31, 40, .14); }
+.screen { width: 100%; height: 100%; border-radius: 52px; background: var(--g100); padding: 30px 24px 24px; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+.sbar { display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 700; padding: 0 14px; }
+.sbar i { width: 96px; height: 28px; border-radius: 14px; background: var(--ink); }
+.scr-h { padding: 8px 8px 0; font-size: 30px; font-weight: 900; letter-spacing: -0.05em; }
+.scr-h small { display: block; font-size: 16px; font-weight: 500; color: var(--g500); letter-spacing: 0; margin-top: 4px; }
+.card { background: var(--white); border-radius: 24px; padding: 20px; }
+.pc { display: grid; grid-template-columns: 80px 1fr; gap: 16px; align-items: center; }
+.pc .th { position: relative; width: 80px; height: 80px; border-radius: 18px; background: radial-gradient(circle at 50% 55%, #FFFFFF 0%, #EEF2F7 55%, #DCE3EC 100%); }
+.pc .th .sp { --s: 40px; left: 20px; top: 18px; }
+.pc b { display: block; font-size: 21px; font-weight: 800; letter-spacing: -0.04em; }
+.pc span { display: block; font-size: 16px; color: var(--g500); margin-top: 3px; }
+.pc .match { display: inline-block; margin-top: 8px; font-size: 14px; font-weight: 800; color: var(--blue-d); background: var(--blue-t); padding: 5px 9px 4px; border-radius: 8px; }
+.why-c { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--g200); }
+.why-c .q { font-size: 16px; font-weight: 800; color: var(--blue); }
+.why-c p:not(.q) { margin-top: 8px; font-size: 17px; line-height: 1.6; color: var(--g700); }
+.why-c p b { color: var(--ink); font-weight: 800; }
+.why-c ul { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 6px; font-size: 15px; color: var(--g600); }
+.why-c li { display: flex; align-items: center; gap: 6px; }
+.why-c li .ico { width: 16px; height: 16px; color: var(--blue); stroke-width: 3; }
+.adline { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 800; color: var(--g500); }
+.adline::before, .adline::after { content: ""; flex: 1; border-top: 1.5px dashed var(--g300); }
+.card.ad { opacity: .8; }
+.pc .adtag { display: inline-block; margin-top: 8px; font-size: 13px; font-weight: 800; color: var(--g600); background: var(--g100); padding: 4px 8px 3px; border-radius: 6px; }
+.ask { margin-top: auto; display: flex; align-items: center; justify-content: space-between; background: var(--white); border-radius: 999px; padding: 10px 10px 10px 22px; font-size: 16px; color: var(--g500); }
+.ask i { width: 40px; height: 40px; border-radius: 50%; background: var(--blue); color: var(--white); display: grid; place-items: center; }
+.ask .ico { width: 18px; height: 18px; }
+.note { position: absolute; display: flex; align-items: center; gap: 14px; }
+.note .pill { font-size: 20px; box-shadow: 0 10px 30px rgba(25, 31, 40, .1); }
+.note i { width: var(--w, 60px); border-top: 2px solid var(--blue); }
+.note i::after { content: ""; display: block; width: 12px; height: 12px; border-radius: 50%; background: var(--blue); margin: -7px 0 0 auto; }
 
-/* N → 3 → 1 */
-.s3-h { position: absolute; left: 96px; right: 96px; top: 150px; }
-.s3-h .st-t { font-size: 84px; margin-top: 22px; }
-.s3-h .st-c { margin-top: 18px; font-size: 27px; color: var(--fg2); max-width: 1300px; }
-.s3-h .st-c b { color: var(--fg); }
-.n31 { position: absolute; left: 96px; right: 96px; top: 470px; display: grid; grid-template-columns: 250px 120px 250px 1fr 250px; align-items: end; }
-.n31 .num { font-size: 300px; font-weight: 900; letter-spacing: -0.07em; line-height: .8; position: relative; }
-.num.n { color: transparent; -webkit-text-stroke: 3px var(--fg2); }
-.num.three { color: var(--sel); }
-.n31 .arr { align-self: center; justify-self: center; color: var(--fg2); }
-.n31 .arr svg { width: 60px; height: 60px; }
-.bridge { align-self: stretch; margin: 0 40px; display: flex; flex-direction: column; justify-content: flex-end; border-left: 1px solid var(--line); padding-left: 36px; }
-.bridge .k { font-size: 17px; font-weight: 800; letter-spacing: .02em; color: var(--fg2); margin-bottom: 8px; }
-.bridge p:not(.k) { font-size: 32px; font-weight: 800; letter-spacing: -0.045em; padding: 13px 0; border-bottom: 1px solid var(--line); }
-.bridge p:last-child { border-bottom: 0; padding-bottom: 0; }
-.n31 .lbl { padding-top: 26px; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
-.n31 .lbl span { display: block; font-size: 18px; font-weight: 400; color: var(--fg2); margin-top: 6px; }
-.lanes { position: absolute; left: 96px; right: 96px; bottom: 92px; display: grid; grid-template-columns: 620px 1fr; column-gap: 40px; }
-.lanes p { padding-top: 14px; border-top: 4px solid; font-size: 19px; font-weight: 800; }
-.lanes .a { border-color: var(--sel); color: var(--sel); }
-.lanes .b { border-color: var(--fg); }
+.fn4 { position: absolute; left: 120px; right: 120px; top: 390px; height: 470px; display: grid; grid-template-columns: 1fr 1fr 1.25fr 0.9fr; gap: 48px; }
+.fn4 .tile { position: relative; display: flex; flex-direction: column; padding: 36px 38px; }
+.fn4 .tile:not(:last-child)::after { content: ""; position: absolute; right: -34px; top: 50%; width: 20px; height: 20px; border-top: 4px solid var(--g300); border-right: 4px solid var(--g300); transform: translateY(-50%) rotate(45deg); }
+.fn4 .big { font-size: 150px; font-weight: 900; letter-spacing: -0.06em; line-height: .9; }
+.fn4 .lb { margin-top: 10px; font-size: 24px; font-weight: 800; letter-spacing: -0.04em; }
+.fn4 .lb span { display: block; margin-top: 4px; font-size: 18px; font-weight: 500; color: var(--g500); letter-spacing: 0; }
+.fn4 .bluet .lb span { color: rgba(255, 255, 255, .75); }
+.dots { margin-top: auto; display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; }
+.dots i { aspect-ratio: 1; border-radius: 50%; background: var(--g200); }
+.dots i.on { background: #93BFFA; }
+.rank { margin-top: auto; display: grid; gap: 8px; }
+.rank span { display: flex; align-items: center; gap: 12px; padding: 11px 16px; border-radius: 16px; background: rgba(255, 255, 255, .16); font-size: 20px; font-weight: 700; }
+.rank em { font-style: normal; font-weight: 900; }
+.emo { margin-top: auto; display: grid; gap: 12px; }
+.emo div { display: flex; align-items: center; gap: 16px; font-size: 23px; font-weight: 800; letter-spacing: -0.04em; }
+.emo .ic { --s: 56px; }
+.fn4 .dark { justify-content: space-between; }
+.paybtn { display: grid; place-items: center; height: 76px; border-radius: 22px; background: var(--blue); color: var(--white); font-size: 28px; font-weight: 800; box-shadow: 0 14px 30px rgba(49, 130, 246, .4); }
+.fn4 .dark .lb span { color: rgba(255, 255, 255, .6); }
+.lanes { position: absolute; left: 120px; right: 120px; top: 890px; display: grid; grid-template-columns: calc((100% - 144px) / 4.15 * 2 + 48px) 1fr; column-gap: 48px; }
+.lanes p { padding-top: 14px; border-top: 4px solid; font-size: 20px; font-weight: 800; }
+.lanes .a { border-color: var(--blue); color: var(--blue); }
+.lanes .b { border-color: var(--ink); }
 
 /* ---------- 16 결론 ---------- */
-.cc-h { position: absolute; left: 96px; top: 168px; font-size: 118px; font-weight: 900; letter-spacing: -0.07em; line-height: 1.12; }
-.eq { position: absolute; left: 96px; right: 96px; top: 700px; display: grid; grid-template-columns: 1fr 80px 1fr 80px 1fr; border-top: 2px solid var(--fg); }
-.eq > div { padding-top: 24px; }
-.eq b { display: block; font-size: 42px; font-weight: 800; letter-spacing: -0.05em; }
-.eq span { display: block; margin-top: 8px; font-size: 20px; color: var(--fg2); }
-.eq .plus { display: grid; place-items: center; font-size: 48px; font-weight: 300; color: var(--fg2); padding-top: 18px; }
-.cc-p { position: absolute; left: 96px; right: 96px; bottom: 92px; font-size: 22px; line-height: 1.7; color: var(--fg2); max-width: 1400px; }
-.cc-p b { color: var(--fg); font-weight: 700; }
+.cc-t { position: absolute; left: 116px; top: 200px; font-size: 104px; font-weight: 900; letter-spacing: -0.065em; line-height: 1.14; }
+.pl3 { position: absolute; left: 120px; right: 120px; top: 640px; height: 220px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.pl3 .tile { display: flex; align-items: center; gap: 28px; padding: 36px 40px; }
+.pl3 .ic { --s: 104px; }
+.pl3 b { display: block; font-size: 36px; font-weight: 800; letter-spacing: -0.05em; }
+.pl3 span:not(.ic) { display: block; margin-top: 8px; font-size: 20px; color: var(--g600); line-height: 1.45; }
+.cc-p { position: absolute; left: 120px; right: 120px; top: 900px; font-size: 22px; line-height: 1.7; color: var(--g600); max-width: 1500px; }
+.cc-p b { color: var(--ink); font-weight: 800; }
 
 /* ---------- 17 끝 ---------- */
-.ty { position: absolute; left: 88px; top: 150px; font-size: 230px; font-weight: 900; letter-spacing: -0.07em; line-height: 1; }
-.qa { position: absolute; left: 104px; top: 448px; font-size: 52px; font-weight: 300; letter-spacing: -0.04em; }
-.refs { position: absolute; left: 96px; right: 96px; bottom: 92px; display: grid; grid-template-columns: 220px repeat(3, 1fr); column-gap: 40px; row-gap: 22px; border-top: 2px solid var(--fg); padding-top: 22px; }
-.refs .k { grid-row: span 2; font-size: 18px; font-weight: 800; color: var(--fg2); letter-spacing: .02em; }
-.refs p:not(.k) { font-size: 20px; line-height: 1.45; font-weight: 600; letter-spacing: -0.03em; }
-.refs p span { display: block; margin-top: 4px; font-size: 16px; font-weight: 400; color: var(--fg2); letter-spacing: 0; }
-.end-team { position: absolute; right: 96px; top: 480px; font-size: 20px; color: var(--fg2); text-align: right; line-height: 1.6; }
-.end-team b { color: var(--fg); font-weight: 800; }
+.ty { position: absolute; left: 112px; top: 170px; font-size: 200px; font-weight: 900; letter-spacing: -0.065em; line-height: 1; }
+.qa { position: absolute; left: 124px; top: 404px; display: flex; gap: 14px; align-items: center; }
+.qa .pill { font-size: 26px; padding: 14px 24px 13px; }
+.end-team { position: absolute; left: 124px; top: 500px; font-size: 22px; color: var(--g500); }
+.end-team b { color: var(--ink); font-weight: 800; margin-right: 10px; }
+.refs { position: absolute; left: 120px; right: 120px; bottom: 90px; padding: 34px 44px; display: grid; grid-template-columns: 180px repeat(3, 1fr); column-gap: 36px; row-gap: 22px; background: var(--g100); box-shadow: none; }
+.refs .rk { grid-row: span 2; font-size: 20px; font-weight: 800; color: var(--g600); }
+.refs p:not(.rk) { font-size: 20px; line-height: 1.45; font-weight: 700; letter-spacing: -0.035em; }
+.refs p span { display: block; margin-top: 4px; font-size: 16px; font-weight: 500; color: var(--g500); letter-spacing: 0; }
 
 /* ---------- 움직임 ---------- */
-@keyframes rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
-.animate .frame.is-active .rv { animation: rise .75s cubic-bezier(.2, .7, .2, 1) both; animation-delay: calc(var(--d, 0) * 70ms + 60ms); }
-@keyframes drift { 0% { translate: 0 0; } 50% { translate: 5px 4px; } 100% { translate: 0 0; } }
-.deck-mode .frame.is-active .cur { animation: drift 4.5s ease-in-out infinite; }
-.deck-mode .frame.is-active .cur.ai { animation-duration: 3.6s; animation-delay: -1.2s; }
+@keyframes rise { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
+.animate .frame.is-active .rv { animation: rise .8s cubic-bezier(.2, .7, .2, 1) both; animation-delay: calc(var(--d, 0) * 70ms + 60ms); }
+@keyframes bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -12px; } }
+.deck-mode .frame.is-active .float3d { animation: bob 5s ease-in-out infinite; }
+.deck-mode .frame.is-active .float3d.late { animation-delay: -2.5s; }
 @media (prefers-reduced-motion: reduce) {
-  .animate .frame.is-active .rv, .deck-mode .frame.is-active .cur { animation: none; }
+  .animate .frame.is-active .rv, .deck-mode .frame.is-active .float3d { animation: none; }
   .deck-mode .frame, .progress i { transition: none; }
 }
 
@@ -439,7 +469,7 @@ button { font: inherit; color: inherit; }
   .bar { display: none; }
   .stage { padding: 0; }
   #deck { container-type: normal; height: auto; display: block; }
-  #deck .frame { position: relative !important; left: auto; top: auto; translate: none; width: 1920px !important; height: 1080px; aspect-ratio: auto; visibility: visible !important; opacity: 1 !important; break-after: page; outline: 0; }
+  #deck .frame { position: relative !important; left: auto; top: auto; translate: none; width: 1920px !important; height: 1080px; aspect-ratio: auto; visibility: visible !important; opacity: 1 !important; border-radius: 0; break-after: page; outline: 0; }
   #deck .frame::after { display: none; }
   .slide { transform: none !important; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; animation: none !important; }
@@ -449,14 +479,32 @@ button { font: inherit; color: inherit; }
 <body>
 
 <svg class="defs" aria-hidden="true" focusable="false">
-  <symbol id="cursor" viewBox="0 0 26 30"><path d="M3 2.5V24l5.6-5.3 3.8 8.5 4-1.8-3.7-8.3h7.8z"/></symbol>
-  <symbol id="i-right" viewBox="0 0 24 24"><path d="M3 12h17M14 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="i-left" viewBox="0 0 24 24"><path d="M20 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="i-next" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="i-se" viewBox="0 0 24 24"><path d="M6 6l12 12M18 8v10H8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
-  <symbol id="i-full" viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></symbol>
+  <symbol id="i-compare" viewBox="0 0 24 24"><path d="M5 20V12M12 20V5M19 20v-9"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/></symbol>
+  <symbol id="i-cart" viewBox="0 0 24 24"><path d="M3 4h2.5l2.2 11h10.6L20.5 7H7"/><circle cx="9.5" cy="19.5" r="1.4"/><circle cx="17" cy="19.5" r="1.4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-checkc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.8 2.8L16.2 9.6"/></symbol>
+  <symbol id="i-xc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></symbol>
+  <symbol id="i-dot" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="currentColor"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3.5 2.5"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.5l9.5 16.5h-19z"/><path d="M12 10v4.5"/><circle cx="12" cy="17.4" r="1" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-data" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6"/><path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7.5 3v5.5c0 4.5-3.2 8-7.5 9.5-4.3-1.5-7.5-5-7.5-9.5V6z"/><path d="M8.8 12l2.3 2.3 4.2-4.3"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.3a4.3 4.3 0 0 1 7.5 2.5C19.5 15.4 12 20 12 20z"/></symbol>
+  <symbol id="i-cube" viewBox="0 0 24 24"><path d="M12 2.8l8 4.6v9.2l-8 4.6-8-4.6V7.4z M4 7.4l8 4.6 8-4.6 M12 12v9.2"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></symbol>
+  <symbol id="i-bag" viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="M20 12H5M11 6l-6 6 6 6"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-full" viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></symbol>
 </svg>
 
 <div class="app">
@@ -464,303 +512,275 @@ button { font: inherit; color: inherit; }
 <main id="deck" class="deck-mode">
 
 <!-- ===================== 01 표지 ===================== -->
-<section class="slide canvas grain" data-name="표지">
-  <div class="cv-top rv"><p>Trend Korea 2026<br><span>Keyword No.1</span></p><p class="r">소비자행동론 팀프로젝트<br><span>Consumer Behavior</span></p></div>
-  <h1 class="cv-title rv"><span class="sb">휴먼<i></i><i></i><i></i><i></i><em>Human · in the loop</em><span class="cur ai lg" style="right:-60px;top:22px"><svg><use href="#cursor"/></svg><b>AI</b></span></span><br>인 더 <span class="pin">루프<span class="cur hu lg" style="left:calc(100% + 18px);top:34%"><svg><use href="#cursor"/></svg><b>나</b></span></span></h1>
-  <div class="cv-q rv"><p class="q1">AI에게 맡기는 소비자</p><p class="q2">왜 추천·검색·선택을 AI에 맡기는가?</p></div>
-  <p class="cv-team rv"><b>A조</b><br>팀원 OOO · OOO · OOO · OOO</p>
-  <p class="cv-vert">HUMAN-IN-THE-LOOP — 2026</p>
+<section class="slide glow" data-name="표지">
+  <div class="orbit" style="left:1010px;top:420px;width:840px;height:300px;rotate:-16deg"></div>
+  <div class="floor" style="left:1230px;top:760px;width:420px;height:70px"></div>
+  <div class="float3d"><div class="sp b" style="--s:380px;left:1250px;top:330px"></div></div>
+  <div class="float3d late"><div class="sp s" style="--s:120px;left:1060px;top:600px"></div></div>
+  <p class="pill float rv" style="left:1500px;top:250px"><b>AI</b>가 추천하고</p>
+  <p class="pill float rv" style="left:960px;top:770px">사람이 결정한다</p>
+  <p class="cv-lab pill bt rv">Trend Korea 2026 · 키워드 01</p>
+  <h1 class="cv-t rv">휴먼 인 더<br>루프</h1>
+  <p class="cv-s rv"><b>AI에게 맡기는 소비자</b><br><span>왜 추천·검색·선택을 AI에 맡기는가?</span></p>
+  <p class="cv-team rv"><b>소비자행동론 팀프로젝트 · A조</b>팀원 OOO · OOO · OOO · OOO</p>
 </section>
 
 <!-- ===================== 02 목차 ===================== -->
-<section class="slide" data-sec="Contents" data-name="목차">
-  <h2 class="toc-h rv">목차</h2>
-  <p class="toc-sub rv">AI에게 선택을 맡기는 소비자를<br><b>현상 → 원인 → 대응</b>의 순서로 읽습니다.</p>
-  <ol class="toc rv">
-    <li data-go="3"><span class="n">01</span><span class="t">트렌드 한눈에 보기</span><span class="e">OVERVIEW</span><span class="p">03</span></li>
-    <li data-go="4"><span class="n">02</span><span class="t">실제 소비현상과 상호작용 유형</span><span class="e">WHAT</span><span class="p">04</span></li>
-    <li data-go="6"><span class="n">03</span><span class="t">기업·브랜드 사례</span><span class="e">CASE</span><span class="p">06</span></li>
-    <li data-go="7"><span class="n">04</span><span class="t">소비자는 왜 AI에 맡기는가</span><span class="e">WHY</span><span class="p">07</span></li>
-    <li data-go="9"><span class="n">05</span><span class="t">소비자행동 이론 적용</span><span class="e">THEORY</span><span class="p">09</span></li>
-    <li data-go="11"><span class="n">06</span><span class="t">기업의 현재 대응 평가</span><span class="e">REVIEW</span><span class="p">11</span></li>
-    <li data-go="12"><span class="n">07</span><span class="t">투트랙 마케팅 전략</span><span class="e">STRATEGY</span><span class="p">12</span></li>
-    <li data-go="16"><span class="n">08</span><span class="t">결론</span><span class="e">CONCLUSION</span><span class="p">16</span></li>
-  </ol>
+<section class="slide" data-meta data-name="목차">
+  <div class="toc-l">
+    <p class="pill bt rv" style="align-self:flex-start">Contents</p>
+    <h2 class="rv">목차</h2>
+    <p class="rv">AI에게 선택을 맡기는 소비자를<br><b>현상 → 원인 → 대응</b> 순서로 살펴봅니다.</p>
+  </div>
+  <div class="toc-g rv">
+    <div class="tile" data-go="3"><span class="n">01</span><span class="ttl">트렌드 한눈에 보기</span><span class="e">OVERVIEW</span><span class="p">03</span></div>
+    <div class="tile" data-go="4"><span class="n">02</span><span class="ttl">실제 소비현상과 유형</span><span class="e">WHAT</span><span class="p">04</span></div>
+    <div class="tile" data-go="6"><span class="n">03</span><span class="ttl">기업·브랜드 사례</span><span class="e">CASE</span><span class="p">06</span></div>
+    <div class="tile" data-go="7"><span class="n">04</span><span class="ttl">왜 AI에 맡기는가</span><span class="e">WHY</span><span class="p">07</span></div>
+    <div class="tile" data-go="9"><span class="n">05</span><span class="ttl">소비자행동 이론 적용</span><span class="e">THEORY</span><span class="p">09</span></div>
+    <div class="tile" data-go="11"><span class="n">06</span><span class="ttl">기업의 현재 대응 평가</span><span class="e">REVIEW</span><span class="p">11</span></div>
+    <div class="tile" data-go="12"><span class="n">07</span><span class="ttl">투트랙 마케팅 전략</span><span class="e">STRATEGY</span><span class="p">12</span></div>
+    <div class="tile" data-go="16"><span class="n">08</span><span class="ttl">결론</span><span class="e">CONCLUSION</span><span class="p">16</span></div>
+  </div>
 </section>
 
-<!-- ===================== 03 한 문장 ===================== -->
-<section class="slide" data-sec="Overview" data-name="트렌드 한눈에 보기">
-  <p class="kicker ov-k rv"><b>01</b>트렌드 핵심 한 문장</p>
-  <p class="ov-s rv">AI 기술의 발전으로 소비자는 상품 검색부터 정보 비교, 개인화된 추천과 최종 구매 선택에 이르기까지 <span class="hl"><b>다양한 의사결정 과정을 AI에 맡기며,</b></span> 이를 통해 <b>시간과 노력을 줄이고</b> 보다 <b>효율적인 소비</b>를 추구한다.</p>
-  <div class="strip rv">
-    <div class="sp"><span>01</span><b>상품 검색</b></div>
-    <div class="sp"><span>02</span><b>정보 비교</b></div>
-    <div class="sp"><span>03</span><b>개인화 추천</b></div>
-    <div class="sp"><span>04</span><b>최종 구매 선택</b></div>
-    <div class="drag"><i></i><i></i><i></i><i></i><em>AI에 맡긴 범위 · 4단계 전부</em><span class="cur ai lg" style="right:-40px;bottom:-60px"><svg><use href="#cursor"/></svg><b>AI</b></span></div>
+<!-- ===================== 03 한눈에 보기 ===================== -->
+<section class="slide" data-meta data-name="트렌드 한눈에 보기">
+  <div class="hd">
+    <p class="pill bt rv">Overview · 트렌드 한눈에 보기</p>
+    <h2 class="t rv">소비자는 이제 <span class="blue">고르는 과정 전체</span>를<br>AI에게 맡긴다</h2>
+  </div>
+  <div class="steps rv">
+    <div class="step tile"><span class="ic" style="--s:84px"><svg><use href="#i-search"/></svg></span><div><span class="no">STEP 01</span><b>상품 검색</b></div></div>
+    <div class="step tile"><span class="ic" style="--s:84px"><svg><use href="#i-compare"/></svg></span><div><span class="no">STEP 02</span><b>정보 비교</b></div></div>
+    <div class="step tile"><span class="ic" style="--s:84px"><svg><use href="#i-spark"/></svg></span><div><span class="no">STEP 03</span><b>개인화 추천</b></div></div>
+    <div class="step tile"><span class="ic" style="--s:84px"><svg><use href="#i-cart"/></svg></span><div><span class="no">STEP 04</span><b>최종 구매 선택</b></div></div>
+  </div>
+  <p class="capsule rv">이 모든 단계를 AI에 위임한다</p>
+  <div class="ov-b">
+    <div class="tile rv"><p class="k">트렌드 핵심 한 문장</p><p class="sent">AI 기술의 발전으로 소비자는 상품 검색부터 정보 비교, 개인화된 추천과 최종 구매 선택에 이르기까지 <b>다양한 의사결정 과정을 AI에 맡기며</b>, 이를 통해 <b>시간과 노력을 줄이고 보다 효율적인 소비</b>를 추구한다.</p></div>
+    <div class="tile res rv"><span class="ic s"><svg><use href="#i-down"/></svg></span><div><b>시간 · 노력</b><p>직접 찾고 비교하는 수고가 준다</p></div></div>
+    <div class="tile res rv"><span class="ic"><svg><use href="#i-up"/></svg></span><div><b>소비 효율</b><p>더 빠르고 정확하게 고른다</p></div></div>
   </div>
 </section>
 
 <!-- ===================== 04 실제 소비현상 ===================== -->
-<section class="slide" data-sec="What" data-name="실제 소비현상">
+<section class="slide" data-meta data-name="실제 소비현상">
   <div class="hd">
-    <h2 class="h-xl rv">AI에게 선택을 맡기는 소비자</h2>
-    <p class="h-sub rv">추천받는 데서 시작해, 이제는 결제와 예약까지 맡긴다.</p>
+    <p class="pill bt rv">What · 실제 소비현상</p>
+    <h2 class="t rv">AI에게 선택을 맡기는 소비자</h2>
+    <p class="s rv">추천받는 데서 시작해, 이제는 결제와 예약까지 맡긴다.</p>
   </div>
-  <div class="rows rv">
-    <div class="row">
-      <div class="lvl"><b>Lv.1 추천</b><span class="meter"><i class="on"></i><i></i><i></i></span></div>
+  <div class="lv3">
+    <div class="tile rv">
+      <div class="top"><span class="ic s"><svg><use href="#i-eye"/></svg></span><span class="pill gy">Lv.1 추천</span></div>
       <h3>네이버 쇼핑 · 쿠팡</h3>
-      <p class="say">AI가 골라서 <span class="hl">보여준다</span></p>
+      <p class="say">AI가 골라서 <b>보여준다</b></p>
       <p class="d">하이퍼클로바 등 AI 기술로 쇼핑 성향을 분석해 맞춤형 상품을 메인 화면에 자동 제안하고, 구매로 이어지게 한다.</p>
+      <p class="meter"><i class="on"></i><i></i><i></i><span>위임 1단계</span></p>
     </div>
-    <div class="row">
-      <div class="lvl"><b>Lv.2 지정</b><span class="meter"><i class="on"></i><i class="on"></i><i></i></span></div>
+    <div class="tile rv">
+      <div class="top"><span class="ic"><svg><use href="#i-play"/></svg></span><span class="pill gy">Lv.2 지정</span></div>
       <h3>넷플릭스 · 유튜브</h3>
-      <p class="say">AI가 다음을 <span class="hl">정해준다</span></p>
+      <p class="say">AI가 다음을 <b>정해준다</b></p>
       <p class="d">시청 이력과 취향을 분석해 다음에 볼 콘텐츠를 자동으로 지정하고, 무엇을 볼지 고민하는 시간을 줄여준다.</p>
+      <p class="meter"><i class="on"></i><i class="on"></i><i></i><span>위임 2단계</span></p>
     </div>
-    <div class="row">
-      <div class="lvl"><b>Lv.3 대행</b><span class="meter"><i class="on"></i><i class="on"></i><i class="on"></i></span></div>
+    <div class="tile bluet rv">
+      <div class="top"><span class="ic s"><svg><use href="#i-cart"/></svg></span><span class="pill" style="background:rgba(255,255,255,.18);color:#fff">Lv.3 대행</span></div>
       <h3>AI 에이전트</h3>
-      <p class="say">AI가 대신 <span class="hl">실행한다</span></p>
+      <p class="say">AI가 대신 <b>실행한다</b></p>
       <p class="d">소비자의 대리인으로 가격 비교와 최적 조건 탐색을 넘어, 정기구독 결제와 예약까지 대신 수행한다.</p>
+      <p class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><span>위임 3단계</span></p>
     </div>
   </div>
 </section>
 
 <!-- ===================== 05 상호작용 유형 ===================== -->
-<section class="slide" data-sec="What" data-name="소비자–AI 상호작용 유형">
+<section class="slide" data-meta data-name="소비자–AI 상호작용 유형">
   <div class="hd">
-    <h2 class="h-xl rv">누가 고르고, 누가 거드는가</h2>
-    <p class="h-sub rv">소비자와 AI의 상호작용은 인간 중심, 인간–AI 파트너십, AI 중심으로 나뉜다.</p>
+    <p class="pill bt rv">What · 상호작용 유형</p>
+    <h2 class="t rv">누가 고르고, 누가 거드는가</h2>
   </div>
-  <div class="cols4 rv">
-    <article>
-      <p class="grp">인간 중심</p>
-      <div class="dg">
-        <span class="tile" style="left:30px"></span><span class="tile" style="left:112px"></span><span class="tile" style="left:194px"></span><span class="tile" style="left:276px"></span>
-        <span class="sb by-hu"><i></i><i></i><i></i><i></i><em>내가 고름</em></span>
-        <span class="cur hu" style="left:176px;top:146px"><svg><use href="#cursor"/></svg><b>나 · 결정</b></span>
-        <span class="cur ai dim" style="left:214px;top:0"><svg><use href="#cursor"/></svg><b>AI · 보조</b></span>
-      </div>
-      <p class="abbr">AITL</p>
-      <h3>AI 인 더 루프</h3>
-      <p class="en">AI-in-the-loop</p>
-      <p class="desc">인간이 전 과정을 주도하고, AI는 검색과 요약, 추천을 돕는 보조 도구로 쓴다.</p>
-    </article>
-    <article class="ink-scope ink-col">
-      <p class="grp">인간–AI 파트너십 <span class="now">이번 트렌드</span></p>
-      <div class="dg">
-        <span class="tile" style="left:30px"></span><span class="tile" style="left:112px"></span><span class="tile" style="left:194px"></span><span class="tile" style="left:276px"></span>
-        <span class="sb"><i></i><i></i><i></i><i></i><em>함께 고름</em></span>
-        <span class="cur hu" style="left:176px;top:146px"><svg><use href="#cursor"/></svg><b>나 · 결정</b></span>
-        <span class="cur ai" style="left:214px;top:0"><svg><use href="#cursor"/></svg><b>AI · 제안</b></span>
-      </div>
-      <p class="abbr">HITL</p>
-      <h3>휴먼 인 더 루프</h3>
-      <p class="en">Human-in-the-loop</p>
-      <p class="desc">인간과 AI 사이에 적절한 상호 협력이 이루어진다.</p>
-    </article>
-    <article>
-      <p class="grp">AI 중심</p>
-      <div class="dg">
-        <span class="tile" style="left:30px"></span><span class="tile" style="left:112px"></span><span class="tile" style="left:194px"></span><span class="tile" style="left:276px"></span>
-        <span class="sb"><i></i><i></i><i></i><i></i><em>AI가 고름</em></span>
-        <span class="cur ai" style="left:176px;top:146px"><svg><use href="#cursor"/></svg><b>AI · 결정</b></span>
-        <span class="cur hu dim" style="left:214px;top:0"><svg><use href="#cursor"/></svg><b>나 · 감시</b></span>
-      </div>
-      <p class="abbr">HOTL</p>
-      <h3>휴먼 온 더 루프</h3>
-      <p class="en">Human-on-the-loop</p>
-      <p class="desc">AI가 수행한 결과를 인간은 감시만 하는 수동적 감독 시스템.</p>
-    </article>
-    <article>
-      <p class="grp">AI 중심</p>
-      <div class="dg">
-        <span class="tile" style="left:30px"></span><span class="tile" style="left:112px"></span><span class="tile" style="left:194px"></span><span class="tile" style="left:276px"></span>
-        <span class="sb"><i></i><i></i><i></i><i></i><em>AI가 고름</em></span>
-        <span class="cur ai" style="left:176px;top:146px"><svg><use href="#cursor"/></svg><b>AI · 결정</b></span>
-        <span class="cur hu ghost" style="left:214px;top:0"><svg><use href="#cursor"/></svg><b>나 · 개입 없음</b></span>
-      </div>
-      <p class="abbr">HOOTL</p>
-      <h3>휴먼 아웃 오브 더 루프</h3>
-      <p class="en">Human-out-of-the-loop</p>
-      <p class="desc">인간의 개입 없이 AI가 최종 결정을 내린다.</p>
-    </article>
-  </div>
-</section>
-
-<!-- ===================== 06 기업·브랜드 사례 ===================== -->
-<section class="slide split" data-sec="Case" data-name="실제 기업·브랜드 사례">
-  <div class="ink-half ink-scope"></div>
-  <div class="half l">
-    <h2 class="h-half rv">사람이 판단하고,</h2>
-    <p class="case-k rv">Case 01 — 인도 · 보험 플랫폼</p>
-    <p class="case-n rv">인슈어런스데코<small>InsuranceDekho</small></p>
-    <div class="nums rv">
-      <div><b>15만<small>명</small></b><span>AI와 일하는<br>보험 설계사</span></div>
-      <div><b>49<small>개</small></b><span>보험사 상품 정보를<br>모두 기억</span></div>
-      <div><b>24<small>h</small></b><span>대기하는 보험<br>전문가 효과</span></div>
+  <p class="legend rv"><span><i class="sp s"></i>사람</span><span><i class="sp b"></i>AI</span></p>
+  <div class="spec rv"><span>인간 중심</span><span>인간–AI 파트너십</span><span>AI 중심</span></div>
+  <div class="t4">
+    <div class="tile rv">
+      <div class="comp"><div class="sp s" style="--s:150px;left:30px;top:10px"></div><div class="sp b" style="--s:62px;left:196px;top:96px"></div><span class="tagmini" style="left:270px;top:118px">보조</span></div>
+      <p class="ab">AITL</p><h3>AI 인 더 루프</h3><p class="en">AI-in-the-loop</p>
+      <p class="d">인간이 전 과정을 주도하고, AI는 검색과 요약, 추천을 돕는 보조 도구로 쓴다.</p>
     </div>
-    <p class="case-d rv">고객이 문의하면 설계사가 AI에게 확인하고, AI는 실제 보험 문서를 실시간으로 검색·참조해 즉시 정확한 답을 준다.</p>
-    <div class="who-list rv">
-      <p><span class="tag hu">나</span>설계사가 고객을 응대하고 최종 안내를 한다</p>
-      <p><span class="tag ai">AI</span>49개 보험사 문서를 검색하고 답을 찾는다</p>
+    <div class="tile dark rv">
+      <span class="pill bl now">이번 트렌드</span>
+      <div class="comp"><div class="orbit" style="left:6px;top:38px;width:310px;height:104px;rotate:-10deg;border-color:rgba(132,180,255,.45)"></div><div class="sp s" style="--s:112px;left:46px;top:32px"></div><div class="sp b" style="--s:112px;left:150px;top:32px"></div></div>
+      <p class="ab">HITL</p><h3>휴먼 인 더 루프</h3><p class="en">Human-in-the-loop</p>
+      <p class="d">인간과 AI 사이에 적절한 상호 협력이 이루어진다.</p>
     </div>
-  </div>
-  <div class="half r ink-scope">
-    <h2 class="h-half rv">AI가 찾아낸다</h2>
-    <p class="case-k rv">Case 02 — 한국 · 의료 진단</p>
-    <p class="case-n rv">서울대학교병원<small>2025년 발표 연구</small></p>
-    <div class="big-pct rv"><b>10%</b><span>유방 촬영 영상 판독에서<br>AI 소프트웨어가 전문의보다<br>더 정확하게 암을 찾아냈다</span></div>
-    <p class="case-d rv">진단 AI는 X-레이, CT, MRI 같은 방대한 의료 영상을 학습해 사람의 눈이 놓칠 수 있는 미묘한 이상 징후를 빠르게 탐지한다.</p>
-    <div class="who-list rv">
-      <p><span class="tag hu">나</span>전문의가 최종 진단을 내린다</p>
-      <p><span class="tag ai">AI</span>영상 속 의심 부위를 먼저 찾아낸다</p>
+    <div class="tile rv">
+      <div class="comp"><div class="sp s" style="--s:56px;left:10px;top:10px"></div><span class="tagmini" style="left:76px;top:26px">지켜보기만</span><div class="sp b" style="--s:146px;left:140px;top:16px"></div></div>
+      <p class="ab">HOTL</p><h3>휴먼 온 더 루프</h3><p class="en">Human-on-the-loop</p>
+      <p class="d">AI가 수행한 결과를 인간은 감시만 하는 수동적 감독 시스템.</p>
+    </div>
+    <div class="tile rv">
+      <div class="comp"><div class="sp ghost" style="--s:56px;left:10px;top:10px"></div><span class="tagmini" style="left:76px;top:26px">개입 없음</span><div class="sp b" style="--s:156px;left:136px;top:8px"></div></div>
+      <p class="ab">HOOTL</p><h3>휴먼 아웃 오브 더 루프</h3><p class="en">Human-out-of-the-loop</p>
+      <p class="d">인간의 개입 없이 AI가 최종 결정을 내린다.</p>
     </div>
   </div>
 </section>
 
-<!-- ===================== 07 왜 ===================== -->
-<section class="slide" data-sec="Why" data-name="소비자는 왜 AI에 맡기는가">
-  <div class="why-h rv"><h2>소비자는 왜 AI에게 맡기는가</h2><p>심리적 · 상황적 원인</p></div>
-  <div class="whys rv">
-    <div><p class="say">덜 고민하고 <span>싶다.</span></p><div><h3>인지적 노력과 의사결정 부담을 줄이려는 욕구</h3><p class="d">여러 사이트를 검색하고, 가격과 품질을 비교하고, 리뷰까지 읽어야 한다. 선택지가 많을수록 번거롭다.</p></div></div>
-    <div><p class="say">빨리 끝내고 <span>싶다.</span></p><div><h3>생산성 및 효율성 극대화</h3><p class="d">AI가 정보를 요약하고 조건에 맞는 대안을 제시해 비교에 드는 시간을 줄여준다.</p></div></div>
-    <div><p class="say">더 잘 고르고 <span>싶다.</span></p><div><h3>전문성 보완</h3><p class="d">정보가 방대하거나 복잡한 분야일수록 AI의 진가가 발휘된다. 모르는 영역을 AI가 채운다.</p></div></div>
+<!-- ===================== 06 사례 ===================== -->
+<section class="slide" data-meta data-name="실제 기업·브랜드 사례">
+  <div class="hd">
+    <p class="pill bt rv">Case · 실제 기업·브랜드 사례</p>
+    <h2 class="t rv">사람이 판단하고, <span class="blue">AI가 찾아낸다</span></h2>
   </div>
-  <p class="why-c rv">선택지가 많아질수록, 소비자는 <span class="hl"><b>AI에 의존한다.</b></span></p>
+  <div class="bento6">
+    <div class="tile wide rv"><p class="k">CASE 01 · 인도 보험 플랫폼</p><p class="n">인슈어런스데코<small>InsuranceDekho</small></p><p class="d">고객이 문의하면 설계사가 AI에게 확인하고, AI는 실제 보험 문서를 실시간으로 찾아 즉시 답한다.</p><p class="who"><span class="pill dk">사람 · 설계사가 고객 응대와 최종 안내</span><span class="pill bt">AI · 보험 문서 검색과 답변</span></p></div>
+    <div class="tile bluet rv"><p class="k">CASE 02 · 서울대학교병원 2025</p><p class="huge">10%</p><p class="d">유방 촬영 영상 판독에서 AI 소프트웨어가 전문의보다 10% 더 정확하게 암을 찾아냈다.</p><p class="who"><span class="pill">사람 · 최종 진단</span><span class="pill">AI · 이상 징후 탐지</span></p></div>
+    <div class="tile rv"><b class="num">15만<small>명</small></b><p class="lb">AI와 일하는 보험 설계사</p></div>
+    <div class="tile rv"><b class="num">49<small>개</small></b><p class="lb">보험사 상품 정보를 모두 기억</p></div>
+    <div class="tile rv"><b class="num">24<small>시간</small></b><p class="lb">대기하는 보험 전문가 효과</p></div>
+  </div>
+</section>
+
+<!-- ===================== 07 WHY ===================== -->
+<section class="slide" data-meta data-name="소비자는 왜 AI에 맡기는가">
+  <div class="hd">
+    <p class="pill bt rv">Why · 원인 분석</p>
+    <h2 class="t rv">소비자는 왜 AI에게 맡기는가</h2>
+    <p class="s rv">심리적 원인과 상황적 원인이 함께 작동한다.</p>
+  </div>
+  <div class="why3">
+    <div class="tile rv"><span class="ic"><svg><use href="#i-layers"/></svg></span><p class="say">“덜 고민하고 싶다”</p><h3>인지적 노력과 의사결정 부담을 줄이려는 욕구</h3><p class="d">여러 사이트를 검색하고 가격과 품질을 비교하고 리뷰까지 읽어야 한다. 선택지가 많을수록 번거롭다.</p></div>
+    <div class="tile rv"><span class="ic"><svg><use href="#i-clock"/></svg></span><p class="say">“빨리 끝내고 싶다”</p><h3>생산성 및 효율성 극대화</h3><p class="d">AI가 정보를 요약하고 조건에 맞는 대안을 제시해 비교에 드는 시간을 줄여준다.</p></div>
+    <div class="tile rv"><span class="ic"><svg><use href="#i-target"/></svg></span><p class="say">“더 잘 고르고 싶다”</p><h3>전문성 보완</h3><p class="d">정보가 방대하거나 복잡한 분야일수록 AI의 진가가 발휘된다. 모르는 영역을 AI가 채운다.</p></div>
+  </div>
+  <div class="banner tile bluet rv"><p>선택지가 많아질수록, 소비자는 <b>AI에 의존한다.</b></p><div class="sp s" style="--s:96px"></div></div>
 </section>
 
 <!-- ===================== 08 인지 증강 ===================== -->
-<section class="slide ink grain" data-sec="Why" data-name="인지 증강">
+<section class="slide glow" data-meta data-name="인지 증강" style="--gx:30%;--gy:40%">
   <div class="aug-l">
-    <p class="kicker rv"><b>Why</b>AI가 덜어주는 것, 사람에게 남는 것</p>
-    <h2 class="aug-t rv">인지 증강</h2>
-    <p class="aug-en rv">Cognitive Augmentation</p>
-    <p class="aug-q rv">기계적이고 소모적인 작업은 AI가 맡고, 인간은 <b>전략적 사고, 창의성, 감성적 판단</b> 같은 고차원적인 일에 집중한다.</p>
-    <p class="aug-cite rv">『트렌드 코리아 2026』 · AI 증강은 결국 인간의 지적 능력을 확장한다.</p>
+    <p class="pill bt rv" style="align-self:flex-start">Why · 인지 증강</p>
+    <h2 class="rv">인지 증강</h2>
+    <p class="en rv">Cognitive Augmentation</p>
+    <p class="q rv">기계적이고 소모적인 작업은 <span class="blue">AI가 맡고</span>, 인간은 <b>전략적 사고, 창의성, 감성적 판단</b> 같은 고차원적인 일에 집중한다.</p>
+    <p class="cite rv">『트렌드 코리아 2026』 · AI 증강은 결국 인간의 지적 능력을 확장한다.</p>
   </div>
-  <div class="todo rv">
-    <p class="todo-h"><span>구매 결정 체크리스트</span><span>담당</span></p>
+  <div class="aug-deco"><div class="float3d"><div class="sp b" style="--s:150px;left:60px;top:0"></div></div><div class="float3d late"><div class="sp s" style="--s:70px;left:0;top:120px"></div></div></div>
+  <div class="check tile rv">
+    <div class="check-h"><b>구매 결정 체크리스트</b><span>AI 완료 4 · 내 몫 3</span></div>
     <ul>
-      <li class="done"><span class="box"><svg><use href="#i-check"/></svg></span><span class="txt">정보 검색</span><span class="tag ai">AI 완료</span></li>
-      <li class="done"><span class="box"><svg><use href="#i-check"/></svg></span><span class="txt">요약</span><span class="tag ai">AI 완료</span></li>
-      <li class="done"><span class="box"><svg><use href="#i-check"/></svg></span><span class="txt">가격 비교</span><span class="tag ai">AI 완료</span></li>
-      <li class="done"><span class="box"><svg><use href="#i-check"/></svg></span><span class="txt">리뷰 정리</span><span class="tag ai">AI 완료</span></li>
-      <li class="mine"><span class="box"></span><span class="txt">전략적 사고</span><span class="tag hu">나</span><span class="cur hu" style="left:14px;top:34px"><svg><use href="#cursor"/></svg></span></li>
-      <li class="mine"><span class="box"></span><span class="txt">창의성</span><span class="tag hu">나</span></li>
-      <li class="mine"><span class="box"></span><span class="txt">감성적 판단</span><span class="tag hu">나</span></li>
+      <li class="done"><span class="ck"><svg class="ico"><use href="#i-check"/></svg></span><span class="tx">정보 검색</span><span class="pill bt">AI 완료</span></li>
+      <li class="done"><span class="ck"><svg class="ico"><use href="#i-check"/></svg></span><span class="tx">요약</span><span class="pill bt">AI 완료</span></li>
+      <li class="done"><span class="ck"><svg class="ico"><use href="#i-check"/></svg></span><span class="tx">가격 비교</span><span class="pill bt">AI 완료</span></li>
+      <li class="done"><span class="ck"><svg class="ico"><use href="#i-check"/></svg></span><span class="tx">리뷰 정리</span><span class="pill bt">AI 완료</span></li>
+      <li class="mine"><span class="ck"></span><span class="tx">전략적 사고</span><span class="pill dk">내 몫</span></li>
+      <li class="mine"><span class="ck"></span><span class="tx">창의성</span><span class="pill dk">내 몫</span></li>
+      <li class="mine"><span class="ck"></span><span class="tx">감성적 판단</span><span class="pill dk">내 몫</span></li>
     </ul>
-    <p class="todo-f">그 결과 <b>기억력 · 주의력 · 문제 해결 능력</b>이 커진다.</p>
+    <p class="check-f"><svg class="ico"><use href="#i-up"/></svg><span>그 결과 <b>기억력 · 주의력 · 문제 해결 능력</b>이 커진다</span></p>
   </div>
 </section>
 
 <!-- ===================== 09 인지적 과부하 ===================== -->
-<section class="slide" data-sec="Theory" data-name="이론 ① 인지적 과부하">
+<section class="slide" data-meta data-name="이론 ① 인지적 과부하">
   <div class="th-l">
-    <p class="kicker rv"><b>Theory 01</b>소비자행동 이론 적용</p>
-    <h2 class="th-t rv">인지적<br>과부하</h2>
-    <p class="th-en rv">Cognitive Overload</p>
-    <div class="def rv">
-      <p class="src"><span>정의</span><span>APA Dictionary of Psychology</span></p>
-      <p>정신적 작업이 요구하는 것이 개인의 정신적 능력이 감당할 수 있는 수준을 초과하는 상황.</p>
-    </div>
-    <p class="th-apply rv">온라인에서는 <b>상품 종류</b>도 많고 <b>가격, 기능, 후기, 브랜드, 할인 정보</b>까지 따져야 한다. 처리할 정보가 늘수록 탐색과 비교의 인지적 부담이 커진다.</p>
+    <p class="pill bt rv" style="align-self:flex-start">Theory 01 · 소비자행동 이론</p>
+    <h2 class="rv">인지적 과부하</h2>
+    <p class="en rv">Cognitive Overload</p>
+    <div class="def tile rv"><p class="src"><b>정의</b><span>APA Dictionary of Psychology</span></p><p>정신적 작업이 요구하는 것이 개인의 정신적 능력이 감당할 수 있는 수준을 초과하는 상황.</p></div>
+    <p class="apply rv">온라인에서는 <b>상품 종류</b>도 많고 <b>가격, 기능, 후기, 브랜드, 할인 정보</b>까지 따져야 한다. 처리할 정보가 늘수록 탐색과 비교의 인지적 부담이 커진다.</p>
   </div>
-  <div class="cap-frame"><i></i><i></i><i></i><i></i><em>소비자의 정보 처리 용량</em></div>
-  <p class="words out" aria-hidden="true">상품 종류 · 가격<br>기능 · 후기 · 브랜드<br>할인 정보 · 배송<br>후기 · 가격 · 옵션<br>브랜드 · 할인 · 기능<br>상품 종류 · 후기</p>
-  <p class="words in" role="img" aria-label="상품 종류, 가격, 기능, 후기, 브랜드, 할인 정보가 처리 용량을 넘어 쌓인다">상품 종류 · 가격<br>기능 · 후기 · 브랜드<br>할인 정보 · 배송<br>후기 · 가격 · 옵션<br>브랜드 · 할인 · 기능<br>상품 종류 · 후기</p>
-  <p class="over"><svg><use href="#i-se"/></svg>감당할 수 있는 수준을 넘친 정보</p>
+  <div class="ov-v tile rv" role="img" aria-label="정보 조각이 처리 용량을 넘어 넘치는 모습">
+    <div class="spill"><span class="chipi">할인 정보</span><span class="chipi">브랜드</span><span class="chipi">배송 · 옵션</span></div>
+    <div class="limit"><span class="pill rd">감당할 수 있는 한계</span></div>
+    <div class="jar"><span class="chipi">후기</span><span class="chipi">기능</span><span class="chipi">가격</span><span class="chipi">상품 종류</span></div>
+    <p class="cap-l">소비자의 정보 처리 용량</p>
+  </div>
 </section>
 
 <!-- ===================== 10 인지적 구두쇠 ===================== -->
-<section class="slide" data-sec="Theory" data-name="이론 ② 인지적 구두쇠">
+<section class="slide" data-meta data-name="이론 ② 인지적 구두쇠">
   <div class="ms-top">
     <div>
-      <p class="kicker rv"><b>Theory 02</b>소비자행동 이론 적용</p>
-      <h2 class="th-t rv">인지적 구두쇠</h2>
-      <p class="th-en rv">Cognitive Miser</p>
+      <p class="pill bt rv">Theory 02 · 소비자행동 이론</p>
+      <h2 class="rv">인지적 구두쇠</h2>
+      <p class="en rv">Cognitive Miser</p>
     </div>
-    <div class="def rv">
-      <p class="src"><span>정의</span><span>논문용어사전</span></p>
-      <p>정보 처리에 드는 인지적 노력을 최소화하려는 경향. 가능한 한 적게 생각하고 판단하려는 성향.</p>
-    </div>
+    <div class="def tile rv"><p class="src"><b>정의</b><span>논문용어사전</span></p><p>정보 처리에 드는 인지적 노력을 최소화하려는 경향. 가능한 한 적게 생각하고 판단하려는 성향.</p></div>
   </div>
-  <div class="cmp rv" role="table" aria-label="직접 할 때와 AI에게 맡길 때">
-    <p class="ch" role="columnheader">단계</p>
-    <p class="ch" role="columnheader">직접 할 때</p>
-    <p class="ch ai" role="columnheader">AI에게 맡기면</p>
-    <p class="w">검색</p><p class="me">여러 웹사이트를 일일이 방문한다</p><p class="ai-t"><span class="tag ai">AI</span>필요한 정보를 한 번에 찾아 달라고 한다</p>
-    <p class="w">추천</p><p class="me">모든 상품을 직접 비교한다</p><p class="ai-t"><span class="tag ai">AI</span>내 조건에 맞는 후보를 추천받는다</p>
-    <p class="w">선택</p><p class="me">모든 상품의 세부 정보를 같은 수준으로 검토한다</p><p class="ai-t"><span class="tag ai">AI</span>AI의 비교 결과로 최종 후보를 정한다</p>
+  <div class="cmp tile rv" role="table" aria-label="직접 할 때와 AI에게 맡길 때">
+    <div class="cmp-r" role="row"><p class="st"><span class="ic"><svg><use href="#i-search"/></svg></span>검색</p><p class="me"><svg class="ico"><use href="#i-xc"/></svg>여러 웹사이트를 일일이 방문한다</p><p class="arr"><svg class="ico"><use href="#i-right"/></svg></p><p class="ai"><svg class="ico"><use href="#i-checkc"/></svg>필요한 정보를 한 번에 찾아 달라고 한다</p></div>
+    <div class="cmp-r" role="row"><p class="st"><span class="ic"><svg><use href="#i-spark"/></svg></span>추천</p><p class="me"><svg class="ico"><use href="#i-xc"/></svg>모든 상품을 직접 비교한다</p><p class="arr"><svg class="ico"><use href="#i-right"/></svg></p><p class="ai"><svg class="ico"><use href="#i-checkc"/></svg>내 조건에 맞는 후보를 추천받는다</p></div>
+    <div class="cmp-r" role="row"><p class="st"><span class="ic"><svg><use href="#i-cart"/></svg></span>선택</p><p class="me"><svg class="ico"><use href="#i-xc"/></svg>모든 상품을 같은 수준으로 검토한다</p><p class="arr"><svg class="ico"><use href="#i-right"/></svg></p><p class="ai"><svg class="ico"><use href="#i-checkc"/></svg>AI의 비교 결과로 최종 후보를 정한다</p></div>
   </div>
-  <p class="ms-ans rv">생각을 아끼려는 소비자는 그래서 <span class="hl"><b>추천·검색·선택</b></span>을 AI에 맡긴다.</p>
+  <p class="ms-ban tile bluet rv"><span>그래서 소비자는 <b>추천 · 검색 · 선택</b>을 AI에 맡긴다.</span></p>
 </section>
 
 <!-- ===================== 11 기업 대응 평가 ===================== -->
-<section class="slide split" data-sec="Review" data-name="기업의 현재 대응 평가">
-  <div class="ink-half ink-scope"></div>
-  <div class="half l">
-    <h2 class="h-half rv" style="font-size:68px">대응은 빨라졌지만,</h2>
-    <p class="rv-k rv"><span>잘하고 있는 것</span><span>+</span></p>
-    <div class="rv-i rv"><h3>초개인화 AI 큐레이션</h3><p>검색어를 입력하지 않아도 취향과 구매 이력으로 상품을 제안한다.</p></div>
-    <div class="rv-i rv"><h3>AI 쇼핑 어시스턴트</h3><p>질문하면 상품 선택부터 비교, 결제 단계까지 보조한다.</p></div>
-    <div class="rv-i rv"><h3>완결형 AI 스토어</h3><p>여러 사이트를 돌아다닐 필요 없이 탐색부터 의사결정까지 플랫폼 안에서 끝낸다.</p></div>
+<section class="slide" data-meta data-name="기업의 현재 대응 평가">
+  <div class="hd">
+    <p class="pill bt rv">Review · 기업 대응 평가</p>
+    <h2 class="t rv">대응은 빨라졌지만,<br>신뢰와 데이터 구조는 아직 부족하다</h2>
   </div>
-  <div class="half r ink-scope">
-    <h2 class="h-half rv" style="font-size:68px">신뢰와 데이터는 아직이다</h2>
-    <p class="rv-k rv"><span>아직 부족한 것</span><span>−</span></p>
-    <div class="rv-i rv"><h3>추천을 믿지 못한다<span class="go">→ 전략 2</span></h3><p>AI 추천 뒤에 광고·협찬이 숨어 있다는 인식이 퍼지고 있다.</p></div>
-    <div class="rv-i rv"><h3>사람만 보고 있다<span class="go">→ 투트랙</span></h3><p>대다수 기업이 여전히 인간 소비자의 감성만 자극하는 전통적 방식을 고수한다.</p></div>
-    <div class="rv-i rv"><h3>AI가 읽을 데이터가 없다<span class="go">→ 전략 1</span></h3><p>소비자 대신 1차 필터링·비교를 하는 AI 에이전트가 상품 정보를 정확히 읽을 데이터 구조가 미흡하다.</p></div>
+  <div class="rv2">
+    <div class="tile good rv">
+      <p class="rv-h"><span class="ic"><svg><use href="#i-check"/></svg></span><b>잘하고 있는 것</b></p>
+      <div class="rv-i"><svg class="ico"><use href="#i-checkc"/></svg><h3>초개인화 AI 큐레이션</h3><p>검색어를 입력하지 않아도 취향과 구매 이력으로 상품을 제안한다.</p></div>
+      <div class="rv-i"><svg class="ico"><use href="#i-checkc"/></svg><h3>AI 쇼핑 어시스턴트</h3><p>질문하면 상품 선택부터 비교, 결제 단계까지 보조한다.</p></div>
+      <div class="rv-i"><svg class="ico"><use href="#i-checkc"/></svg><h3>완결형 AI 스토어</h3><p>탐색부터 의사결정까지 플랫폼 안에서 끝낸다.</p></div>
+    </div>
+    <div class="tile bad rv">
+      <p class="rv-h"><span class="ic r"><svg><use href="#i-alert"/></svg></span><b>아직 부족한 것</b></p>
+      <div class="rv-i"><svg class="ico"><use href="#i-dot"/></svg><h3>추천을 믿지 못한다</h3><p>AI 추천 뒤에 광고·협찬이 숨어 있다는 인식이 퍼지고 있다.</p><span class="pill bt">→ 전략 2</span></div>
+      <div class="rv-i"><svg class="ico"><use href="#i-dot"/></svg><h3>사람만 보는 마케팅</h3><p>여전히 인간 소비자의 감성만 자극하는 전통적 방식을 고수한다.</p><span class="pill bt">→ 투트랙</span></div>
+      <div class="rv-i"><svg class="ico"><use href="#i-dot"/></svg><h3>AI가 읽을 데이터 부족</h3><p>AI 에이전트가 상품 정보를 정확히 읽고 평가할 데이터 구조가 미흡하다.</p><span class="pill bt">→ 전략 1</span></div>
+    </div>
   </div>
 </section>
 
 <!-- ===================== 12 투트랙 ===================== -->
-<section class="slide field grain" data-sec="Strategy" data-name="우리 팀의 마케팅 전략">
-  <h2 class="tt-h rv">사람을 설득하고,<br>AI에게 선택받는다</h2>
-  <p class="tt-sub rv">의사결정을 AI에게 맡기는 시대에는 <b>인간 소비자를 직접 설득하는 트랙</b>과 <b>AI 알고리즘에게 선택받는 트랙</b>을 함께 굴리는 투트랙(Two-Track) 전략이 필요하다.</p>
-  <div class="map rv">
-    <svg viewBox="0 0 1728 450" preserveAspectRatio="none" aria-hidden="true">
-      <line class="ln" x1="160" y1="210" x2="1568" y2="210"/>
-      <path class="ln" d="M832 200l14 10-14 10M1540 200l14 10-14 10"/>
-      <line class="ld" x1="864" y1="72" x2="864" y2="126"/>
-      <line class="ld" x1="512" y1="216" x2="512" y2="300"/>
-      <line class="ld" x1="1568" y1="216" x2="1568" y2="300"/>
-      <circle class="dot" cx="160" cy="210" r="11"/>
-      <rect class="dot" x="852" y="198" width="24" height="24"/>
-      <circle class="ring" cx="1568" cy="210" r="11"/>
-      <circle class="dot" cx="512" cy="210" r="5"/>
+<section class="slide glow" data-meta data-name="우리 팀의 마케팅 전략" style="--gx:50%;--gy:72%">
+  <div class="hd">
+    <p class="pill bt rv">Strategy · 우리 팀의 마케팅 전략</p>
+    <h2 class="t rv">사람을 설득하고, <span class="blue">AI에게 선택받는다</span></h2>
+    <p class="s rv">의사결정을 AI에게 맡기는 시대엔 두 트랙을 동시에 굴리는 투트랙(Two-Track) 마케팅이 필요하다.</p>
+  </div>
+  <div class="tt rv">
+    <svg class="lines" viewBox="0 0 1680 590" preserveAspectRatio="none" aria-hidden="true">
+      <path class="ln" d="M300 300H700"/><path class="ar" d="M688 290l12 10-12 10"/>
+      <path class="ln" d="M980 300H1360"/><path class="ar" d="M1348 290l12 10-12 10"/>
+      <path class="lnb" d="M840 122V196"/>
+      <path class="lnb" d="M500 300V468"/>
+      <path class="lnb" d="M1500 452V468"/>
     </svg>
-    <p class="mp track" style="top:0">TRACK A<b>AI에게 선택받기</b></p>
-    <p class="mp track" style="top:316px">TRACK B<b>사람을 설득하기</b></p>
-    <p class="mp node" style="left:160px">소비자</p>
-    <p class="mp node" style="left:864px">AI 에이전트</p>
-    <p class="mp node" style="left:1568px">브랜드 구매</p>
-    <p class="mp edge" style="left:512px;top:178px">의사결정 위임</p>
-    <p class="mp edge" style="left:1216px;top:178px">추천 · 선택</p>
-    <div class="mp st" style="left:864px;top:0"><span>STRATEGY 1</span><b>GEO / AEO</b></div>
-    <div class="mp st" style="left:512px;top:312px"><span>STRATEGY 2</span><b>투명성 신뢰 마케팅</b><p>추천의 이유를 보여준다</p></div>
-    <div class="mp st" style="left:1568px;top:312px"><span>STRATEGY 3</span><b>감성적 검증</b><p>결제 직전의 확신을 준다</p></div>
+    <div class="trk tile tint" style="left:840px;top:0"><p class="k">TRACK A · AI에게 선택받기</p><b><span>전략 1</span>GEO / AEO</b></div>
+    <div class="node" style="left:200px;top:210px"><div class="float3d"><div class="sp s" style="--s:180px"></div></div><b>소비자</b></div>
+    <div class="node" style="left:840px;top:210px"><div class="float3d late"><span class="ic" style="--s:180px"><span class="ai">AI</span></span></div><b>AI 에이전트</b></div>
+    <div class="node" style="left:1500px;top:210px"><span class="ic k" style="--s:180px"><svg><use href="#i-bag"/></svg></span><b>브랜드 구매</b></div>
+    <p class="edge pill wh" style="left:500px;top:300px;box-shadow:0 8px 24px rgba(25,31,40,.08)">의사결정 위임</p>
+    <p class="edge pill wh" style="left:1170px;top:300px;box-shadow:0 8px 24px rgba(25,31,40,.08)">추천 · 선택</p>
+    <div class="trk tile" style="left:500px;top:470px"><p class="k">TRACK B · 사람을 설득하기</p><b><span>전략 2</span>투명성 신뢰 마케팅</b></div>
+    <div class="trk tile" style="left:1430px;top:470px"><p class="k">TRACK B · 사람을 설득하기</p><b><span>전략 3</span>감성적 검증</b></div>
   </div>
 </section>
 
 <!-- ===================== 13 전략 1 ===================== -->
-<section class="slide" data-sec="Strategy 1" data-name="GEO / AEO 전략">
+<section class="slide" data-meta data-name="GEO / AEO 전략">
   <div class="st-l">
-    <p class="kicker rv"><b>Track A</b>AI에게 선택받기</p>
-    <h2 class="st-t lat rv">GEO/AEO</h2>
-    <p class="st-en rv">Generative Engine · AI Engine Optimization</p>
-    <p class="st-c rv">기존 SEO를 넘어, AI가 브랜드 데이터를 쉽게 <b>수집·분석·추천</b>할 수 있도록 상품 정보와 리뷰를 구조화한다.</p>
-    <div class="acts rv">
-      <div><span class="n">01</span><div><h3>구조화된 정량 데이터 제공</h3><p>스펙, 가격, 배송 옵션, 성분을 표준화된 태그와 스키마 구조로 등록한다.</p></div></div>
-      <div><span class="n">02</span><div><h3>맥락 있는 텍스트 리뷰 자산</h3><p>누가, 어떤 조건에서, 어떤 효과를 보았는지 담긴 리뷰를 유도한다.</p></div></div>
+    <p class="st-chips rv"><span class="pill bl">Strategy 1</span><span class="pill bt">Track A · AI에게 선택받기</span></p>
+    <h2 class="lat rv">GEO / AEO</h2>
+    <p class="en rv">Generative Engine · AI Engine Optimization</p>
+    <p class="c rv">기존 SEO를 넘어, AI가 브랜드 데이터를 쉽게 <b>수집·분석·추천</b>할 수 있도록 상품 정보와 리뷰를 구조화한다.</p>
+    <div class="acts">
+      <div class="act tile rv"><span class="no">1</span><div><h3>구조화된 정량 데이터 제공</h3><p>스펙, 가격, 배송 옵션, 성분을 표준화된 태그와 스키마로 등록한다.</p></div></div>
+      <div class="act tile rv"><span class="no">2</span><div><h3>맥락 있는 텍스트 리뷰 자산</h3><p>누가, 어떤 조건에서, 어떤 효과를 보았는지 담긴 리뷰를 유도한다.</p></div></div>
     </div>
   </div>
-  <div class="pdp rv" role="img" aria-label="AI가 상세페이지에서 읽어내는 정보 예시">
-    <div class="pdp-img">제품 이미지 · 예시</div>
+  <div class="pdp tile rv" role="img" aria-label="AI가 상세페이지에서 읽어내는 정보 예시">
+    <div class="pdp-img"><div class="floor"></div><div class="sp b"></div><span>제품 이미지 · 예시</span></div>
     <div class="pdp-info">
       <p class="pdp-brand">BRAND</p>
       <p class="pdp-name det"><em>name</em>수분 선크림 50ml</p>
@@ -768,86 +788,87 @@ button { font: inherit; color: inherit; }
       <p class="pdp-row det"><em>shipping</em>내일 도착 · 무료배송</p>
       <p class="pdp-row det"><em>spf · ingredients</em>SPF50+ · 히알루론산 · 판테놀</p>
     </div>
-    <p class="pdp-copy det mute"><em>AI가 읽기 어려운 감성 문구</em>올여름, 피부가 숨 쉬는 촉촉함</p>
-    <div class="pdp-rev">
-      <p class="k">REVIEW · 예시</p>
-      <p><span class="seg" data-k="누가">30대 지성 피부</span>인데, <span class="seg" data-k="어떤 조건에서">여름 야외활동에 2주 썼더니</span> <span class="seg" data-k="어떤 효과를">오후 번들거림이 확 줄었어요.</span></p>
-    </div>
+    <p class="pdp-copy det"><em>AI가 읽기 어려운 감성 문구</em>올여름, 피부가 숨 쉬는 촉촉함</p>
+    <div class="pdp-rev"><p class="rk"><span>리뷰 · 예시</span><span>★ 4.8</span></p><p><span class="seg" data-k="누가">30대 지성 피부</span>인데, <span class="seg" data-k="어떤 조건에서">여름 야외활동에 2주 썼더니</span> <span class="seg" data-k="어떤 효과를">오후 번들거림이 확 줄었어요.</span></p></div>
   </div>
 </section>
 
 <!-- ===================== 14 전략 2 ===================== -->
-<section class="slide" data-sec="Strategy 2" data-name="투명성 중심의 신뢰성 마케팅">
-  <div class="st-l" style="width:760px">
-    <p class="kicker rv"><b>Track B</b>사람을 설득하기</p>
-    <h2 class="st-t rv">투명성 중심의<br>신뢰 마케팅</h2>
-    <p class="st-c rv">소비자가 AI의 추천을 의심 없이 받아들이도록, <b>“왜 이 제품이 당신에게 추천되었는지”</b> 이유를 분명히 보여준다.</p>
-    <div class="acts rv">
-      <div><span class="n">01</span><div><h3>XAI(설명 가능한 AI) 기반 큐레이션</h3><p>추천 사유와 적합도를 화면에 투명하게 표시한다.</p></div></div>
-      <div><span class="n">02</span><div><h3>광고와 순수 추천의 명확한 분리</h3><p>알고리즘의 공정성을 확보해 AI 추천에 대한 불신을 해소한다.</p></div></div>
+<section class="slide" data-meta data-name="투명성 중심의 신뢰성 마케팅">
+  <div class="st-l">
+    <p class="st-chips rv"><span class="pill bl">Strategy 2</span><span class="pill bt">Track B · 사람을 설득하기</span></p>
+    <h2 class="rv">투명성 중심의<br>신뢰 마케팅</h2>
+    <p class="c rv">소비자가 AI의 추천을 의심 없이 받아들이도록, <b>“왜 이 제품이 당신에게 추천되었는지”</b> 이유를 분명히 보여준다.</p>
+    <div class="acts">
+      <div class="act tile rv"><span class="no">1</span><div><h3>XAI(설명 가능한 AI) 기반 큐레이션</h3><p>추천 사유와 적합도를 화면에 투명하게 표시한다.</p></div></div>
+      <div class="act tile rv"><span class="no">2</span><div><h3>광고와 순수 추천의 명확한 분리</h3><p>알고리즘의 공정성을 확보해 AI 추천에 대한 불신을 해소한다.</p></div></div>
     </div>
   </div>
-  <p class="note rv" style="top:448px"><b>01 추천 사유 표시</b><span>검색 기록, 가격대, 적합도를<br>그대로 보여준다</span></p>
-  <p class="note rv" style="top:650px"><b>02 광고 영역 분리</b><span>광고는 추천 목록과<br>섞지 않는다</span></p>
+  <p class="note rv" style="left:960px;top:432px;--w:180px"><span class="pill bl">1 추천 이유 표시</span><i></i></p>
+  <p class="note rv" style="left:960px;top:700px;--w:180px"><span class="pill dk">2 광고 영역 분리</span><i></i></p>
   <div class="phone rv" role="img" aria-label="AI 추천 화면 예시">
     <div class="screen">
       <p class="sbar"><span>9:41</span><i></i><span>5G</span></p>
       <p class="scr-h">AI 추천<small>고객님을 위한 Top 3 · 예시</small></p>
-      <div class="pc"><span class="th"></span><div><b>수분 선크림 50ml</b><span>23,000원</span><span class="match">적합도 98%</span></div></div>
-      <div class="reason">
-        <p class="q">왜 이 제품을 추천했나요?</p>
-        <p>고객님이 최근 검색한 <b>A 기능</b>과 <b>B 가격대</b>에 가장 적합하여 AI가 <b>98% 확률</b>로 추천했습니다.</p>
-        <ul><li>최근 검색 · A 기능</li><li>선호 가격대 · B</li></ul>
+      <div class="card">
+        <div class="pc"><span class="th"><span class="sp b"></span></span><div><b>수분 선크림 50ml</b><span>23,000원</span><span class="match">적합도 98%</span></div></div>
+        <div class="why-c">
+          <p class="q">왜 이 제품을 추천했나요?</p>
+          <p>고객님이 최근 검색한 <b>A 기능</b>과 <b>B 가격대</b>에 가장 적합하여 AI가 <b>98% 확률</b>로 추천했습니다.</p>
+          <ul><li><svg class="ico"><use href="#i-check"/></svg>최근 검색 · A 기능</li><li><svg class="ico"><use href="#i-check"/></svg>선호 가격대 · B</li></ul>
+        </div>
       </div>
       <p class="adline">여기부터 광고</p>
-      <div class="pc ad"><span class="th"></span><div><b>스폰서 상품</b><span>광고비를 받고 노출하는 상품</span><span class="adtag">광고</span></div></div>
-      <p class="ask">조건을 바꿔 다시 물어보세요<i><svg><use href="#i-next"/></svg></i></p>
+      <div class="card ad"><div class="pc"><span class="th"><span class="sp s"></span></span><div><b>스폰서 상품</b><span>광고비를 받고 노출하는 상품</span><span class="adtag">광고</span></div></div></div>
+      <p class="ask">조건을 바꿔 다시 물어보세요<i><svg class="ico"><use href="#i-up"/></svg></i></p>
     </div>
   </div>
 </section>
 
 <!-- ===================== 15 전략 3 ===================== -->
-<section class="slide" data-sec="Strategy 3" data-name="최종 선택을 이끄는 감성적 검증">
-  <div class="s3-h">
-    <p class="kicker rv"><b>Track B</b>사람을 설득하기</p>
-    <h2 class="st-t rv">‘최종 선택’을 이끄는 감성적 검증</h2>
-    <p class="st-c rv">AI가 선택지를 2~3개로 좁혀줘도, 결제 버튼을 누르는 순간에는 <b>사람의 감성적 확신</b>이 필요하다.</p>
+<section class="slide" data-meta data-name="최종 선택을 이끄는 감성적 검증">
+  <div class="hd">
+    <p class="st-chips rv"><span class="pill bl">Strategy 3</span><span class="pill bt">Track B · 사람을 설득하기</span></p>
+    <h2 class="t rv">‘최종 선택’을 이끄는 감성적 검증</h2>
+    <p class="s rv">AI가 선택지를 2~3개로 좁혀줘도, 결제 버튼을 누르는 순간엔 사람의 감성적 확신이 필요하다.</p>
   </div>
-  <div class="n31 rv">
-    <div><p class="num n">N</p><p class="lbl">전체 상품<span>AI가 조건에 맞게 탐색·비교</span></p></div>
-    <div class="arr"><svg><use href="#i-right"/></svg></div>
-    <div><p class="num three">3</p><p class="lbl">AI 추천 Top 2~3<span>AI 큐레이션 결과</span></p></div>
-    <div class="bridge">
-      <p class="k">감성을 자극하는 보조 장치</p>
-      <p>숏폼 영상 리뷰</p>
-      <p>3D · AR 실착 체험</p>
-      <p>1:1 사용자 커뮤니티 반응</p>
-    </div>
-    <div><p class="num">1<span class="cur hu lg" style="left:58%;top:52%"><svg><use href="#cursor"/></svg><b>나 · 결제</b></span></p><p class="lbl">최종 구매 전환<span>사람이 확신하고 고르는 하나</span></p></div>
+  <div class="fn4">
+    <div class="tile rv"><p class="big" style="color:var(--g300)">N</p><p class="lb">전체 상품<span>AI가 조건에 맞게 탐색·비교</span></p>
+      <div class="dots" aria-hidden="true"><i></i><i></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="on"></i><i></i><i></i><i></i></div></div>
+    <div class="tile bluet rv"><p class="big">3</p><p class="lb">AI 추천 Top 2~3<span>AI 큐레이션 결과</span></p>
+      <div class="rank"><span><em>1</em>수분 선크림 A</span><span><em>2</em>수분 선크림 B</span><span><em>3</em>수분 선크림 C</span></div></div>
+    <div class="tile rv"><p class="k">감성을 자극하는 보조 장치</p><p class="lb" style="margin-top:8px">결제 직전, 확신을 주는 장치</p>
+      <div class="emo"><div><span class="ic"><svg><use href="#i-play"/></svg></span>숏폼 영상 리뷰</div><div><span class="ic"><svg><use href="#i-cube"/></svg></span>3D · AR 실착 체험</div><div><span class="ic"><svg><use href="#i-chat"/></svg></span>1:1 사용자 커뮤니티 반응</div></div></div>
+    <div class="tile dark rv"><p class="big">1</p><div><p class="lb">최종 구매 전환<span>사람이 확신하고 고르는 하나</span></p><p class="paybtn" style="margin-top:22px">결제하기</p></div></div>
   </div>
   <div class="lanes rv"><p class="a">AI가 좁힌다</p><p class="b">사람이 확신한다</p></div>
 </section>
 
 <!-- ===================== 16 결론 ===================== -->
-<section class="slide ink grain" data-sec="Conclusion" data-name="결론">
-  <h2 class="cc-h rv"><span class="hl">AI에게 선택받고,</span><br>사람에게 확신을 주는<br>브랜드가 살아남는다.</h2>
-  <div class="eq rv">
-    <div><b>데이터 구조화</b><span>AI가 정확히 읽고 비교한다</span></div>
-    <p class="plus">+</p>
-    <div><b>투명한 알고리즘</b><span>소비자가 추천을 믿는다</span></div>
-    <p class="plus">+</p>
-    <div><b>감성적 구매 확신</b><span>사람이 마지막에 결정한다</span></div>
+<section class="slide glow" data-meta data-name="결론" style="--gx:80%;--gy:30%">
+  <p class="pill bt rv" style="position:absolute;left:120px;top:118px">Conclusion · 결론</p>
+  <div class="orbit" style="left:1180px;top:200px;width:620px;height:220px;rotate:-14deg"></div>
+  <div class="float3d"><div class="sp b" style="--s:260px;left:1400px;top:150px"></div></div>
+  <div class="float3d late"><div class="sp s" style="--s:90px;left:1250px;top:330px"></div></div>
+  <h2 class="cc-t rv"><span class="blue">AI에게 선택받고,</span><br>사람에게 확신을 주는<br>브랜드가 살아남는다</h2>
+  <div class="pl3">
+    <div class="tile rv"><span class="ic"><svg><use href="#i-data"/></svg></span><div><b>데이터 구조화</b><span>AI가 정확히 읽고 비교한다</span></div></div>
+    <div class="tile rv"><span class="ic"><svg><use href="#i-shield"/></svg></span><div><b>투명한 알고리즘</b><span>소비자가 추천을 믿는다</span></div></div>
+    <div class="tile rv"><span class="ic k"><svg><use href="#i-heart"/></svg></span><div><b>감성적 구매 확신</b><span>사람이 마지막에 결정한다</span></div></div>
   </div>
   <p class="cc-p rv">소비자는 정보 과부하와 의사결정 피로를 줄이기 위해 AI에게 탐색과 선택 권한을 적극적으로 위임하고 있다. 기업은 이제 인간 소비자뿐 아니라 <b>소비자의 선택을 대행하는 AI 에이전트</b>도 중요한 마케팅 대상으로 봐야 한다.</p>
 </section>
 
 <!-- ===================== 17 끝 ===================== -->
-<section class="slide canvas grain" data-sec="References" data-name="감사합니다 · 참고자료">
+<section class="slide glow" data-meta data-name="감사합니다 · 참고자료" style="--gx:78%;--gy:30%">
+  <div class="orbit" style="left:1160px;top:170px;width:620px;height:220px;rotate:-14deg"></div>
+  <div class="float3d"><div class="sp b" style="--s:230px;left:1420px;top:140px"></div></div>
+  <div class="float3d late"><div class="sp s" style="--s:84px;left:1230px;top:300px"></div></div>
   <h2 class="ty rv">감사합니다</h2>
-  <p class="qa rv"><span class="sb by-hu">질문 받겠습니다<i></i><i></i><i></i><i></i><em>Q&amp;A</em></span><span class="cur ai" style="left:calc(100% + 4px);top:62px"><svg><use href="#cursor"/></svg><b>AI</b></span></p>
-  <p class="end-team rv"><b>A조</b><br>팀원 OOO · OOO · OOO · OOO</p>
-  <div class="refs rv">
-    <p class="k">참고자료</p>
+  <p class="qa rv"><span class="pill bl">Q&amp;A</span><span class="pill wh" style="box-shadow:0 8px 24px rgba(25,31,40,.08)">질문 받겠습니다</span></p>
+  <p class="end-team rv"><b>소비자행동론 · A조</b>팀원 OOO · OOO · OOO · OOO</p>
+  <div class="refs tile rv">
+    <p class="rk">참고자료</p>
     <p>『트렌드 코리아 2026』<span>김난도 외, 미래의창</span></p>
     <p>APA Dictionary of Psychology<span>인지적 과부하 정의</span></p>
     <p>논문용어사전<span>인지적 구두쇠 정의</span></p>
@@ -865,7 +886,7 @@ button { font: inherit; color: inherit; }
   <div class="bar-c">
     <button class="btn" id="prev" type="button" aria-label="이전 슬라이드"><svg aria-hidden="true"><use href="#i-left"/></svg></button>
     <span id="count" aria-live="polite">01 / 17</span>
-    <button class="btn" id="next" type="button" aria-label="다음 슬라이드"><svg aria-hidden="true"><use href="#i-next"/></svg></button>
+    <button class="btn" id="next" type="button" aria-label="다음 슬라이드"><svg aria-hidden="true"><use href="#i-right"/></svg></button>
   </div>
   <div class="bar-r">
     <span class="keys">← → 이동 · G 전체 보기 · F 전체화면</span>
@@ -890,10 +911,9 @@ button { font: inherit; color: inherit; }
     f.tabIndex = -1;
     s.before(f);
     f.append(s);
-    if (s.dataset.sec) {
+    if ('meta' in s.dataset) {
       s.insertAdjacentHTML('afterbegin',
-        '<div class="s-meta"><span><b>휴먼 인 더 루프</b>Trend Korea 2026</span><span class="m-c">' + s.dataset.sec + ' — ' + (s.dataset.name || '') +
-        '</span><span class="m-r">' + pad(i + 1) + '<i> / ' + pad(total) + '</i></span></div>');
+        '<div class="meta"><span>휴먼 인 더 루프 <i>· Trend Korea 2026</i></span><span class="no">' + pad(i + 1) + ' <i>/ ' + pad(total) + '</i></span></div>');
     }
     s.querySelectorAll('.rv').forEach((el, k) => el.style.setProperty('--d', k));
     return f;
@@ -948,10 +968,10 @@ button { font: inherit; color: inherit; }
     f.addEventListener('click', () => { if (isGrid()) { setGrid(false); show(i, true); } });
     f.addEventListener('keydown', e => { if (isGrid() && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setGrid(false); show(i, true); } });
   });
-  deck.querySelectorAll('[data-go]').forEach(li => li.addEventListener('click', e => {
+  deck.querySelectorAll('[data-go]').forEach(el => el.addEventListener('click', e => {
     if (isGrid()) return;
     e.stopPropagation();
-    show(Number(li.dataset.go) - 1, true);
+    show(Number(el.dataset.go) - 1, true);
   }));
 
   addEventListener('keydown', e => {
