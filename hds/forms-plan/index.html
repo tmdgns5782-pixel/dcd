@@ -1,0 +1,668 @@
+<title>HDS 안전기록 운영안</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* 레이아웃: 왼쪽 고정 목차 + 오른쪽 제안서 본문(최대 880px). 좁은 화면에서는 한 줄 */
+:root {
+  --bg: #f4f6fb;
+  --surface: #ffffff;
+  --sunk: #eef1fa;
+  --ink: #161b3d;
+  --body: #3d4260;
+  --muted: #686e8e;
+  --line: #e2e5f0;
+  --navy: #223289;
+  --navy-2: #4254c0;
+  --heat: #223289;
+  --red: #d42a1e;
+  --red-soft: #fdeeec;
+  --amber: #a7660b;
+  --amber-soft: #fdf3e1;
+  --green: #187a4c;
+  --green-soft: #e5f4ec;
+  --on-strong: #ffffff;
+  --shadow: 0 1px 2px rgba(22, 27, 61, .05), 0 8px 24px rgba(22, 27, 61, .06);
+  --font: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1023; --surface: #151933; --sunk: #1c2142; --ink: #eef0fa; --body: #c6cae0; --muted: #969cba;
+    --line: #2a3052; --navy: #9aa8ff; --navy-2: #b4bfff; --heat: #4f63e6; --red: #ff7468; --red-soft: #3b1e24;
+    --amber: #f2b552; --amber-soft: #382c14; --green: #55c991; --green-soft: #133227; --on-strong: #ffffff;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1023; --surface: #151933; --sunk: #1c2142; --ink: #eef0fa; --body: #c6cae0; --muted: #969cba;
+  --line: #2a3052; --navy: #9aa8ff; --navy-2: #b4bfff; --heat: #4f63e6; --red: #ff7468; --red-soft: #3b1e24;
+  --amber: #f2b552; --amber-soft: #382c14; --green: #55c991; --green-soft: #133227; --on-strong: #ffffff;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--body); font-family: var(--font); font-size: 15.5px; line-height: 1.7;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 64px; -webkit-font-smoothing: antialiased; word-break: keep-all; overflow-wrap: anywhere;
+}
+h1, h2, h3, h4 { color: var(--ink); text-wrap: balance; margin: 0; letter-spacing: -.01em; }
+p { margin: 0; }
+a { color: var(--navy-2); }
+code, .mono { font-family: var(--mono); font-size: .88em; }
+:focus-visible { outline: 2px solid var(--navy-2); outline-offset: 2px; border-radius: 4px; }
+
+.shell { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 40px; }
+@media (min-width: 1100px) { .shell { grid-template-columns: 220px minmax(0, 1fr); } }
+
+.toc { display: none; }
+@media (min-width: 1100px) {
+  .toc { display: block; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 28px); align-self: start; padding-top: 28px; font-size: 13.5px; }
+  .toc b { display: block; color: var(--ink); font-size: 12px; letter-spacing: .08em; margin-bottom: 10px; }
+  .toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; counter-reset: t; }
+  .toc a { display: block; padding: 4px 10px; border-radius: 6px; color: var(--muted); text-decoration: none; }
+  .toc a:hover { background: var(--sunk); color: var(--ink); }
+}
+
+main { min-width: 0; max-width: 880px; display: grid; gap: 64px; padding-top: 28px; }
+section { display: grid; gap: 20px; min-width: 0; scroll-margin-top: 24px; }
+.eyebrow { font-size: 12.5px; font-weight: 600; letter-spacing: .08em; color: var(--red); }
+h2 { font-size: clamp(22px, 3vw, 28px); line-height: 1.35; font-weight: 700; }
+h3 { font-size: 17px; font-weight: 600; line-height: 1.45; }
+.lead { font-size: 16.5px; color: var(--body); max-width: 66ch; }
+.note { font-size: 13px; color: var(--muted); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; min-width: 0; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 12.5px; font-weight: 500; color: var(--navy); background: var(--sunk); border-radius: 6px; padding: 2px 8px; white-space: nowrap; }
+.tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: var(--sunk); color: var(--navy); white-space: nowrap; }
+.tag.red { background: var(--red-soft); color: var(--red); }
+.tag.green { background: var(--green-soft); color: var(--green); }
+.tag.amber { background: var(--amber-soft); color: var(--amber); }
+
+/* 표지 */
+.hero { padding-top: 12px; gap: 28px; }
+.brand { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+.brand .mark { font-weight: 700; color: var(--navy); letter-spacing: .02em; font-size: 15px; }
+.hero h1 { font-size: clamp(30px, 5.4vw, 48px); line-height: 1.22; font-weight: 700; letter-spacing: -.025em; }
+.hero h1 em { font-style: normal; color: var(--navy); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 2px; }
+.stat b { font-size: 26px; color: var(--ink); font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 13px; color: var(--muted); line-height: 1.45; }
+
+/* 구글 무료 질문 */
+.qa { display: grid; gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px; box-shadow: var(--shadow); }
+.qa .q { font-size: 18px; font-weight: 700; color: var(--ink); }
+.qa .a { display: grid; gap: 12px; }
+.split { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.split > div { background: var(--sunk); border-radius: 12px; padding: 14px 16px; display: grid; gap: 6px; min-width: 0; }
+.split h4 { font-size: 14.5px; }
+ul.tight { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+
+/* 문제 목록 */
+.issues { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.issue { display: grid; gap: 8px; align-content: start; }
+.issues.pairs { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.issue .n { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.issue p { font-size: 14px; }
+
+/* 점수 표 */
+.scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+.scroll table { min-width: 640px; }
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+thead th { font-size: 12.5px; font-weight: 600; color: var(--muted); background: var(--surface); white-space: nowrap; }
+tbody tr:last-child td { border-bottom: 0; }
+.heat td.s { text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; min-width: 64px;
+  background: color-mix(in srgb, var(--heat) calc((var(--s) - 2) * 7.5%), var(--surface)); color: var(--ink); }
+.heat td.avg { font-weight: 700; color: var(--ink); text-align: center; font-variant-numeric: tabular-nums; }
+.heat tr.win td { background-image: linear-gradient(var(--sunk), var(--sunk)); }
+.heat tr.win td.s { background-image: none; }
+.opt b { color: var(--ink); display: block; }
+.opt span { font-size: 12.5px; color: var(--muted); }
+
+/* 구조도 */
+.flow { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 760px) { .flow { grid-template-columns: 1fr 28px 1.15fr 28px 1fr; align-items: stretch; } }
+.node { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.node.core { border: 1.5px solid var(--navy); }
+.node h3 { font-size: 15.5px; }
+.node .who { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .04em; }
+.node ul { margin: 0; padding-left: 16px; font-size: 13.5px; display: grid; gap: 3px; }
+.arrow { display: grid; place-items: center; color: var(--muted); font-size: 20px; }
+.arrow::before { content: "↓"; }
+@media (min-width: 760px) { .arrow::before { content: "→"; } }
+.layer { border: 1.5px dashed var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 8px; }
+.layer h3 { font-size: 15px; }
+
+/* 기록유형 */
+.types { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+.type { display: grid; gap: 8px; align-content: start; }
+.type .forms { display: flex; flex-wrap: wrap; gap: 6px; }
+.type p { font-size: 14px; }
+
+/* 조치 루프 */
+.idrow { display: grid; gap: 10px; }
+.idbig { font-family: var(--mono); font-size: clamp(18px, 3.4vw, 26px); font-weight: 600; color: var(--ink); letter-spacing: .01em; display: flex; flex-wrap: wrap; gap: 0; }
+.idbig span { padding: 2px 2px; border-bottom: 2px solid var(--line); }
+.idbig span.k { border-color: var(--navy-2); }
+.idlegend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--muted); }
+.states { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; counter-reset: st; }
+.state { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 4px; }
+.state b { color: var(--ink); font-size: 15px; }
+.state b::before { counter-increment: st; content: counter(st) " "; font-family: var(--mono); color: var(--navy-2); font-size: 13px; }
+.state p { font-size: 13px; }
+
+/* 대시보드 예시 */
+.dash { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); }
+.dash-bar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--sunk); }
+.dash-bar b { color: var(--ink); font-size: 14px; }
+.dash-body { padding: 16px; display: grid; gap: 16px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.tile { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: grid; gap: 2px; }
+.tile span { font-size: 12px; color: var(--muted); }
+.tile b { font-size: 22px; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1.25; }
+.tile i { font-style: normal; font-size: 12px; }
+.tile i.bad { color: var(--red); } .tile i.ok { color: var(--green); } .tile i.warn { color: var(--amber); }
+.signals td, .signals th { padding: 8px 10px; font-size: 13px; white-space: nowrap; }
+.signals td:first-child { white-space: normal; min-width: 140px; }
+.dot { display: inline-flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+.dot::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--green); flex: none; }
+.dot.warn::before { background: var(--amber); }
+.dot.bad::before { background: var(--red); }
+.dash-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.aging { display: grid; gap: 8px; }
+.aging .row { display: grid; grid-template-columns: 84px 1fr 34px; gap: 8px; align-items: center; font-size: 13px; }
+.aging .bar { height: 10px; border-radius: 5px; background: var(--sunk); overflow: hidden; }
+.aging .bar i { display: block; height: 100%; background: var(--navy-2); border-radius: 5px; }
+.aging .bar i.bad { background: var(--red); }
+.aging .row b { text-align: right; color: var(--ink); font-variant-numeric: tabular-nums; }
+.exceptions { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.exceptions li { display: grid; grid-template-columns: auto 1fr; gap: 8px; font-size: 13px; align-items: start; }
+
+/* KPI 표 */
+.kpi td:nth-child(3), .kpi td:nth-child(4), .kpi td:nth-child(5) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* HEC 타임라인 */
+.timeline { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.tstep { border-top: 3px solid var(--navy-2); background: var(--surface); border-radius: 0 0 12px 12px; padding: 12px 14px; display: grid; gap: 4px; border-left: 1px solid var(--line); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.tstep b { font-family: var(--mono); color: var(--navy); font-size: 14px; }
+.tstep p { font-size: 13.5px; }
+.formula { font-family: var(--mono); font-size: 13px; background: var(--sunk); border-radius: 10px; padding: 12px 14px; color: var(--ink); overflow-x: auto; white-space: pre; }
+
+/* 비용 범위 막대 */
+.ranges { display: grid; gap: 10px; }
+.range { display: grid; grid-template-columns: 150px 1fr; gap: 12px; align-items: center; font-size: 13.5px; }
+.range .lbl b { color: var(--ink); display: block; }
+.range .lbl span { font-size: 12px; color: var(--muted); }
+.track { position: relative; height: 18px; border-radius: 6px; background: var(--sunk); }
+.track i { position: absolute; top: 0; bottom: 0; border-radius: 6px; background: color-mix(in srgb, var(--navy-2) 55%, var(--surface)); }
+.track i.pick { background: var(--navy); }
+.track i.warn { background: color-mix(in srgb, var(--red) 45%, var(--surface)); }
+.axis { display: grid; grid-template-columns: 150px 1fr; gap: 12px; font-size: 11.5px; color: var(--muted); }
+.axis div { display: flex; justify-content: space-between; }
+.money .stat b { font-size: 21px; }
+.money { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+
+/* 로드맵 */
+.road { display: grid; gap: 12px; }
+.phase { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 720px) { .phase { grid-template-columns: 170px minmax(0, 1fr); } }
+.phase .when b { display: block; color: var(--ink); font-size: 15px; }
+.phase .when span { font-size: 12.5px; color: var(--muted); }
+.phase .what { display: grid; gap: 8px; }
+.gate { background: var(--sunk); border-radius: 10px; padding: 10px 12px; font-size: 13.5px; }
+.gate b { color: var(--ink); }
+
+.qs { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.qs li { display: grid; grid-template-columns: 54px 1fr; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14.5px; }
+.qs li:last-child { border-bottom: 0; }
+.qs .chip { justify-self: start; }
+
+.method { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.method .card b { color: var(--ink); font-size: 22px; display: block; font-variant-numeric: tabular-nums; }
+
+footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 18px; display: grid; gap: 4px; }
+
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+
+<div class="shell">
+  <nav class="toc" aria-label="목차">
+    <b>목차</b>
+    <ol>
+      <li><a href="#free">구글은 무료 아닌가요</a></li>
+      <li><a href="#issues">지금 양식의 문제</a></li>
+      <li><a href="#options">6개 방안 감사 결과</a></li>
+      <li><a href="#plan">권고 구조</a></li>
+      <li><a href="#types">기록유형별 운영</a></li>
+      <li><a href="#act">조치번호 하나</a></li>
+      <li><a href="#dashboard">대시보드</a></li>
+      <li><a href="#hec">HEC 평가 대비</a></li>
+      <li><a href="#forms">양식 정비 방향</a></li>
+      <li><a href="#cost">비용</a></li>
+      <li><a href="#roadmap">실행 순서</a></li>
+      <li><a href="#risks">리스크</a></li>
+      <li><a href="#questions">HDS에 확인할 것</a></li>
+      <li><a href="#method">검토 방법</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <!-- 표지 -->
+    <section class="hero" id="top">
+      <div class="brand"><span class="mark">HDS</span><span>안전경영지원실 · 사업장 표준양식 배포·취합 방안</span></div>
+      <h1>사업장 10곳의 안전양식,<br><em>파일 대신 장부 하나</em>로 받습니다</h1>
+      <p class="lead">현장은 휴대폰으로 QR을 찍어 3분 안에 입력하고, 기록은 HDS 명의 장부 하나에 사업장 코드와 서버 시각이 붙어 쌓입니다. 본사는 취합 작업 없이 미제출, 기한 넘긴 조치, HEC 평가 준비도만 봅니다. 양식 10종과 고객사(HEC) 평가표를 모두 분석하고, 6개 방안을 설계팀 6명과 감사관 6명이 교차 검증한 결과입니다.</p>
+      <div class="stats">
+        <div class="stat"><b>14종</b><span>현행 10종 + 신규 4종을 기록유형 5가지로 재편</span></div>
+        <div class="stat"><b>3분</b><span>현장 일일점검 목표 (현행 7번은 하루 최대 약 140칸)</span></div>
+        <div class="stat"><b>0시간</b><span>본사 취합 수작업 (파일 수집·시트 복사·미결 이월 없음)</span></div>
+        <div class="stat"><b>월 약 5만 원</b><span>10곳 기준 현금 운영비 (외주 유지보수 별도, 추정)</span></div>
+      </div>
+    </section>
+
+    <!-- 구글 무료 -->
+    <section id="free">
+      <div class="eyebrow">먼저 받은 질문</div>
+      <div class="qa">
+        <p class="q">"구글은 무료 아니냐?"</p>
+        <div class="a">
+          <p>맞습니다. 구글 시트, Apps Script, Data Studio(구 Looker Studio)는 이 권고안에서도 추가 요금 없이 씁니다. 다만 무료 개인 지메일 계정 하나에 회사 안전기록을 쌓는 방식은 감사팀 6명 모두 실데이터 운영 불가로 판정했습니다. 그래서 장부를 소유할 회사 계정 3개만 유료로 둡니다.</p>
+          <div class="split">
+            <div>
+              <h4>무료로 쓰는 것</h4>
+              <ul class="tight">
+                <li>시트(장부), 드라이브(사진), Apps Script(입력 화면·자동화)</li>
+                <li>Data Studio 대시보드</li>
+                <li>현장 1,200명은 계정 0개. 인원 수에 비례하는 요금 없음</li>
+              </ul>
+            </div>
+            <div>
+              <h4>돈이 드는 것</h4>
+              <ul class="tight">
+                <li>장부 소유 계정 3석: 월 약 2.9만 원 ($7/석, 환율 추정)</li>
+                <li>알림톡·문자: 10곳 월 1~2만 원</li>
+                <li>입력 화면을 만들고 고치는 사람(외주 또는 직접 구축)</li>
+              </ul>
+            </div>
+            <div>
+              <h4>무료 계정만 쓰면 막히는 곳</h4>
+              <ul class="tight">
+                <li>구글 설문지의 사진 첨부는 응답자 로그인이 필요하고, 카톡 인앱 브라우저에서는 구글 로그인 자체가 막힘</li>
+                <li>관리자 복구·감사로그 없음. 계정이 잠기면 전 사업장이 함께 멈춤</li>
+                <li>1인 1계정·접속기록 같은 개인정보 안전조치 기준을 지킬 수 없음</li>
+              </ul>
+            </div>
+          </div>
+          <p class="note">3년 총비용 중 구글 유료 계정은 약 300만 원(3~6%)입니다. 무료로 바꿔서 아끼는 돈은 이 정도이고, 대신 위 위험을 모두 떠안게 됩니다. 시제품 단계는 무료 계정이나 14일 체험판에 가짜 데이터로 만듭니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 문제 -->
+    <section id="issues">
+      <div class="eyebrow">진단</div>
+      <h2>문제는 양식 디자인보다 기록 구조에 있습니다</h2>
+      <p class="lead">양식 10종을 시트·셀 단위로 열어 봤습니다. 사업장 10곳이 같은 파일을 채워 보내는 순간 아래 문제가 바로 터집니다.</p>
+      <div class="issues">
+        <div class="card issue"><span class="n">01 · 사업장 키 없음</span><h3>같은 사업장이 이름 4개로 들어옵니다</h3><p>기록마다 사업장 코드가 붙는 곳은 9번 '본사취합' 하나뿐입니다. 한화 의정부는 '한화생명 의정부 / 한화생명 의정부사옥 / 한화의정부생명 / 한화의정부'로 제각각이라 띄어쓰기 하나에도 집계가 깨집니다.</p></div>
+        <div class="card issue"><span class="n">02 · 조치 기록 분산</span><h3>'발견 → 조치 → 종결'이 9곳에 흩어져 있습니다</h3><p>양식 1·2·4·5·6·7·8·9·10이 각자 조치 칸을 따로 갖고 있고, 상태 표현도 3가지(미조치/미착수/기한경과 미결 등)입니다. 9번은 미결 과제를 매월 새 파일로 손으로 옮겨 적게 되어 있습니다.</p></div>
+        <div class="card issue"><span class="n">03 · 파일 폭증</span><h3>일일점검만 연 3,650개 파일</h3><p>7번이 1일 1파일이면 10곳 연 3,650개, 44곳이면 연 약 1.6만 개입니다. 작성안내에도 '사업장 간 자동취합 기능 없음'이라고 적혀 있습니다.</p></div>
+        <div class="card issue"><span class="n">04 · 취합 수식이 깨짐</span><h3>시트를 복사해 오는 취합이 이미 망가졌습니다</h3><p>3번은 사업장 파일을 시트째 가져오다 외부 파일 참조가 3개 생겼고, 손으로 옮긴 현황표는 요청 방법이 원본과 뒤바뀌거나 9곳이 빠져 있습니다. 9번은 보고월에 글자를 넣으면 235칸이 오류인데도 '제출가능'이 뜹니다.</p></div>
+        <div class="card issue"><span class="n">05 · 환경 불일치</span><h3>M365 전용 기능이 M365 없는 회사에</h3><p>1·2번 사진은 Excel 365 전용 '셀 안에 그림'이라 다른 PC나 PDF 변환에서 <code>#VALUE!</code>로 보입니다. 사진 증빙이 열어 보는 PC에 따라 사라집니다.</p></div>
+        <div class="card issue"><span class="n">06 · 배포본 노출</span><h3>배포 파일에 내부 정보가 그대로</h3><p>1번에 외부 링크 63개(구 서버 경로·제3자 실명), 3번 배포본에 도급비 합계·내부 리스크 메모·휴대폰 번호, 6~10번에 ChatGPT 작업 메모가 남아 있습니다. 지금 배포 전에 정리해야 합니다.</p></div>
+      </div>
+    </section>
+
+    <!-- 방안 비교 -->
+    <section id="options">
+      <div class="eyebrow">6개 방안 교차 감사</div>
+      <h2>설계팀 6명이 각자 끝까지 밀어붙이고, 감사관 6명이 모든 안을 채점했습니다</h2>
+      <p class="lead">감사관은 설계안이 과장한 부분을 찾도록 지시받았고, 도구 기능과 가격은 2026년 10월 기준으로 검색해 확인했습니다. 칸이 진할수록 높은 점수입니다(10점 만점).</p>
+      <div class="scroll">
+        <table class="heat">
+          <thead>
+            <tr><th>방안</th><th>현장 사용성</th><th>본사 운영</th><th>증빙력</th><th>보안·법규</th><th>비용·확장</th><th>실패 내성</th><th>평균</th></tr>
+          </thead>
+          <tbody>
+            <tr class="win"><td class="opt"><b>F 단계형 혼합</b><span>무계정 웹앱 + 회사 계정 장부</span></td>
+              <td class="s" style="--s:6">6</td><td class="s" style="--s:6">6</td><td class="s" style="--s:5.5">5.5</td><td class="s" style="--s:5.5">5.5</td><td class="s" style="--s:7.5">7.5</td><td class="s" style="--s:6.5">6.5</td><td class="avg">6.2</td></tr>
+            <tr><td class="opt"><b>E 맞춤 웹앱</b><span>QR + 국내 리전 DB, 직접 개발</span></td>
+              <td class="s" style="--s:7">7</td><td class="s" style="--s:4">4</td><td class="s" style="--s:7.5">7.5</td><td class="s" style="--s:7">7</td><td class="s" style="--s:4.5">4.5</td><td class="s" style="--s:5.5">5.5</td><td class="avg">5.9</td></tr>
+            <tr><td class="opt"><b>B M365 로우코드</b><span>SharePoint·Power Apps·Power BI</span></td>
+              <td class="s" style="--s:4">4</td><td class="s" style="--s:4">4</td><td class="s" style="--s:6">6</td><td class="s" style="--s:7.5">7.5</td><td class="s" style="--s:5">5</td><td class="s" style="--s:4">4</td><td class="avg">5.1</td></tr>
+            <tr><td class="opt"><b>A 엑셀 정공법</b><span>사업장별 xlsx + 자동 취합</span></td>
+              <td class="s" style="--s:3.5">3.5</td><td class="s" style="--s:5">5</td><td class="s" style="--s:3.5">3.5</td><td class="s" style="--s:6">6</td><td class="s" style="--s:6.5">6.5</td><td class="s" style="--s:3.5">3.5</td><td class="avg">4.7</td></tr>
+            <tr><td class="opt"><b>D 외부 솔루션</b><span>kintone + 폼 플러그인 + 알림톡</span></td>
+              <td class="s" style="--s:4.5">4.5</td><td class="s" style="--s:5">5</td><td class="s" style="--s:5">5</td><td class="s" style="--s:5">5</td><td class="s" style="--s:4">4</td><td class="s" style="--s:3.5">3.5</td><td class="avg">4.5</td></tr>
+            <tr><td class="opt"><b>C 구글 0원</b><span>무료 지메일 1개가 전부 소유</span></td>
+              <td class="s" style="--s:5.5">5.5</td><td class="s" style="--s:3">3</td><td class="s" style="--s:3">3</td><td class="s" style="--s:2">2</td><td class="s" style="--s:6">6</td><td class="s" style="--s:3">3</td><td class="avg">3.8</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="issues pairs">
+        <div class="card issue"><span class="n">탈락 · A 엑셀</span><p>자동화와 소장이 같은 xlsx에 동시에 쓰는 구조라 잠금·중복이 생기고, 기록 원본을 현장이 고칠 수 있습니다. 사진은 따로 링크로 올리고 번호를 손으로 쳐서 연결해야 합니다.</p></div>
+        <div class="card issue"><span class="n">탈락 · B M365</span><p>현장 계정 라이선스로는 Power Apps 사용 권리가 없는 것으로 보여, 상위 요금제로 가면 44곳 월 약 200만 원입니다. 50~60대 담당자에게 앱 3개 설치와 패스키를 요구합니다.</p></div>
+        <div class="card issue"><span class="n">탈락 · C 구글 0원</span><p>계정 하나를 3명이 비밀번호로 같이 쓰게 되어 누가 고쳤는지 알 수 없고, 관리자 복구와 감사로그가 없습니다. 화면 구조는 좋아서 권고안이 그대로 가져왔습니다.</p></div>
+        <div class="card issue"><span class="n">보류 · E 맞춤 웹앱</span><p>품질은 가장 높지만 첫해 6,500만~1억 원과 개발자 1명 종속이 문제입니다. 신원 확인·위변조 방지 설계를 권고안에 이식하고, 나중에 백엔드를 옮길 출구로 남겨 둡니다.</p></div>
+      </div>
+    </section>
+
+    <!-- 권고 구조 -->
+    <section id="plan">
+      <div class="eyebrow">권고안</div>
+      <h2>한 장부, 두 입구: 현장은 링크로, 본사는 회사 계정으로</h2>
+      <p class="lead">감사 1위인 F안을 뼈대로, 다른 안의 강점을 붙이고 감사관이 지적한 결함을 고쳤습니다. 현장 화면 구조는 C안, 신원 확인과 위변조 방지는 E안, 민감정보 분리는 B안, 고객사 원형 Excel 출력은 A안에서 가져왔습니다.</p>
+      <div class="flow">
+        <div class="node">
+          <span class="who">현장 · 개인 휴대폰</span>
+          <h3>사업장 QR · 단톡방 고정 링크</h3>
+          <ul>
+            <li>앱 설치·회사 계정 없음</li>
+            <li>담당자·관리감독자만 최초 1회 등록(문자 인증 + 개인 PIN)</li>
+            <li>홈 맨 위에 미결 조치, 빨간 긴급보고 버튼</li>
+            <li>사진·터치 서명·임시저장</li>
+          </ul>
+        </div>
+        <div class="arrow" aria-hidden="true"></div>
+        <div class="node core">
+          <span class="who">장부 · HDS 명의 구글 워크스페이스</span>
+          <h3>시트 장부 + 드라이브 사진 + 자동화</h3>
+          <ul>
+            <li>모든 기록에 사업장 코드·양식 버전·서버 수신시각</li>
+            <li>점검에서 '주의·불량'이 나오면 조치(ACT) 자동 생성</li>
+            <li>소장 확인 후 잠금, 수정은 사유 기록</li>
+            <li>민감정보(재해자·위반자·작업중지 행사자)는 따로 분리</li>
+            <li>마감 판정·독촉·월간 KPI 자동 계산</li>
+          </ul>
+        </div>
+        <div class="arrow" aria-hidden="true"></div>
+        <div class="node">
+          <span class="who">본사 2명 · MU · 고객사</span>
+          <h3>예외 목록 · 대시보드 · 출력</h3>
+          <ul>
+            <li>처리하면 사라지는 '오늘의 예외'</li>
+            <li>전사 신호등, 조치 추적, HEC 준비도</li>
+            <li>A4 PDF(양식번호·버전·QR·서버시각)</li>
+            <li>고객사 원형 Excel, HEC 증빙 묶음</li>
+          </ul>
+        </div>
+      </div>
+      <div class="layer">
+        <h3>강화 레이어 (감사팀 권고에 포함, 시범 운영 결과에 따라 단계 적용 가능)</h3>
+        <ul class="tight">
+          <li>입력 화면을 회사 도메인(예: <code>s.hds-secu.com/S012</code>)으로 옮겨, 구글 경고 띠·카톡 인앱 임시저장 유실·피싱 오탐을 없앰. 회사 DNS에 CNAME 1건만 추가</li>
+          <li>앞단 관문에서 PIN 5회 잠금, 접속기록, 위변조 방지 서명</li>
+          <li>마감 독촉은 카카오 알림톡(실패하면 문자), 본문에는 기록 번호와 링크만</li>
+        </ul>
+        <p class="note">감사팀 비용 견적은 이 레이어까지 포함한 금액입니다. 시범 운영(PoC)에서 구글 기본 화면만으로 카톡 인앱 사진·서명·임시저장이 통과하면, 이 레이어는 44곳 확대 전에 붙여도 됩니다.</p>
+      </div>
+    </section>
+
+    <!-- 기록유형 -->
+    <section id="types">
+      <div class="eyebrow">운영 방식</div>
+      <h2>양식이 아니라 기록유형 5가지로 받습니다</h2>
+      <p class="lead">양식 14종은 받는 방식으로 보면 다섯 종류뿐입니다. 유형마다 필요한 장치가 달라서, 단순 설문지나 파일 배포 하나로는 전부를 감당할 수 없습니다.</p>
+      <div class="types">
+        <div class="card type"><h3>반복 체크리스트</h3><div class="forms"><span class="tag">7 일일</span><span class="tag">6 폭염</span><span class="tag">9 중점점검</span><span class="tag">10 반기점검</span><span class="tag">N4 분기</span></div><p>들어와야 할 제출을 미리 만들어 두고 빠진 곳을 자동으로 찾습니다. 기본값은 '이상 없음'이고 예외만 입력합니다. 주의·불량이면 조치가 자동으로 생깁니다.</p></div>
+        <div class="card type"><h3>누적 대장</h3><div class="forms"><span class="tag">조치(ACT)</span><span class="tag">8 보호구</span><span class="tag">1 위험요인</span><span class="tag">2 접수대장</span><span class="tag">N1 개인 이수</span></div><p>영구 번호를 쓰고 월별 파일 같은 기간 경계를 두지 않습니다. 기존 기록을 링크로 다시 열어 고치고, 바뀐 값은 이력으로 남깁니다.</p></div>
+        <div class="card type"><h3>사건 보고</h3><div class="forms"><span class="tag">4 재해사고</span><span class="tag">5 수칙위반</span><span class="tag">10 작업중지</span><span class="tag">2 소통센터</span><span class="tag">N3 작업허가</span></div><p>긴급보고 버튼으로 2분 속보를 보내면 본사·소장에게 바로 알림이 갑니다. 최초 보고시각은 서버가 기록해 바꿀 수 없고, 조사·조치·종결을 같은 기록에 이어 채웁니다.</p></div>
+        <div class="card type"><h3>계획·결과</h3><div class="forms"><span class="tag">1 위험성평가</span><span class="tag">3 연간계획</span><span class="tag">N1 교육</span><span class="tag">N2 훈련</span></div><p>계획이 먼저 생기고 결과를 계획에 연결합니다. 정기평가는 직전 + 365일, 최초평가는 개설 + 30일로 D-day를 자동 계산합니다.</p></div>
+        <div class="card type"><h3>서명·회의록</h3><div class="forms"><span class="tag">1 서명지·회의록</span><span class="tag">8 수령 서명</span><span class="tag">N1~N3 참석</span></div><p>15명 이하는 담당자 폰을 돌려 터치 서명, 16명 이상은 QR이 찍힌 종이 서명지를 사진으로 올립니다. 명부 대비 미서명자가 자동 표시됩니다.</p></div>
+      </div>
+    </section>
+
+    <!-- 조치 루프 -->
+    <section id="act">
+      <div class="eyebrow">핵심 객체</div>
+      <h2>조치번호 하나가 대시보드의 대부분을 만듭니다</h2>
+      <p class="lead">모든 '발견'은 한 형식의 번호를 받고 종결까지 같은 번호로 추적됩니다. 9번의 월간 미결 이월, 7번의 '전일 미완료 조치 확인'이 단순 조회로 바뀝니다. 중대재해처벌법상 '유해·위험요인 확인·개선 절차' 이행 증빙도 이 장부 하나에서 나옵니다.</p>
+      <div class="card idrow">
+        <div class="idbig" aria-label="조치번호 예시 ACT-S012-2610-007"><span>ACT</span>-<span class="k">S012</span>-<span class="k">2610</span>-<span class="k">007</span></div>
+        <div class="idlegend"><span><b>S012</b> 사업장 코드(영구)</span><span><b>2610</b> 발견 연월</span><span><b>007</b> 사업장별 월 순번(서버 발급)</span><span>출처 <code>ID-S012-261024-01 / D05</code> = 10월 24일 주간 일일점검의 5번 항목</span></div>
+      </div>
+      <div class="states">
+        <div class="state"><b>등록</b><p>점검·사건·평가에서 자동 생성. 위험수준·담당·기한 필수(높음 D+1, 보통 D+7, 낮음 D+30)</p></div>
+        <div class="state"><b>조치중</b><p>담당자 착수, 즉시조치 내용과 시각 기록</p></div>
+        <div class="state"><b>완료</b><p>개선 후 사진 1장 이상, 또는 '사진 불가 사유'(보안구역 등)가 있어야 넘어감</p></div>
+        <div class="state"><b>확인·종결</b><p>소장이 확인하면 잠김. 본사는 HEC·사고·높음 등급과 무작위 10%만 직접 종결</p></div>
+      </div>
+      <p class="note">예외 상태: 보류(재검토일 필수), 불채택(소통센터 제안만, 사유·회신 필수), 고객사 이관(통보일 필수, 14일 무회신 시 MU 알림). '기한경과'는 저장하지 않고 매번 계산합니다.</p>
+    </section>
+
+    <!-- 대시보드 -->
+    <section id="dashboard">
+      <div class="eyebrow">본사 화면</div>
+      <h2>본사 2명은 예외만 봅니다</h2>
+      <p class="lead">44곳이면 일일점검만 월 1,300~2,600건이라 건별 검토는 불가능합니다. 화면은 본사 종합, 사업장 상세, 조치 추적, HEC 대비, 마감 현황, 데이터 품질 6개로 구성합니다. 아래는 본사 종합 화면의 예시입니다.</p>
+      <div class="dash" role="img" aria-label="본사 종합 대시보드 예시 화면, 가상의 수치">
+        <div class="dash-bar"><b>본사 종합 · 2026년 11월 (예시 화면)</b><span class="tag amber">가상의 수치</span></div>
+        <div class="dash-body">
+          <div class="tiles">
+            <div class="tile"><span>어제 적시제출률</span><b>94%</b><i class="warn">기준 95%</i></div>
+            <div class="tile"><span>월간보고 제출</span><b>7 / 10</b><i class="ok">마감 D-2</i></div>
+            <div class="tile"><span>기한경과 조치</span><b>5</b><i class="bad">높음 1건 포함</i></div>
+            <div class="tile"><span>이번 주 사건</span><b>2</b><i class="ok">보고 중앙값 34분</i></div>
+            <div class="tile"><span>HEC 평가 임박</span><b>D-23</b><i class="warn">S003 모의 91.8점</i></div>
+          </div>
+          <div class="scroll">
+            <table class="signals">
+              <thead><tr><th>사업장</th><th>적시제출</th><th>기한경과 조치</th><th>위험성평가</th><th>교육 충족</th><th>비상훈련</th><th>HEC 준비도</th></tr></thead>
+              <tbody>
+                <tr><td>S001 오피스</td><td><span class="dot">98%</span></td><td><span class="dot">0</span></td><td><span class="dot">D-142</span></td><td><span class="dot">100%</span></td><td><span class="dot">실시</span></td><td><span class="dot">95%</span></td></tr>
+                <tr><td>S003 금융 오피스</td><td><span class="dot warn">89%</span></td><td><span class="dot bad">3</span></td><td><span class="dot">D-61</span></td><td><span class="dot warn">D-30 미충족 2명</span></td><td><span class="dot">실시</span></td><td><span class="dot warn">84%</span></td></tr>
+                <tr><td>S005 연구소</td><td><span class="dot">96%</span></td><td><span class="dot warn">1</span></td><td><span class="dot warn">D-18</span></td><td><span class="dot">100%</span></td><td><span class="dot warn">D-30 미실시</span></td><td><span class="dot">91%</span></td></tr>
+                <tr><td>S007 항만</td><td><span class="dot bad">78%</span></td><td><span class="dot warn">1</span></td><td><span class="dot">D-203</span></td><td><span class="dot">100%</span></td><td><span class="dot">실시</span></td><td><span class="dot bad">72%</span></td></tr>
+                <tr><td>S009 복합상가</td><td><span class="dot">99%</span></td><td><span class="dot">0</span></td><td><span class="dot bad">경과 4일</span></td><td><span class="dot">100%</span></td><td><span class="dot">실시</span></td><td><span class="dot warn">88%</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="dash-cols">
+            <div class="aging">
+              <h3>미결 조치 경과</h3>
+              <div class="row"><span>0~7일</span><div class="bar"><i style="width:72%"></i></div><b>18</b></div>
+              <div class="row"><span>8~30일</span><div class="bar"><i style="width:36%"></i></div><b>9</b></div>
+              <div class="row"><span>31~90일</span><div class="bar"><i class="bad" style="width:12%"></i></div><b>3</b></div>
+              <div class="row"><span>90일 초과</span><div class="bar"><i class="bad" style="width:4%"></i></div><b>1</b></div>
+            </div>
+            <div>
+              <h3 style="margin-bottom:8px">오늘의 예외</h3>
+              <ul class="exceptions">
+                <li><span class="tag red">사건</span><span><code>AC-S003-261105-01</code> 넘어짐 속보, 조사 단계 미입력</span></li>
+                <li><span class="tag red">기한</span><span><code>ACT-S007-2610-004</code> 판넬 앞 적치물, 높음 · 기한 3일 경과</span></li>
+                <li><span class="tag amber">미제출</span><span>S007 일일점검 2일 연속 미제출 → MU 알림 완료</span></li>
+                <li><span class="tag">HEC</span><span>S003 직전 지적 원복 재확인 예정일 D-2</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="scroll">
+        <table class="kpi">
+          <thead><tr><th>지표</th><th>산식</th><th>초록</th><th>노랑</th><th>빨강</th></tr></thead>
+          <tbody>
+            <tr><td>적시제출률</td><td>마감 안 제출 ÷ 들어와야 할 제출</td><td>≥ 95%</td><td>85~95%</td><td>&lt; 85% 또는 3일 연속 미제출</td></tr>
+            <tr><td>기한경과 조치</td><td>기한 &lt; 오늘이고 완료·확인 아님</td><td>0</td><td>1~2</td><td>≥ 3 또는 높음 1건</td></tr>
+            <tr><td>조치 적기종결률</td><td>기한 안 완료 ÷ 기한 도래 조치</td><td>≥ 90%</td><td>75~90%</td><td>&lt; 75%</td></tr>
+            <tr><td>위험성평가 D-day</td><td>직전 + 365일 (최초는 개설 + 30일)</td><td>&gt; 30일</td><td>0~30일</td><td>경과 또는 사고 후 수시평가 미실시</td></tr>
+            <tr><td>교육 충족률</td><td>반기 법정시간 충족 인원 ÷ 대상</td><td>100%</td><td>반기 말 D-30 미충족자</td><td>반기 말 미이수 1명 이상</td></tr>
+            <tr><td>위험 발굴 활성도</td><td>소통센터 접수 ÷ 상시근로자 × 100 / 월</td><td>≥ 1</td><td>최근 90일 0건</td><td>최근 1년 0건 (HEC X 위험)</td></tr>
+            <tr><td>지연 입력률</td><td>점검 후 12시간 넘어 입력 ÷ 제출</td><td>≤ 5%</td><td>5~15%</td><td>&gt; 15%</td></tr>
+            <tr><td>HEC 준비도</td><td>유효 증빙 있는 항목 ÷ 적용 항목</td><td>≥ 90%</td><td>75~90%</td><td>&lt; 75% 또는 직전 지적 미조치</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">사업장 순위('안전관리 지수')는 코칭용으로만 쓰고, 재해·작업중지 건수는 넣지 않습니다. 넣으면 보고를 숨기는 유인이 생깁니다. 개인 단위 순위는 만들지 않습니다.</p>
+    </section>
+
+    <!-- HEC -->
+    <section id="hec">
+      <div class="eyebrow">고객사 평가</div>
+      <h2>HEC 평가를 '항상 준비된 상태'로</h2>
+      <p class="lead">분석한 사업장 중 약 24곳의 도급인이 HEC(현대엔지니어링으로 판단)라, 반기 안전평가가 과반 사업장의 실제 시험입니다. 평가표 46개 항목과 현장실태 11개 유형을 장부 데이터에 연결해, 항목마다 '최근 6개월 안에 유효한 증빙이 있는가'를 자동으로 판정합니다.</p>
+      <div class="timeline">
+        <div class="tstep"><b>D-30</b><p>사업장 × 항목 준비도 판정. 빨강·노랑은 무엇이 빠졌는지 붙여 소장·MU 과제로 배정</p></div>
+        <div class="tstep"><b>D-14</b><p>양식 개정 동결. 직전 지적사항 원복 재확인</p></div>
+        <div class="tstep"><b>D-7</b><p>버튼 하나로 증빙 묶음 생성. HEC 항목코드 순 목차 PDF + 기록별 PDF</p></div>
+        <div class="tstep"><b>평가일</b><p>소장 휴대폰의 오프라인 판본으로 현장 열람('PC에만 보관 시 불인정' 대응)</p></div>
+        <div class="tstep"><b>D+3</b><p>결과 입력, 지적사항은 조치로 등록, 오프라인 판본 삭제 확인</p></div>
+      </div>
+      <div class="formula">모의 Part I = Σ(○ 10 · △ 5 · X 0) ÷ (10 × 적용 항목) × 100
+모의 D1    = 100 − 5 × (1~8번 유형 지적 건수) − 3 × (9~11번 유형 지적 건수)   ※ 유형당 최대 5건</div>
+      <p class="note">평가 전제: 직전 지적을 조치하지 않으면 해당 항목이 0점입니다. 그래서 HEC 지적은 원복 재확인 예정일까지 필수로 받습니다. 샘플 평가표의 분모 수식에 '○(권고)'가 빠져 100%를 넘을 수 있는 오류도 바로잡았습니다.</p>
+    </section>
+
+    <!-- 양식 정비 -->
+    <section id="forms">
+      <div class="eyebrow">이번 요청 범위</div>
+      <h2>양식 정비 방향: 6~10번 보완, 신규 4종, 1~5번 처리</h2>
+      <p class="lead">양식은 앞으로도 출력본 모양을 유지합니다. 대신 입력은 위 기록유형에 맞춰 짜고, 출력은 장부에서 자동으로 만듭니다. 시스템 구축 전 단계(0단계)에서는 같은 구조로 Excel을 먼저 정비해 배포합니다.</p>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>양식</th><th>핵심 수정</th></tr></thead>
+          <tbody>
+            <tr><td><b>6 폭염</b></td><td>32항목을 하절기 체계점검(약 20항목, 시즌 전 + 5~9월 월 1회)과 일일 폭염 확인(7번 안, 체감온도 31℃ 이상일 때만 펼침)으로 나눔. 체감온도 단계(31/33/35/38℃)별 조치를 항목 옆에 둠. 고정 조치목록 32종은 조치번호로 대체. 고위험자는 인원수만 기록</td></tr>
+            <tr><td><b>7 일일점검</b></td><td>28항목 → 12항목, '전부 이상 없음' 1탭 후 예외만 입력. 출근·건강확인·TBM 등 숫자를 14칸으로 나눠 '건강확인 ≤ 출근' 같은 검증 적용. 근무조 인수 확인 화면 추가. 출력은 일일 28쪽 대신 월간 요약 1~2쪽</td></tr>
+            <tr><td><b>8 보호구·장비</b></td><td>6시트를 지급·반납 / 분기 보유 실사 / 장비 점검 셋으로 나눔. 인증검사는 본사 관리로 옮기고 현장에는 '위험기계기구 보유 여부' 1문항만. 경비업 표준 품목(경광봉·휴대용 조명·방검·베임방지 장갑 등) 마스터, 관리번호 자동 부여</td></tr>
+            <tr><td><b>9 월간보고</b></td><td>'본사취합'의 세로형 구조(사업장 × 월 × 업무 × 지표)는 표준으로 유지. 현장 입력은 직접 세야 하는 7~10칸만 남기고 나머지는 자동 계산. '해당없음'을 0과 구분. '미점검'이면 조치계획일 필수</td></tr>
+            <tr><td><b>10 작업중지권</b></td><td>기본값 '사업주 작업중지(제51조)' 삭제 → 근로자 작업중지(제52조) / 고객응대 일시중단(제41조) / 사업주(제51조) 중 선택. 즉시보고 → 조치·재개 → 사후관리 3단계, 시각 5칸으로 보고 지연 자동 계산. 불리한 처우 D+30 확인</td></tr>
+            <tr><td><b>N1 교육</b> <span class="tag green">신규</span></td><td>과정 13종 선택, 반기 계획 대비 실적 자동 비교, 시작·종료 시각으로 교육시간 계산, 사진 2장 이상(중복 사진 차단), 명부 대비 미이수자·보충교육, 경비업법 직무교육은 별도 구분</td></tr>
+            <tr><td><b>N2 비상훈련</b> <span class="tag green">신규</span></td><td>시나리오 10종 중 선택(직전 2회와 같으면 경고), 상황 전파~대피 완료 시각, 중대재해 대응 3요소 체크, 미참여자 전달교육, 미흡점은 조치로</td></tr>
+            <tr><td><b>N3 사전작업 허가</b> <span class="tag green">신규</span></td><td>서버가 발행시각 기록(사후 발행 차단), 작업유형 8종별 체크리스트, 작업 전 TBM 전원 서명, 관리자 시간대별 점검, 월별 '대상 작업 없음' 확인(HEC N/A 근거)</td></tr>
+            <tr><td><b>N4 분기 점검</b> <span class="tag green">신규</span></td><td>HEC 평가 항목을 그대로 비춘 Part A + 현장실태 11유형 Part B + 직전 지적 원복 Part C. 모의점수 자동, 평가 30일 전 회차는 모의평가</td></tr>
+            <tr><td><b>1~5번</b></td><td>1 위험성평가: 외부 링크 63개·깨진 이름정의 333개·셀 안 그림 삭제, 3×3 기준 하나로 통일. 2 소통센터: QR 접수·익명 선택. 3 요청서: 현황표는 조회 화면으로, 도급비·내부 메모는 영업 파일로 분리. 4·5 PPT 보고서: 사건 기록으로 바꾸고 PDF로 같은 모양 출력</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 비용 -->
+    <section id="cost">
+      <div class="eyebrow">비용 (VAT 별도, 추정 포함)</div>
+      <h2>3년 비용의 대부분은 라이선스가 아니라 구축과 유지보수입니다</h2>
+      <div class="money">
+        <div class="stat"><b>월 5.0~5.3만 원</b><span>10곳 현금 운영비: 구글 3석, 알림톡·문자, 화면 서버</span></div>
+        <div class="stat"><b>월 17.7~18.6만 원</b><span>44곳 현금 운영비 (구글 11석)</span></div>
+        <div class="stat"><b>월 30~70만 원</b><span>외주 유지보수 (월 6~14시간)</span></div>
+        <div class="stat"><b>2,600~4,000만 원</b><span>초기 구축 65~80인일 (보안점검·법무·교육·이관 포함 시 3,520~5,970만 원)</span></div>
+      </div>
+      <h3>방안별 3년 총비용 (감사팀 보정치)</h3>
+      <div class="ranges" role="img" aria-label="방안별 3년 총비용 범위 막대 그래프">
+        <div class="range"><div class="lbl"><b>권고안</b><span>5,100만~9,000만 · F 개량</span></div><div class="track"><i class="pick" style="left:34%;width:26%"></i></div></div>
+        <div class="range"><div class="lbl"><b>F 단계형</b><span>3,700만~6,300만 · 공수 과소 산정</span></div><div class="track"><i style="left:24.7%;width:17.3%"></i></div></div>
+        <div class="range"><div class="lbl"><b>A 엑셀</b><span>5,200만~8,000만</span></div><div class="track"><i style="left:34.7%;width:18.6%"></i></div></div>
+        <div class="range"><div class="lbl"><b>D 외부 솔루션</b><span>6,700만~1.05억</span></div><div class="track"><i style="left:44.7%;width:25.3%"></i></div></div>
+        <div class="range"><div class="lbl"><b>B M365</b><span>7,100만~1.32억</span></div><div class="track"><i style="left:47.3%;width:40.7%"></i></div></div>
+        <div class="range"><div class="lbl"><b>E 맞춤 웹앱</b><span>8,700만~1.4억</span></div><div class="track"><i style="left:58%;width:35.3%"></i></div></div>
+        <div class="range"><div class="lbl"><b>C 구글 0원</b><span>2,900만~6,700만 · 실데이터 불가</span></div><div class="track"><i class="warn" style="left:19.3%;width:25.4%"></i></div></div>
+        <div class="axis"><span></span><div><span>0</span><span>5천만</span><span>1억</span><span>1.5억</span></div></div>
+      </div>
+      <p class="note">권고안이 F안보다 비싼 이유는 보안점검, 개인정보 법무 검토, 교육 키트, 기존 기록 이관, 현실적인 공수를 넣었기 때문입니다. 예비비 30%를 넣으면 상단은 약 1.02억 원입니다. 구글 계정 가격은 연간 약정 $7/석 기준이며 원화가는 확인하지 못해 ₩1,400/$로 환산했습니다.</p>
+    </section>
+
+    <!-- 로드맵 -->
+    <section id="roadmap">
+      <div class="eyebrow">실행 순서</div>
+      <h2>13주 안에 10곳, 관문을 통과해야 다음 단계로</h2>
+      <div class="road">
+        <div class="card phase">
+          <div class="when"><b>0~3주</b><span>10/26~11/15 · 결정·정비·시험</span></div>
+          <div class="what">
+            <ul class="tight">
+              <li>배포본 정리(외부 링크·도급비·휴대폰 번호·작업 메모), 9번 최소 수정, 본사 조치 마스터 Excel</li>
+              <li>사업장 코드 10곳·공통 코드·조치번호 규칙 확정</li>
+              <li>14일 체험판에 가짜 데이터로 시범 화면 왕복 확인</li>
+              <li>고객사 사전 승인(촬영 범위·QR 위치·휴대폰 사용 시간대), 노사협의·처리방침 착수</li>
+            </ul>
+            <div class="gate"><b>3주차 관문</b> 카톡 인앱에서 사진·서명·임시저장 동작 · 50~60대 3명 일일점검 중앙값 3분 이하 · 고객사 망 2곳에서 5/5 제출 · 동시 제출 10건 누락 0 · PDF 출력. 하나라도 실패하면 대안을 정하고 본계약하지 않습니다.</div>
+          </div>
+        </div>
+        <div class="card phase">
+          <div class="when"><b>4~7주</b><span>11/16~12/13 · 1단계 + 시범 3곳</span></div>
+          <div class="what">
+            <ul class="tight">
+              <li>장부·입력 화면·본사 콘솔, 7번 일일점검·근무조 인수·조치·긴급보고·2번 QR</li>
+              <li>기존 미결 조치·최근 3년 산재 기록·최신 위험성평가 이관</li>
+              <li>교육 키트(QR 포스터 뒷면 안내, 1분 영상 3편, 소장용 2쪽, FAQ)</li>
+              <li>시범 3곳: HEC 대상 1곳, 야간·지하 음영 1곳, 보안구역 1곳</li>
+            </ul>
+            <div class="gate"><b>시범 합격선</b> 일일점검 중앙값 3분·상위 90% 5분 · 이상 사진 첨부 90% 이상 · 첫 주 도움 없이 성공 80% 이상 · 본사 예외 처리 1인 하루 30분 이하. 미달이면 확산하지 않습니다.</div>
+          </div>
+        </div>
+        <div class="card phase">
+          <div class="when"><b>8~13주</b><span>12/14~1/24 · 10곳 전개 + 2단계</span></div>
+          <div class="what">
+            <ul class="tight">
+              <li>나머지 7곳 온보딩(곳당 30분 + MU 동행), 9번 월간보고 12월분은 Excel과 병행 대조</li>
+              <li>8번 보호구, N1 교육(2027 상반기 계획 1/31 마감), 1번 위험성평가 흐름, 10번 하반기 점검</li>
+              <li>대시보드 6화면, HEC 준비도·모의점수, 알림톡 자동 독촉</li>
+            </ul>
+            <div class="gate"><b>인수 시험</b> 외주 없이 본사 2명이 항목 추가·선택지 변경·사업장 온보딩·출력 수정·장애 복구를 직접 해내야 잔금 지급.</div>
+          </div>
+        </div>
+        <div class="card phase">
+          <div class="when"><b>이후</b><span>2027년 1월 말~</span></div>
+          <div class="what">
+            <ul class="tight">
+              <li>N2 훈련, N3 작업허가, 6번 폭염(2027년 4월 시즌 전), HEC 증빙 묶음 자동화</li>
+              <li>월 8~10곳씩 44곳까지 확대, 사용량이 한도의 60%를 넘으면 백엔드를 국내 DB로 이전</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 리스크 -->
+    <section id="risks">
+      <div class="eyebrow">사전 실패 분석</div>
+      <h2>6개월 뒤 실패한다면, 이유는 이것입니다</h2>
+      <div class="issues">
+        <div class="card issue"><h3>외주가 늦거나 빠짐</h3><p>현실적 공수 + 예비비, 시범 계약 분리, 인수 시험을 지급 조건으로, 소스·계정은 HDS 소유. 1단계만으로도 조치·일일점검·속보·월간보고가 독립적으로 돌아가게 설계합니다.</p></div>
+        <div class="card issue"><h3>현장이 몰아서 씀</h3><p>3분 화면, MU 대면 동행 교육, 무작위 1항목 사진, 소장 확인. 지연 입력률과 '전부 양호인데 20초 미만' 비율을 사업장 단위로만 봅니다(개인 평가·징계 금지).</p></div>
+        <div class="card issue"><h3>카톡 인앱 호환 실패</h3><p>실기기 시범 운영에서 먼저 검증합니다. 서버 임시저장을 두고, 실패하면 갤러리 업로드 경로로 대체합니다.</p></div>
+        <div class="card issue"><h3>고객사가 촬영·외부 저장 금지</h3><p>사업장마다 촬영 허용·휴대폰 반입 플래그를 두고 화면에서 강제합니다. 금지 사업장은 종이 원본 바인더로 운영하고 시스템에는 비식별 정보만 넣습니다.</p></div>
+        <div class="card issue"><h3>본사 2명 처리량 초과</h3><p>확인은 소장에게 위임하고 본사는 고위험과 표본만 봅니다. 예외 처리가 1인 하루 60분을 넘으면 확대를 멈춥니다.</p></div>
+        <div class="card issue"><h3>HEC가 디지털 증빙 불인정</h3><p>QR 종이 서명지 원본을 현장 바인더로 병행하고, 오프라인 PDF를 소장 휴대폰에 둡니다. 확인되면 종이 경로를 기본으로 바꿉니다.</p></div>
+      </div>
+    </section>
+
+    <!-- 질문 -->
+    <section id="questions">
+      <div class="eyebrow">결정 전 확인</div>
+      <h2>HDS에 확인할 질문 (3주차 관문 전)</h2>
+      <ul class="qs">
+        <li><span class="chip">Q11</span><span>초기 구축비와 월 유지보수비를 승인할 수 있는가? 외주를 허용하는가? 카드 결제가 되는가?</span></li>
+        <li><span class="chip">Q1</span><span>M365는 안 쓴다고 했는데, 2·3번 파일 저장 경로에 회사 이름의 원드라이브 계정(<code>hds2024</code>) 흔적이 있다. 누구 소유이고 회사 기록이 거기에 있는가?</span></li>
+        <li><span class="chip">Q2</span><span>회사 메일(<code>@hds-secu.com</code>)은 어떤 시스템인가? 도메인 DNS는 누가 관리하는가? 그룹웨어·전자결재가 있는가?</span></li>
+        <li><span class="chip">Q3</span><span>1차 10곳 명단, 업무구성, 근무형태, 개설일, HEC 평가 대상 여부와 다음 평가일은?</span></li>
+        <li><span class="chip">Q4</span><span>사업장별 담당자 수와 교대 패턴, 개인 폰 업무 사용 동의와 데이터 요금 보전, 휴대폰 기종(피처폰 여부)은?</span></li>
+        <li><span class="chip">Q13</span><span>1차 10곳 고객사 중 외부 클라우드 저장, 촬영, 휴대폰 반입·사용을 제한하는 곳은?</span></li>
+        <li><span class="chip">Q14</span><span>개인정보 보호책임자는 누구이고, 재해자 진단서 같은 민감정보 처리 근거는 마련돼 있는가?</span></li>
+        <li><span class="chip">Q20</span><span>노사협의회(또는 근로자 대표)가 있는가? 입력 시각 기록과 개인 폰 사용을 협의할 창구는?</span></li>
+      </ul>
+    </section>
+
+    <!-- 방법 -->
+    <section id="method">
+      <div class="eyebrow">검토 방법</div>
+      <h2>어떻게 이 결론에 왔나</h2>
+      <div class="method">
+        <div class="card"><b>8명</b><p>1단계 분석. 양식 10종을 시트·셀 단위로, HEC 평가표 46개 항목을 전부 읽고 공통 데이터 구조를 도출</p></div>
+        <div class="card"><b>6개 안</b><p>설계팀이 엑셀·M365·구글 무료·외부 솔루션·맞춤 웹앱·단계형을 각자 최선으로 설계</p></div>
+        <div class="card"><b>6개 관점</b><p>감사관이 현장 사용성·본사 운영·증빙력·보안법규·비용확장·실패 시나리오로 모든 안을 채점하고 과장된 주장을 반박</p></div>
+        <div class="card"><b>총괄 + 비평</b><p>최종안을 종합한 뒤 비평가가 틀린 가격·미확인 기능·빠진 현장 문제를 찾아 수정</p></div>
+      </div>
+      <p class="note">도구 기능과 가격은 2026년 10월 25일 웹 검색 요약으로 확인했고, 원문을 직접 열지 못한 값과 원화가는 추정으로 표시했습니다. 세부 근거와 출처는 같은 폴더의 <code>audit-report.md</code>(총괄 감사 보고서 15장)에 있습니다.</p>
+    </section>
+
+    <footer>
+      <span>HDS(주) 안전경영지원실 사업장 표준양식 배포·취합·대시보드 방안 · 2026-10-25 초안</span>
+      <span>대시보드 화면의 사업장 번호와 수치는 설명을 위한 가상의 예시입니다.</span>
+    </footer>
+  </main>
+</div>
