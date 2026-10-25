@@ -1,0 +1,1026 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>HDS 안전장부 시제품</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* 레이아웃: 넓은 화면은 왼쪽 휴대폰(현장) + 오른쪽 본사 화면 나란히, 좁은 화면은 탭으로 전환 */
+:root {
+  --bg: #f4f6fb;
+  --surface: #ffffff;
+  --sunk: #eef1fa;
+  --ink: #161b3d;
+  --body: #3d4260;
+  --muted: #686e8e;
+  --line: #e2e5f0;
+  --navy: #223289;
+  --navy-2: #4254c0;
+  --on-navy: #ffffff;
+  --red: #d42a1e;
+  --red-soft: #fdeeec;
+  --on-red: #ffffff;
+  --amber: #a7660b;
+  --amber-soft: #fdf3e1;
+  --green: #187a4c;
+  --green-soft: #e5f4ec;
+  --phone: #11152e;
+  --shadow: 0 1px 2px rgba(22, 27, 61, .05), 0 10px 30px rgba(22, 27, 61, .08);
+  --font: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1023; --surface: #151933; --sunk: #1c2142; --ink: #eef0fa; --body: #c6cae0; --muted: #969cba;
+    --line: #2a3052; --navy: #9aa8ff; --navy-2: #b4bfff; --on-navy: #0d1023; --red: #ff7468; --red-soft: #3b1e24; --on-red: #1a0b0d;
+    --amber: #f2b552; --amber-soft: #382c14; --green: #55c991; --green-soft: #133227; --phone: #05060f;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 30px rgba(0, 0, 0, .3);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1023; --surface: #151933; --sunk: #1c2142; --ink: #eef0fa; --body: #c6cae0; --muted: #969cba;
+  --line: #2a3052; --navy: #9aa8ff; --navy-2: #b4bfff; --on-navy: #0d1023; --red: #ff7468; --red-soft: #3b1e24; --on-red: #1a0b0d;
+  --amber: #f2b552; --amber-soft: #382c14; --green: #55c991; --green-soft: #133227; --phone: #05060f;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 30px rgba(0, 0, 0, .3);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+img { max-width: 100%; }
+body {
+  background: var(--bg); color: var(--body); font-family: var(--font); font-size: 15px; line-height: 1.6; margin: 0;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 48px; word-break: keep-all; overflow-wrap: anywhere; -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { color: var(--ink); margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+p { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+code, .mono { font-family: var(--mono); font-size: .9em; }
+:focus-visible { outline: 2px solid var(--navy-2); outline-offset: 2px; }
+
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 20px; }
+.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-top: 20px; }
+.brand { display: grid; gap: 2px; }
+.brand b { font-size: 20px; color: var(--ink); }
+.brand b span { color: var(--navy); }
+.brand small { color: var(--muted); font-size: 13px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--sunk); color: var(--muted); }
+.pill::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.pill.on { color: var(--green); background: var(--green-soft); }
+.pill.on::before { background: var(--green); }
+.pill.local { color: var(--amber); background: var(--amber-soft); }
+.pill.local::before { background: var(--amber); }
+
+.tabs { display: flex; gap: 6px; background: var(--sunk); padding: 4px; border-radius: 12px; width: fit-content; max-width: 100%; overflow-x: auto; }
+.tabs button { border: 0; background: transparent; padding: 8px 14px; border-radius: 9px; font-weight: 600; font-size: 14px; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+
+.stage { display: grid; gap: 24px; align-items: start; }
+@media (min-width: 1100px) {
+  .stage { grid-template-columns: 400px minmax(0, 1fr); }
+}
+.pane-label { font-size: 12.5px; font-weight: 600; letter-spacing: .06em; color: var(--muted); margin-bottom: 8px; }
+
+/* 휴대폰 */
+.phone { background: var(--phone); border-radius: 34px; padding: 12px; box-shadow: var(--shadow); max-width: 400px; margin: 0 auto; }
+.screen { background: var(--bg); border-radius: 24px; height: 720px; overflow-y: auto; position: relative; display: flex; flex-direction: column; }
+@media (max-width: 520px) {
+  .phone { background: transparent; padding: 0; box-shadow: none; border-radius: 0; }
+  .screen { height: auto; min-height: 70vh; border-radius: 16px; border: 1px solid var(--line); }
+}
+.appbar { position: sticky; top: 0; z-index: 2; background: var(--navy); color: var(--on-navy); padding: 14px 16px; display: flex; align-items: center; gap: 10px; }
+.appbar b { font-size: 16px; flex: 1; min-width: 0; }
+.appbar small { display: block; font-weight: 400; opacity: .85; font-size: 12px; }
+.appbar button { border: 0; background: color-mix(in srgb, var(--on-navy) 18%, transparent); color: var(--on-navy); border-radius: 8px; padding: 6px 10px; font-size: 13px; cursor: pointer; }
+.body { padding: 16px; display: grid; gap: 14px; align-content: start; flex: 1; }
+.field { display: grid; gap: 6px; }
+.field > span { font-size: 13px; font-weight: 600; color: var(--ink); }
+.field select, .field input, .field textarea { width: 100%; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 11px 12px; font-size: 16px; }
+.field textarea { min-height: 72px; resize: vertical; }
+.btn { border: 0; border-radius: 12px; padding: 14px 16px; font-weight: 700; font-size: 16px; cursor: pointer; background: var(--navy); color: var(--on-navy); width: 100%; min-height: 50px; }
+.btn.ghost { background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
+.btn.danger { background: var(--red); color: var(--on-red); }
+.btn.small { width: auto; padding: 8px 12px; min-height: 0; font-size: 14px; border-radius: 9px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.hint { font-size: 12.5px; color: var(--muted); }
+.err { font-size: 13px; color: var(--red); font-weight: 600; }
+
+.box { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 10px; min-width: 0; }
+.box h3 { font-size: 15px; }
+.actlist { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.actlist button { width: 100%; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 10px 12px; cursor: pointer; display: grid; gap: 2px; }
+.actlist button b { color: var(--ink); font-size: 14px; }
+.actlist .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
+.tag { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: var(--sunk); color: var(--navy); white-space: nowrap; }
+.tag.red { background: var(--red-soft); color: var(--red); }
+.tag.amber { background: var(--amber-soft); color: var(--amber); }
+.tag.green { background: var(--green-soft); color: var(--green); }
+.bigbtns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.bigbtns .btn { min-height: 76px; display: grid; place-items: center; gap: 2px; font-size: 15px; }
+.bigbtns .btn small { font-weight: 500; font-size: 12px; opacity: .85; }
+
+.item { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 12px; display: grid; gap: 10px; }
+.item.bad { border-color: var(--red); }
+.item.warn { border-color: var(--amber); }
+.item .q { font-size: 14.5px; color: var(--ink); font-weight: 600; display: flex; gap: 8px; }
+.item .q code { color: var(--muted); font-weight: 500; }
+.seg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.seg button { border: 1px solid var(--line); background: var(--surface); border-radius: 9px; padding: 9px 2px; font-size: 13.5px; font-weight: 600; cursor: pointer; color: var(--body); min-height: 42px; }
+.seg button[aria-pressed="true"][data-v="양호"] { background: var(--green-soft); border-color: var(--green); color: var(--green); }
+.seg button[aria-pressed="true"][data-v="주의"] { background: var(--amber-soft); border-color: var(--amber); color: var(--amber); }
+.seg button[aria-pressed="true"][data-v="불량"] { background: var(--red-soft); border-color: var(--red); color: var(--red); }
+.seg button[aria-pressed="true"][data-v="해당없음"] { background: var(--sunk); border-color: var(--muted); color: var(--ink); }
+.nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.nums .field input { padding: 9px 10px; text-align: right; font-variant-numeric: tabular-nums; }
+.photo-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.photo-row label { display: inline-flex; align-items: center; gap: 6px; border: 1px dashed var(--muted); border-radius: 10px; padding: 8px 12px; font-size: 13.5px; font-weight: 600; cursor: pointer; color: var(--ink); }
+.photo-row input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.thumb { width: 72px; height: 72px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); background: var(--sunk); }
+.sig { display: grid; gap: 6px; }
+.sig canvas { width: 100%; height: 120px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; touch-action: none; }
+.sticky-foot { position: sticky; bottom: 0; background: linear-gradient(to top, var(--bg) 70%, transparent); padding: 12px 16px 16px; display: grid; gap: 8px; z-index: 2; }
+.done-ids { display: grid; gap: 6px; }
+.done-ids code { background: var(--sunk); border-radius: 8px; padding: 6px 10px; color: var(--ink); font-size: 13.5px; display: block; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 12px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.chips button[aria-pressed="true"] { background: var(--navy); color: var(--on-navy); border-color: var(--navy); }
+.kv { display: grid; grid-template-columns: 84px 1fr; gap: 4px 10px; font-size: 13.5px; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; color: var(--ink); min-width: 0; }
+
+/* 본사 화면 */
+.hq { display: grid; gap: 16px; min-width: 0; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 2px; }
+.tile span { font-size: 12.5px; color: var(--muted); }
+.tile b { font-size: 26px; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1.25; }
+.tile i { font-style: normal; font-size: 12px; color: var(--muted); }
+.tile.bad b { color: var(--red); }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; min-width: 0; }
+.panel > header { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.panel > header h3 { font-size: 15px; }
+.panel .inner { padding: 12px 14px; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 560px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+th { font-size: 12px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+tbody tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; }
+.dot { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.dot::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--green); flex: none; }
+.dot.warn::before { background: var(--amber); }
+.dot.bad::before { background: var(--red); }
+.dot.none::before { background: var(--line); }
+.hq-cols { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.exc { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.exc li { border-bottom: 1px solid var(--line); }
+.exc li:last-child { border-bottom: 0; }
+.exc button { width: 100%; text-align: left; background: none; border: 0; padding: 10px 14px; display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; cursor: pointer; font-size: 13.5px; }
+.exc button:hover { background: var(--sunk); }
+.exc small { display: block; color: var(--muted); font-size: 12px; }
+.empty { padding: 18px 14px; color: var(--muted); font-size: 13.5px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.toolbar .btn.small { font-size: 13px; padding: 7px 11px; }
+.toolbar .armed { border-color: var(--red); color: var(--red); }
+.filebtn { position: relative; display: inline-flex; align-items: center; }
+.filebtn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.linkbtn { border: 0; background: none; color: var(--navy-2); font-weight: 600; cursor: pointer; padding: 0; text-align: left; }
+
+dialog { border: 1px solid var(--line); border-radius: 16px; padding: 0; background: var(--surface); color: var(--body); width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 48px); }
+dialog::backdrop { background: rgba(10, 12, 30, .45); }
+dialog .dh { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 14px 16px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--surface); }
+dialog .db { padding: 16px; display: grid; gap: 12px; }
+.photos { display: flex; gap: 8px; flex-wrap: wrap; }
+.photos img { width: 140px; height: 105px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); background: var(--sunk); }
+.photos .sigimg { width: 200px; height: 75px; object-fit: contain; background: #fff; }
+
+/* 구현 구조 */
+.how { display: grid; gap: 16px; }
+.how .cols { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.how .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 8px; align-content: start; }
+.how .card b { color: var(--ink); }
+.how .card ul { margin: 0; padding-left: 18px; font-size: 13.5px; display: grid; gap: 3px; }
+pre { margin: 0; background: var(--sunk); border-radius: 12px; padding: 14px; overflow-x: auto; font-family: var(--mono); font-size: 12.5px; line-height: 1.6; color: var(--ink); }
+.map td:first-child { white-space: nowrap; font-weight: 600; color: var(--ink); }
+.note { font-size: 12.5px; color: var(--muted); }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">
+      <b><span>HDS</span> 안전장부 시제품 <small style="display:inline;font-size:12px;font-weight:600">로컬판</small></b>
+      <small>현장 입력 → 장부 → 본사 화면. 이 파일 하나로 PC에서 열고, 기록은 이 PC 브라우저에 저장됩니다</small>
+    </div>
+    <span class="pill" id="store-pill">저장소 연결 중</span>
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="화면 선택">
+    <button class="stage-tab" role="tab" id="tab-field" aria-selected="true" data-tab="field">현장 화면</button>
+    <button class="stage-tab" role="tab" id="tab-hq" aria-selected="false" data-tab="hq">본사 화면</button>
+    <button role="tab" id="tab-how" aria-selected="false" data-tab="how">실제 구현 구조</button>
+  </div>
+
+  <div class="stage" id="stage">
+    <section class="pane" id="pane-field" aria-labelledby="tab-field">
+      <div class="pane-label">현장 · 사업장 QR로 연 휴대폰 화면</div>
+      <div class="phone"><div class="screen" id="screen"></div></div>
+    </section>
+    <section class="pane" id="pane-hq" aria-labelledby="tab-hq" hidden>
+      <div class="pane-label">본사 · 안전경영지원실 PC 화면</div>
+      <div class="hq" id="hq"></div>
+    </section>
+  </div>
+
+  <section class="how" id="pane-how" aria-labelledby="tab-how" hidden>
+    <h2>이 시제품이 실제로는 어떻게 만들어지나</h2>
+    <p>지금 보는 화면은 HTML 하나입니다. 실제 운영판은 같은 화면을 Apps Script에 붙여넣고, 저장하는 부분만 구글 시트로 바꿉니다. 화면 코드는 거의 그대로 씁니다.</p>
+    <div class="cols">
+      <div class="card"><b>① 화면 (Index.html)</b><ul><li>지금 이 페이지와 같은 HTML·CSS·JS</li><li>사업장 QR 링크: <code>…/exec?site=S001</code></li><li>사진 압축, 서명 패드는 휴대폰 브라우저가 처리</li></ul></div>
+      <div class="card"><b>② 서버 (Code.gs)</b><ul><li>기록 번호 발급(동시 제출에도 겹치지 않게 잠금)</li><li>서버 시각 기록, 불량이면 조치 자동 생성</li><li>매일 마감 판정·독촉 메일, 월간 PDF</li></ul></div>
+      <div class="card"><b>③ 장부 (구글 시트)</b><ul><li>탭: 사업장, 인원, 일일점검, 조치, 사건</li><li>사진·서명: 구글 드라이브 폴더, 시트에는 링크</li><li>본사 화면은 시트를 읽어 그림</li></ul></div>
+    </div>
+    <div class="panel">
+      <header><h3>버튼 하나가 서버에서 하는 일 (Code.gs 예시)</h3></header>
+      <pre>// 현장에서 '제출'을 누르면 화면이 이 함수를 부릅니다
+function saveInspection(data) {
+  const lock = LockService.getScriptLock();   // 동시에 10명이 눌러도 번호가 겹치지 않게
+  lock.waitLock(10000);
+  try {
+    const book = SpreadsheetApp.openById(BOOK_ID);
+    const id = nextId('ID', data.site);       // ID-S001-261025-01
+    const photos = savePhotos(data, id);      // 드라이브에 사진 저장 → 링크
+    book.getSheetByName('일일점검').appendRow([
+      id, data.site, new Date(), data.shift, data.person, JSON.stringify(data.items), photos.sign
+    ]);
+    data.items.filter(i => i.result === '주의' || i.result === '불량')
+      .forEach(i => createAction(book, id, i, photos[i.code]));   // ACT-S001-2610-001
+    return id;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// 화면(Index.html) 쪽은 한 줄입니다
+google.script.run.withSuccessHandler(showDone).saveInspection(draft);</pre>
+    </div>
+    <div class="panel">
+      <header><h3>시제품 ↔ 실제 운영판</h3></header>
+      <div class="scroll">
+        <table class="map">
+          <thead><tr><th>이 시제품</th><th>실제 운영판</th></tr></thead>
+          <tbody>
+            <tr><td>사업장 선택 화면</td><td>사업장별 QR(링크에 사업장 코드 고정) + 담당자 문자 인증·개인 PIN</td></tr>
+            <tr><td>이 PC 브라우저에 저장(다른 PC·휴대폰과 공유 안 됨)</td><td>HDS 구글 계정의 시트 장부 + 드라이브, 휴대폰과 본사가 같은 기록을 봄</td></tr><tr><td>엑셀(CSV)·백업 파일 내보내기</td><td>시트 자체가 장부라 내보낼 필요 없음, 월간 PDF 자동 생성</td></tr>
+            <tr><td>기록 번호를 화면에서 계산</td><td>서버가 잠금을 걸고 발급, 서버 시각 기록</td></tr>
+            <tr><td>누구나 '소장 확인' 가능</td><td>소장 개인 인증 후에만 확인·잠금</td></tr>
+            <tr><td>본사 화면 실시간 갱신</td><td>시트 기반 본사 콘솔 + Data Studio 대시보드</td></tr>
+            <tr><td>알림 없음</td><td>마감 독촉 메일(무료) 또는 알림톡(유료)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <p class="note">시제품의 사업장·인원 이름과 예시 기록은 모두 가상입니다. 기록은 이 파일을 연 PC의 브라우저 안에만 저장되고, 브라우저 방문 기록·사이트 데이터를 지우면 함께 사라집니다. 중요한 시험 기록은 본사 화면의 "백업 저장"으로 파일을 받아 두세요.</p>
+  </section>
+</div>
+
+<dialog id="dlg" aria-labelledby="dlg-title">
+  <div class="dh"><h3 id="dlg-title">기록 상세</h3><button class="btn small ghost" data-close>닫기</button></div>
+  <div class="db" id="dlg-body"></div>
+</dialog>
+
+<script>
+(() => {
+  // ───────── 기준정보 (실제로는 '사업장'·'인원' 시트) ─────────
+  const SITES = [
+    { id: 'S001', name: '강남 오피스타워', type: '오피스', people: ['김민수 · 안전보건 담당', '이정훈 · 관리감독자', '박서연 · 소장'] },
+    { id: 'S002', name: '여의도 금융센터', type: '금융', people: ['최유진 · 안전보건 담당', '정우성 · 관리감독자', '한지은 · 소장'] },
+    { id: 'S003', name: '판교 R&D센터', type: '연구소', people: ['오세훈 · 안전보건 담당', '윤가람 · 관리감독자', '서도윤 · 소장'] },
+    { id: 'S004', name: '평택 물류센터', type: '물류', people: ['강태호 · 안전보건 담당', '임하늘 · 관리감독자', '송민재 · 소장'] },
+    { id: 'S005', name: '송파 복합상가', type: '상가', people: ['조은비 · 안전보건 담당', '배성진 · 관리감독자', '노지훈 · 소장'] },
+    { id: 'S006', name: '마포 사옥', type: '오피스', people: ['홍수아 · 안전보건 담당', '문태현 · 관리감독자', '유하린 · 소장'] },
+  ];
+  const ITEMS = [
+    ['D01', '출입구·초소 주변 바닥 미끄럼·단차'],
+    ['D02', '순찰로 조명·비상조명 점등'],
+    ['D03', '소화기·소화전 앞 적치물'],
+    ['D04', '비상구·피난통로 확보'],
+    ['D05', '전기 판넬 앞 70cm 확보·시건'],
+    ['D06', '휴게실 비인가 전열기구'],
+    ['D07', '경광봉·휴대용 조명 작동(건전지)'],
+    ['D08', '무전기·비상연락 수단'],
+    ['D09', '보호구 지급·착용 상태'],
+    ['D10', '차량 동선·차단기 주변 위험'],
+    ['D11', '야간·단독 근무자 안부 확인'],
+    ['D12', '고객 폭언·폭행 등 특이사항'],
+  ];
+  const RESULTS = ['양호', '주의', '불량', '해당없음'];
+  const REPORT_TYPES = ['재해(부상)', '아차사고', '폭언·폭행', '작업중지', '기타'];
+  const NOPHOTO = ['보안구역 촬영 금지', '고객사 요청', '기타'];
+  const siteById = id => SITES.find(s => s.id === id);
+
+  // ───────── 공통 도구 ─────────
+  const $ = (sel, el = document) => el.querySelector(sel);
+  const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const pad = (n, w = 2) => String(n).padStart(w, '0');
+  const ymd = d => String(d.getFullYear()).slice(2) + pad(d.getMonth() + 1) + pad(d.getDate());
+  const ym = d => String(d.getFullYear()).slice(2) + pad(d.getMonth() + 1);
+  const dayKey = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+  const fmt = iso => { if (!iso) return '-'; const d = new Date(iso); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+  const fmtDay = key => { if (!key) return '-'; const [, m, d] = key.split('-'); return Number(m) + '/' + Number(d); };
+  const todayKey = () => dayKey(new Date());
+  const lsGet = (k, fb) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (e) { return fb; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
+
+  function compressImage(file, max = 720, q = 0.6) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const s = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        resolve(c.toDataURL('image/jpeg', q));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('사진을 읽지 못했습니다. 다른 사진을 골라 주세요.')); };
+      img.src = url;
+    });
+  }
+
+  // ───────── 저장소: 이 PC 브라우저 (기록은 localStorage, 사진은 IndexedDB) ─────────
+  const PhotoDB = {
+    db: null,
+    open() {
+      return new Promise(resolve => {
+        try {
+          const req = indexedDB.open('hds-safety-ledger', 1);
+          req.onupgradeneeded = () => req.result.createObjectStore('photos');
+          req.onsuccess = () => { this.db = req.result; resolve(true); };
+          req.onerror = () => resolve(false);
+          req.onblocked = () => resolve(false);
+        } catch (e) { resolve(false); }
+      });
+    },
+    put(id, data) {
+      return new Promise((res, rej) => {
+        const tx = this.db.transaction('photos', 'readwrite');
+        tx.objectStore('photos').put(data, id);
+        tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error);
+      });
+    },
+    get(id) {
+      return new Promise(res => {
+        const r = this.db.transaction('photos').objectStore('photos').get(id);
+        r.onsuccess = () => res(r.result || null); r.onerror = () => res(null);
+      });
+    },
+    all() {
+      return new Promise(res => {
+        const out = {};
+        const r = this.db.transaction('photos').objectStore('photos').openCursor();
+        r.onsuccess = () => { const c = r.result; if (c) { out[c.key] = c.value; c.continue(); } else res(out); };
+        r.onerror = () => res(out);
+      });
+    },
+    clear() {
+      return new Promise(res => {
+        const tx = this.db.transaction('photos', 'readwrite');
+        tx.objectStore('photos').clear();
+        tx.oncomplete = () => res(); tx.onerror = () => res();
+      });
+    },
+  };
+
+  const Store = {
+    mode: 'local', records: [], acts: [], photoCache: {}, subs: new Set(), idb: false,
+    on(fn) { this.subs.add(fn); },
+    emit() { this.subs.forEach(fn => fn()); },
+    async init() {
+      this.records = lsGet('hds.ledger.records', []);
+      this.acts = lsGet('hds.ledger.acts', []);
+      this.mode = lsSet('hds.ledger.ping', 1) ? 'local' : 'memory';
+      this.idb = await PhotoDB.open();
+      setPill(); this.emit();
+    },
+    persist() {
+      const ok = lsSet('hds.ledger.records', this.records) && lsSet('hds.ledger.acts', this.acts);
+      if (!ok) { this.mode = 'memory'; setPill(); }
+    },
+    async putRecord(rec) { this.records = [rec, ...this.records.filter(r => r.id !== rec.id)]; this.persist(); this.emit(); },
+    async putAct(act) { this.acts = [act, ...this.acts.filter(a => a.id !== act.id)]; this.persist(); this.emit(); },
+    async patchAct(id, patch) { this.acts = this.acts.map(a => a.id === id ? { ...a, ...patch } : a); this.persist(); this.emit(); },
+    async putPhoto(id, data) {
+      this.photoCache[id] = data;
+      if (this.idb) { try { await PhotoDB.put(id, data); return; } catch (e) { /* 아래 방식으로 저장 */ } }
+      const all = lsGet('hds.ledger.photos', {}); all[id] = data;
+      if (!lsSet('hds.ledger.photos', all)) console.warn('사진 저장공간이 부족합니다. 백업 저장 후 오래된 기록을 정리하세요.');
+    },
+    async getPhoto(id) {
+      if (!id) return null;
+      if (this.photoCache[id]) return this.photoCache[id];
+      let data = this.idb ? await PhotoDB.get(id) : null;
+      if (!data) data = lsGet('hds.ledger.photos', {})[id] || null;
+      if (data) this.photoCache[id] = data;
+      return data;
+    },
+    async allPhotos() {
+      const ls = lsGet('hds.ledger.photos', {});
+      const idb = this.idb ? await PhotoDB.all() : {};
+      return { ...ls, ...idb };
+    },
+    async replaceAll({ records, acts, photos }) {
+      this.records = Array.isArray(records) ? records : [];
+      this.acts = Array.isArray(acts) ? acts : [];
+      this.photoCache = {};
+      if (this.idb) await PhotoDB.clear();
+      try { localStorage.removeItem('hds.ledger.photos'); } catch (e) { /* 무시 */ }
+      for (const [id, data] of Object.entries(photos || {})) await this.putPhoto(id, data);
+      this.persist(); this.emit();
+    },
+    nextId(prefix, site, period, list) {
+      const head = `${prefix}-${site}-${period}-`;
+      const used = list.filter(x => x.id && x.id.startsWith(head)).map(x => Number(x.id.slice(head.length)) || 0);
+      const n = (used.length ? Math.max(...used) : 0) + 1;
+      return head + pad(n, prefix === 'ACT' ? 3 : 2);
+    },
+  };
+  // 같은 PC에서 창을 두 개 열어 두면 서로 갱신
+  window.addEventListener('storage', e => {
+    if (e.key === 'hds.ledger.records' || e.key === 'hds.ledger.acts') {
+      Store.records = lsGet('hds.ledger.records', []);
+      Store.acts = lsGet('hds.ledger.acts', []);
+      Store.emit();
+    }
+  });
+  function setPill() {
+    const p = $('#store-pill');
+    p.className = 'pill';
+    if (Store.mode === 'local') { p.classList.add('on'); p.textContent = '이 PC 브라우저에 저장 중 · 닫았다 열어도 남습니다'; }
+    else { p.classList.add('local'); p.textContent = '저장 안 됨 · 브라우저가 저장을 막아 창을 닫으면 사라집니다'; }
+  }
+
+  const isOpen = a => a.status !== '완료' && a.status !== '확인';
+  const isOverdue = a => isOpen(a) && a.due && a.due < todayKey();
+  const statusTag = a => {
+    if (isOverdue(a)) return '<span class="tag red">기한경과</span>';
+    if (a.status === '확인') return '<span class="tag green">종결</span>';
+    if (a.status === '완료') return '<span class="tag">확인 대기</span>';
+    return `<span class="tag amber">${esc(a.status)}</span>`;
+  };
+  const levelTag = l => l === '높음' ? '<span class="tag red">높음</span>' : l === '보통' ? '<span class="tag amber">보통</span>' : `<span class="tag">${esc(l)}</span>`;
+
+  // ───────── 현장 화면 ─────────
+  const saved = lsGet('hds.ledger.me', {});
+  const F = { screen: saved.site ? 'home' : 'entry', site: saved.site || '', person: saved.person || '', shift: saved.shift || '주간', draft: null, actId: null, error: '', done: null };
+  const screen = $('#screen');
+
+  function newDraft() {
+    const items = {};
+    ITEMS.forEach(([code]) => { items[code] = { result: null, note: '', photo: null }; });
+    return { items, counts: { attend: '', health: '', abnormal: '0', tbmTarget: '', tbmAttend: '' }, signature: null };
+  }
+
+  function appbar(title, sub, back) {
+    return `<div class="appbar">${back ? `<button data-act="${back}" aria-label="뒤로">←</button>` : ''}<b>${esc(title)}<small>${esc(sub)}</small></b>${F.site && F.screen === 'home' ? '<button data-act="logout">나가기</button>' : ''}</div>`;
+  }
+
+  function renderField() {
+    const keepScroll = screen.scrollTop;
+    const site = siteById(F.site);
+    let html = '';
+    if (F.screen === 'entry') {
+      html = appbar('HDS 안전장부', '사업장 QR을 찍으면 이 화면이 열립니다') + `
+        <div class="body">
+          <p class="hint">실제로는 초소에 붙은 QR에 사업장이 고정되어 있고, 담당자는 처음 한 번만 문자 인증과 개인 PIN을 등록합니다. 이 파일에서는 직접 고릅니다.</p>
+          <label class="field"><span>사업장</span><select id="f-site"><option value="">선택</option>${SITES.map(s => `<option value="${s.id}" ${F.site === s.id ? 'selected' : ''}>${s.id} ${esc(s.name)}</option>`).join('')}</select></label>
+          <label class="field"><span>이름</span><select id="f-person" ${F.site ? '' : 'disabled'}>${(site ? site.people : []).map(p => `<option ${F.person === p ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select></label>
+          <label class="field"><span>근무조</span><select id="f-shift"><option ${F.shift === '주간' ? 'selected' : ''}>주간</option><option ${F.shift === '야간' ? 'selected' : ''}>야간</option></select></label>
+          <label class="field"><span>개인 PIN</span><input id="f-pin" inputmode="numeric" maxlength="6" placeholder="시제품은 아무 숫자나 입력"></label>
+          ${F.error ? `<p class="err">${esc(F.error)}</p>` : ''}
+          <button class="btn" data-act="login">시작하기</button>
+        </div>`;
+    } else if (F.screen === 'home') {
+      const mine = Store.acts.filter(a => a.site === F.site && isOpen(a)).sort((a, b) => (a.due || '').localeCompare(b.due || ''));
+      const waiting = Store.acts.filter(a => a.site === F.site && a.status === '완료');
+      const todays = Store.records.filter(r => r.type === 'ID' && r.site === F.site && r.day === todayKey());
+      const doneShift = todays.some(r => r.shift === F.shift);
+      html = appbar(`${site.id} ${site.name}`, `${F.person.split(' · ')[0]} · ${F.shift} 근무`) + `
+        <div class="body">
+          <div class="box">
+            <h3>오늘 할 일</h3>
+            <p>${doneShift ? `<span class="tag green">제출 완료</span> 오늘 ${esc(F.shift)} 일일점검을 냈습니다.` : `<span class="tag amber">미제출</span> 오늘 ${esc(F.shift)} 일일점검이 아직 없습니다. 마감은 다음 날 10시입니다.`}</p>
+          </div>
+          <div class="bigbtns">
+            <button class="btn" data-act="start-check">일일점검<small>12항목 · 약 3분</small></button>
+            <button class="btn danger" data-act="start-report">긴급 보고<small>사고·아차사고 2분 속보</small></button>
+          </div>
+          <div class="box">
+            <h3>미결 조치 ${mine.length ? `<span class="tag red">${mine.length}</span>` : ''}</h3>
+            ${mine.length ? `<ul class="actlist">${mine.map(a => `<li><button data-act="open-act" data-id="${esc(a.id)}"><b>${esc(a.title)}</b><span class="meta"><code>${esc(a.id)}</code>${levelTag(a.level)}${statusTag(a)}<span>기한 ${esc(fmtDay(a.due))}</span></span></button></li>`).join('')}</ul>` : '<p class="hint">미결 조치가 없습니다. 점검에서 주의·불량을 고르면 여기에 자동으로 생깁니다.</p>'}
+          </div>
+          ${waiting.length ? `<div class="box"><h3>소장 확인 대기 <span class="tag">${waiting.length}</span></h3><ul class="actlist">${waiting.map(a => `<li><button data-act="open-act" data-id="${esc(a.id)}"><b>${esc(a.title)}</b><span class="meta"><code>${esc(a.id)}</code><span>완료 ${esc(fmt(a.doneAt))}</span></span></button></li>`).join('')}</ul></div>` : ''}
+        </div>`;
+    } else if (F.screen === 'check') {
+      const d = F.draft;
+      html = appbar('일일 안전보건 점검', `${site.id} · ${todayKey()} · ${F.shift}`, 'home') + `
+        <div class="body">
+          <button class="btn ghost" data-act="all-ok">전부 이상 없음 · 한 번에 체크</button>
+          <div class="box">
+            <h3>오늘 인원</h3>
+            <div class="nums">
+              <label class="field"><span>출근</span><input data-num="attend" inputmode="numeric" value="${esc(d.counts.attend)}"></label>
+              <label class="field"><span>건강확인</span><input data-num="health" inputmode="numeric" value="${esc(d.counts.health)}"></label>
+              <label class="field"><span>이상자</span><input data-num="abnormal" inputmode="numeric" value="${esc(d.counts.abnormal)}"></label>
+              <label class="field"><span>TBM 대상</span><input data-num="tbmTarget" inputmode="numeric" value="${esc(d.counts.tbmTarget)}"></label>
+              <label class="field"><span>TBM 참석</span><input data-num="tbmAttend" inputmode="numeric" value="${esc(d.counts.tbmAttend)}"></label>
+            </div>
+            <p class="hint">건강 관련 내용은 숫자만 받습니다. 이름·질환은 적지 않습니다.</p>
+          </div>
+          ${ITEMS.map(([code, q]) => {
+            const it = d.items[code];
+            const cls = it.result === '불량' ? 'bad' : it.result === '주의' ? 'warn' : '';
+            return `<div class="item ${cls}" data-code="${code}">
+              <div class="q"><code>${code}</code><span>${esc(q)}</span></div>
+              <div class="seg" role="group" aria-label="${esc(q)} 판정">${RESULTS.map(v => `<button data-act="set" data-code="${code}" data-v="${v}" aria-pressed="${it.result === v}">${v === '해당없음' ? '해당없음' : v}</button>`).join('')}</div>
+              ${it.result === '주의' || it.result === '불량' ? `
+                <label class="field"><span>무엇이 문제인가요</span><textarea data-note="${code}" placeholder="예: 판넬 앞에 박스 적치">${esc(it.note)}</textarea></label>
+                <div class="photo-row">
+                  <label>사진 추가<input type="file" accept="image/*" data-photo="${code}"></label>
+                  ${it.photo ? `<img class="thumb" src="${it.photo}" alt="${code} 사진">` : '<span class="hint">사진이 있으면 조치 확인이 빨라집니다</span>'}
+                </div>
+                <p class="hint">제출하면 조치번호가 자동으로 생기고, 기한은 ${it.result === '불량' ? '내일(높음)' : '7일 뒤(보통)'}로 잡힙니다.</p>` : ''}
+              ${it.result === '해당없음' ? `<label class="field"><span>해당없음 사유</span><input data-note="${code}" value="${esc(it.note)}" placeholder="예: 차량 출입 없는 사업장"></label>` : ''}
+            </div>`;
+          }).join('')}
+          <div class="box sig">
+            <h3>점검자 서명</h3>
+            <canvas id="sig" aria-label="서명 칸, 손가락으로 서명"></canvas>
+            <div><button class="btn small ghost" data-act="sig-clear">다시 쓰기</button></div>
+          </div>
+        </div>
+        <div class="sticky-foot">
+          ${F.error ? `<p class="err">${esc(F.error)}</p>` : ''}
+          <button class="btn" data-act="submit-check">제출</button>
+        </div>`;
+    } else if (F.screen === 'done') {
+      html = appbar('제출 완료', `${site.id} ${site.name}`, 'home') + `
+        <div class="body">
+          <div class="box">
+            <h3>${esc(F.done.title)}</h3>
+            <p>서버 시각 ${esc(fmt(F.done.at))}에 장부에 들어갔습니다.</p>
+            <div class="done-ids">${F.done.ids.map(x => `<code>${esc(x)}</code>`).join('')}</div>
+            ${F.done.note ? `<p class="hint">${esc(F.done.note)}</p>` : ''}
+          </div>
+          <button class="btn" data-act="home">홈으로</button>
+        </div>`;
+    } else if (F.screen === 'report') {
+      const d = F.draft;
+      html = appbar('긴급 보고', `${site.id} · 2분 속보`, 'home') + `
+        <div class="body">
+          <p class="hint">급한 위험은 먼저 사람을 대피시키고, 관리감독자에게 전화한 뒤 이 속보를 남깁니다. 보고 시각은 서버가 기록합니다.</p>
+          <div class="field"><span>무슨 일인가요</span><div class="chips">${REPORT_TYPES.map(t => `<button data-act="rtype" data-v="${esc(t)}" aria-pressed="${d.type === t}">${esc(t)}</button>`).join('')}</div></div>
+          <label class="field"><span>어디서</span><input data-rf="place" value="${esc(d.place)}" placeholder="예: 지하 2층 주차장 B구역"></label>
+          <div class="field"><span>다친 사람이 있나요</span><div class="chips">${['없음', '있음'].map(t => `<button data-act="rinj" data-v="${t}" aria-pressed="${d.injury === t}">${t}</button>`).join('')}</div></div>
+          <label class="field"><span>상황</span><textarea data-rf="desc" placeholder="무엇이, 어떻게 (이름은 적지 않아도 됩니다)">${esc(d.desc)}</textarea></label>
+          <div class="photo-row"><label>사진 1장<input type="file" accept="image/*" data-rphoto="1"></label>${d.photo ? `<img class="thumb" src="${d.photo}" alt="현장 사진">` : ''}</div>
+        </div>
+        <div class="sticky-foot">
+          ${F.error ? `<p class="err">${esc(F.error)}</p>` : ''}
+          <button class="btn danger" data-act="submit-report">속보 보내기</button>
+        </div>`;
+    } else if (F.screen === 'act') {
+      const a = Store.acts.find(x => x.id === F.actId);
+      if (!a) { F.screen = 'home'; return renderField(); }
+      const d = F.draft || {};
+      html = appbar('조치 상세', a.id, 'home') + `
+        <div class="body">
+          <div class="box">
+            <h3>${esc(a.title)}</h3>
+            <dl class="kv">
+              <dt>상태</dt><dd>${statusTag(a)} ${levelTag(a.level)}</dd>
+              <dt>발견</dt><dd><code>${esc(a.srcId)}</code> / ${esc(a.srcItem)}</dd>
+              <dt>내용</dt><dd>${esc(a.note || '-')}</dd>
+              <dt>기한</dt><dd>${esc(fmtDay(a.due))}</dd>
+              <dt>발견자</dt><dd>${esc(a.foundBy || '-')}</dd>
+            </dl>
+            <div class="photos" id="act-photos"></div>
+          </div>
+          ${isOpen(a) ? `
+          <div class="box">
+            <h3>조치 완료 처리</h3>
+            <label class="field"><span>무엇을 했나요</span><textarea data-af="done" placeholder="예: 적치물 치우고 고객사 시설팀에 통보">${esc(d.done || '')}</textarea></label>
+            <div class="photo-row"><label>개선 후 사진<input type="file" accept="image/*" data-aphoto="1"></label>${d.photo ? `<img class="thumb" src="${d.photo}" alt="개선 후 사진">` : ''}</div>
+            <label class="field"><span>사진을 못 찍는 경우 사유</span><select data-af="reason"><option value="">선택 안 함</option>${NOPHOTO.map(r => `<option ${d.reason === r ? 'selected' : ''}>${r}</option>`).join('')}</select></label>
+            ${F.error ? `<p class="err">${esc(F.error)}</p>` : ''}
+            <button class="btn" data-act="act-done">완료로 바꾸기</button>
+          </div>` : ''}
+          ${a.status === '완료' ? `
+          <div class="box">
+            <h3>소장 확인</h3>
+            <p class="hint">실제로는 소장이 개인 인증을 한 뒤에만 누를 수 있고, 누르면 기록이 잠깁니다.</p>
+            <button class="btn" data-act="act-confirm">확인하고 종결</button>
+          </div>` : ''}
+          ${a.status === '확인' ? `<p class="hint">${esc(fmt(a.confirmedAt))}에 소장 확인으로 종결됐습니다.</p>` : ''}
+        </div>`;
+    }
+    screen.innerHTML = html;
+    if (F.screen === 'check') { setupSig(); screen.scrollTop = keepScroll; }
+    if (F.screen === 'act') { const a = Store.acts.find(x => x.id === F.actId); if (a) fillPhotos($('#act-photos'), [[a.photoBefore, '발견 사진'], [a.photoAfter, '개선 후']]); }
+  }
+
+  async function fillPhotos(el, pairs) {
+    if (!el) return;
+    for (const [id, label] of pairs) {
+      if (!id) continue;
+      const data = await Store.getPhoto(id);
+      if (data && el.isConnected) {
+        const img = document.createElement('img');
+        img.src = data; img.alt = label;
+        if (label === '서명') img.className = 'sigimg';
+        el.appendChild(img);
+      }
+    }
+  }
+
+  // 서명 패드
+  let sigCanvas = null, sigCtx = null, drawing = false, hasInk = false;
+  function setupSig() {
+    sigCanvas = $('#sig'); if (!sigCanvas) return;
+    const r = sigCanvas.getBoundingClientRect();
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    sigCanvas.width = Math.max(1, Math.round(r.width * dpr)); sigCanvas.height = Math.round(120 * dpr);
+    sigCtx = sigCanvas.getContext('2d');
+    sigCtx.scale(dpr, dpr); sigCtx.lineWidth = 2.4; sigCtx.lineCap = 'round'; sigCtx.lineJoin = 'round'; sigCtx.strokeStyle = '#161b3d';
+    sigCtx.fillStyle = '#ffffff'; sigCtx.fillRect(0, 0, r.width, 120);
+    hasInk = false;
+    if (F.draft && F.draft.signature) {
+      const img = new Image();
+      img.onload = () => { sigCtx.drawImage(img, 0, 0, r.width, 120); hasInk = true; };
+      img.src = F.draft.signature;
+    }
+    const pos = e => { const b = sigCanvas.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; };
+    sigCanvas.onpointerdown = e => { drawing = true; sigCanvas.setPointerCapture(e.pointerId); const [x, y] = pos(e); sigCtx.beginPath(); sigCtx.moveTo(x, y); };
+    sigCanvas.onpointermove = e => { if (!drawing) return; const [x, y] = pos(e); sigCtx.lineTo(x, y); sigCtx.stroke(); hasInk = true; };
+    sigCanvas.onpointerup = sigCanvas.onpointercancel = () => {
+      if (!drawing) return; drawing = false;
+      if (hasInk) F.draft.signature = sigCanvas.toDataURL('image/png');
+    };
+  }
+
+  // 현장 화면 이벤트
+  screen.addEventListener('change', async e => {
+    const t = e.target;
+    if (t.id === 'f-site') { F.site = t.value; F.person = siteById(F.site) ? siteById(F.site).people[0] : ''; renderField(); return; }
+    if (t.id === 'f-person') { F.person = t.value; return; }
+    if (t.id === 'f-shift') { F.shift = t.value; return; }
+    const file = t.files && t.files[0];
+    if (!file) { if (t.dataset.af) { F.draft[t.dataset.af] = t.value; } return; }
+    try {
+      const data = await compressImage(file);
+      if (t.dataset.photo) F.draft.items[t.dataset.photo].photo = data;
+      if (t.dataset.rphoto) F.draft.photo = data;
+      if (t.dataset.aphoto) F.draft.photo = data;
+      F.error = '';
+    } catch (err) { F.error = err.message; }
+    renderField();
+  });
+  screen.addEventListener('input', e => {
+    const t = e.target;
+    if (!F.draft) return;
+    if (t.dataset.num) F.draft.counts[t.dataset.num] = t.value.replace(/[^0-9]/g, '');
+    if (t.dataset.note) F.draft.items[t.dataset.note].note = t.value;
+    if (t.dataset.rf) F.draft[t.dataset.rf] = t.value;
+    if (t.dataset.af) F.draft[t.dataset.af] = t.value;
+  });
+  screen.addEventListener('click', async e => {
+    const b = e.target.closest('[data-act]'); if (!b) return;
+    const act = b.dataset.act;
+    if (act === 'login') {
+      const site = $('#f-site').value, person = $('#f-person') && $('#f-person').value, pin = $('#f-pin').value;
+      if (!site || !person) { F.error = '사업장과 이름을 골라 주세요.'; return renderField(); }
+      if (!/^[0-9]{4,6}$/.test(pin)) { F.error = 'PIN은 숫자 4~6자리입니다.'; return renderField(); }
+      Object.assign(F, { site, person, shift: $('#f-shift').value, screen: 'home', error: '' });
+      lsSet('hds.ledger.me', { site: F.site, person: F.person, shift: F.shift });
+      return renderField();
+    }
+    if (act === 'logout') { F.screen = 'entry'; lsSet('hds.ledger.me', {}); return renderField(); }
+    if (act === 'home') { F.screen = 'home'; F.draft = null; F.error = ''; screen.scrollTop = 0; return renderField(); }
+    if (act === 'start-check') { F.draft = newDraft(); F.screen = 'check'; F.error = ''; screen.scrollTop = 0; return renderField(); }
+    if (act === 'start-report') { F.draft = { type: '', place: '', injury: '', desc: '', photo: null }; F.screen = 'report'; F.error = ''; screen.scrollTop = 0; return renderField(); }
+    if (act === 'open-act') { F.actId = b.dataset.id; F.draft = { done: '', photo: null, reason: '' }; F.screen = 'act'; F.error = ''; screen.scrollTop = 0; return renderField(); }
+    if (act === 'all-ok') { ITEMS.forEach(([c]) => { if (!F.draft.items[c].result) F.draft.items[c].result = '양호'; }); return renderField(); }
+    if (act === 'set') { const it = F.draft.items[b.dataset.code]; it.result = b.dataset.v; if (it.result === '양호') { it.note = ''; it.photo = null; } return renderField(); }
+    if (act === 'sig-clear') { F.draft.signature = null; return setupSig(); }
+    if (act === 'rtype') { F.draft.type = b.dataset.v; return renderField(); }
+    if (act === 'rinj') { F.draft.injury = b.dataset.v; return renderField(); }
+    if (act === 'submit-check') return submitCheck(b);
+    if (act === 'submit-report') return submitReport(b);
+    if (act === 'act-done') return actDone(b);
+    if (act === 'act-confirm') return actConfirm(b);
+  });
+
+  function checkErrors(d) {
+    const c = d.counts;
+    const n = k => c[k] === '' ? null : Number(c[k]);
+    const missing = ITEMS.filter(([code]) => !d.items[code].result).map(([code]) => code);
+    if (missing.length) return `아직 고르지 않은 항목이 ${missing.length}개 있습니다 (${missing.slice(0, 3).join(', ')}${missing.length > 3 ? ' …' : ''}).`;
+    for (const k of ['attend', 'health', 'tbmTarget', 'tbmAttend']) if (n(k) === null) return '오늘 인원 칸을 모두 숫자로 채워 주세요.';
+    if (n('health') > n('attend')) return '건강확인 인원이 출근 인원보다 많을 수 없습니다.';
+    if (n('tbmAttend') > n('tbmTarget')) return 'TBM 참석 인원이 대상 인원보다 많을 수 없습니다.';
+    const noNote = ITEMS.find(([code]) => ['주의', '불량', '해당없음'].includes(d.items[code].result) && !d.items[code].note.trim());
+    if (noNote) return `${noNote[0]} 항목에 내용(또는 해당없음 사유)을 적어 주세요.`;
+    if (!d.signature) return '점검자 서명을 해 주세요.';
+    return '';
+  }
+
+  async function submitCheck(btn) {
+    const d = F.draft;
+    if (sigCanvas && hasInk) d.signature = sigCanvas.toDataURL('image/png');
+    const errMsg = checkErrors(d);
+    if (errMsg) { F.error = errMsg; return renderField(); }
+    btn.disabled = true; btn.textContent = '장부에 저장 중…';
+    try {
+      const now = new Date();
+      const id = Store.nextId('ID', F.site, ymd(now), Store.records);
+      const sigId = 'SIG-' + id;
+      await Store.putPhoto(sigId, d.signature);
+      const items = {};
+      for (const [code] of ITEMS) {
+        const it = d.items[code];
+        let photoId = null;
+        if (it.photo) { photoId = 'PH-' + id + '-' + code; await Store.putPhoto(photoId, it.photo); }
+        items[code] = { result: it.result, note: it.note.trim(), photo: photoId };
+      }
+      const rec = { id, type: 'ID', site: F.site, day: dayKey(now), shift: F.shift, person: F.person, createdAt: now.toISOString(), counts: { ...d.counts }, items, signature: sigId };
+      await Store.putRecord(rec);
+      const actIds = [];
+      let actList = Store.acts.slice();
+      for (const [code, q] of ITEMS) {
+        const it = items[code];
+        if (it.result !== '주의' && it.result !== '불량') continue;
+        const aid = Store.nextId('ACT', F.site, ym(now), actList);
+        const level = it.result === '불량' ? '높음' : '보통';
+        const actRec = { id: aid, site: F.site, srcId: id, srcItem: code, title: q, note: it.note, level, due: dayKey(addDays(now, level === '높음' ? 1 : 7)), status: '등록', photoBefore: it.photo, foundBy: F.person.split(' · ')[0], createdAt: new Date().toISOString() };
+        await Store.putAct(actRec);
+        actList = [actRec, ...actList];
+        actIds.push(aid);
+      }
+      F.done = { title: '일일점검이 들어갔습니다', at: now.toISOString(), ids: [id, ...actIds], note: actIds.length ? `주의·불량 ${actIds.length}건은 조치번호가 생겼고, 홈의 미결 조치와 본사 화면에 바로 뜹니다.` : '이상 항목이 없어 조치는 생기지 않았습니다.' };
+      F.screen = 'done'; F.draft = null; F.error = ''; screen.scrollTop = 0; renderField();
+    } catch (err) {
+      console.warn(err);
+      F.error = err && err.code === 'quota_exceeded' ? '저장공간이 가득 찼습니다. 본사 화면에서 오래된 시험 기록을 지워 주세요.' : '저장하지 못했습니다. 연결을 확인하고 다시 눌러 주세요.';
+      renderField();
+    }
+  }
+
+  async function submitReport(btn) {
+    const d = F.draft;
+    if (!d.type) { F.error = '무슨 일인지 골라 주세요.'; return renderField(); }
+    if (!d.place.trim()) { F.error = '어디서인지 적어 주세요.'; return renderField(); }
+    if (!d.injury) { F.error = '다친 사람이 있는지 골라 주세요.'; return renderField(); }
+    btn.disabled = true; btn.textContent = '보내는 중…';
+    try {
+      const now = new Date();
+      const id = Store.nextId('AC', F.site, ymd(now), Store.records);
+      let photoId = null;
+      if (d.photo) { photoId = 'PH-' + id; await Store.putPhoto(photoId, d.photo); }
+      await Store.putRecord({ id, type: 'AC', site: F.site, day: dayKey(now), shift: F.shift, person: F.person, createdAt: now.toISOString(), kind: d.type, place: d.place.trim(), injury: d.injury, desc: d.desc.trim(), photo: photoId, stage: '속보' });
+      F.done = { title: '긴급 보고가 접수됐습니다', at: now.toISOString(), ids: [id], note: '본사 화면 맨 위 "오늘의 예외"에 바로 뜹니다. 실제로는 본사 2명과 소장에게 알림이 함께 갑니다.' };
+      F.screen = 'done'; F.draft = null; F.error = ''; screen.scrollTop = 0; renderField();
+    } catch (err) { console.warn(err); F.error = '보내지 못했습니다. 연결을 확인하고 다시 눌러 주세요.'; renderField(); }
+  }
+
+  async function actDone(btn) {
+    const d = F.draft;
+    if (!d.done || !d.done.trim()) { F.error = '무엇을 했는지 적어 주세요.'; return renderField(); }
+    if (!d.photo && !d.reason) { F.error = '개선 후 사진을 찍거나, 못 찍는 사유를 골라 주세요.'; return renderField(); }
+    btn.disabled = true; btn.textContent = '저장 중…';
+    try {
+      let photoId = null;
+      if (d.photo) { photoId = 'PH-' + F.actId + '-after'; await Store.putPhoto(photoId, d.photo); }
+      await Store.patchAct(F.actId, { status: '완료', doneNote: d.done.trim(), photoAfter: photoId, noPhotoReason: d.reason || null, doneAt: new Date().toISOString(), doneBy: F.person.split(' · ')[0] });
+      F.draft = { done: '', photo: null, reason: '' }; F.error = ''; renderField();
+    } catch (err) { console.warn(err); F.error = '저장하지 못했습니다. 다시 눌러 주세요.'; renderField(); }
+  }
+
+  async function actConfirm(btn) {
+    btn.disabled = true;
+    try { await Store.patchAct(F.actId, { status: '확인', confirmedAt: new Date().toISOString(), confirmedBy: F.person.split(' · ')[0] }); renderField(); }
+    catch (err) { console.warn(err); btn.disabled = false; }
+  }
+
+  // ───────── 본사 화면 ─────────
+  const hq = $('#hq');
+  function renderHQ() {
+    const today = todayKey();
+    const recs = Store.records, acts = Store.acts;
+    const todaysChecks = recs.filter(r => r.type === 'ID' && r.day === today);
+    const sitesDone = new Set(todaysChecks.map(r => r.site));
+    const open = acts.filter(isOpen), overdue = acts.filter(isOverdue), waiting = acts.filter(a => a.status === '완료');
+    const incidentsToday = recs.filter(r => r.type === 'AC' && r.day === today);
+    const weekAgo = dayKey(addDays(new Date(), -7));
+    const incidentsWeek = recs.filter(r => r.type === 'AC' && r.day >= weekAgo);
+
+    const exceptions = [
+      ...incidentsToday.map(r => ({ tag: '<span class="tag red">사건</span>', text: `${r.site} ${esc(r.kind)} · ${esc(r.place)}`, sub: `${esc(r.id)} · ${fmt(r.createdAt)} · 부상 ${esc(r.injury)}`, kind: 'rec', id: r.id })),
+      ...overdue.map(a => ({ tag: '<span class="tag red">기한</span>', text: `${a.site} ${esc(a.title)}`, sub: `${esc(a.id)} · ${a.level} · 기한 ${fmtDay(a.due)}`, kind: 'act', id: a.id })),
+      ...waiting.map(a => ({ tag: '<span class="tag">확인</span>', text: `${a.site} ${esc(a.title)}`, sub: `${esc(a.id)} · 완료 ${fmt(a.doneAt)} · 소장 확인 대기`, kind: 'act', id: a.id })),
+      ...SITES.filter(s => !sitesDone.has(s.id)).map(s => ({ tag: '<span class="tag amber">미제출</span>', text: `${s.id} ${esc(s.name)} 오늘 일일점검 없음`, sub: '마감 다음 날 10:00 · 실제로는 자동 독촉', kind: 'none' })),
+    ];
+
+    const rows = SITES.map(s => {
+      const c = todaysChecks.filter(r => r.site === s.id);
+      const shifts = ['주간', '야간'].map(sh => c.some(r => r.shift === sh) ? `<span class="dot">${sh}</span>` : `<span class="dot none">${sh}</span>`).join(' ');
+      const o = open.filter(a => a.site === s.id).length;
+      const od = overdue.filter(a => a.site === s.id).length;
+      const inc = incidentsWeek.filter(r => r.site === s.id).length;
+      return `<tr><td><b>${s.id}</b> ${esc(s.name)}<br><small class="hint">${esc(s.type)}</small></td><td>${shifts}</td><td class="num"><span class="dot ${o ? 'warn' : ''}">${o}</span></td><td class="num"><span class="dot ${od ? 'bad' : ''}">${od}</span></td><td class="num"><span class="dot ${inc ? 'bad' : ''}">${inc}</span></td></tr>`;
+    }).join('');
+
+    const recent = recs.slice(0, 12);
+    const actRows = acts.slice().sort((a, b) => (isOpen(b) - isOpen(a)) || (a.due || '').localeCompare(b.due || '')).slice(0, 14);
+
+    hq.innerHTML = `
+      <div class="toolbar" aria-label="데이터 관리">
+        <button class="btn small ghost" data-tool="csv-records">점검·사건 엑셀(CSV)</button>
+        <button class="btn small ghost" data-tool="csv-acts">조치대장 엑셀(CSV)</button>
+        <button class="btn small ghost" data-tool="backup">백업 저장</button>
+        <label class="btn small ghost filebtn">백업 불러오기<input type="file" accept="application/json,.json" data-tool="restore"></label>
+        ${recs.length + acts.length === 0 ? '<button class="btn small" data-tool="seed">예시 데이터 넣기</button>' : ''}
+        <button class="btn small ghost ${wipeArmed ? 'armed' : ''}" data-tool="wipe">${wipeArmed ? '한 번 더 누르면 전부 지웁니다' : '전체 지우기'}</button>
+        ${toolMsg ? `<span class="hint">${esc(toolMsg)}</span>` : ''}
+      </div>
+      <div class="tiles">
+        <div class="tile"><span>오늘 일일점검 제출</span><b>${sitesDone.size} / ${SITES.length}</b><i>사업장 기준</i></div>
+        <div class="tile"><span>미결 조치</span><b>${open.length}</b><i>확인 대기 ${waiting.length}</i></div>
+        <div class="tile ${overdue.length ? 'bad' : ''}"><span>기한경과 조치</span><b>${overdue.length}</b><i>${overdue.some(a => a.level === '높음') ? '높음 포함' : '높음 없음'}</i></div>
+        <div class="tile ${incidentsToday.length ? 'bad' : ''}"><span>오늘 사건 보고</span><b>${incidentsToday.length}</b><i>최근 7일 ${incidentsWeek.length}건</i></div>
+      </div>
+      <div class="hq-cols">
+        <div class="panel">
+          <header><h3>오늘의 예외</h3><span class="hint">처리하면 사라지는 목록</span></header>
+          ${exceptions.length ? `<ul class="exc">${exceptions.slice(0, 12).map(x => `<li><button ${x.kind === 'none' ? 'disabled' : `data-open="${x.kind}" data-id="${esc(x.id)}"`}>${x.tag}<span>${x.text}<small>${x.sub}</small></span></button></li>`).join('')}</ul>` : '<p class="empty">처리할 예외가 없습니다.</p>'}
+        </div>
+        <div class="panel">
+          <header><h3>최근 들어온 기록</h3><span class="hint">누르면 상세</span></header>
+          ${recent.length ? `<ul class="exc">${recent.map(r => `<li><button data-open="rec" data-id="${esc(r.id)}">${r.type === 'AC' ? '<span class="tag red">속보</span>' : '<span class="tag">점검</span>'}<span><code>${esc(r.id)}</code>${r.demo ? ' <span class="tag amber">예시</span>' : ''}<small>${esc(siteById(r.site) ? siteById(r.site).name : r.site)} · ${esc((r.person || '').split(' · ')[0])} · ${fmt(r.createdAt)}${r.type === 'ID' ? ` · 이상 ${Object.values(r.items || {}).filter(i => i.result === '주의' || i.result === '불량').length}건` : ''}</small></span></button></li>`).join('')}</ul>` : '<p class="empty">아직 들어온 기록이 없습니다. 왼쪽 현장 화면에서 일일점검을 한 번 제출하거나, 위의 "예시 데이터 넣기"를 눌러 보세요.</p>'}
+        </div>
+      </div>
+      <div class="panel">
+        <header><h3>사업장 신호등</h3><span class="hint">오늘 ${fmtDay(today)} 기준</span></header>
+        <div class="scroll"><table><thead><tr><th>사업장</th><th>오늘 점검</th><th>미결 조치</th><th>기한경과</th><th>사건(7일)</th></tr></thead><tbody>${rows}</tbody></table></div>
+      </div>
+      <div class="panel">
+        <header><h3>조치 추적</h3><span class="hint">발견 → 조치 → 완료 → 확인</span></header>
+        ${actRows.length ? `<div class="scroll"><table><thead><tr><th>조치번호</th><th>내용</th><th>등급</th><th>기한</th><th>상태</th></tr></thead><tbody>${actRows.map(a => `<tr><td><button class="linkbtn" data-open="act" data-id="${esc(a.id)}"><code>${esc(a.id)}</code></button>${a.demo ? ' <span class="tag amber">예시</span>' : ''}</td><td>${esc(a.title)}</td><td>${levelTag(a.level)}</td><td class="num">${esc(fmtDay(a.due))}</td><td>${statusTag(a)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="empty">아직 조치가 없습니다. 점검에서 주의나 불량을 고르면 자동으로 생깁니다.</p>'}
+      </div>`;
+  }
+
+  // ───────── 데이터 도구: 엑셀 내보내기·백업·예시·초기화 ─────────
+  let wipeArmed = false, wipeTimer = null, toolMsg = '';
+  const stamp = () => { const d = new Date(); return ymd(d) + '-' + pad(d.getHours()) + pad(d.getMinutes()); };
+  function download(name, text, type) {
+    const blob = new Blob([text], { type });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  }
+  const csvCell = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const toCSV = rows => '﻿' + rows.map(r => r.map(csvCell).join(',')).join('\r\n');
+  const siteName = id => (siteById(id) || {}).name || '';
+  function csvRecords() {
+    const head = ['기록번호', '유형', '사업장코드', '사업장명', '일자', '근무조', '작성자', '저장시각', '출근', '건강확인', '이상자', 'TBM대상', 'TBM참석', ...ITEMS.map(([c, q]) => c + ' ' + q), '이상 내용', '사건 유형', '장소', '부상', '상황'];
+    const rows = Store.records.slice().sort((a, b) => a.createdAt.localeCompare(b.createdAt)).map(r => {
+      const it = r.items || {}, c = r.counts || {};
+      const bad = ITEMS.filter(([code]) => it[code] && it[code].result !== '양호').map(([code]) => `${code} ${it[code].result}${it[code].note ? ': ' + it[code].note : ''}`).join(' / ');
+      return [r.id, r.type === 'AC' ? '긴급보고' : '일일점검', r.site, siteName(r.site), r.day, r.shift, r.person, fmt(r.createdAt), c.attend, c.health, c.abnormal, c.tbmTarget, c.tbmAttend, ...ITEMS.map(([code]) => it[code] ? it[code].result : ''), bad, r.kind, r.place, r.injury, r.desc];
+    });
+    return toCSV([head, ...rows]);
+  }
+  function csvActs() {
+    const head = ['조치번호', '사업장코드', '사업장명', '발견 기록', '항목', '내용', '상세', '등급', '기한', '상태', '발견자', '등록시각', '조치 내용', '사진 없음 사유', '완료시각', '완료자', '확인시각', '확인자'];
+    const rows = Store.acts.slice().sort((a, b) => a.id.localeCompare(b.id)).map(a => [a.id, a.site, siteName(a.site), a.srcId, a.srcItem, a.title, a.note, a.level, a.due, isOverdue(a) ? '기한경과' : a.status === '확인' ? '종결' : a.status, a.foundBy, fmt(a.createdAt), a.doneNote, a.noPhotoReason, a.doneAt ? fmt(a.doneAt) : '', a.doneBy, a.confirmedAt ? fmt(a.confirmedAt) : '', a.confirmedBy]);
+    return toCSV([head, ...rows]);
+  }
+  function seedExamples() {
+    const now = new Date(), y = addDays(now, -1);
+    const at = (d, h, m) => { const x = new Date(d); x.setHours(h, m, 0, 0); return x.toISOString(); };
+    const allOk = () => Object.fromEntries(ITEMS.map(([c]) => [c, { result: '양호', note: '', photo: null }]));
+    const i1 = allOk(); i1.D05 = { result: '불량', note: '판넬 앞 택배 박스 적치', photo: null }; i1.D07 = { result: '주의', note: '경광봉 2개 중 1개 점등 약함', photo: null };
+    const i2 = allOk(); i2.D10 = { result: '해당없음', note: '차량 출입 없는 사업장', photo: null };
+    const r1 = `ID-S002-${ymd(y)}-01`;
+    const records = [
+      { id: `ID-S001-${ymd(now)}-01`, type: 'ID', site: 'S001', day: dayKey(now), shift: '주간', person: '김민수 · 안전보건 담당', createdAt: at(now, 8, 40), counts: { attend: '6', health: '6', abnormal: '0', tbmTarget: '6', tbmAttend: '6' }, items: i2, signature: null, demo: true },
+      { id: `AC-S004-${ymd(y)}-01`, type: 'AC', site: 'S004', day: dayKey(y), shift: '야간', person: '강태호 · 안전보건 담당', createdAt: at(y, 22, 30), kind: '아차사고', place: '하역장 3번 도크 앞', injury: '없음', desc: '후진하던 지게차와 순찰 중인 경비원이 1m 거리까지 근접', photo: null, stage: '속보', demo: true },
+      { id: r1, type: 'ID', site: 'S002', day: dayKey(y), shift: '주간', person: '최유진 · 안전보건 담당', createdAt: at(y, 8, 12), counts: { attend: '8', health: '8', abnormal: '0', tbmTarget: '8', tbmAttend: '7' }, items: i1, signature: null, demo: true },
+    ];
+    const acts = [
+      { id: `ACT-S002-${ym(y)}-002`, site: 'S002', srcId: r1, srcItem: 'D07', title: '경광봉·휴대용 조명 작동(건전지)', note: '경광봉 2개 중 1개 점등 약함', level: '보통', due: dayKey(addDays(y, 7)), status: '완료', photoBefore: null, photoAfter: null, noPhotoReason: '기타', doneNote: '건전지 교체, 예비 건전지 초소 비치', doneAt: at(y, 14, 20), doneBy: '정우성', createdAt: at(y, 8, 13), demo: true },
+      { id: `ACT-S002-${ym(y)}-001`, site: 'S002', srcId: r1, srcItem: 'D05', title: '전기 판넬 앞 70cm 확보·시건', note: '판넬 앞 택배 박스 적치', level: '높음', due: dayKey(addDays(y, -1)), status: '등록', photoBefore: null, foundBy: '최유진', createdAt: at(y, 8, 12), demo: true },
+    ];
+    Store.records = [...records, ...Store.records]; Store.acts = [...acts, ...Store.acts];
+    Store.persist(); Store.emit();
+  }
+  hq.addEventListener('click', async e => {
+    const b = e.target.closest('[data-tool]'); if (!b || b.tagName === 'INPUT') return;
+    const tool = b.dataset.tool;
+    if (tool === 'csv-records') { download(`HDS_records_${stamp()}.csv`, csvRecords(), 'text/csv;charset=utf-8'); toolMsg = '점검·사건 기록을 CSV로 저장했습니다. 엑셀에서 바로 열립니다.'; }
+    if (tool === 'csv-acts') { download(`HDS_actions_${stamp()}.csv`, csvActs(), 'text/csv;charset=utf-8'); toolMsg = '조치대장을 CSV로 저장했습니다.'; }
+    if (tool === 'backup') {
+      const photos = await Store.allPhotos();
+      download(`HDS_ledger_backup_${stamp()}.json`, JSON.stringify({ app: 'hds-safety-ledger', version: 1, savedAt: new Date().toISOString(), records: Store.records, acts: Store.acts, photos }), 'application/json');
+      toolMsg = `백업 파일을 저장했습니다 (기록 ${Store.records.length}건, 조치 ${Store.acts.length}건, 사진 ${Object.keys(photos).length}장).`;
+    }
+    if (tool === 'seed') { seedExamples(); toolMsg = '예시 기록 3건과 조치 2건을 넣었습니다.'; }
+    if (tool === 'wipe') {
+      if (!wipeArmed) { wipeArmed = true; clearTimeout(wipeTimer); wipeTimer = setTimeout(() => { wipeArmed = false; renderHQ(); }, 4000); }
+      else { wipeArmed = false; clearTimeout(wipeTimer); await Store.replaceAll({ records: [], acts: [], photos: {} }); toolMsg = '모든 기록을 지웠습니다.'; }
+    }
+    renderHQ();
+  });
+  hq.addEventListener('change', async e => {
+    const inp = e.target.closest('[data-tool="restore"]'); if (!inp || !inp.files || !inp.files[0]) return;
+    try {
+      const data = JSON.parse(await inp.files[0].text());
+      if (data.app !== 'hds-safety-ledger') throw new Error('이 시제품에서 만든 백업 파일이 아닙니다.');
+      await Store.replaceAll(data);
+      toolMsg = `백업을 불러왔습니다 (기록 ${Store.records.length}건, 조치 ${Store.acts.length}건).`;
+    } catch (err) { toolMsg = '불러오지 못했습니다. ' + (err.message || ''); }
+    renderHQ();
+  });
+
+  // 상세 보기
+  const dlg = $('#dlg'), dlgBody = $('#dlg-body');
+  function openDetail(kind, id) {
+    let html = '', photoPairs = [];
+    if (kind === 'rec') {
+      const r = Store.records.find(x => x.id === id); if (!r) return;
+      const s = siteById(r.site);
+      if (r.type === 'ID') {
+        const bad = ITEMS.filter(([c]) => r.items && r.items[c] && r.items[c].result !== '양호');
+        html = `<dl class="kv"><dt>기록번호</dt><dd><code>${esc(r.id)}</code></dd><dt>사업장</dt><dd>${esc(s ? s.id + ' ' + s.name : r.site)}</dd><dt>근무</dt><dd>${esc(r.day)} ${esc(r.shift)} · ${esc(r.person)}</dd><dt>서버 시각</dt><dd>${esc(fmt(r.createdAt))}</dd><dt>인원</dt><dd>출근 ${esc(r.counts.attend)} · 건강확인 ${esc(r.counts.health)} · 이상 ${esc(r.counts.abnormal)} · TBM ${esc(r.counts.tbmAttend)}/${esc(r.counts.tbmTarget)}</dd></dl>
+          <div class="box"><h3>양호가 아닌 항목 ${bad.length}건</h3>${bad.length ? bad.map(([c, q]) => `<p><code>${c}</code> ${esc(q)} · <b>${esc(r.items[c].result)}</b>${r.items[c].note ? ` · ${esc(r.items[c].note)}` : ''}</p>`).join('') : '<p class="hint">12항목 모두 양호</p>'}</div>
+          <div class="photos" id="dlg-photos"></div>`;
+        photoPairs = bad.map(([c]) => [r.items[c].photo, c + ' 사진']).concat([[r.signature, '서명']]);
+      } else {
+        html = `<dl class="kv"><dt>기록번호</dt><dd><code>${esc(r.id)}</code></dd><dt>사업장</dt><dd>${esc(s ? s.id + ' ' + s.name : r.site)}</dd><dt>유형</dt><dd>${esc(r.kind)} · 부상 ${esc(r.injury)}</dd><dt>장소</dt><dd>${esc(r.place)}</dd><dt>상황</dt><dd>${esc(r.desc || '-')}</dd><dt>보고자</dt><dd>${esc(r.person)}</dd><dt>서버 시각</dt><dd>${esc(fmt(r.createdAt))}</dd><dt>단계</dt><dd>${esc(r.stage)} → 조사 → 재발방지 조치 → 종결 (실제 운영판에서 이어 채움)</dd></dl><div class="photos" id="dlg-photos"></div>`;
+        photoPairs = [[r.photo, '현장 사진']];
+      }
+    } else {
+      const a = Store.acts.find(x => x.id === id); if (!a) return;
+      html = `<dl class="kv"><dt>조치번호</dt><dd><code>${esc(a.id)}</code></dd><dt>상태</dt><dd>${statusTag(a)} ${levelTag(a.level)}</dd><dt>발견</dt><dd><code>${esc(a.srcId)}</code> / ${esc(a.srcItem)} · ${esc(a.foundBy || '-')}</dd><dt>내용</dt><dd>${esc(a.title)}${a.note ? ' · ' + esc(a.note) : ''}</dd><dt>기한</dt><dd>${esc(fmtDay(a.due))}</dd><dt>조치</dt><dd>${esc(a.doneNote || '-')}${a.noPhotoReason ? ` (사진 없음: ${esc(a.noPhotoReason)})` : ''}</dd><dt>완료</dt><dd>${esc(fmt(a.doneAt))} ${esc(a.doneBy || '')}</dd><dt>확인</dt><dd>${esc(fmt(a.confirmedAt))} ${esc(a.confirmedBy || '')}</dd></dl><div class="photos" id="dlg-photos"></div>`;
+      photoPairs = [[a.photoBefore, '발견 사진'], [a.photoAfter, '개선 후']];
+    }
+    $('#dlg-title').textContent = kind === 'rec' ? '기록 상세' : '조치 상세';
+    dlgBody.innerHTML = html;
+    fillPhotos($('#dlg-photos'), photoPairs);
+    if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
+  }
+  hq.addEventListener('click', e => { const b = e.target.closest('[data-open]'); if (b) openDetail(b.dataset.open, b.dataset.id); });
+  dlg.addEventListener('click', e => { if (e.target.closest('[data-close]') || e.target === dlg) dlg.close ? dlg.close() : dlg.removeAttribute('open'); });
+
+  // 탭
+  const tabs = document.querySelectorAll('.tabs [data-tab]');
+  function showTab(name) {
+    tabs.forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === name)));
+    const wide = window.matchMedia('(min-width: 1100px)').matches;
+    $('#stage').hidden = name === 'how';
+    $('#pane-how').hidden = name !== 'how';
+    $('#pane-field').hidden = !wide && name !== 'field';
+    $('#pane-hq').hidden = !wide && name !== 'hq';
+    try { sessionStorage.setItem('hds.ledger.tab', name); } catch (e) { /* 무시 */ }
+  }
+  tabs.forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
+  window.matchMedia('(min-width: 1100px)').addEventListener('change', () => {
+    const cur = [...tabs].find(t => t.getAttribute('aria-selected') === 'true');
+    let name = cur ? cur.dataset.tab : 'field';
+    if (name === 'hq' && window.matchMedia('(min-width: 1100px)').matches) name = 'field';
+    showTab(name);
+  });
+  let startTab = 'field';
+  try { startTab = sessionStorage.getItem('hds.ledger.tab') || 'field'; } catch (e) { /* 무시 */ }
+  showTab(startTab);
+
+  Store.on(() => {
+    renderHQ();
+    const typing = screen.contains(document.activeElement) && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+    if (['home', 'act'].includes(F.screen) && !typing) renderField();
+  });
+  renderField(); renderHQ();
+  Store.init();
+})();
+</script>
+
+</body>
+</html>
