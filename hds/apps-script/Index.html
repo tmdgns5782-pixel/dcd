@@ -272,7 +272,7 @@ canvas.sigpad { width: 100%; height: 180px; border: 1px solid var(--line2); bord
       <span id="savestate">불러오는 중…</span>
     </header>
     <div id="banner"></div>
-    <main id="view"></main>
+    <main id="view"><div class="empty" style="padding:60px 20px;font-size:15px">불러오는 중입니다… 화면이 계속 이대로면 PC의 크롬이나 엣지로 여세요. 휴대폰이나 압축 파일 안에서는 열리지 않을 수 있습니다.</div></main>
   </div>
 </div>
 <div id="print-root"></div>
@@ -328,18 +328,41 @@ function compressImage(file, max = 1280, q = 0.7) {
 }
 
 /* ───────────── 저장소 (IndexedDB) ───────────── */
-const HDS_SITE = /^[A-Z0-9]{2,8}$/.test(window.HDS_SITE || '') ? window.HDS_SITE : '';
+const LOCAL = !(window.google && google.script && google.script.run);
+const HDS_SITE = (() => { const v = String(window.HDS_SITE || '').toUpperCase(); if (/^[A-Z0-9]{2,8}$/.test(v)) return v; try { const q = new URLSearchParams(location.search).get('site'); return q && /^[A-Za-z0-9]{2,8}$/.test(q) ? q.toUpperCase() : ''; } catch (e) { return ''; } })();
 const HDS_URL = /^https?:/.test(window.HDS_URL || '') ? window.HDS_URL : '';
-const gs = (fn, ...args) => new Promise((res, rej) => { if (!(window.google && google.script && google.script.run)) { rej(new Error('구글 앱스 스크립트로 게시된 화면에서만 저장됩니다')); return; } google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...args); });
-const DB = {
+const gs = (fn, ...args) => new Promise((res, rej) => { if (LOCAL) { rej(new Error('로컬 미리보기에서는 서버를 쓰지 않습니다')); return; } google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...args); });
+const IDB = {
+  db: null,
+  open() {
+    return new Promise(resolve => {
+      let r;
+      try { r = indexedDB.open('hds-safety-ledger', 1); } catch (e) { resolve(false); return; }
+      r.onupgradeneeded = () => { const d = r.result; if (!d.objectStoreNames.contains('records')) d.createObjectStore('records', { keyPath: 'id' }); if (!d.objectStoreNames.contains('acts')) d.createObjectStore('acts', { keyPath: 'id' }); if (!d.objectStoreNames.contains('files')) d.createObjectStore('files'); if (!d.objectStoreNames.contains('kv')) d.createObjectStore('kv'); };
+      r.onsuccess = () => { this.db = r.result; resolve(true); };
+      r.onerror = () => resolve(false); r.onblocked = () => resolve(false);
+    });
+  },
+  tx(store, mode, fn) {
+    if (!this.db) return Promise.resolve(null);
+    return new Promise((res, rej) => { const t = this.db.transaction(store, mode); const s = t.objectStore(store); const out = fn(s); t.oncomplete = () => res(out && out.result !== undefined ? out.result : out); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error); });
+  },
+  all(store) { if (!this.db) return Promise.resolve([]); return new Promise((res) => { const out = []; const r = this.db.transaction(store).objectStore(store).openCursor(); r.onsuccess = () => { const c = r.result; if (c) { out.push(store === 'kv' || store === 'files' ? [c.key, c.value] : c.value); c.continue(); } else res(out); }; r.onerror = () => res(out); }); },
+  put(store, val, key) { return this.tx(store, 'readwrite', s => key === undefined ? s.put(val) : s.put(val, key)); },
+  bulk(store, vals) { return this.tx(store, 'readwrite', s => { vals.forEach(v => Array.isArray(v) ? s.put(v[1], v[0]) : s.put(v)); }); },
+  get(store, key) { if (!this.db) return Promise.resolve(null); return new Promise(res => { const r = this.db.transaction(store).objectStore(store).get(key); r.onsuccess = () => res(r.result ?? null); r.onerror = () => res(null); }); },
+  clear(store) { return this.tx(store, 'readwrite', s => s.clear()); },
+};
+const SRV = {
   db: true,
-  async open() { return !!(window.google && google.script && google.script.run); },
+  async open() { return true; },
   put(store, val, key) { if (store === 'files') return gs('apiPutFile', key, val); return gs('apiPut', store, String(key === undefined ? val.id : key), JSON.stringify(val)); },
   async bulk(store, vals) { const items = vals.map(v => Array.isArray(v) ? { k: v[0], v: v[1] } : { k: v.id, v }); if (store === 'files') { for (const it of items) await gs('apiPutFile', it.k, it.v); return; } for (let i = 0; i < items.length; i += 300) await gs('apiPutMany', store, JSON.stringify(items.slice(i, i + 300))); },
   get(store, key) { if (store === 'files') return gs('apiGetFile', key).catch(() => null); return Promise.resolve(null); },
   async all() { return []; },
   clear(store) { if (store === 'files') return Promise.resolve(); return gs('apiClear', store); },
 };
+const DB = LOCAL ? IDB : SRV;
 
 const S = { meta: {}, sites: [], people: [], records: new Map(), acts: new Map(), files: new Map(), log: [], ok: true };
 let savingN = 0;
@@ -642,7 +665,7 @@ function renderNav(route) {
   else if (isHQ()) { mb.textContent = '본사'; mb.className = 'badge-mode'; }
   else { mb.textContent = `사업장 ${mySite()} ${siteName(mySite())}`; mb.className = 'badge-mode site'; }
   $('#sidefoot').innerHTML = `${esc(S.meta.company || 'HDS(주) 안전경영지원실')}<br>기록 ${recs().length}건 · 조치 ${acts().length}건`;
-  $('#banner').innerHTML = (S.meta.demo ? `<div class="band demo"><b>예시 데이터</b> 가상의 사업장·인원·기록입니다. <button class="btn sm ghost" data-act="demo-clear">예시 데이터 지우고 새로 시작</button></div>` : '') + (!S.ok ? '<div class="band err">이 브라우저에서 저장소를 쓸 수 없어 창을 닫으면 기록이 사라집니다. 크롬이나 엣지로 여세요.</div>' : '');
+  $('#banner').innerHTML = (LOCAL ? `<div class="band demo" style="background:var(--navy-soft);color:var(--navy)"><b>로컬 미리보기</b> 기록은 이 PC 브라우저에 저장됩니다. 실제 운영은 구글 앱스 스크립트로 게시하면 구글 시트·드라이브에 저장됩니다.${!isHQ() && S.meta.mode ? ' <button class="btn sm ghost" data-act="to-hq">본사 화면으로</button>' : ''}</div>` : '') + (S.meta.demo ? `<div class="band demo"><b>예시 데이터</b> 가상의 사업장·인원·기록입니다. <button class="btn sm ghost" data-act="demo-clear">예시 데이터 지우고 새로 시작</button></div>` : '') + (!S.ok ? '<div class="band err">이 브라우저에서 저장소를 쓸 수 없어 창을 닫으면 기록이 사라집니다. 크롬이나 엣지로 여세요.</div>' : '');
 }
 function go(h) { if (location.hash === h) route(); else location.hash = h; }
 async function route() {
@@ -653,7 +676,7 @@ async function route() {
   document.body.classList.remove('screen-print'); $('#print-root').innerHTML = '';
   if (!S.meta.mode) { renderNav(''); return viewSetup(); }
   renderNav(r);
-  if (!isHQ() && !siteById(mySite())) { $('#view').innerHTML = `<div class="setup"><h1>사업장 ${esc(mySite())} 은(는) 아직 등록되지 않았습니다</h1><p class="muted">본사 담당자에게 사업장 등록을 요청하세요. 등록 후 이 링크를 새로고침하면 바로 쓸 수 있습니다.</p></div>`; return; }
+  if (!isHQ() && !siteById(mySite())) { $('#view').innerHTML = `<div class="setup"><h1>사업장 ${esc(mySite())} 은(는) 아직 등록되지 않았습니다</h1><p class="muted">본사 담당자에게 사업장 등록을 요청하세요. 등록 후 새로고침하면 바로 쓸 수 있습니다.</p>${LOCAL ? '<button class="btn" data-act="to-hq">본사 화면으로</button>' : ''}</div>`; return; }
   const v = $('#view'); v.scrollTop = 0; window.scrollTo(0, 0);
   try {
     if (r === 'home') return isHQ() ? viewHomeHQ() : viewHomeSite();
@@ -679,14 +702,14 @@ window.addEventListener('beforeunload', e => { if (ED && ED.dirty) { saveDraft(t
 /* 최초 설정 */
 function viewSetup() {
   $('#view').innerHTML = `<div class="setup">
-    <div><h1 style="font-size:26px">HDS 안전장부 시작하기</h1><p class="muted" style="margin-top:6px">이 화면은 <b>본사 링크</b>입니다. 기록은 구글 시트에, 사진·서명은 구글 드라이브에 자동 저장됩니다. 사업장은 본사가 보내는 사업장 링크(끝에 ?site=S001)로 들어옵니다.</p></div>
+    <div><h1 style="font-size:26px">HDS 안전장부 시작하기</h1><p class="muted" style="margin-top:6px">이 화면은 <b>본사 화면</b>입니다. 사업장은 본사가 보내는 사업장 링크(끝에 ?site=S001)로 들어와 입력합니다. ${LOCAL ? '지금은 로컬 미리보기라 기록이 이 PC 브라우저에 저장됩니다.' : '기록은 구글 시트에, 사진·서명은 구글 드라이브에 자동 저장됩니다.'}</p></div>
     <div class="opts" style="grid-template-columns:1fr 1fr">
-      <div class="opt"><b>본사용으로 시작</b><p class="small muted">사업장을 등록하고, 사업장마다 링크를 보내 입력받습니다.</p>
+      <div class="opt"><b>예시 데이터로 둘러보기</b><p class="small muted">가상 사업장 6곳과 최근 두 달 기록이 들어간 상태로 시작합니다. 기능을 확인할 때 쓰세요. 나중에 지우고 새로 시작할 수 있습니다.</p>
+        <button class="btn" data-act="setup-demo">예시로 둘러보기</button></div>
+      <div class="opt"><b>빈 상태로 시작</b><p class="small muted">사업장을 직접 등록하고 사업장마다 링크를 보내 입력받습니다.</p>
         <div class="fld"><label>회사·부서</label><input type="text" id="su-company" value="HDS(주) 안전경영지원실"></div>
         <div class="fld"><label>담당자 이름</label><input type="text" id="su-user" placeholder="예: 안전팀 담당자"></div>
-        <button class="btn" data-act="setup-hq">본사용으로 시작</button></div>
-      <div class="opt"><b>예시 데이터로 둘러보기</b><p class="small muted">가상 사업장 6곳과 최근 두 달 기록을 구글 시트에 넣고 시작합니다(1~2분). 나중에 지우고 새로 시작할 수 있습니다.</p>
-        <button class="btn ghost" data-act="setup-demo">예시로 둘러보기</button></div>
+        <button class="btn ghost" data-act="setup-hq">빈 상태로 시작</button></div>
     </div></div>`;
 }
 
@@ -707,7 +730,7 @@ function viewHomeHQ() {
   const ages = [[0, 7], [8, 30], [31, 90], [91, 99999]].map(([a, b]) => open.filter(x => { const d = daysDiff(fmtD(x.createdAt), t); return d >= a && d <= b; }).length);
   const maxAge = Math.max(1, ...ages);
   $('#view').innerHTML = `
-  <div class="page-head"><div><h1>본사 종합</h1><p>${t} 기준 · 사업장 ${sites.length}곳</p></div><div class="row"><a class="btn ghost" target="_blank" rel="noopener" href="${esc((S.info || {}).bookUrl || '#')}">구글 시트 열기</a><button class="btn ghost" data-act="xlsx">엑셀 취합본</button></div></div>
+  <div class="page-head"><div><h1>본사 종합</h1><p>${t} 기준 · 사업장 ${sites.length}곳</p></div><div class="row">${LOCAL ? '' : `<a class="btn ghost" target="_blank" rel="noopener" href="${esc((S.info || {}).bookUrl || '#')}">구글 시트 열기</a>`}<button class="btn ghost" data-act="xlsx">엑셀 취합본</button></div></div>
   <div class="tiles">
     <div class="tile ${exp && got / exp < .85 ? 'bad' : ''}"><span>어제 일일점검 제출</span><b>${exp ? Math.round(got / exp * 100) : 0}%</b><i>${got} / ${exp} 근무조</i></div>
     <div class="tile"><span>${lastMonth.label} 월간보고</span><b>${mr} / ${sites.length}</b><i>마감 매월 5일</i></div>
@@ -755,7 +778,7 @@ function viewHomeSite() {
     <div class="tile"><span>오늘 일일점검</span><b>${todays.filter(submitted).length} / ${(s.shifts || ['주간']).length}</b><i>${todays.map(r => r.shift).join(', ') || '아직 없음'}</i></div>
     <div class="tile ${open.some(isOverdue) ? 'bad' : ''}"><span>미결 조치</span><b>${open.length}</b><i>기한경과 ${open.filter(isOverdue).length}</i></div>
     <div class="tile"><span>확인 대기</span><b>${wait.length}</b><i>소장·본사 확인 필요</i></div>
-    <div class="tile"><span>이번 달 기록</span><b>${recs().filter(r => r.site === site && r.date >= periodOf('monthly', t).from).length}</b><i>구글 시트에 바로 저장됨</i></div>
+    <div class="tile"><span>이번 달 기록</span><b>${recs().filter(r => r.site === site && r.date >= periodOf('monthly', t).from).length}</b><i>${LOCAL ? '이 PC에 저장됨' : '구글 시트에 바로 저장됨'}</i></div>
   </div>
   <div class="cols2">
     <div class="card"><div class="hd"><h3>해야 할 일·다가오는 마감</h3><a class="small" href="#/schedule">일정 전체</a></div><div class="bd flush">${due.length ? `<table class="t"><tbody>${due.map(x => `<tr class="click" data-href="#/new/${x.f.code}"><td><b>${esc(x.f.short)}</b><div class="small muted">${esc(x.f.title)}</div></td><td>${esc(x.st.period)}</td><td><span class="${stDot(x.st.status)}">${esc(x.st.label)}</span></td><td><span class="btn sm ghost">쓰기</span></td></tr>`).join('')}</tbody></table>` : '<div class="empty">밀린 양식이 없습니다.</div>'}</div></div>
@@ -1001,7 +1024,7 @@ function rerenderIfStructural() { renderEditorKeep(); }
 function renderEditorKeep() { const y = window.scrollY; const act = document.activeElement; const key = act && (act.dataset.k || act.dataset.t || act.dataset.chknote); renderEditor(); window.scrollTo(0, y); if (key) { const el = $(`[data-k="${CSS.escape(key)}"], [data-t="${CSS.escape(key)}"], [data-chknote="${CSS.escape(key)}"]`); if (el && el.focus) el.focus(); } }
 view.addEventListener('click', async e => {
   const b = e.target.closest('button, [data-href], a[data-act]');
-  if (!b) return;
+  if (!b) { if (!ED) return onViewClick(e, e.target); return; }
   if (b.dataset.href && !b.closest('a')) { e.preventDefault(); return go(b.dataset.href); }
   if (!ED) return onViewClick(e, b);
   const act = b.dataset.act;
@@ -1217,9 +1240,9 @@ function viewHEC() {
 function viewSites() {
   const list = isHQ() ? S.sites : S.sites.filter(s => s.id === mySite());
   const sel = S.ui_psite || (list[0] || {}).id;
-  $('#view').innerHTML = `<div class="page-head"><div><h1>${isHQ() ? '사업장·인원' : '사업장 정보'}</h1><p>${isHQ() ? '사업장을 등록하고 "사업장 링크"를 담당자에게 보내세요. 사업장은 그 링크로 들어와 바로 입력합니다.' : '사업장 정보와 인원 명부입니다. 명부는 서명·참석자 선택에 쓰입니다.'}</p></div>
+  $('#view').innerHTML = `<div class="page-head"><div><h1>${isHQ() ? '사업장·인원' : '사업장 정보'}</h1><p>${isHQ() ? (LOCAL ? '사업장을 등록하고 "사업장 화면 보기"로 사업장 담당자가 보는 화면을 확인하세요. 게시 후에는 "사업장 링크"를 담당자에게 보냅니다.' : '사업장을 등록하고 "사업장 링크"를 담당자에게 보내세요. 사업장은 그 링크로 들어와 바로 입력합니다.') : '사업장 정보와 인원 명부입니다. 명부는 서명·참석자 선택에 쓰입니다.'}</p></div>
   <div class="row">${isHQ() ? '<button class="btn" data-act="site-new">사업장 추가</button>' : ''}</div></div>
-  <div class="card"><div class="bd flush scroll"><table class="t"><thead><tr><th>코드</th><th>이름</th><th>유형</th><th>업무구성</th><th>근무조</th><th>개설일</th><th>HEC</th><th>다음 평가일</th><th>인원</th><th></th></tr></thead><tbody>${list.map(s => `<tr><td class="mono">${s.id}</td><td><b>${esc(s.name)}</b></td><td>${esc(s.type || '')}</td><td>${esc((s.tags || []).join('·'))}</td><td>${esc((s.shifts || []).join('/'))}</td><td>${esc(s.openDate || '')}</td><td>${s.hec === false ? '아님' : '대상'}</td><td>${esc(s.hecNextEval || '')}</td><td class="num">${peopleOf(s.id).length}</td><td class="row" style="flex-wrap:nowrap"><button class="btn sm ghost" data-act="site-edit" data-id="${s.id}">수정</button><button class="btn sm ghost" data-act="ppl" data-id="${s.id}">명부</button>${isHQ() ? `<button class="btn sm ghost" data-act="copy-link" data-id="${s.id}">사업장 링크</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="10" class="empty">등록된 사업장이 없습니다.</td></tr>'}</tbody></table></div></div>
+  <div class="card"><div class="bd flush scroll"><table class="t"><thead><tr><th>코드</th><th>이름</th><th>유형</th><th>업무구성</th><th>근무조</th><th>개설일</th><th>HEC</th><th>다음 평가일</th><th>인원</th><th></th></tr></thead><tbody>${list.map(s => `<tr><td class="mono">${s.id}</td><td><b>${esc(s.name)}</b></td><td>${esc(s.type || '')}</td><td>${esc((s.tags || []).join('·'))}</td><td>${esc((s.shifts || []).join('/'))}</td><td>${esc(s.openDate || '')}</td><td>${s.hec === false ? '아님' : '대상'}</td><td>${esc(s.hecNextEval || '')}</td><td class="num">${peopleOf(s.id).length}</td><td class="row" style="flex-wrap:nowrap"><button class="btn sm ghost" data-act="site-edit" data-id="${s.id}">수정</button><button class="btn sm ghost" data-act="ppl" data-id="${s.id}">명부</button>${isHQ() ? `<button class="btn sm ghost" data-act="copy-link" data-id="${s.id}">${LOCAL ? '사업장 화면 보기' : '사업장 링크'}</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="10" class="empty">등록된 사업장이 없습니다.</td></tr>'}</tbody></table></div></div>
   ${sel ? peoplePanel(sel) : ''}`;
 }
 function peoplePanel(site) {
@@ -1272,11 +1295,11 @@ function pasteDialog(site) {
 /* ───────────── 데이터 주고받기 ───────────── */
 function viewData() {
   const hq = isHQ(); const info = S.info || {};
-  $('#view').innerHTML = `<div class="page-head"><div><h1>데이터</h1><p>모든 기록은 구글 시트에, 사진·서명은 구글 드라이브에 바로 저장됩니다. 사업장이 파일을 따로 보낼 필요가 없습니다.</p></div></div>
+  $('#view').innerHTML = `<div class="page-head"><div><h1>데이터</h1><p>${LOCAL ? '로컬 미리보기: 기록은 이 PC 브라우저에 저장됩니다. 구글 앱스 스크립트로 게시하면 구글 시트·드라이브에 바로 저장됩니다.' : '모든 기록은 구글 시트에, 사진·서명은 구글 드라이브에 바로 저장됩니다. 사업장이 파일을 따로 보낼 필요가 없습니다.'}</p></div></div>
   <div class="cols2">
-  <div class="card"><div class="hd"><h3>저장 위치</h3></div><div class="bd" style="display:grid;gap:10px">${hq ? `<div class="row"><a class="btn ghost" target="_blank" rel="noopener" href="${esc(info.bookUrl || '#')}">구글 시트(DB) 열기</a><a class="btn ghost" target="_blank" rel="noopener" href="${esc(info.folderUrl || '#')}">첨부 사진 폴더 열기</a></div>` : ''}<p class="small muted">시트 탭: records(기록), acts(조치), kv(사업장·인원·설정). 시트를 직접 고치지 말고 이 화면에서 고치세요.</p></div></div>
+  ${!LOCAL && hq ? `<div class="card"><div class="hd"><h3>저장 위치</h3></div><div class="bd" style="display:grid;gap:10px"><div class="row"><a class="btn ghost" target="_blank" rel="noopener" href="${esc(info.bookUrl || '#')}">구글 시트(DB) 열기</a><a class="btn ghost" target="_blank" rel="noopener" href="${esc(info.folderUrl || '#')}">첨부 사진 폴더 열기</a></div><p class="small muted">시트 탭: records(기록), acts(조치), kv(사업장·인원·설정). 시트를 직접 고치지 말고 이 화면에서 고치세요.</p></div></div>` : ''}
   <div class="card"><div class="hd"><h3>엑셀 내보내기</h3></div><div class="bd" style="display:grid;gap:10px"><p class="small muted">시트: 사업장, 기록목록, 점검결과(항목별 1행), 조치대장, 월간지표, HEC준비도${hq ? ' — 전 사업장 취합본' : ''}.</p><button class="btn ghost" data-act="xlsx" style="justify-self:start">엑셀 파일 만들기(.xlsx)</button></div></div>
-  ${hq ? `<div class="card"><div class="hd"><h3>백업·초기화</h3></div><div class="bd" style="display:grid;gap:10px"><p class="small muted">구글 시트가 원본이지만, 사진까지 파일 하나로 받아 둘 수 있습니다.</p><div class="row"><button class="btn ghost" data-act="backup">전체 백업 저장</button><button class="btn ghost" data-act="wipe" id="wipe-btn">전체 초기화</button></div></div></div>` : ''}
+  ${hq ? `<div class="card"><div class="hd"><h3>백업·초기화</h3></div><div class="bd" style="display:grid;gap:10px"><p class="small muted">사진까지 파일 하나로 받아 둘 수 있습니다.</p><div class="row"><button class="btn ghost" data-act="backup">전체 백업 저장</button>${LOCAL ? '<label class="upl">백업 파일로 복원<input type="file" accept=".json,application/json" id="restore-file"></label>' : ''}<button class="btn ghost" data-act="wipe" id="wipe-btn">전체 초기화</button></div></div></div>` : ''}
   </div>`;
 }
 function stripSensitive(rec) {
@@ -1475,17 +1498,17 @@ function viewSettings() {
   <div class="fld"><label>이 PC 사용자 이름(작성자·확인자로 기록)</label><input type="text" id="st-user" value="${esc(S.meta.user || '')}"></div>
   <div class="row"><button class="btn" data-act="st-save">저장</button></div>
   <hr style="border:0;border-top:1px solid var(--line);width:100%">
-  <div><b>링크</b></div><p class="small">본사: <code>${esc(HDS_URL || '(배포 URL)')}</code><br>사업장: <code>${esc(HDS_URL || '(배포 URL)')}?site=사업장코드</code></p>
+  <div><b>링크</b></div><p class="small">${LOCAL ? '로컬 미리보기에서는 사업장·인원 메뉴의 "사업장 화면 보기"로 사업장 화면을 확인합니다.' : `본사: <code>${esc(HDS_URL)}</code><br>사업장: <code>${esc(HDS_URL)}?site=사업장코드</code>`}</p>
   ${S.meta.demo ? '<button class="btn ghost" data-act="demo-clear">예시 데이터 지우고 새로 시작</button>' : ''}
   </div></div>`;
 }
 function viewHelp() {
-  $('#view').innerHTML = `<div class="page-head"><div><h1>사용 방법</h1><p>구글 앱스 스크립트로 게시한 웹앱입니다. 기록은 구글 시트, 사진·서명은 구글 드라이브에 저장됩니다.</p></div></div>
+  $('#view').innerHTML = `<div class="page-head"><div><h1>사용 방법</h1><p>같은 화면을 로컬 미리보기(이 PC 저장)와 구글 앱스 스크립트 웹앱(구글 시트·드라이브 저장)으로 씁니다.</p></div></div>
   <div class="card help"><div class="bd" style="display:grid;gap:14px">
   <div class="flowline"><div><b>① 등록</b>본사가 '사업장·인원'에서 사업장과 명부를 등록합니다.</div><div><b>② 링크 배포</b>사업장마다 '사업장 링크'(끝에 ?site=코드)를 담당자에게 보냅니다.</div><div><b>③ 입력</b>사업장은 링크로 들어와 양식을 씁니다. 저장하는 순간 구글 시트에 들어갑니다.</div><div><b>④ 관리</b>본사는 대시보드·조치대장·HEC 대비를 보고, 완료된 조치를 확인합니다.</div></div>
   <h3>본사가 할 일</h3><ol><li>사업장(코드 S001 형식)과 업무구성·근무조·인원 명부를 등록합니다.</li><li>사업장 링크를 복사해 담당자에게 카톡·메일로 보냅니다.</li><li>홈의 '오늘의 예외'를 처리하고, 완료된 조치는 '확인하고 종결'합니다.</li><li>엑셀 취합본은 홈 또는 데이터 메뉴에서 만듭니다.</li></ol>
   <h3>사업장이 할 일</h3><ol><li>받은 링크를 PC 크롬·엣지 즐겨찾기에 넣어 둡니다.</li><li>매일 근무조마다 일일점검을 쓰고, 사고·아차사고·작업중지는 바로 보고합니다. 주의·불량 항목은 조치로 자동 등록됩니다.</li><li>조치를 끝내면 조치대장에서 '완료'(개선 후 사진 또는 못 찍은 사유)로 바꿉니다.</li></ol>
-  <h3>꼭 알아둘 것</h3><ul><li>링크를 아는 사람은 누구나 들어올 수 있는 시안입니다. 실제 운영 전에는 사업장 PIN 같은 접근 제한을 붙여야 합니다.</li><li>제출한 기록을 고치면 수정 사유와 차수가 남고, 확인(잠금)된 기록은 본사만 잠금을 풀 수 있습니다.</li><li>구글 시트를 직접 고치면 화면과 어긋날 수 있으니 이 화면에서 고치세요.</li></ul>
+  <h3>꼭 알아둘 것</h3><ul><li>시안이라 링크를 아는 사람은 누구나 들어올 수 있습니다. 실제 운영 전에는 사업장 PIN 같은 접근 제한을 붙여야 합니다.</li><li>제출한 기록을 고치면 수정 사유와 차수가 남고, 확인(잠금)된 기록은 본사만 잠금을 풀 수 있습니다.</li><li>로컬 미리보기는 브라우저의 '사이트 데이터 삭제'를 하면 기록이 지워집니다.</li></ul>
   </div></div>`;
 }
 function viewSearch(q) {
@@ -1531,7 +1554,8 @@ async function onViewClick(e, b) {
   if (act === 'ppl-add') return personDialog(b.dataset.id);
   if (act === 'ppl-paste') return pasteDialog(b.dataset.id);
   if (act === 'ppl-toggle') { const p = S.people.find(x => x.id === b.dataset.pid); if (p) { p.active = p.active === false; await savePeople(); viewSites(); } return; }
-  if (act === 'copy-link') { const link = (HDS_URL || '(배포 URL)') + '?site=' + b.dataset.id; try { await navigator.clipboard.writeText(link); toast('복사했습니다: ' + link, 5000); } catch (err) { askText('사업장 링크(복사해서 보내세요)', link, () => {}); setTimeout(() => { const i = $('#ask-v'); if (i) { i.value = link; i.select(); } }, 50); } return; }
+  if (act === 'copy-link') { if (LOCAL) { location.href = location.pathname + '?site=' + b.dataset.id + '#/home'; return; } const link = HDS_URL + '?site=' + b.dataset.id; try { await navigator.clipboard.writeText(link); toast('복사했습니다: ' + link, 5000); } catch (err) { askText('사업장 링크(복사해서 보내세요)', link, () => {}); setTimeout(() => { const i = $('#ask-v'); if (i) { i.value = link; i.select(); } }, 50); } return; }
+  if (act === 'to-hq') { location.href = location.pathname + '#/home'; return; }
   if (act === 'setup-all') { for (const s of activeSites()) await exportSetup(s.id); return toast(`설정 파일 ${activeSites().length}개를 만들었습니다`); }
   if (act === 'setup-sel') return exportSetup($('#rep-site').value);
   if (act === 'reply') return exportReply($('#rep-site').value);
@@ -1542,7 +1566,7 @@ async function onViewClick(e, b) {
   if (act === 'mode-site') { S.meta.mode = 'site'; S.meta.site = $('#st-site').value; await saveMeta(); toast('사업장 모드로 바꿨습니다'); return go('#/home'); }
   if (act === 'mode-hq') { S.meta.mode = 'hq'; await saveMeta(); toast('본사 모드로 바꿨습니다'); return go('#/home'); }
 }
-$('#banner').addEventListener('click', async e => { if (e.target.closest('[data-act="demo-clear"]')) { await wipeAll(true); toast('예시 데이터를 지웠습니다'); go('#/home'); route(); } });
+$('#banner').addEventListener('click', async e => { if (e.target.closest('[data-act="to-hq"]')) { location.href = location.pathname + '#/home'; return; } if (e.target.closest('[data-act="demo-clear"]')) { await wipeAll(true); toast('예시 데이터를 지웠습니다'); go('#/home'); route(); } });
 async function setupFromFile(file) {
   try { const j = JSON.parse(await file.text()); if (j.app !== 'hds-safety-ledger' || j.kind !== 'site-setup') throw new Error('사업장 설정 파일이 아닙니다'); S.meta = { mode: 'site', site: j.site, company: 'HDS(주)', user: '', createdAt: isoLocal(now()) }; await applyPackage(j); await saveMeta(); toast(`${j.site} 사업장으로 시작합니다`); go('#/home'); route(); }
   catch (e) { toast('가져오지 못했습니다: ' + e.message, 4000); }
@@ -1584,7 +1608,7 @@ function autofill(def, rec, opts = {}) {
 /* ───────────── 예시 데이터 ───────────── */
 async function makeDemo() {
   const T = today();
-  S.meta = { mode: 'hq', started: true, company: 'HDS(주) 안전경영지원실', user: '본사 담당자', demo: true, createdAt: isoLocal(now()) }; toast('예시 데이터를 구글 시트에 쓰는 중입니다(1~2분)…', 90000);
+  S.meta = { mode: 'hq', started: true, company: 'HDS(주) 안전경영지원실', user: '본사 담당자', demo: true, createdAt: isoLocal(now()) }; if (!LOCAL) toast('예시 데이터를 구글 시트에 쓰는 중입니다(1~2분)…', 90000);
   const sdef = [['S001', '강남 오피스타워', '오피스', ['보안', '안내', '주차', '미화'], ['주간', '야간']], ['S002', '여의도 금융센터', '금융', ['보안', '안내'], ['주간', '야간']], ['S003', '판교 R&D센터', '연구소', ['보안', '시설', '미화'], ['주간', '야간']], ['S004', '평택 물류센터', '물류', ['보안', '주차'], ['주간', '야간']], ['S005', '송파 복합상가', '상가', ['보안', '주차', '미화'], ['주간']], ['S006', '마포 사옥', '오피스', ['보안', '안내'], ['주간']]];
   S.sites = sdef.map(([id, name, type, tags, shifts], i) => ({ id, name, type, tags, shifts, openDate: addDays(T, -400 - i * 30), hec: i < 4, status: '운영', hecLastEval: addDays(T, -120 + i * 5), hecNextEval: addDays(T, 40 + i * 9), lastReceivedAt: isoLocal(new Date(Date.now() - (i === 5 ? 40 : i) * 86400000)) }));
   const fam = ['김', '이', '박', '최', '정', '강', '조', '윤', '장', '임', '한', '오'], given = ['민수', '서연', '지훈', '수빈', '도윤', '하은', '준호', '유진', '현우', '지민', '성민', '예린'];
@@ -1635,9 +1659,15 @@ async function syncActsDemo(def, rec) { for (const w of actsFromRecord(def, rec)
 window.HDS = { S, FORM, autofill, get ED() { return ED; }, refresh: () => refreshDynamic(), go, Xlsx };
 function applyMode() { try { S.meta.user = localStorage.getItem('hds.user') || S.meta.user || ''; } catch (e) { /* 무시 */ } if (HDS_SITE) { S.meta.mode = 'site'; S.meta.site = HDS_SITE; } else { S.meta.mode = S.meta.started ? 'hq' : ''; } }
 (async () => {
-  S.ok = await DB.open();
-  $('#view').innerHTML = '<div class="empty">구글 시트에서 기록을 불러오는 중…</div>';
-  if (S.ok) { try { const j = JSON.parse(await gs('apiLoad', HDS_SITE)); S.meta = j.meta || {}; S.sites = j.sites || []; S.people = j.people || []; S.log = j.log || []; (j.records || []).forEach(r => S.records.set(r.id, r)); (j.acts || []).forEach(a => S.acts.set(a.id, a)); S.info = j.info || {}; } catch (e) { S.ok = false; toast('불러오지 못했습니다: ' + (e.message || e), 8000); } }
+  try {
+    if (LOCAL) {
+      S.ok = await DB.open();
+      if (S.ok) { for (const [k, v] of await DB.all('kv')) { if (k === 'meta') S.meta = v || {}; if (k === 'sites') S.sites = v || []; if (k === 'people') S.people = v || []; if (k === 'log') S.log = v || []; } (await DB.all('records')).forEach(r => S.records.set(r.id, r)); (await DB.all('acts')).forEach(a => S.acts.set(a.id, a)); }
+    } else {
+      S.ok = true; $('#view').innerHTML = '<div class="empty">구글 시트에서 기록을 불러오는 중…</div>';
+      const j = JSON.parse(await gs('apiLoad', HDS_SITE)); S.meta = j.meta || {}; S.sites = j.sites || []; S.people = j.people || []; S.log = j.log || []; (j.records || []).forEach(r => S.records.set(r.id, r)); (j.acts || []).forEach(a => S.acts.set(a.id, a)); S.info = j.info || {};
+    }
+  } catch (e) { S.ok = false; console.error(e); toast('불러오지 못했습니다: ' + (e.message || e), 8000); }
   applyMode(); setSaving(0); route();
 })();
 })();

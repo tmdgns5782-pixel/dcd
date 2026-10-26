@@ -1019,7 +1019,7 @@ function rerenderIfStructural() { renderEditorKeep(); }
 function renderEditorKeep() { const y = window.scrollY; const act = document.activeElement; const key = act && (act.dataset.k || act.dataset.t || act.dataset.chknote); renderEditor(); window.scrollTo(0, y); if (key) { const el = $(`[data-k="${CSS.escape(key)}"], [data-t="${CSS.escape(key)}"], [data-chknote="${CSS.escape(key)}"]`); if (el && el.focus) el.focus(); } }
 view.addEventListener('click', async e => {
   const b = e.target.closest('button, [data-href], a[data-act]');
-  if (!b) return;
+  if (!b) { if (!ED) return onViewClick(e, e.target); return; }
   if (b.dataset.href && !b.closest('a')) { e.preventDefault(); return go(b.dataset.href); }
   if (!ED) return onViewClick(e, b);
   const act = b.dataset.act;
