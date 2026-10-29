@@ -1,4 +1,120 @@
-<!-- t3: 5장 압축판. 이 파일만 편집. 스타일은 #t3 로 범위를 한정 -->
+<!-- t3: 3장 연구 방법 (12장 판 S6 프레임워크 + S7·S8 요점). 이 파일만 편집. 스타일은 #t3 로 범위를 한정 -->
 <style>
-#t3 .body { }
+/* 격자: 카드 4개(396) + 사이 48(화살표 자리) = 1728 / 묶음 머리 40 + 16 + 카드 688 = 744 → 카드 y310–998 (다른 장의 키바·영웅 카드 아래선과 같음) */
+#t3 .t3-grid { position: absolute; left: 0; top: 0; width: 1728px; display: grid;
+  grid-template-columns: 396px 48px 396px 48px 396px 48px 396px; grid-template-rows: 40px 688px; row-gap: 16px; }
+
+/* 묶음 머리: 도면 해석 / 3D 재구성 */
+#t3 .gh { grid-row: 1; display: flex; align-items: center; gap: 16px; height: 40px; font-size: 24px; font-weight: 800; letter-spacing: -0.02em; color: var(--navy); white-space: nowrap; line-height: 40px; }
+#t3 .gh::after { content: ""; flex: 1; height: 2px; border-radius: 1px; background: var(--navy); }
+#t3 .gh.g1 { grid-column: 1 / 4; } #t3 .gh.g2 { grid-column: 5 / 8; }
+
+/* 단계 카드: 안쪽 폭 340. 글자 3단계 = 제목 28 / 본문 19 / 라벨 16 */
+#t3 .st { grid-row: 2; display: flex; flex-direction: column; padding: 28px; border-radius: var(--radius); background: var(--surface); }
+#t3 .st.k1 { grid-column: 1; } #t3 .st.k2 { grid-column: 3; } #t3 .st.k3 { grid-column: 5; } #t3 .st.k4 { grid-column: 7; }
+#t3 .st .fig { flex: none; height: 244px; }
+#t3 .st .lb { margin-top: 18px; font-size: 16px; font-weight: 800; letter-spacing: 0.12em; color: var(--navy-2); line-height: 1; }
+#t3 .st h3 { margin-top: 6px; font-size: 28px; font-weight: 800; letter-spacing: -0.035em; color: var(--navy); line-height: 1.25; }
+#t3 .st .d { margin-top: 8px; font-size: 19px; font-weight: 600; letter-spacing: -0.025em; line-height: 28px; color: var(--navy-2); white-space: nowrap; }
+
+/* 어떻게: 열쇠말 + 쉬운 말 한 줄 */
+#t3 .how { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+#t3 .how li { display: grid; grid-template-columns: 52px 1fr; column-gap: 10px; align-items: start; }
+#t3 .how .k { font-size: 16px; font-weight: 800; letter-spacing: -0.01em; color: var(--navy-2); line-height: 28px; white-space: nowrap; }
+#t3 .how .v { font-size: 19px; font-weight: 500; letter-spacing: -0.03em; line-height: 28px; color: var(--ink-2); }
+#t3 .how .v b { font-weight: 700; color: var(--ink); }
+#t3 .how .v .ex { display: block; font-weight: 700; color: var(--navy); font-variant-numeric: tabular-nums; }
+#t3 .how .v .ex small { font-size: 16px; font-weight: 600; color: var(--ink-3); margin-left: 6px; }
+
+/* 핵심 기법 (칩 2줄 자리를 늘 확보 → 네 카드의 구분선 높이가 같다) */
+#t3 .tq { margin-top: auto; padding-top: 12px; border-top: 1.5px solid var(--line-2); }
+#t3 .tq .tl { font-size: 16px; font-weight: 700; letter-spacing: 0.04em; color: var(--ink-3); line-height: 1; }
+#t3 .tq ul { margin-top: 8px; min-height: 88px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+#t3 .tq .chip { height: 40px; padding: 0 16px; font-size: 19px; background: var(--paper); border-color: var(--line-2); }
+#t3 .tq .chip .gl { font-weight: 500; color: var(--ink-2); margin-left: -4px; }
+
+/* 단계 사이 화살표: 그림 가운데(28 + 244/2 = 150)에 맞춤 */
+#t3 .go { grid-row: 2; position: relative; }
+#t3 .go.a1 { grid-column: 2; } #t3 .go.a2 { grid-column: 4; } #t3 .go.a3 { grid-column: 6; }
+#t3 .go i { position: absolute; left: 4px; top: 130px; width: 40px; height: 40px; border-radius: 50%; background: var(--navy); display: grid; place-items: center; box-shadow: 0 4px 10px rgba(16, 42, 76, .18); }
+#t3 .go svg { width: 18px; height: 18px; }
+
+/* 그림: 그림 속 실제 도면 범위를 틀(안쪽 337×241)에 맞춰 키움 — 네 그림의 도면 높이 ≈ 220px로 맞춤
+   STEP 1·2는 위(입면도 묶음)·아래(평면도 묶음) 두 조각으로 나눠 사이 빈칸만 줄임(비율 그대로) */
+#t3 .st .fig img.fit { position: absolute; top: 0; height: 100%; object-fit: cover; }
+#t3 .st .fig img.seg { position: absolute; object-fit: cover; }
+#t3 .st .fig img.seg.a { left: 39.7px; top: 8.4px; width: 259.6px; height: 100.6px; object-position: 0 -8.5px; }
+#t3 .st .fig img.seg.b { left: 39.7px; top: 121px; width: 259.6px; height: 111.6px; object-position: 0 -140.8px; }
 </style>
+
+<div class="t3-grid">
+  <p class="gh g1">도면 해석</p>
+  <p class="gh g2">3D 재구성</p>
+
+  <!-- STEP 1 -->
+  <article class="st k1">
+    <div class="fig"><img class="seg a" src="assets/step1.png" alt="입면도 입력"><img class="seg b" src="assets/step1.png" alt="평면도 입력"></div>
+    <p class="lb">STEP 1</p>
+    <h3>도면 이미지 입력</h3>
+    <p class="d">평면도·입면도 이미지만 입력</p>
+    <ul class="how">
+      <li><span class="k">평면도</span><p class="v">창·문의 평면 위치 <b>X·Y</b></p></li>
+      <li><span class="k">입면도</span><p class="v">창·문이 놓인 높이 <b>Z</b></p></li>
+    </ul>
+    <div class="tq">
+      <p class="tl">입력 형식</p>
+      <ul><li class="chip">래스터 이미지 <span class="gl">(픽셀 기반)</span></li></ul>
+    </div>
+  </article>
+  <div class="go a1"><i><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4.5L13 10l-5.5 5.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></i></div>
+
+  <!-- STEP 2 -->
+  <article class="st k2">
+    <div class="fig"><img class="seg a" src="assets/step2.png" alt="입면도 객체 인식 결과"><img class="seg b" src="assets/step2.png" alt="평면도 객체 인식 결과"></div>
+    <p class="lb">STEP 2</p>
+    <h3>객체 인식</h3>
+    <p class="d">도면 속 벽·창문·문 인식</p>
+    <ul class="how">
+      <li><span class="k">평면도</span><p class="v">외벽 창·문을 동·서·남·북<br><b>방향별로 정리</b></p></li>
+      <li><span class="k">입면도</span><p class="v">같은 층 창·문끼리 묶어<br><b>층 높이 파악</b></p></li>
+    </ul>
+    <div class="tq">
+      <p class="tl">핵심 기법</p>
+      <ul><li class="chip">YOLO + SAHI <span class="gl">(작은 객체 분할 추론)</span></li><li class="chip">DBSCAN 층별 클러스터링</li></ul>
+    </div>
+  </article>
+  <div class="go a2"><i><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4.5L13 10l-5.5 5.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></i></div>
+
+  <!-- STEP 3 -->
+  <article class="st k3">
+    <div class="fig"><img class="fit" src="assets/step3.png" alt="대응 객체 매칭" style="left:19.1px; width:301.4px; object-position:0 -37.6px"></div>
+    <p class="lb">STEP 3</p>
+    <h3>대응 객체 매칭</h3>
+    <p class="d">평면도·입면도의 같은 객체끼리 짝짓기</p>
+    <ul class="how">
+      <li><span class="k">축척</span><p class="v">LMM(GPT-4o)이 축척을 읽어<br><b>픽셀 → 실제 길이</b> 환산<span class="ex">1 px = 33.88 mm<small>예시</small></span></p></li>
+      <li><span class="k">매칭</span><p class="v">X·Y + Z → <b>3차원 위치 확정</b></p></li>
+    </ul>
+    <div class="tq">
+      <p class="tl">핵심 기법</p>
+      <ul><li class="chip">LMM 기반 축척 보정</li><li class="chip">헝가리안 알고리즘 <span class="gl">(최적 1:1 매칭)</span></li></ul>
+    </div>
+  </article>
+  <div class="go a3"><i><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4.5L13 10l-5.5 5.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></i></div>
+
+  <!-- STEP 4 -->
+  <article class="st k4">
+    <div class="fig"><img class="fit" src="assets/step4.png" alt="자동 생성 BIM" style="left:39.5px; width:250.6px; object-position:0 -11.4px"></div>
+    <p class="lb">STEP 4</p>
+    <h3>BIM 자동 생성</h3>
+    <p class="d">높이까지 갖춘 3D BIM 모델</p>
+    <ul class="how">
+      <li><span class="k">벽체</span><p class="v">골격선(스켈레톤)으로<br><b>벽 중심선 추출</b></p></li>
+      <li><span class="k">창·문</span><p class="v">붙일 벽 결정(호스팅) 후<br><b>Revit API로 BIM 생성</b></p></li>
+    </ul>
+    <div class="tq">
+      <p class="tl">핵심 기법</p>
+      <ul><li class="chip">스켈레톤 기반 벽체 추출</li><li class="chip">Revit API</li></ul>
+    </div>
+  </article>
+</div>

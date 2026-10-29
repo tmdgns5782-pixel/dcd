@@ -1,4 +1,113 @@
-<!-- t5: 5장 압축판. 이 파일만 편집. 스타일은 #t5 로 범위를 한정 -->
+<!-- t5: 5장 직무와의 연관성 (12장 판 S11 이식 + S12 요점: 게재 정보·감사 인사). 이 파일만 편집. 스타일은 #t5 로 범위를 한정 -->
 <style>
-#t5 .body { }
+/* 격자: [직무 과제 카드 840] [이음 64] [연구 접점 카드 824 = 연구 내용 | → | 활용(틴트 면 448)] = 1728
+   세로: 열 머리 40 · 16 · 행 3개(각 168, 사이 16) → 592 · 핵심 메시지 바닥 18 (S4·S5와 같은 바닥선)
+   이음은 S5·S9처럼 간격 한가운데 네이비 원 + 가는 선 */
+#t5 .t5-ch { position: absolute; top: 0; height: 40px; display: flex; align-items: center; gap: 14px; font-size: 24px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; white-space: nowrap; color: var(--navy); }
+#t5 .t5-ch::after { content: ""; flex: 1; height: 2px; border-radius: 1px; background: var(--navy); }
+#t5 .t5-ch svg { flex: none; width: 26px; height: 26px; }
+#t5 .t5-ch.c1 { left: 0; width: 840px; }
+#t5 .t5-ch.c2 { left: 904px; width: 824px; }
+
+#t5 .t5-row { position: absolute; left: 0; width: 1728px; height: 168px; }
+#t5 .t5-row.r1 { top: 56px; } #t5 .t5-row.r2 { top: 240px; } #t5 .t5-row.r3 { top: 424px; }
+
+/* 직무 과제 칸 */
+#t5 .t5-task { position: absolute; left: 0; top: 0; width: 840px; height: 168px; display: flex; align-items: center; gap: 32px; padding: 0 40px 0 36px; border-radius: var(--radius); background: var(--surface); }
+#t5 .t5-ic { flex: none; width: 80px; height: 80px; border-radius: 20px; background: var(--paper); display: grid; place-items: center; box-shadow: 0 2px 6px rgba(16, 42, 76, .06); }
+#t5 .t5-ic svg { width: 40px; height: 40px; }
+#t5 .t5-ic .g { fill: none; stroke: var(--navy); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+#t5 .t5-ic .w { fill: var(--paper); }
+#t5 .t5-tx { width: 296px; flex: none; }
+#t5 .t5-tx .k { font-size: 16px; font-weight: 800; letter-spacing: 0.12em; line-height: 1; color: var(--ink-3); }
+#t5 .t5-tx h3 { margin-top: 12px; font-size: 28px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.3; color: var(--navy); }
+#t5 .t5-task .d { flex: 1; padding-left: 32px; border-left: 1.5px solid var(--line-2); font-size: 22px; font-weight: 500; letter-spacing: -0.025em; line-height: 1.5; color: var(--ink-2); white-space: nowrap; }
+
+/* 이음: 두 카드 사이 간격 한가운데 (S5·S9와 같은 언어, 아이콘만 '맞닿음') */
+#t5 .t5-link { position: absolute; left: 840px; top: 0; width: 64px; height: 168px; }
+#t5 .t5-link::before { content: ""; position: absolute; left: 0; right: 0; top: 83px; height: 2px; background: var(--line-2); }
+#t5 .t5-link i { position: absolute; left: 8px; top: 60px; width: 48px; height: 48px; border-radius: 50%; background: var(--navy); display: grid; place-items: center; }
+#t5 .t5-link svg { width: 22px; height: 22px; }
+
+/* 연구 접점 칸: 연구 내용(보조) → 활용(초점) */
+#t5 .t5-res { position: absolute; left: 904px; top: 0; width: 824px; height: 168px; border-radius: var(--radius); background: var(--paper); border: 2px solid var(--navy); box-shadow: 0 6px 18px rgba(16, 42, 76, .08); }
+#t5 .t5-res .a { position: absolute; left: 38px; top: 0; bottom: 0; display: flex; align-items: center; font-size: 23px; font-weight: 700; letter-spacing: -0.035em; line-height: 1.45; color: var(--ink); white-space: nowrap; }
+#t5 .t5-ar { position: absolute; left: 292px; top: 70px; width: 40px; height: 24px; }
+#t5 .t5-out { position: absolute; right: 0; top: 0; bottom: 0; width: 448px; display: flex; flex-direction: column; justify-content: center; padding: 0 40px; border-radius: 0 18px 18px 0; background: var(--navy-tint); }
+#t5 .t5-out .b { font-size: 26px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.4; color: var(--navy); white-space: nowrap; }
+
+/* 핵심 메시지 (S4·S5와 같은 바닥선) */
+#t5 .t5-key { position: absolute; left: 0; right: 0; bottom: 18px; }
+
+/* 마무리(12장 판 S12 요점): 키바 오른쪽 빈자리에 서명처럼 — 가는 세로선 뒤 '감사합니다 · Q&A' + 게재 정보 한 줄.
+   핵심 메시지(27px/700 흰색)보다 한 단계 낮춤: 22px/700 옅은 흰색. 분홍은 KEY MESSAGE 라벨·강조 구절에만.
+   #DCE3EE·#A9B7CB = 네이비 바탕 위 글자 틴트(S9와 같은 방식, base.css 변수 아님) */
+#t5 .t5-end { margin-left: auto; align-self: stretch; display: flex; flex-direction: column; justify-content: center; gap: 8px;
+  padding-left: 40px; border-left: 1px solid rgba(255, 255, 255, .18); }
+#t5 .t5-end .ty { display: flex; align-items: baseline; gap: 10px; font-size: 22px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.2; color: #DCE3EE; white-space: nowrap; }
+#t5 .t5-end .ty span { font-size: 16px; font-weight: 700; letter-spacing: 0.04em; color: #A9B7CB; }
+#t5 .t5-end .pub { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.3; color: #A9B7CB; white-space: nowrap; }
+#t5 .t5-end .pub b { font-weight: 700; color: #DCE3EE; }
 </style>
+
+<!-- 열 머리 -->
+<p class="t5-ch c1">
+  <svg viewBox="0 0 26 26" aria-hidden="true"><g fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="20" height="14" rx="2.5"/><path d="M9.5 8V6a1.5 1.5 0 0 1 1.5-1.5h4A1.5 1.5 0 0 1 16.5 6v2"/><path d="M3 14.5h20"/></g></svg>
+  직무 과제</p>
+<p class="t5-ch c2">
+  <svg viewBox="0 0 26 26" aria-hidden="true"><g fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h8.5L20 8v14.5H7z"/><path d="M15.5 3.5V8H20"/><path d="M10.5 13h6M10.5 17.5h6"/></g></svg>
+  연구 접점</p>
+
+<!-- 1 Virtual FAB 구축 -->
+<div class="t5-row r1">
+  <div class="t5-task">
+    <span class="t5-ic"><svg viewBox="0 0 40 40" aria-hidden="true"><g class="g"><path d="M3 35h34"/><path d="M5 35V19l8-5v5l8-5v5l8-5V5h5.5v30"/><path d="M15.5 35v-6.5h6V35"/></g></svg></span>
+    <div class="t5-tx"><p class="k">과제 1</p><h3>Virtual FAB 구축</h3></div>
+    <p class="d">여러 출처의 도면·모델 데이터를<br>하나로 통합</p>
+  </div>
+  <div class="t5-link"><i><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></g></svg></i></div>
+  <div class="t5-res">
+    <p class="a">서로 다른 도면의<br>불완전한 정보를 짝지어</p>
+    <svg class="t5-ar" viewBox="0 0 40 24" aria-hidden="true"><path d="M2 12h34M27 4l9 8-9 8" fill="none" stroke="var(--navy-2)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div class="t5-out"><p class="b">하나의 3D 모델로 통합</p></div>
+  </div>
+</div>
+
+<!-- 2 기존 시설의 디지털 전환 -->
+<div class="t5-row r2">
+  <div class="t5-task">
+    <span class="t5-ic"><svg viewBox="0 0 40 40" aria-hidden="true"><g class="g"><path d="M15 33H5V3h14.5l4.5 4.5V14"/><path d="M19.5 3v4.5H24"/><path d="M9 10h9M9 15h9M9 20h5"/><path class="w" d="M28 17l9 5-9 5-9-5z"/><path class="w" d="M19 22v10l9 5 9-5V22"/><path d="M28 27v10"/></g></svg></span>
+    <div class="t5-tx"><p class="k">과제 2</p><h3>기존 시설의 디지털 전환</h3></div>
+    <p class="d">이미지 도면만 남은<br>기존 시설이 많음</p>
+  </div>
+  <div class="t5-link"><i><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></g></svg></i></div>
+  <div class="t5-res">
+    <p class="a">CAD 정보 없이<br>이미지 도면에서 BIM 생성</p>
+    <svg class="t5-ar" viewBox="0 0 40 24" aria-hidden="true"><path d="M2 12h34M27 4l9 8-9 8" fill="none" stroke="var(--navy-2)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div class="t5-out"><p class="b">디지털 전환 기간 단축</p></div>
+  </div>
+</div>
+
+<!-- 3 5D(물량·원가) 관리 -->
+<div class="t5-row r3">
+  <div class="t5-task">
+    <span class="t5-ic"><svg viewBox="0 0 40 40" aria-hidden="true"><g class="g"><path d="M11.5 12l9 5-9 5-9-5z"/><path d="M2.5 17v13l9 5 9-5V17"/><path d="M11.5 22v13"/><ellipse cx="30" cy="8" rx="7" ry="3"/><path d="M23 8v24a7 3 0 0 0 14 0V8"/><path d="M23 16a7 3 0 0 0 14 0M23 24a7 3 0 0 0 14 0"/></g></svg></span>
+    <div class="t5-tx"><p class="k">과제 3</p><h3>5D(물량·원가) 관리</h3></div>
+    <p class="d">BIM 데이터가 정확해야<br>물량·원가 관리가 의미 있음</p>
+  </div>
+  <div class="t5-link"><i><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></g></svg></i></div>
+  <div class="t5-res">
+    <p class="a">축척 보정·생성 완성도<br>검증 경험</p>
+    <svg class="t5-ar" viewBox="0 0 40 24" aria-hidden="true"><path d="M2 12h34M27 4l9 8-9 8" fill="none" stroke="var(--navy-2)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div class="t5-out"><p class="b">모델 데이터 품질 검증에<br>바로 활용</p></div>
+  </div>
+</div>
+
+<div class="keybar t5-key">
+  <span class="kb-label">KEY MESSAGE</span>
+  <p>도면 속 불완전한 정보를 <em>정확한 3D 데이터</em>로 잇는 경험으로,<br>SK하이닉스 Virtual FAB의 데이터 품질을 높이겠습니다.</p>
+  <div class="t5-end">
+    <p class="ty">감사합니다<span>· Q&amp;A</span></p>
+    <p class="pub"><b>Automation in Construction</b> · Vol. 187 · 2026 게재</p>
+  </div>
+</div>

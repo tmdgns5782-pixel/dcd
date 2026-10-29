@@ -1,4 +1,193 @@
-<!-- t4: 5장 압축판. 이 파일만 편집. 스타일은 #t4 로 범위를 한정 -->
+<!-- t4: 4장 연구 결과 및 기여 (12장 판 S9 기여 ↔ 근거 수치 + S10 검증 규모 요점). 이 파일만 편집. 스타일은 #t4 로 범위를 한정 -->
 <style>
-#t4 .body { }
+/* 격자: [기여 504 | 연결 56 | 근거 664] = 1224  + 간격 40 + [최종 결과 464] = 1728
+   세로: 열 머리 40 · 16 · 행 3개(각 224, 사이 16) → 760 · 주석 777~801 = 바닥선 801 (2장 핵심 메시지와 같은 바닥선) */
+#t4 .t4-tbl { position: absolute; left: 0; top: 0; width: 1224px; display: grid;
+  grid-template-columns: 504px 56px 664px; grid-template-rows: 40px repeat(3, 224px); row-gap: 16px; }
+#t4 .t4-tbl > .r1 { grid-row: 2; } #t4 .t4-tbl > .r2 { grid-row: 3; } #t4 .t4-tbl > .r3 { grid-row: 4; }
+
+/* 열 머리 */
+#t4 .t4-ch { display: flex; align-items: center; gap: 16px; font-size: 24px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; white-space: nowrap; color: var(--navy); }
+#t4 .t4-ch::after { content: ""; flex: 1; height: 2px; border-radius: 1px; background: var(--navy); }
+#t4 .t4-ch svg { flex: none; width: 26px; height: 26px; }
+#t4 .t4-ch.c1 { grid-column: 1; } #t4 .t4-ch.c2 { grid-column: 3; }
+#t4 .t4-ch.c2::after { content: none; }
+#t4 .t4-ch .ln { flex: 1; height: 2px; border-radius: 1px; background: var(--navy); }
+/* 막대 범례 */
+#t4 .t4-lg { flex: none; display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; letter-spacing: -0.02em; color: var(--ink-3); }
+#t4 .t4-lg i { flex: none; width: 24px; height: 8px; border-radius: 4px; }
+#t4 .t4-lg i.g { background: var(--gray-bar); }
+#t4 .t4-lg i.r { margin-left: 8px; background: var(--accent); }
+
+/* 기여 칸 */
+#t4 .t4-con { grid-column: 1; display: flex; align-items: center; gap: 24px; padding: 0 32px; border-radius: var(--radius); background: var(--surface); }
+/* 아이콘 칸: 2장(.t2-ic)·5장(.t5-ic)과 같은 80×80, 반경 20 — 2장 높이/CAD/치수 아이콘을 반복해 목표 → 기여를 잇는다 */
+#t4 .t4-ic { flex: none; width: 80px; height: 80px; border-radius: 20px; background: var(--paper); display: grid; place-items: center; box-shadow: 0 2px 6px rgba(16, 42, 76, .06); }
+#t4 .t4-ic svg { width: 40px; height: 40px; }
+#t4 .t4-ic .g { fill: none; stroke: var(--navy); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+#t4 .t4-con .k { font-size: 16px; font-weight: 800; letter-spacing: 0.04em; line-height: 1; color: var(--accent); margin-bottom: 16px; }
+#t4 .t4-con h3 { font-size: var(--fs-h3); font-weight: 800; letter-spacing: -0.04em; line-height: 1.38; color: var(--navy); white-space: nowrap; }
+
+/* 연결 */
+#t4 .t4-go { grid-column: 2; position: relative; }
+#t4 .t4-go::before { content: ""; position: absolute; left: 0; right: 0; top: 111px; height: 2px; background: var(--line-2); }
+#t4 .t4-go i { position: absolute; left: 4px; top: 88px; width: 48px; height: 48px; border-radius: 50%; background: var(--navy); display: grid; place-items: center; }
+#t4 .t4-go svg { width: 20px; height: 20px; }
+
+/* 근거 칸 */
+#t4 .t4-ev { grid-column: 3; display: flex; flex-direction: column; justify-content: center; padding: 0 32px; border-radius: var(--radius); background: var(--paper); border: 2px solid var(--navy); box-shadow: 0 6px 18px rgba(16, 42, 76, .08); }
+#t4 .t4-mt { display: flex; align-items: baseline; gap: 8px; height: 20px; line-height: 1; white-space: nowrap; }
+#t4 .t4-mt b { font-size: 19px; font-weight: 800; letter-spacing: -0.02em; color: var(--navy); }
+#t4 .t4-mt span { font-size: 19px; font-weight: 600; letter-spacing: -0.02em; color: var(--ink-3); }
+#t4 .t4-pair { margin-top: 24px; display: grid; grid-template-columns: repeat(2, 1fr); column-gap: 32px; }
+/* 이름 줄: 왼쪽 항목 이름, 오른쪽 끝에 비교값·표본 수(작게) */
+#t4 .t4-kv .n { display: flex; align-items: baseline; justify-content: space-between; font-size: 19px; font-weight: 700; color: var(--ink-2); line-height: 1; white-space: nowrap; }
+#t4 .t4-kv .n span { font-size: 16px; font-weight: 600; letter-spacing: -0.02em; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+#t4 .t4-kv .n span b { font-weight: 700; color: var(--ink-2); }
+#t4 .t4-kv .v { margin-top: 8px; display: flex; align-items: center; gap: 8px; height: 60px; }
+#t4 .t4-kv .v .kpi { flex: none; font-size: 60px; white-space: nowrap; }
+#t4 .t4-kv .v .delta { flex: none; }
+#t4 .t4-kv.ref .n { color: var(--ink-3); }
+#t4 .t4-kv.ref .v { align-items: flex-end; padding-bottom: 2px; }
+#t4 .t4-kv.ref .v .kpi { font-size: 48px; color: var(--ink-3); }
+
+/* 0~1 눈금 막대 */
+#t4 .t4-bar { position: relative; margin-top: 16px; height: 8px; border-radius: 4px; background: var(--surface-2); }
+#t4 .t4-bar i { position: absolute; top: 0; height: 8px; }
+#t4 .t4-bar .b0 { left: 0; background: var(--gray-bar); border-radius: 4px 0 0 4px; }
+#t4 .t4-bar .b0.solo { border-radius: 4px; }
+#t4 .t4-bar .b1 { background: var(--accent); border-radius: 0 4px 4px 0; }
+#t4 .t4-bar .bn { left: 0; background: var(--navy-2); border-radius: 4px; }
+
+/* 주석 */
+#t4 .t4-note { position: absolute; left: 0; top: 777px; width: 1224px; font-size: 16px; font-weight: 600; color: var(--ink-3); line-height: 24px; white-space: nowrap; }
+#t4 .t4-note b { color: var(--ink-2); font-weight: 700; }
+
+/* 최종 결과 (4장 핵심 메시지) */
+#t4 .t4-ch.c3 { position: absolute; left: 1264px; top: 0; width: 464px; height: 40px; }
+#t4 .t4-hero { position: absolute; left: 1264px; top: 56px; width: 464px; height: 745px; display: flex; flex-direction: column; padding: 32px 40px; border-radius: var(--radius); background: var(--navy); color: #fff; box-shadow: 0 10px 28px rgba(16, 42, 76, .18); }
+#t4 .t4-hh { display: flex; align-items: center; justify-content: space-between; white-space: nowrap; }
+#t4 .t4-hero h3 { font-size: 30px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.2; color: #fff; }
+#t4 .t4-tag { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 14px 0 12px; border-radius: 999px; background: rgba(255, 255, 255, .12); font-size: 16px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; color: rgba(255, 255, 255, .88); }
+#t4 .t4-tag svg { flex: none; width: 18px; height: 18px; }
+#t4 .t4-big { margin-top: 8px; display: flex; align-items: baseline; gap: 16px; white-space: nowrap; }
+#t4 .t4-big .kpi { font-size: 128px; color: #fff; letter-spacing: -0.05em; }
+#t4 .t4-big .of { font-size: 40px; font-weight: 700; color: rgba(255, 255, 255, .55); letter-spacing: -0.03em; line-height: 1; }
+#t4 .t4-hero .sub { margin-top: 8px; font-size: 21px; font-weight: 600; color: rgba(255, 255, 255, .82); line-height: 1.4; white-space: nowrap; }
+#t4 .t4-hbar { position: relative; flex: none; margin-top: 24px; height: 12px; border-radius: 6px; background: rgba(255, 255, 255, .16); }
+#t4 .t4-hbar i { position: absolute; left: 0; top: 0; height: 12px; width: 93.3%; border-radius: 6px; background: var(--accent); }
+#t4 .t4-rate { margin-top: 16px; display: flex; align-items: baseline; justify-content: space-between; line-height: 1; white-space: nowrap; }
+#t4 .t4-rate span { font-size: 19px; font-weight: 700; color: rgba(255, 255, 255, .75); }
+#t4 .t4-rate b { font-size: 32px; font-weight: 800; color: #fff; letter-spacing: -0.03em; }
+/* 요소별 생성 수: 작은 이름 줄(이름 + 가는 선) 아래 한 줄 */
+#t4 .t4-elk { margin-top: 24px; display: flex; align-items: center; gap: 12px; font-size: 16px; font-weight: 700; letter-spacing: -0.01em; line-height: 1; color: rgba(255, 255, 255, .62); white-space: nowrap; }
+#t4 .t4-elk::after { content: ""; flex: 1; height: 1.5px; background: rgba(255, 255, 255, .16); }
+#t4 .t4-el { margin-top: 14px; display: flex; align-items: center; justify-content: space-between; white-space: nowrap; line-height: 1; font-variant-numeric: tabular-nums; }
+#t4 .t4-el p { font-size: 19px; font-weight: 600; color: rgba(255, 255, 255, .6); letter-spacing: -0.02em; }
+#t4 .t4-el p b { margin-left: 4px; font-weight: 800; color: #fff; }
+#t4 .t4-el i { flex: none; width: 1.5px; height: 16px; margin: 0 16px; background: rgba(255, 255, 255, .22); }
+/* 그림 틀이 낮아져도 건물 전체(지붕~바닥)가 보이도록 그림 폭을 256px로 잡고 가운데 정렬 */
+#t4 .t4-hero .fig { flex: 1 1 auto; min-height: 0; margin-top: 20px; padding: 12px 68px 12px 60px; border: none; }
+#t4 .t4-hero .fig img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; }
+#t4 .t4-hero .hc { margin-top: 16px; font-size: 16px; font-weight: 600; line-height: 1; color: rgba(255, 255, 255, .62); white-space: nowrap; }
 </style>
+
+<div class="t4-tbl">
+  <!-- 열 머리 -->
+  <p class="t4-ch c1">
+    <svg viewBox="0 0 26 26" aria-hidden="true"><path d="M7 22V5M7 5.5h11.5l-2.5 4 2.5 4H7" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    연구 기여</p>
+  <p class="t4-ch c2">
+    <svg viewBox="0 0 26 26" aria-hidden="true"><path d="M4 22h18M7.5 18v-5M13 18V7M18.5 18v-8" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round"/></svg>
+    <span>근거 수치</span><span class="ln"></span>
+    <span class="t4-lg"><i class="g"></i>비교 기준<i class="r"></i>향상분</span></p>
+
+  <!-- 기여 1 -->
+  <div class="t4-con r1">
+    <span class="t4-ic"><svg viewBox="0 0 40 40" aria-hidden="true"><g class="g"><path d="M5 35h24"/><rect x="9" y="11" width="14" height="24" rx="1.5"/><path d="M13 17h6M13 23h6M13 29h6"/><path d="M33 6v29"/><path d="M29.5 9.5L33 6l3.5 3.5"/><path d="M29.5 31.5L33 35l3.5-3.5"/></g></svg></span>
+    <div><p class="k">기여 1</p><h3>도면 종류별 최적<br>학습·인식 전략 제안</h3></div>
+  </div>
+  <div class="t4-go r1"><i><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4.5L13 10l-5.5 5.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></i></div>
+  <div class="t4-ev r1">
+    <p class="t4-mt"><b>도면 객체 인식 mAP@0.5</b><span>· &nbsp;학습 이미지 평면도 72,792장 · 입면도 16,992장</span></p>
+    <div class="t4-pair">
+      <div class="t4-kv">
+        <p class="n">평면도<span>Baseline <b>0.507</b></span></p>
+        <p class="v"><span class="kpi num">0.934</span><span class="delta">+42.7%p</span></p>
+        <div class="t4-bar"><i class="b0" style="width:50.7%"></i><i class="b1" style="left:50.7%;width:42.7%"></i></div>
+      </div>
+      <div class="t4-kv">
+        <p class="n">입면도<span>Baseline <b>0.355</b></span></p>
+        <p class="v"><span class="kpi num">0.838</span><span class="delta">+48.3%p</span></p>
+        <div class="t4-bar"><i class="b0" style="width:35.5%"></i><i class="b1" style="left:35.5%;width:48.3%"></i></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 기여 2 -->
+  <div class="t4-con r2">
+    <span class="t4-ic"><svg viewBox="0 0 40 40" aria-hidden="true"><g class="g"><path d="M20 6l14 7-14 7-14-7z"/><path d="M6 20l14 7 14-7"/><path d="M6 27l14 7 14-7"/></g></svg></span>
+    <div><p class="k">기여 2</p><h3>CAD 정보 없이 평면도·입면도 간<br>객체 대응 관계 정의</h3></div>
+  </div>
+  <div class="t4-go r2"><i><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4.5L13 10l-5.5 5.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></i></div>
+  <div class="t4-ev r2">
+    <p class="t4-mt"><b>대응 객체 매칭 F1-score</b><span>· &nbsp;8개 동 BIM, 개구부 3,458개</span></p>
+    <div class="t4-pair">
+      <div class="t4-kv">
+        <p class="n">창문<span><b>3,410</b>개</span></p>
+        <p class="v"><span class="kpi num">0.93</span></p>
+        <div class="t4-bar"><i class="bn" style="width:93%"></i></div>
+      </div>
+      <div class="t4-kv">
+        <p class="n">문<span><b>48</b>개</span></p>
+        <p class="v"><span class="kpi num">0.95</span></p>
+        <div class="t4-bar"><i class="bn" style="width:95%"></i></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 기여 3 -->
+  <div class="t4-con r3">
+    <span class="t4-ic"><svg viewBox="0 0 40 40" aria-hidden="true"><g class="g"><path d="M6 12v16M34 12v16"/><path d="M6 20h28"/><path d="M10.5 16.5L6 20l4.5 3.5M29.5 16.5L34 20l-4.5 3.5"/><rect x="5" y="31" width="30" height="5" rx="1.5"/><path d="M11 31v2.5M17 31v2.5M23 31v2.5M29 31v2.5"/></g></svg></span>
+    <div><p class="k">기여 3</p><h3>LMM 기반 축척 인식으로 불완전한<br>도면에서도 안정적인 치수 보정</h3></div>
+  </div>
+  <div class="t4-go r3"><i><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4.5L13 10l-5.5 5.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></i></div>
+  <div class="t4-ev r3">
+    <p class="t4-mt"><b>축척 인식 정확도</b><span>· &nbsp;Tesseract OCR 대비</span></p>
+    <div class="t4-pair">
+      <div class="t4-kv">
+        <p class="n">LMM(GPT-4o)</p>
+        <p class="v"><span class="kpi num">0.707</span><span class="delta">+33.8%p</span></p>
+        <div class="t4-bar"><i class="b0" style="width:36.9%"></i><i class="b1" style="left:36.9%;width:33.8%"></i></div>
+      </div>
+      <div class="t4-kv ref">
+        <p class="n">Tesseract OCR</p>
+        <p class="v"><span class="kpi num">0.369</span></p>
+        <div class="t4-bar"><i class="b0 solo" style="width:36.9%"></i></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="t4-note"><b>mAP@0.5</b> 객체를 맞게 찾아낸 정도 &nbsp;·&nbsp; <b>F1-score</b> 정밀도·재현율의 조화평균 (모두 1에 가까울수록 좋음) &nbsp;·&nbsp; <b>LMM</b> 대형 멀티모달 모델 &nbsp;·&nbsp; 학습 이미지 수는 타일 포함</p>
+
+<!-- 최종 결과 (4장 핵심 메시지) -->
+<p class="t4-ch c3">
+  <svg viewBox="0 0 26 26" aria-hidden="true"><path d="M13 3.5l8.5 4.75v9.5L13 22.5l-8.5-4.75v-9.5z" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linejoin="round"/><path d="M4.5 8.25L13 13l8.5-4.75M13 13v9.5" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linejoin="round"/></svg>
+  최종 결과</p>
+<aside class="t4-hero">
+  <div class="t4-hh"><h3>최종 BIM 생성</h3>
+    <span class="t4-tag"><svg viewBox="0 0 18 18" aria-hidden="true"><path d="M2.5 16h13M4.5 16V5.5L9 2.5l4.5 3V16" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.5 8h3M7.5 11.5h3" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="2" stroke-linecap="round"/></svg>건물 1동 실증</span></div>
+  <p class="t4-big"><span class="kpi num">379</span><span class="of num">/ 406</span></p>
+  <p class="sub">406개 객체 중 379개 자동 생성</p>
+  <div class="t4-hbar"><i></i></div>
+  <p class="t4-rate"><span>생성 완성도</span><b class="num">93.3%</b></p>
+  <p class="t4-elk">요소별 생성</p>
+  <div class="t4-el">
+    <p>벽<b>135</b> / 153</p><i></i>
+    <p>문<b>64</b> / 64</p><i></i>
+    <p>창문<b>180</b> / 189</p>
+  </div>
+  <div class="fig"><img src="assets/step4.png" alt="자동 생성된 3D BIM"></div>
+  <p class="hc">자동 생성된 3D BIM</p>
+</aside>
