@@ -1,0 +1,16 @@
+{
+  "name": "skh-pt",
+  "private": true,
+  "description": "SK하이닉스 석사 연구 PT — HTML 시안 · 편집 가능한 PPTX 빌드 도구",
+  "scripts": {
+    "build": "node tools/build.cjs",
+    "preview": "node tools/render.cjs deck.html --png-only",
+    "pptx": "node tools/build.cjs && node tools/to-pptx.cjs deck.html"
+  },
+  "dependencies": {
+    "jszip": "^3.10.1",
+    "pptxgenjs": "3.12.0",
+    "sharp": "0.33.5",
+    "svgpath": "^2.6.0"
+  }
+}
