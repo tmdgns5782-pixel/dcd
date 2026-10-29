@@ -1,4 +1,135 @@
-<!-- s8: 이 파일만 편집. 스타일은 #s8 로 범위를 한정 -->
+<!-- s8: ② 대응 객체 매칭 · BIM 생성. 이 파일만 편집. 스타일은 #s8 로 범위를 한정 -->
 <style>
-#s8 .body { }
+/* 격자: 왼쪽(STEP 3 대응 객체 매칭) 844 | 40 | 오른쪽(STEP 4 BIM 요소 생성) 844 = 1728 */
+#s8 .s8-l { position: absolute; left: 0; top: 0; width: 844px; height: 744px; }
+#s8 .s8-r { position: absolute; left: 884px; top: 0; width: 844px; height: 744px; }
+
+/* 열 머리 (S7과 같은 형식) */
+#s8 .s8-ch { display: flex; align-items: center; gap: 14px; height: 36px; white-space: nowrap; }
+#s8 .s8-ch .st { font-size: 15px; font-weight: 800; letter-spacing: 0.12em; color: var(--navy-2); line-height: 1; }
+#s8 .s8-ch h3 { font-size: 26px; font-weight: 800; letter-spacing: -0.035em; color: var(--navy); line-height: 1; margin-right: 4px; }
+#s8 .s8-ch .chip { height: 34px; font-size: 16px; padding: 0 14px; }
+#s8 .s8-ch::after { content: ""; flex: 1; height: 2px; border-radius: 1px; background: var(--navy); margin-left: 6px; }
+
+/* (a) 매칭 개념도 */
+#s8 .s8-mfig { position: absolute; left: 0; top: 56px; width: 844px; height: 551px; display: grid; place-items: center; }
+#s8 .s8-mfig .im { position: relative; width: 776px; height: 524px; }
+#s8 .s8-mfig .im img { width: 100%; height: 100%; object-fit: contain; }
+#s8 .s8-kl { position: absolute; right: 229px; text-align: right; line-height: 1.3; white-space: nowrap; }
+#s8 .s8-kl .a { display: block; font-size: 16px; font-weight: 600; color: var(--ink-3); }
+#s8 .s8-kl .b { display: block; font-size: 20px; font-weight: 800; color: var(--navy); letter-spacing: -0.02em; }
+
+/* (a) 매칭 3단계 */
+#s8 .s8-steps { position: absolute; left: 0; top: 627px; width: 844px; height: 117px; padding: 0 28px; display: grid; grid-template-columns: 1fr 28px 1fr 28px 1fr; align-items: center; }
+#s8 .s8-step { display: flex; align-items: center; gap: 12px; }
+#s8 .s8-step .no { width: 36px; height: 36px; font-size: 16px; }
+#s8 .s8-step h4 { font-size: 21px; font-weight: 800; letter-spacing: -0.035em; color: var(--navy); line-height: 1.25; white-space: nowrap; }
+#s8 .s8-step p { margin-top: 4px; font-size: 18px; font-weight: 500; letter-spacing: -0.025em; color: var(--ink-2); line-height: 1.3; white-space: nowrap; }
+#s8 .s8-chev { width: 28px; height: 28px; }
+
+/* (b) BIM 요소 생성 스트립: 1201×271 → 폭 800(×0.666), 그림 부분만 */
+#s8 .s8-sfig { position: absolute; left: 0; top: 56px; width: 844px; height: 222px; padding: 16px 0 14px; }
+#s8 .s8-sfig .im { width: 800px; height: 137px; margin: 0 auto; }
+#s8 .s8-sfig .im img { width: 100%; height: 100%; object-fit: cover; object-position: 0 -5px; }
+#s8 .s8-caps { position: relative; width: 800px; height: 42px; margin: 10px auto 0; }
+#s8 .s8-caps span { position: absolute; top: 0; width: 160px; margin-left: -80px; text-align: center; font-size: 16px; font-weight: 600; line-height: 21px; color: var(--ink-2); white-space: nowrap; }
+#s8 .s8-caps span b { font-weight: 800; color: var(--navy); }
+
+/* (b) Revit API → 결과 BIM */
+#s8 .s8-down { position: absolute; left: 0; top: 278px; }
+#s8 .s8-revit { position: absolute; left: 0; top: 314px; width: 372px; height: 430px; padding: 30px 30px 24px; display: flex; flex-direction: column; }
+#s8 .s8-revit .t { display: flex; align-items: center; gap: 16px; }
+#s8 .s8-revit .t .ic { flex: none; width: 56px; height: 56px; border-radius: 14px; background: var(--navy); display: grid; place-items: center; }
+#s8 .s8-revit .t .ic svg { width: 32px; height: 32px; }
+#s8 .s8-revit .t .n { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; line-height: 1; color: var(--navy); }
+#s8 .s8-revit .t .s { margin-top: 8px; font-size: 19px; font-weight: 600; line-height: 1; color: var(--ink-3); }
+#s8 .s8-revit .d { margin-top: 22px; font-size: 21px; font-weight: 500; line-height: 1.45; color: var(--ink-2); letter-spacing: -0.025em; }
+#s8 .s8-revit .d b { font-weight: 700; color: var(--ink); }
+#s8 .s8-term { margin-top: auto; border-radius: 14px; background: var(--paper); border: 1.5px solid var(--line); padding: 20px 24px 22px; }
+#s8 .s8-term .k { font-size: 14px; font-weight: 800; letter-spacing: 0.12em; color: var(--ink-3); line-height: 1; }
+#s8 .s8-term h4 { margin-top: 12px; font-size: 23px; font-weight: 800; letter-spacing: -0.035em; color: var(--navy); line-height: 1.2; }
+#s8 .s8-term h4 small { font-size: 16px; font-weight: 600; color: var(--ink-3); margin-left: 8px; letter-spacing: 0; }
+#s8 .s8-term p { margin-top: 8px; font-size: 20px; font-weight: 500; line-height: 1.45; color: var(--ink-2); letter-spacing: -0.025em; }
+#s8 .s8-term p b { font-weight: 700; color: var(--ink); }
+#s8 .s8-go { position: absolute; left: 372px; top: 314px; }
+
+#s8 .s8-bim { position: absolute; left: 412px; top: 314px; width: 432px; height: 430px; padding: 14px 16px 16px; border-color: var(--line-2); box-shadow: 0 6px 16px rgba(16, 42, 76, .08); }
+#s8 .s8-bim .im { width: 100%; height: 362px; }
+#s8 .s8-bim .im img { width: 100%; height: 100%; object-fit: contain; }
+#s8 .s8-bim .cap { margin-top: 8px; text-align: center; font-size: 17px; font-weight: 700; color: var(--navy); line-height: 1.2; }
+#s8 .s8-bim .cap span { color: var(--ink-3); font-weight: 600; }
 </style>
+
+<!-- ================= 왼쪽: STEP 3 대응 객체 매칭 ================= -->
+<div class="s8-l">
+  <div class="s8-ch">
+    <span class="st">STEP 3</span>
+    <h3>대응 객체 매칭</h3>
+    <span class="chip tint">헝가리안 알고리즘</span>
+  </div>
+
+  <div class="fig s8-mfig">
+    <div class="im">
+      <img src="assets/matching-concept.png" alt="평면도 X·Y 좌표와 입면도 Z 좌표 매칭 개념도">
+      <p class="s8-kl" style="top:34px"><span class="a">입면도에서</span><span class="b">Z 좌표 (높이)</span></p>
+      <p class="s8-kl" style="top:458px"><span class="a">평면도에서</span><span class="b">X·Y 좌표</span></p>
+    </div>
+  </div>
+
+  <div class="card s8-steps">
+    <div class="s8-step"><span class="no">1</span><div><h4>비용 행렬 구성</h4><p>객체 위치·상대 정렬 기준</p></div></div>
+    <svg class="s8-chev" viewBox="0 0 28 28" aria-hidden="true"><path d="M10 7l7 7-7 7" fill="none" stroke="var(--gray-bar-2)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div class="s8-step"><span class="no">2</span><div><h4>헝가리안 알고리즘</h4><p>최적 1:1 매칭</p></div></div>
+    <svg class="s8-chev" viewBox="0 0 28 28" aria-hidden="true"><path d="M10 7l7 7-7 7" fill="none" stroke="var(--gray-bar-2)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div class="s8-step"><span class="no">3</span><div><h4>3차원 위치 확정</h4><p>같은 창·문의 X·Y + Z</p></div></div>
+  </div>
+</div>
+
+<!-- ================= 오른쪽: STEP 4 BIM 요소 생성 ================= -->
+<div class="s8-r">
+  <div class="s8-ch">
+    <span class="st">STEP 4</span>
+    <h3>BIM 요소 생성</h3>
+    <span class="chip tint">스켈레톤 기반 벽체 추출</span>
+    <span class="chip tint">Revit API</span>
+  </div>
+
+  <div class="fig s8-sfig">
+    <div class="im"><img src="assets/bim-instantiation.png" alt="BIM 요소 생성 5단계"></div>
+    <div class="s8-caps">
+      <span style="left:73px">평면도 객체<br>인식 결과</span>
+      <span style="left:240px">Skeletonization<br>(골격선 추출)</span>
+      <span style="left:417px">벽체 중심선·<br>코너점 추출</span>
+      <span style="left:571px"><b>창문 호스팅</b><br>관계 정의</span>
+      <span style="left:732px"><b>문 호스팅</b><br>관계 정의</span>
+    </div>
+  </div>
+
+  <svg class="s8-down" width="372" height="36" viewBox="0 0 372 36" aria-hidden="true">
+    <line x1="186" y1="8" x2="186" y2="22" stroke="var(--navy-2)" stroke-width="2" stroke-linecap="round"/>
+    <polygon points="186,31 180,20 192,20" fill="var(--navy-2)"/>
+  </svg>
+
+  <div class="card s8-revit">
+    <div class="t">
+      <span class="ic"><svg viewBox="0 0 32 32" aria-hidden="true"><g fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4l11 6v12l-11 6-11-6V10z"/><path d="M5 10l11 6 11-6M16 16v12"/></g></svg></span>
+      <div><p class="n">Revit API</p><p class="s">BIM 모델 생성</p></div>
+    </div>
+    <p class="d">추출한 <b>벽체</b>와 <b>호스팅 관계</b>로<br>벽 · 창문 · 문 BIM 요소 생성</p>
+    <div class="s8-term">
+      <p class="k">용어 풀이</p>
+      <h4>호스팅<small>Hosting</small></h4>
+      <p>창·문을 <b>어느 벽에 붙일지</b><br>정하는 것</p>
+    </div>
+  </div>
+
+  <svg class="s8-go" width="40" height="430" viewBox="0 0 40 430" aria-hidden="true">
+    <line x1="8" y1="215" x2="26" y2="215" stroke="var(--navy-2)" stroke-width="2" stroke-linecap="round"/>
+    <polygon points="35,215 24,209 24,221" fill="var(--navy-2)"/>
+  </svg>
+
+  <div class="fig s8-bim">
+    <div class="im"><img src="assets/step4.png" alt="자동 생성된 3D BIM"></div>
+    <p class="cap">자동 생성된 3D BIM <span>(결과)</span></p>
+  </div>
+</div>

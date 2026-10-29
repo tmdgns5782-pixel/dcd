@@ -1,4 +1,94 @@
-<!-- s2: 이 파일만 편집. 스타일은 #s2 로 범위를 한정 -->
+<!-- s2: 목차. 이 파일만 편집. 스타일은 #s2 로 범위를 한정 -->
 <style>
-#s2 .body { }
+/* 격자: 카드 5개 + 묶음 안 간격 20 + 묶음 사이 간격 64(화살표 자리)
+   높이 = 묶음 머리 40 + 간격 28 + 카드 464 = 532 → 본문 세로 가운데보다 살짝 위 */
+#s2 .s2-grid { position: absolute; left: 0; right: 0; top: calc(50% - 300px); height: 532px; display: grid;
+  grid-template-columns: 1fr 20px 1fr 64px 1fr 20px 1fr 64px 1fr; grid-template-rows: 40px 464px; row-gap: 28px; }
+
+/* 묶음 머리: 문제 / 해결 / 의미 */
+#s2 .gh { display: flex; align-items: center; gap: 16px; font-size: 24px; font-weight: 800; letter-spacing: -0.02em; color: var(--navy); white-space: nowrap; }
+#s2 .gh::after { content: ""; flex: 1; height: 2px; border-radius: 1px; background: var(--navy); }
+#s2 .gh.c1 { grid-column: 1 / 4; } #s2 .gh.c2 { grid-column: 5 / 8; } #s2 .gh.c3 { grid-column: 9 / 10; }
+#s2 .go { grid-row: 1; display: grid; place-items: center; }
+#s2 .go.a1 { grid-column: 4; } #s2 .go.a2 { grid-column: 8; }
+#s2 .go svg { width: 28px; height: 28px; }
+
+/* 장 카드: 위(번호·장 이름) + 아래 띠(이 장이 답하는 질문) */
+#s2 .ch { grid-row: 2; display: flex; flex-direction: column; border-radius: var(--radius); background: var(--surface); }
+#s2 .ch.k1 { grid-column: 1; } #s2 .ch.k2 { grid-column: 3; } #s2 .ch.k3 { grid-column: 5; } #s2 .ch.k4 { grid-column: 7; } #s2 .ch.k5 { grid-column: 9; }
+#s2 .ch .hd2 { flex: 1; display: flex; flex-direction: column; padding: 44px 28px 32px 32px; }
+#s2 .ch .top { display: flex; align-items: flex-start; justify-content: space-between; }
+#s2 .ch .n { font-size: 64px; font-weight: 800; line-height: 1; letter-spacing: -0.03em; color: var(--navy); font-variant-numeric: tabular-nums; }
+#s2 .ch .top svg { width: 40px; height: 40px; }
+#s2 .ch .ic { fill: none; stroke: var(--navy-2); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+#s2 .ch .bar { margin-top: 32px; width: 32px; height: 3px; border-radius: 2px; background: var(--navy); }
+#s2 .ch .t { margin-top: 24px; font-size: 30px; font-weight: 800; line-height: 1.32; letter-spacing: -0.035em; color: var(--navy); }
+#s2 .ch .q { flex: none; height: 144px; padding: 32px 28px 0 32px; border-radius: 0 0 var(--radius) var(--radius); background: var(--navy-tint); }
+#s2 .ch .q p { font-size: 22px; font-weight: 600; line-height: 1.45; letter-spacing: -0.02em; color: var(--ink-2); }
+
+/* 의미(05): 네이비 카드 = 발표의 도착점 */
+#s2 .ch.k5 { background: var(--navy); }
+#s2 .ch.k5 .n, #s2 .ch.k5 .t { color: #fff; }
+#s2 .ch.k5 .bar { background: #9FB0C8; }
+#s2 .ch.k5 .ic { stroke: #9FB0C8; }
+#s2 .ch.k5 .q { background: #213D63; }
+#s2 .ch.k5 .q p { color: #E3E9F2; }
 </style>
+
+<div class="s2-grid">
+  <p class="gh c1">문제</p>
+  <div class="go a1"><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M10 7l7 7-7 7" fill="none" stroke="var(--navy)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <p class="gh c2">해결</p>
+  <div class="go a2"><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M10 7l7 7-7 7" fill="none" stroke="var(--navy)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <p class="gh c3">의미</p>
+
+  <article class="ch k1">
+  <div class="hd2">
+    <div class="top"><p class="n">01</p>
+      <svg viewBox="0 0 40 40" aria-hidden="true"><g class="ic"><circle cx="17" cy="17" r="10"/><path d="M24.5 24.5L34 34"/><path d="M13 17h8M17 13v8"/></g></svg></div>
+    <i class="bar"></i>
+    <h3 class="t">연구 배경 및<br>문제 정의</h3>
+  </div>
+    <div class="q"><p>왜 이 연구가 필요한가</p></div>
+  </article>
+
+  <article class="ch k2">
+  <div class="hd2">
+    <div class="top"><p class="n">02</p>
+      <svg viewBox="0 0 40 40" aria-hidden="true"><g class="ic"><circle cx="20" cy="20" r="14"/><circle cx="20" cy="20" r="8"/><circle cx="20" cy="20" r="2"/></g></svg></div>
+    <i class="bar"></i>
+    <h3 class="t">기존 연구 한계 및<br>연구 목표</h3>
+  </div>
+    <div class="q"><p>기존 연구로는 왜 안 되는가,<br>그래서 무엇을 목표로 했는가</p></div>
+  </article>
+
+  <article class="ch k3">
+  <div class="hd2">
+    <div class="top"><p class="n">03</p>
+      <svg viewBox="0 0 40 40" aria-hidden="true"><g class="ic"><rect x="4" y="15" width="10" height="10" rx="2"/><rect x="26" y="5" width="10" height="10" rx="2"/><rect x="26" y="25" width="10" height="10" rx="2"/><path d="M14 20h6M20 10v20M20 10h6M20 30h6"/></g></svg></div>
+    <i class="bar"></i>
+    <h3 class="t">연구 방법</h3>
+  </div>
+    <div class="q"><p>어떻게 해결했는가</p></div>
+  </article>
+
+  <article class="ch k4">
+  <div class="hd2">
+    <div class="top"><p class="n">04</p>
+      <svg viewBox="0 0 40 40" aria-hidden="true"><g class="ic"><path d="M5 35h30"/><rect x="8" y="23" width="6" height="12" rx="1"/><rect x="17" y="15" width="6" height="20" rx="1"/><rect x="26" y="7" width="6" height="28" rx="1"/></g></svg></div>
+    <i class="bar"></i>
+    <h3 class="t">연구 결과 및 기여</h3>
+  </div>
+    <div class="q"><p>얼마나 잘 됐고,<br>어떤 의미가 있는가</p></div>
+  </article>
+
+  <article class="ch k5">
+  <div class="hd2">
+    <div class="top"><p class="n">05</p>
+      <svg viewBox="0 0 40 40" aria-hidden="true"><g class="ic"><path d="M3 35h34"/><path d="M6 35V20l9-6v6l9-6v6h3V7h6v28"/><path d="M11 28h4M20 28h4"/></g></svg></div>
+    <i class="bar"></i>
+    <h3 class="t">Utility 기술<br>(건축, BIM/5D)<br>직무와의 연관성</h3>
+  </div>
+    <div class="q"><p>SK하이닉스 직무에서<br>왜 중요한가</p></div>
+  </article>
+</div>

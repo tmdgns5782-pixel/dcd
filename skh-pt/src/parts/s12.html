@@ -1,4 +1,71 @@
-<!-- s12: 이 파일만 편집. 스타일은 #s12 로 범위를 한정 -->
+<!-- s12: 마무리(표지와 짝). 이 파일만 편집. 스타일은 #s12 로 범위를 한정 -->
 <style>
-#s12 .body { }
+/* 틀: 머리글 없음 → 본문이 슬라이드 높이를 모두 쓰게. 바닥글은 자리만 남기고 숨김 */
+#s12 { grid-template-rows: 1fr auto; }
+#s12 .body { margin-top: 0; }
+#s12 .ft { visibility: hidden; }
+
+/* 오른쪽 면: 표지와 같은 자리·같은 색 */
+#s12 .body::before {
+  content: ""; position: absolute; z-index: 0;
+  left: 1024px; right: -96px; top: -60px; bottom: -64px;
+  background: linear-gradient(180deg, #F5F7FA 0%, #E6ECF4 100%);
+}
+
+/* ---------- 왼쪽: 글 (표지와 같은 뼈대) ---------- */
+#s12 .s12-text { position: absolute; z-index: 1; left: 0; top: 0; width: 904px; height: calc(100% - 12px);
+  display: flex; flex-direction: column; justify-content: space-between; padding: 24px 0 8px; }
+#s12 .s12-kicker { display: flex; align-items: center; gap: 14px; height: 30px; font-size: 19px; font-weight: 700; color: var(--navy); letter-spacing: 0.02em; }
+#s12 .s12-kicker i { width: 28px; height: 4px; border-radius: 2px; background: var(--accent); }
+
+#s12 .s12-t1 { font-size: 120px; font-weight: 800; line-height: 1.1; letter-spacing: -0.05em; color: var(--navy); white-space: nowrap; }
+#s12 .s12-t2 { margin-top: 28px; display: flex; align-items: center; gap: 20px; font-size: 40px; font-weight: 700; line-height: 1.3; letter-spacing: -0.02em; color: var(--ink-2); }
+#s12 .s12-t2 i { width: 40px; height: 4px; border-radius: 2px; background: var(--accent); }
+
+#s12 .s12-meta { display: flex; border-top: 1.5px solid var(--line); padding-top: 24px; }
+#s12 .s12-meta > div { padding: 0 40px; border-left: 1.5px solid var(--line); }
+#s12 .s12-meta > div:first-child { padding-left: 0; border-left: 0; }
+#s12 .s12-meta .k { font-size: 15px; font-weight: 700; letter-spacing: 0.08em; color: var(--ink-3); }
+#s12 .s12-meta .v { margin-top: 6px; font-size: 22px; font-weight: 700; color: var(--navy); white-space: nowrap; }
+
+/* ---------- 오른쪽: 논문 ---------- */
+#s12 .s12-logo { position: absolute; z-index: 1; right: 0; top: 16px; width: 150px; }
+/* 논문 카드: 첫 페이지 윗부분 + 인용 */
+#s12 .s12-card { position: absolute; z-index: 1; left: 1072px; top: 212px; width: 656px;
+  background: var(--paper); border-radius: var(--radius); overflow: hidden;
+  box-shadow: 0 24px 56px rgba(16, 42, 76, .14); }
+#s12 .s12-page { position: relative; height: 344px; margin: 20px 28px 0; overflow: hidden; }
+#s12 .s12-page img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+#s12 .s12-fade { position: absolute; left: 0; right: 0; bottom: 0; height: 104px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, #FFFFFF 88%); }
+#s12 .s12-cite { border-top: 1.5px solid var(--line); padding: 24px 32px 28px; }
+#s12 .s12-cite .lb { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700; color: var(--navy); }
+#s12 .s12-cite .lb i { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+#s12 .s12-cite p.ref { margin-top: 10px; font-size: 19px; font-weight: 500; line-height: 1.55; letter-spacing: -0.01em; color: var(--ink-2); }
+#s12 .s12-cite p.ref b { font-weight: 700; color: var(--navy); }
+#s12 .s12-cite p.ref span { white-space: nowrap; }
 </style>
+
+<div class="s12-text">
+  <div class="s12-kicker"><i></i>석사 연구 발표</div>
+
+  <div class="s12-title">
+    <h1 class="s12-t1">감사합니다</h1>
+    <p class="s12-t2"><i></i>Q&amp;A</p>
+  </div>
+
+  <div class="s12-meta">
+    <div><p class="k">지원 직무</p><p class="v">Utility 기술 (건축, BIM/5D)</p></div>
+    <div><p class="k">발표일</p><p class="v num">2026. 12. 3.</p></div>
+    <div><p class="k">지원자</p><p class="v">○○○</p></div>
+  </div>
+</div>
+
+<img class="s12-logo" src="assets/logo-skhynix.png" alt="SK hynix">
+<div class="s12-card">
+  <div class="s12-page"><img src="assets/paper-page.png" alt="논문 첫 페이지"><div class="s12-fade"></div></div>
+  <div class="s12-cite">
+    <p class="lb"><i></i>Automation in Construction · Vol. 187 · 2026 게재</p>
+    <p class="ref">Lee, H., Jang, S., Lee, J., Jeong, H. D., &amp; Lee, G. (2026). Automated BIM generation from inconsistent multi-view raster architectural drawings with missing dimensions. <span><b>Automation in Construction</b>, 187, 106971.</span></p>
+  </div>
+</div>
