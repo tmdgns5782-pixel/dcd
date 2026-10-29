@@ -11,7 +11,7 @@
 </head>
 <body>
 <main class="deck">
-<section class="slide cover" id="s1" data-notes="">
+<section class="slide cover" id="s1" data-notes="안녕하세요, 오늘 발표할 연구는 「평면도와 입면도 객체 인식 및 정보 통합을 통한 3D BIM 자동 생성 연구」입니다. 평면도와 입면도 이미지만으로 높이까지 갖춘 3D BIM 모델을 자동으로 만드는 연구이고, Automation in Construction 187권에 2026년 게재되었습니다. 오른쪽 그림처럼 2D 도면 묶음을 넣으면 3D BIM 모델이 자동으로 생성되는 흐름입니다. Utility 기술(건축, BIM/5D) 직무에 지원한 ○○○입니다.">
   <header class="hd" hidden></header>
   <div class="body">
     <!-- @include parts/s1.html -->
@@ -19,7 +19,7 @@
   <footer class="ft"><span>석사 연구 발표 &nbsp;·&nbsp; 평면도와 입면도 객체 인식 및 정보 통합을 통한 3D BIM 자동 생성 연구</span><span class="pg"><b>01</b> / 12</span></footer>
 </section>
 
-<section class="slide" id="s2" data-notes="">
+<section class="slide" id="s2" data-notes="발표는 다섯 장으로 구성했습니다. 1장과 2장은 &#x27;문제&#x27; 부분으로, 왜 이 연구가 필요한지, 그리고 기존 연구로는 왜 안 되는지와 그래서 무엇을 목표로 했는지 말씀드립니다. 3장과 4장은 &#x27;해결&#x27; 부분으로, 어떻게 해결했는지와 얼마나 잘 됐고 어떤 의미가 있는지를 보여 드립니다. 마지막 5장에서는 이 연구가 SK하이닉스 Utility 기술(건축, BIM/5D) 직무에서 왜 중요한지, 그 의미를 말씀드리겠습니다.">
   <header class="hd">
     <div class="hd-meta"><span class="ch-no">00</span><span class="ch-name">CONTENTS</span><span class="sep"></span><span>발표 순서</span></div>
     <h1 class="hd-title">어떤 문제를, 어떻게 해결했고, <em>그게 SK하이닉스에서 왜 의미 있는가</em></h1>
@@ -30,7 +30,7 @@
   <footer class="ft"><span>석사 연구 발표 &nbsp;·&nbsp; 평면도와 입면도 객체 인식 및 정보 통합을 통한 3D BIM 자동 생성 연구</span><span class="pg"><b>02</b> / 12</span></footer>
 </section>
 
-<section class="slide" id="s3" data-notes="">
+<section class="slide" id="s3" data-notes="국토교통부는 공공공사 BIM 의무화를 단계적으로 넓히고 있습니다. 2022년 하반기 도로를 시작으로 2023년 철도·건축, 2024년 하천·항만까지 1,000억원 이상 신규 사업에 적용했고, 2026년에는 500억원 이상, 2028년에는 300억원 이상 사업으로 확대합니다. 2030 건축BIM 로드맵도 2025년 BIM 설계 기반 구축, 2030년 디지털 건축서비스 완전 구현을 목표로 하고, LH 공동주택은 BIM 의무화를 2020년 25%, 2022년 50%, 2024년 100%로 늘렸습니다. 하지만 현실을 보면, 신규 건설은 2D 도면을 먼저 그린 뒤 BIM으로 옮기는 &#x27;BIM 전환설계&#x27;가 대부분이라 설계 후반에 투입 인력이 늘고 추가 비용이 생깁니다. 기존 건축물은 2D 도면만 남아 있어서, 결국 두 경우 모두 사람이 도면을 보고 직접 모델링해야 합니다.">
   <header class="hd">
     <div class="hd-meta"><span class="ch-no">01</span><span class="ch-name">연구 배경 및 문제 정의</span><span class="sep"></span><span>국내 BIM 도입 실태</span></div>
     <h1 class="hd-title">BIM 전면 도입이 추진되고 있지만,<br>대부분의 BIM은 여전히 <em>2D 도면</em>에서 출발합니다.</h1>
@@ -42,7 +42,7 @@
   <footer class="ft"><span>석사 연구 발표 &nbsp;·&nbsp; 평면도와 입면도 객체 인식 및 정보 통합을 통한 3D BIM 자동 생성 연구</span><span class="pg"><b>03</b> / 12</span></footer>
 </section>
 
-<section class="slide" id="s4" data-notes="">
+<section class="slide" id="s4" data-notes="2D 도면을 BIM으로 옮기려면, 사람이 평면도와 입면도를 한 장씩 해석해서 직접 모델링해야 합니다. 오른쪽 사무동 모델은 이렇게 수작업으로 모델링한 예시입니다. 이 방식에는 세 가지 문제가 있습니다. 도면을 보며 벽·창·문을 일일이 입력하는 노동집약적 작업이고, 건물 규모에 비례해 모델링 시간과 비용이 늘어나며, 도면 해석·입력 과정에서 누락과 오류가 생길 수 있습니다. 그래서 2차원 도면에 기반한 3차원 BIM 모델 자동 생성 프로세스가 필요합니다.">
   <header class="hd">
     <div class="hd-meta"><span class="ch-no">01</span><span class="ch-name">연구 배경 및 문제 정의</span><span class="sep"></span><span>BIM 자동 생성 기술의 필요성</span></div>
     <h1 class="hd-title">2D 도면을 사람이 직접 BIM으로 옮기는 과정은<br><em>느리고, 비싸고, 오류에 취약</em>합니다.</h1>
@@ -54,7 +54,7 @@
   <footer class="ft"><span>석사 연구 발표 &nbsp;·&nbsp; 평면도와 입면도 객체 인식 및 정보 통합을 통한 3D BIM 자동 생성 연구</span><span class="pg"><b>04</b> / 12</span></footer>
 </section>
 
-<section class="slide" id="s5" data-notes="">
+<section class="slide" id="s5" data-notes="기존 연구에는 세 가지 한계가 있었습니다. 첫째, 평면도 한 장만 사용해서 높이 정보를 알 수 없었고, 그래서 높이는 수동으로 입력하거나 고정값을 써야 했습니다. 둘째, CAD 레이어나 블록 같은 정보에 의존해서 이미지로만 남은 실제 도면에는 적용할 수 없었고, 셋째, 치수 글자 인식, 즉 OCR에 의존해서 치수가 빠지거나 겹치면 결과가 부정확했습니다. 그래서 저는 평면도와 입면도 정보를 통합해 완전한 3차원 BIM을 생성하고, CAD 정보 없이 이미지만으로 두 도면 간 대응 객체를 정의하고, 대형 멀티모달 모델인 LMM으로 축척을 인식해 치수를 안정적으로 보정하는 것을 목표로 했습니다. 정리하면, 딥러닝 기반 도면 객체 인식과 평면도·입면도 간 직접 매칭으로 정확한 3차원 정보를 가진 BIM 자동 생성 방법을 제안합니다.">
   <header class="hd">
     <div class="hd-meta"><span class="ch-no">02</span><span class="ch-name">기존 연구 한계 및 연구 목표</span><span class="sep"></span><span>기존 연구의 한계 ↔ 연구 목표</span></div>
     <h1 class="hd-title">기존 연구의 세 가지 한계를<br><em>세 가지 연구 목표</em>로 하나씩 해결합니다.</h1>
@@ -66,7 +66,7 @@
   <footer class="ft"><span>석사 연구 발표 &nbsp;·&nbsp; 평면도와 입면도 객체 인식 및 정보 통합을 통한 3D BIM 자동 생성 연구</span><span class="pg"><b>05</b> / 12</span></footer>
 </section>
 
-<section class="slide" id="s6" data-notes="">
+<section class="slide" id="s6" data-notes="전체 프레임워크는 네 단계로 이루어져 있습니다. 먼저 평면도와 입면도의 래스터 이미지, 즉 도면 이미지만 입력하면, 2단계에서 YOLO와 작은 객체를 나눠서 추론하는 SAHI로 도면 속 벽·창문·문을 인식하고, DBSCAN으로 층별 클러스터링을 합니다. 3단계에서는 LMM 기반으로 축척을 보정하고, 헝가리안 알고리즘으로 평면도와 입면도에서 같은 객체끼리 최적의 1:1로 짝짓습니다. 마지막 4단계에서 스켈레톤 기반으로 벽체를 추출하고 Revit API를 이용해 높이까지 갖춘 3D BIM 모델을 자동 생성합니다. 객체 인식과 축척 보정은 다음 장에서, 대응 객체 매칭과 BIM 생성은 그다음 장에서 자세히 말씀드리겠습니다.">
   <header class="hd">
     <div class="hd-meta"><span class="ch-no">03</span><span class="ch-name">연구 방법</span><span class="sep"></span><span>전체 프레임워크</span></div>
     <h1 class="hd-title">도면 이미지만으로 객체 인식부터 BIM 생성까지<br><em>전 과정을 자동화</em>했습니다.</h1>
@@ -78,7 +78,7 @@
   <footer class="ft"><span>석사 연구 발표 &nbsp;·&nbsp; 평면도와 입면도 객체 인식 및 정보 통합을 통한 3D BIM 자동 생성 연구</span><span class="pg"><b>06</b> / 12</span></footer>
 </section>
 
-<section class="slide" id="s7" data-notes="">
+<section class="slide" id="s7" data-notes="먼저 STEP 2, 도면 객체 인식입니다. 평면도에서는 YOLO와 SAHI, 즉 작은 객체를 나눠서 추론하는 방식으로 벽·창문·문을 인식합니다. 이어서 최외곽 윤곽선을 뽑고, 외벽의 창·문을 동·서·남·북 방향별로 정리해 입면도와 짝지을 준비를 합니다. 입면도에서는 창·문을 인식한 뒤 DBSCAN 층별 클러스터링으로 같은 층의 창·문끼리 묶어 층 높이를 파악합니다. 오른쪽은 STEP 3에서 쓰는 축척 보정 기법입니다. LMM인 GPT-4o가 도면의 축척과 용지 크기를 읽어 픽셀을 실제 길이로 바꾸는데, 예를 들어 4,963×3,509픽셀 도면이 축척 1/200, A3 용지라면 1픽셀은 33.88mm가 됩니다.">
   <header class="hd">
     <div class="hd-meta"><span class="ch-no">03</span><span class="ch-name">연구 방법</span><span class="sep"></span><span>① 도면 객체 인식 · 축척 보정</span></div>
     <h1 class="hd-title">평면도와 입면도에서 <em>벽 · 창문 · 문</em>을 찾고, 실제 크기로 맞춥니다.</h1>
@@ -90,7 +90,7 @@
   <footer class="ft"><span>석사 연구 발표 &nbsp;·&nbsp; 평면도와 입면도 객체 인식 및 정보 통합을 통한 3D BIM 자동 생성 연구</span><span class="pg"><b>07</b> / 12</span></footer>
 </section>
 
-<section class="slide" id="s8" data-notes="">
+<section class="slide" id="s8" data-notes="다음은 STEP 3, 대응 객체 매칭입니다. 평면도에서는 창·문의 X·Y 좌표를, 입면도에서는 높이인 Z 좌표를 얻습니다. 객체 위치와 상대 정렬로 짝 후보마다 점수를 매긴 비용 행렬을 만들고, 헝가리안 알고리즘으로 최적의 1:1 매칭을 찾아 같은 창·문의 3차원 위치를 확정합니다. STEP 4에서는 평면도 인식 결과에서 골격선을 추출해 벽체 중심선과 코너점을 뽑고, 창문과 문을 어느 벽에 붙일지 정하는 호스팅 관계를 정의합니다. 이렇게 추출한 벽체와 호스팅 관계로 Revit API를 통해 벽·창문·문 BIM 요소를 생성하면, 오른쪽처럼 높이까지 갖춘 3D BIM이 자동으로 만들어집니다.">
   <header class="hd">
     <div class="hd-meta"><span class="ch-no">03</span><span class="ch-name">연구 방법</span><span class="sep"></span><span>② 대응 객체 매칭 · BIM 생성</span></div>
     <h1 class="hd-title">평면도의 X·Y와 입면도의 Z를 짝지어,<br><em>높이까지 갖춘 BIM</em>을 생성합니다.</h1>
@@ -102,7 +102,7 @@
   <footer class="ft"><span>석사 연구 발표 &nbsp;·&nbsp; 평면도와 입면도 객체 인식 및 정보 통합을 통한 3D BIM 자동 생성 연구</span><span class="pg"><b>08</b> / 12</span></footer>
 </section>
 
-<section class="slide" id="s9" data-notes="">
+<section class="slide" id="s9" data-notes="이 장에서는 세 가지 연구 기여를 각각의 근거 수치와 짝지어 보여 드립니다. 첫째, 도면 종류별 최적 학습·인식 전략을 썼고, 객체 인식 mAP@0.5가 평면도 0.934, 입면도 0.838입니다. Baseline보다 각각 42.7%p, 48.3%p 높습니다. 둘째, CAD 정보 없이 평면도와 입면도 사이의 객체 대응 관계를 정의했고, 대응 객체 매칭 F1-score는 창문 0.93, 문 0.95였습니다. 셋째, LMM 기반 축척 인식은 축척 인식 정확도 0.707로, Tesseract OCR 대비 33.8%p 높았습니다. 그 결과 최종 BIM 생성에서 406개 객체 중 379개를 자동으로 만들어 생성 완성도 93.3%를 달성했습니다.">
   <header class="hd">
     <div class="hd-meta"><span class="ch-no">04</span><span class="ch-name">연구 결과 및 기여</span><span class="sep"></span><span>연구 기여와 근거</span></div>
     <h1 class="hd-title">세 가지 기여가 모두 <em>수치로</em> 뒷받침됩니다.</h1>
@@ -114,7 +114,7 @@
   <footer class="ft"><span>석사 연구 발표 &nbsp;·&nbsp; 평면도와 입면도 객체 인식 및 정보 통합을 통한 3D BIM 자동 생성 연구</span><span class="pg"><b>09</b> / 12</span></footer>
 </section>
 
-<section class="slide" id="s10" data-notes="">
+<section class="slide" id="s10" data-notes="이 장은 단계마다 성능을 검증한 결과를 모은 근거 자료입니다. 도면 객체 인식은 mAP@0.5 기준으로 평면도 0.934, 입면도 0.838을 기록해 Baseline보다 각각 42.7%p, 48.3%p 높았습니다. 입면도 100장으로 측정한 층별 클러스터링은 ARI 0.952, NMI 0.966, Homogeneity 0.965였습니다. 축척 인식 정확도는 LMM(GPT-4o)이 0.707로 Tesseract OCR보다 33.8%p 높았고, 8개 동 개구부 3,458개를 대상으로 한 대응 객체 매칭 F1-score는 창문 0.93, 문 0.95였습니다. 마지막으로 건물 1동에서 객체 406개 중 379개를 자동 생성해 생성 완성도 93.3%를 얻었고, 생성 모델과 정답 모델의 체적 IoU는 0.693이었습니다.">
   <header class="hd">
     <div class="hd-meta"><span class="ch-no">04</span><span class="ch-name">연구 결과 및 기여</span><span class="sep"></span><span>성능 검증 상세</span></div>
     <h1 class="hd-title">도면 인식 · 객체 매칭 · BIM 생성, <em>단계마다</em> 성능을 검증했습니다.</h1>
@@ -126,7 +126,7 @@
   <footer class="ft"><span>석사 연구 발표 &nbsp;·&nbsp; 평면도와 입면도 객체 인식 및 정보 통합을 통한 3D BIM 자동 생성 연구</span><span class="pg"><b>10</b> / 12</span></footer>
 </section>
 
-<section class="slide" id="s11" data-notes="">
+<section class="slide" id="s11" data-notes="마지막으로, 제 연구가 Utility 기술 직무와 어떻게 맞닿아 있는지 말씀드리겠습니다. 첫째, Virtual FAB 구축은 여러 출처의 도면·모델 데이터를 하나로 통합하는 일입니다. 제 연구도 서로 다른 도면의 불완전한 정보를 짝지어 하나의 3D 모델로 통합했습니다. 둘째, 기존 시설 중에는 이미지 도면만 남은 곳이 많습니다. CAD 정보 없이 이미지 도면에서 BIM을 생성하는 방법으로 디지털 전환 기간을 줄일 수 있습니다. 셋째, 5D, 즉 물량·원가 관리는 BIM 데이터가 정확해야 의미가 있습니다. 축척 보정과 생성 완성도를 검증한 경험을 모델 데이터 품질 검증에 바로 활용하겠습니다. 도면 속 불완전한 정보를 정확한 3D 데이터로 잇는 경험으로, SK하이닉스 Virtual FAB의 데이터 품질을 높이겠습니다.">
   <header class="hd">
     <div class="hd-meta"><span class="ch-no">05</span><span class="ch-name">Utility 기술(건축, BIM/5D) 직무와의 연관성</span><span class="sep"></span><span>직무 과제 ↔ 연구 접점</span></div>
     <h1 class="hd-title">직무에서 마주할 세 가지 과제가<br><em>제 연구와 맞닿아</em> 있습니다.</h1>
@@ -138,7 +138,7 @@
   <footer class="ft"><span>석사 연구 발표 &nbsp;·&nbsp; 평면도와 입면도 객체 인식 및 정보 통합을 통한 3D BIM 자동 생성 연구</span><span class="pg"><b>11</b> / 12</span></footer>
 </section>
 
-<section class="slide cover" id="s12" data-notes="">
+<section class="slide cover" id="s12" data-notes="이상으로 발표를 마치겠습니다. 들어 주셔서 감사합니다. 오늘 말씀드린 연구는 Automation in Construction 187권 106971번 논문으로 2026년에 게재되었습니다. 궁금하신 점이 있으시면 편하게 질문해 주십시오.">
   <header class="hd" hidden></header>
   <div class="body">
     <!-- @include parts/s12.html -->

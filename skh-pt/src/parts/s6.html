@@ -2,40 +2,41 @@
 <style>
 /* 격자: 카드 4개(390) + 사이 56(화살표 자리) = 1728 */
 #s6 .s6-grid { position: absolute; left: 0; top: 0; width: 1728px; display: grid;
-  grid-template-columns: 390px 56px 390px 56px 390px 56px 390px; grid-template-rows: 36px 632px; row-gap: 22px; }
+  grid-template-columns: 390px 56px 390px 56px 390px 56px 390px; grid-template-rows: 36px 624px; row-gap: 24px; }
 
 /* 묶음 머리: 도면 해석 / 3D 재구성 */
 #s6 .gh { grid-row: 1; display: flex; align-items: center; gap: 16px; font-size: 24px; font-weight: 800; letter-spacing: -0.02em; color: var(--navy); white-space: nowrap; line-height: 1; }
 #s6 .gh::after { content: ""; flex: 1; height: 2px; border-radius: 1px; background: var(--navy); }
-#s6 .gh small { font-size: 15px; font-weight: 800; letter-spacing: 0.12em; color: var(--ink-3); }
 #s6 .gh.g1 { grid-column: 1 / 4; } #s6 .gh.g2 { grid-column: 5 / 8; }
 
-/* 단계 카드 */
-#s6 .st { grid-row: 2; display: flex; flex-direction: column; padding: 28px 28px 28px; border-radius: var(--radius); background: var(--surface); }
+/* 단계 카드: 안쪽 폭 334 */
+#s6 .st { grid-row: 2; display: flex; flex-direction: column; padding: 28px; border-radius: var(--radius); background: var(--surface); }
 #s6 .st.k1 { grid-column: 1; } #s6 .st.k2 { grid-column: 3; } #s6 .st.k3 { grid-column: 5; } #s6 .st.k4 { grid-column: 7; }
-#s6 .st .fig { flex: none; height: 304px; padding: 6px; }
-#s6 .st .lb { margin-top: 24px; font-size: 15px; font-weight: 800; letter-spacing: 0.12em; color: var(--accent); line-height: 1; }
-#s6 .st h3 { margin-top: 10px; font-size: 28px; font-weight: 800; letter-spacing: -0.035em; color: var(--navy); line-height: 1.25; }
-#s6 .st .d { margin-top: 8px; font-size: 20px; font-weight: 500; letter-spacing: -0.025em; line-height: 1.45; color: var(--ink-2); }
+#s6 .st .fig { flex: none; height: 296px; }
+#s6 .st .lb { margin-top: 24px; font-size: 15px; font-weight: 800; letter-spacing: 0.12em; color: var(--navy-2); line-height: 1; }
+#s6 .st h3 { margin-top: 8px; font-size: 28px; font-weight: 800; letter-spacing: -0.035em; color: var(--navy); line-height: 1.25; }
+#s6 .st .d { margin-top: 8px; font-size: 20px; font-weight: 500; letter-spacing: -0.025em; line-height: 1.45; color: var(--ink-2); white-space: nowrap; }
 
-/* 핵심 기법 */
-#s6 .tq { margin-top: auto; padding-top: 18px; border-top: 1.5px solid var(--line-2); }
-#s6 .tq .tl { font-size: 15px; font-weight: 700; letter-spacing: 0.04em; color: var(--ink-3); line-height: 1; }
-#s6 .tq ul { margin-top: 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
-#s6 .tq .chip { background: var(--paper); border-color: var(--line-2); }
-#s6 .tq .chip svg { flex: none; width: 18px; height: 18px; margin-left: -4px; }
-#s6 .tq .chip span { font-weight: 600; color: var(--ink-3); margin-left: -4px; }
+/* 핵심 기법 (칩 2줄 자리를 늘 확보 → 네 카드의 구분선 높이가 같다) */
+#s6 .tq { margin-top: auto; padding-top: 16px; border-top: 1.5px solid var(--line-2); }
+#s6 .tq .tl { font-size: 16px; font-weight: 700; letter-spacing: 0.04em; color: var(--ink-3); line-height: 1; }
+#s6 .tq ul { margin-top: 8px; min-height: 88px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+#s6 .tq .chip { height: 40px; padding: 0 16px; font-size: 19px; background: var(--paper); border-color: var(--line-2); }
+#s6 .tq .chip .gl { font-weight: 500; color: var(--ink-2); margin-left: -4px; }
+/* 다른 장에서 다루는 기법 표시 */
+#s6 .tq .chip .ref { display: inline-flex; align-items: center; height: 24px; margin-right: -6px; padding: 0 8px; border-radius: 6px; background: var(--navy-tint); font-size: 16px; font-weight: 800; letter-spacing: 0.02em; color: var(--navy-2); }
 
-/* 단계 사이 화살표 */
+/* 단계 사이 화살표: 그림 가운데(28 + 296/2 = 176)에 맞춤 */
 #s6 .go { grid-row: 2; position: relative; }
 #s6 .go.a1 { grid-column: 2; } #s6 .go.a2 { grid-column: 4; } #s6 .go.a3 { grid-column: 6; }
 #s6 .go i { position: absolute; left: 6px; top: 154px; width: 44px; height: 44px; border-radius: 50%; background: var(--navy); display: grid; place-items: center; box-shadow: 0 4px 10px rgba(16, 42, 76, .18); }
 #s6 .go svg { width: 20px; height: 20px; }
 
-/* 다음 장 안내 */
-#s6 .nx { position: absolute; top: 704px; height: 40px; }
+/* 다음 장 안내: 카드 아래 16px, 괄호 선 위에 글자 한 줄 */
+#s6 .nx { position: absolute; top: 700px; height: 24px; }
 #s6 .nx svg { position: absolute; left: 0; top: 0; }
-#s6 .nx p { position: absolute; left: 0; right: 0; top: 18px; text-align: center; font-size: 17px; font-weight: 600; letter-spacing: -0.02em; color: var(--ink-3); line-height: 1; white-space: nowrap; }
+#s6 .nx p { position: absolute; left: 0; right: 0; top: 0; text-align: center; line-height: 24px; white-space: nowrap; }
+#s6 .nx p span { display: inline-block; padding: 0 16px; background: var(--paper); font-size: 17px; font-weight: 600; letter-spacing: -0.02em; color: var(--ink-3); line-height: 24px; }
 #s6 .nx p b { font-weight: 800; color: var(--navy); margin-right: 8px; letter-spacing: 0.02em; }
 #s6 .nx.n1 { left: 446px; width: 390px; }
 #s6 .nx.n2 { left: 892px; width: 836px; }
@@ -50,10 +51,10 @@
     <div class="fig"><img src="assets/step1.png" alt="평면도·입면도 입력"></div>
     <p class="lb">STEP 1</p>
     <h3>도면 이미지 입력</h3>
-    <p class="d">평면도·입면도 이미지(래스터)만 입력</p>
+    <p class="d">평면도·입면도 이미지만 입력</p>
     <div class="tq">
-      <p class="tl">입력</p>
-      <ul><li class="chip"><svg viewBox="0 0 18 18" aria-hidden="true"><rect x="2" y="3" width="14" height="12" rx="2" fill="none" stroke="var(--navy-2)" stroke-width="1.8"/><path d="M2.5 13l4-4 3 3 2-2 4 4" fill="none" stroke="var(--navy-2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="6.5" r="1.3" fill="var(--navy-2)"/></svg>평면도 이미지</li><li class="chip"><svg viewBox="0 0 18 18" aria-hidden="true"><rect x="2" y="3" width="14" height="12" rx="2" fill="none" stroke="var(--navy-2)" stroke-width="1.8"/><path d="M2.5 13l4-4 3 3 2-2 4 4" fill="none" stroke="var(--navy-2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="6.5" r="1.3" fill="var(--navy-2)"/></svg>입면도 이미지</li></ul>
+      <p class="tl">입력 형식</p>
+      <ul><li class="chip">래스터 이미지 <span class="gl">(픽셀 기반)</span></li></ul>
     </div>
   </article>
   <div class="go a1"><i><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4.5L13 10l-5.5 5.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></i></div>
@@ -66,7 +67,7 @@
     <p class="d">도면 속 벽·창문·문 인식</p>
     <div class="tq">
       <p class="tl">핵심 기법</p>
-      <ul><li class="chip">YOLO + SAHI <span>(작은 객체 분할 추론)</span></li><li class="chip">DBSCAN 층별 클러스터링</li></ul>
+      <ul><li class="chip">YOLO + SAHI <span class="gl">(작은 객체 분할 추론)</span></li><li class="chip">DBSCAN 층별 클러스터링</li></ul>
     </div>
   </article>
   <div class="go a2"><i><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4.5L13 10l-5.5 5.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></i></div>
@@ -79,7 +80,7 @@
     <p class="d">평면도와 입면도에서 같은 객체끼리 짝짓기</p>
     <div class="tq">
       <p class="tl">핵심 기법</p>
-      <ul><li class="chip">LMM 기반 축척 보정</li><li class="chip">헝가리안 알고리즘 <span>(최적 1:1 매칭)</span></li></ul>
+      <ul><li class="chip">LMM 기반 축척 보정 <span class="ref">→ p.07</span></li><li class="chip">헝가리안 알고리즘 <span class="gl">(최적 1:1 매칭)</span></li></ul>
     </div>
   </article>
   <div class="go a3"><i><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4.5L13 10l-5.5 5.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></i></div>
@@ -99,10 +100,10 @@
 
 <!-- 다음 장 안내 -->
 <div class="nx n1">
-  <svg width="390" height="10" viewBox="0 0 390 10" aria-hidden="true"><path d="M1 1v6h388V1" fill="none" stroke="var(--line-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  <p><b>p.07</b>도면 객체 인식 · 축척 보정</p>
+  <svg width="390" height="24" viewBox="0 0 390 24" aria-hidden="true"><path d="M1 1v11h388V1" fill="none" stroke="var(--line-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <p><span><b>p.07</b>도면 객체 인식 · 축척 보정</span></p>
 </div>
 <div class="nx n2">
-  <svg width="836" height="10" viewBox="0 0 836 10" aria-hidden="true"><path d="M1 1v6h834V1" fill="none" stroke="var(--line-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  <p><b>p.08</b>대응 객체 매칭 · BIM 생성</p>
+  <svg width="836" height="24" viewBox="0 0 836 24" aria-hidden="true"><path d="M1 1v11h834V1" fill="none" stroke="var(--line-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <p><span><b>p.08</b>대응 객체 매칭 · BIM 생성</span></p>
 </div>

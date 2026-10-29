@@ -1,11 +1,11 @@
 <!-- s5: 기존 연구 한계 ↔ 연구 목표 (1:1 대응). 이 파일만 편집. 스타일은 #s5 로 범위를 한정 -->
 <style>
-/* 격자: 쟁점 304 | 32 | 한계 600 | 연결 80 | 목표 712  = 1728 */
+/* 격자: 쟁점 280 | 32 | 한계 624 | 연결 80 | 목표 712  = 1728 */
 #s5 .s5-tbl { position: absolute; left: 0; top: 0; width: 1728px; display: grid;
-  grid-template-columns: 304px 32px 600px 80px 712px; grid-template-rows: 40px repeat(3, 168px); row-gap: 16px; }
+  grid-template-columns: 280px 32px 624px 80px 712px; grid-template-rows: 40px repeat(3, 168px); row-gap: 16px; }
 
 /* 열 머리 */
-#s5 .s5-ch { display: flex; align-items: center; gap: 14px; font-size: 24px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; white-space: nowrap; }
+#s5 .s5-ch { display: flex; align-items: center; gap: 16px; font-size: 24px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; white-space: nowrap; }
 #s5 .s5-ch::after { content: ""; flex: 1; height: 2px; border-radius: 1px; }
 #s5 .s5-ch.c0 { grid-column: 1; color: var(--ink-3); font-size: 17px; font-weight: 700; letter-spacing: 0.04em; }
 #s5 .s5-ch.c0::after { background: var(--line-2); }
@@ -16,7 +16,7 @@
 #s5 .s5-ch svg { flex: none; width: 26px; height: 26px; }
 
 /* 쟁점 칸 */
-#s5 .s5-is { grid-column: 1; display: flex; align-items: center; gap: 20px; }
+#s5 .s5-is { grid-column: 1; display: flex; align-items: center; gap: 24px; }
 #s5 .s5-ic { position: relative; flex: none; width: 80px; height: 80px; border-radius: 20px; background: var(--navy-tint); display: grid; place-items: center; }
 #s5 .s5-ic svg { width: 40px; height: 40px; }
 #s5 .s5-ic .g { fill: none; stroke: var(--navy); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -24,16 +24,20 @@
 
 /* 한계 / 목표 칸 공통 */
 #s5 .s5-cell { display: flex; flex-direction: column; justify-content: center; padding: 0 36px; border-radius: var(--radius); }
-#s5 .s5-cell .k { font-size: 15px; font-weight: 800; letter-spacing: 0.12em; line-height: 1; color: var(--ink-3); margin-bottom: 12px; }
-#s5 .s5-cell .a { font-size: 24px; font-weight: 800; letter-spacing: -0.035em; line-height: 1.4; }
-#s5 .s5-cell .b { margin-top: 6px; display: flex; align-items: flex-start; gap: 10px; font-size: 22px; font-weight: 500; letter-spacing: -0.025em; line-height: 1.45; color: var(--ink-2); }
-#s5 .s5-cell .b svg { flex: none; width: 20px; height: 20px; margin-top: 6px; }
+#s5 .s5-cell .k { font-size: 16px; font-weight: 800; letter-spacing: 0.04em; line-height: 1; color: var(--ink-3); margin-bottom: 16px; }
+#s5 .s5-cell .a { font-size: 26px; font-weight: 800; letter-spacing: -0.035em; line-height: 1.3; }
+#s5 .s5-cell .b { margin-top: 8px; font-size: 24px; font-weight: 500; letter-spacing: -0.03em; line-height: 1.4; color: var(--ink-2); }
 
+/* 한계: 원인 → 결과 (꺾인 화살표는 한계 칸에서만 사용) */
 #s5 .s5-lim { grid-column: 3; background: var(--surface); }
 #s5 .s5-lim .a { color: var(--ink); }
+#s5 .s5-lim .b { display: flex; align-items: flex-start; gap: 8px; }
+#s5 .s5-lim .b svg { flex: none; width: 20px; height: 20px; margin-top: 7px; }
 
-#s5 .s5-obj { grid-column: 5; position: relative; background: var(--paper); border: 2px solid var(--navy); box-shadow: 0 6px 18px rgba(16, 42, 76, .08); padding-left: 36px; }
-#s5 .s5-obj .a { color: var(--navy); font-size: 27px; letter-spacing: -0.04em; }
+/* 목표: 한 문장 (굵은 핵심구 + 이어지는 말) */
+#s5 .s5-obj { grid-column: 5; position: relative; background: var(--paper); border: 2px solid var(--navy); box-shadow: 0 6px 18px rgba(16, 42, 76, .08); }
+#s5 .s5-obj .a { color: var(--navy); font-size: 30px; letter-spacing: -0.04em; }
+#s5 .s5-obj .b { margin-top: 4px; }
 #s5 .s5-obj .k { color: var(--accent); }
 
 /* 연결 */
@@ -67,13 +71,13 @@
   <div class="s5-cell s5-lim r1">
     <p class="k">한계 1</p>
     <p class="a">평면도 한 장만 사용</p>
-    <p class="b"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 3v7.5a2 2 0 0 0 2 2h9M12.5 9l3.5 3.5-3.5 3.5" fill="none" stroke="var(--gray-bar-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>높이 정보를 알 수 없음 (수동 입력·고정값)</span></p>
+    <p class="b"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 3v7.5a2 2 0 0 0 2 2h9M12.5 9l3.5 3.5-3.5 3.5" fill="none" stroke="var(--gray-bar-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>높이 정보를 알 수 없음 → 수동 입력·고정값 사용</span></p>
   </div>
   <div class="s5-go r1"><i><svg viewBox="0 0 22 22" aria-hidden="true"><path d="M8 5l6 6-6 6" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></i></div>
   <div class="s5-cell s5-obj r1">
     <p class="k">목표 1</p>
     <p class="a">평면도와 입면도 정보를 통합해</p>
-    <p class="b"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 3v7.5a2 2 0 0 0 2 2h9M12.5 9l3.5 3.5-3.5 3.5" fill="none" stroke="var(--navy-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>완전한 3차원 BIM 생성</span></p>
+    <p class="b">완전한 3차원 BIM 생성</p>
   </div>
 
   <!-- 2 CAD 의존 -->
@@ -90,7 +94,7 @@
   <div class="s5-cell s5-obj r2">
     <p class="k">목표 2</p>
     <p class="a">CAD 정보 없이 이미지만으로</p>
-    <p class="b"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 3v7.5a2 2 0 0 0 2 2h9M12.5 9l3.5 3.5-3.5 3.5" fill="none" stroke="var(--navy-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>평면도·입면도 간 대응 객체 정의</span></p>
+    <p class="b">평면도·입면도 간 대응 객체 정의</p>
   </div>
 
   <!-- 3 치수 의존 -->
@@ -107,7 +111,7 @@
   <div class="s5-cell s5-obj r3">
     <p class="k">목표 3</p>
     <p class="a">LMM(대형 멀티모달 모델)으로 축척을 인식해</p>
-    <p class="b"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 3v7.5a2 2 0 0 0 2 2h9M12.5 9l3.5 3.5-3.5 3.5" fill="none" stroke="var(--navy-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>안정적으로 치수 보정</span></p>
+    <p class="b">안정적으로 치수 보정</p>
   </div>
 </div>
 

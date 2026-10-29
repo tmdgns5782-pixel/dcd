@@ -1,24 +1,31 @@
 <!-- s9: 연구 기여 ↔ 근거 수치 + 최종 결과(379/406). 이 파일만 편집. 스타일은 #s9 로 범위를 한정 -->
 <style>
-/* 격자: [기여 520 | 연결 56 | 근거 648] = 1224  + 간격 40 + [최종 결과 464] = 1728
+/* 격자: [기여 504 | 연결 56 | 근거 664] = 1224  + 간격 40 + [최종 결과 464] = 1728
    세로: 열 머리 40 · 16 · 행 3개(각 220, 사이 16) → 748 · 주석 777~801 = 바닥선 801 (S4·S5 핵심 메시지와 같은 바닥선) */
 #s9 .s9-tbl { position: absolute; left: 0; top: 0; width: 1224px; display: grid;
-  grid-template-columns: 520px 56px 648px; grid-template-rows: 40px repeat(3, 220px); row-gap: 16px; }
+  grid-template-columns: 504px 56px 664px; grid-template-rows: 40px repeat(3, 220px); row-gap: 16px; }
 #s9 .s9-tbl > .r1 { grid-row: 2; } #s9 .s9-tbl > .r2 { grid-row: 3; } #s9 .s9-tbl > .r3 { grid-row: 4; }
 
 /* 열 머리 */
-#s9 .s9-ch { display: flex; align-items: center; gap: 14px; font-size: 24px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; white-space: nowrap; color: var(--navy); }
+#s9 .s9-ch { display: flex; align-items: center; gap: 16px; font-size: 24px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; white-space: nowrap; color: var(--navy); }
 #s9 .s9-ch::after { content: ""; flex: 1; height: 2px; border-radius: 1px; background: var(--navy); }
 #s9 .s9-ch svg { flex: none; width: 26px; height: 26px; }
 #s9 .s9-ch.c1 { grid-column: 1; } #s9 .s9-ch.c2 { grid-column: 3; }
+#s9 .s9-ch.c2::after { content: none; }
+#s9 .s9-ch .ln { flex: 1; height: 2px; border-radius: 1px; background: var(--navy); }
+/* 막대 범례 */
+#s9 .s9-lg { flex: none; display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; letter-spacing: -0.02em; color: var(--ink-3); }
+#s9 .s9-lg i { flex: none; width: 24px; height: 8px; border-radius: 4px; }
+#s9 .s9-lg i.g { background: var(--gray-bar); }
+#s9 .s9-lg i.r { margin-left: 8px; background: var(--accent); }
 
 /* 기여 칸 */
 #s9 .s9-con { grid-column: 1; display: flex; align-items: center; gap: 24px; padding: 0 32px; border-radius: var(--radius); background: var(--surface); }
-#s9 .s9-ic { flex: none; width: 72px; height: 72px; border-radius: 18px; background: var(--paper); display: grid; place-items: center; box-shadow: 0 2px 6px rgba(16, 42, 76, .06); }
+#s9 .s9-ic { flex: none; width: 72px; height: 72px; border-radius: 16px; background: var(--paper); display: grid; place-items: center; box-shadow: 0 2px 6px rgba(16, 42, 76, .06); }
 #s9 .s9-ic svg { width: 38px; height: 38px; }
 #s9 .s9-ic .g { fill: none; stroke: var(--navy); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-#s9 .s9-con .k { font-size: 15px; font-weight: 800; letter-spacing: 0.12em; line-height: 1; color: var(--accent); margin-bottom: 12px; }
-#s9 .s9-con h3 { font-size: 25px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.38; color: var(--navy); }
+#s9 .s9-con .k { font-size: 16px; font-weight: 800; letter-spacing: 0.04em; line-height: 1; color: var(--accent); margin-bottom: 16px; }
+#s9 .s9-con h3 { font-size: var(--fs-h3); font-weight: 800; letter-spacing: -0.04em; line-height: 1.38; color: var(--navy); white-space: nowrap; }
 
 /* 연결 */
 #s9 .s9-go { grid-column: 2; position: relative; }
@@ -27,20 +34,21 @@
 #s9 .s9-go svg { width: 20px; height: 20px; }
 
 /* 근거 칸 */
-#s9 .s9-ev { grid-column: 3; display: flex; flex-direction: column; justify-content: center; padding: 0 32px 4px; border-radius: var(--radius); background: var(--paper); border: 2px solid var(--navy); box-shadow: 0 6px 18px rgba(16, 42, 76, .08); }
-#s9 .s9-mt { display: flex; align-items: baseline; justify-content: space-between; height: 20px; line-height: 1; white-space: nowrap; }
+#s9 .s9-ev { grid-column: 3; display: flex; flex-direction: column; justify-content: center; padding: 0 32px; border-radius: var(--radius); background: var(--paper); border: 2px solid var(--navy); box-shadow: 0 6px 18px rgba(16, 42, 76, .08); }
+#s9 .s9-mt { display: flex; align-items: baseline; gap: 8px; height: 20px; line-height: 1; white-space: nowrap; }
 #s9 .s9-mt b { font-size: 19px; font-weight: 800; letter-spacing: -0.02em; color: var(--navy); }
-#s9 .s9-mt span { font-size: 16px; font-weight: 600; color: var(--ink-3); }
-#s9 .s9-pair { margin-top: 22px; display: grid; grid-template-columns: 276px 276px; column-gap: 32px; }
+#s9 .s9-mt span { font-size: 19px; font-weight: 600; letter-spacing: -0.02em; color: var(--ink-3); }
+#s9 .s9-pair { margin-top: 24px; display: grid; grid-template-columns: 284px 284px; column-gap: 32px; }
 #s9 .s9-kv .n { font-size: 19px; font-weight: 700; color: var(--ink-2); line-height: 1; white-space: nowrap; }
-#s9 .s9-kv .v { margin-top: 10px; display: flex; align-items: center; gap: 10px; height: 60px; }
+#s9 .s9-kv .v { margin-top: 8px; display: flex; align-items: center; gap: 8px; height: 60px; }
 #s9 .s9-kv .v .kpi { flex: none; font-size: 60px; white-space: nowrap; }
-#s9 .s9-kv .v .delta { flex: none; padding: 0 10px; }
+#s9 .s9-kv .v .delta { flex: none; }
 #s9 .s9-kv.ref .n { color: var(--ink-3); }
-#s9 .s9-kv.ref .v b { font-size: 30px; font-weight: 800; letter-spacing: -0.03em; color: var(--gray-bar-2); white-space: nowrap; line-height: 1; }
+#s9 .s9-kv.ref .v { align-items: flex-end; padding-bottom: 2px; }
+#s9 .s9-kv.ref .v .kpi { font-size: 48px; color: var(--ink-3); }
 
 /* 0~1 눈금 막대 */
-#s9 .s9-bar { position: relative; margin-top: 14px; height: 8px; border-radius: 4px; background: var(--surface-2); }
+#s9 .s9-bar { position: relative; margin-top: 16px; height: 8px; border-radius: 4px; background: var(--surface-2); }
 #s9 .s9-bar i { position: absolute; top: 0; height: 8px; }
 #s9 .s9-bar .b0 { left: 0; background: var(--gray-bar); border-radius: 4px 0 0 4px; }
 #s9 .s9-bar .b0.solo { border-radius: 4px; }
@@ -53,22 +61,20 @@
 
 /* 최종 결과 */
 #s9 .s9-ch.c3 { position: absolute; left: 1264px; top: 0; width: 464px; height: 40px; }
-#s9 .s9-hero { position: absolute; left: 1264px; top: 56px; width: 464px; height: 745px; display: flex; flex-direction: column; padding: 36px 40px 32px; border-radius: var(--radius); background: var(--navy); color: #fff; box-shadow: 0 10px 28px rgba(16, 42, 76, .18); }
-#s9 .s9-hero .kl { font-size: 15px; font-weight: 800; letter-spacing: 0.14em; line-height: 1; color: #FF8FA3; }
-#s9 .s9-hero h3 { margin-top: 14px; font-size: 30px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.2; color: #fff; }
-#s9 .s9-big { margin-top: 14px; display: flex; align-items: baseline; gap: 14px; white-space: nowrap; }
-#s9 .s9-big .kpi { font-size: 140px; color: #fff; letter-spacing: -0.05em; }
-#s9 .s9-big .of { font-size: 44px; font-weight: 700; color: rgba(255, 255, 255, .55); letter-spacing: -0.03em; line-height: 1; }
-#s9 .s9-hero .sub { margin-top: 10px; font-size: 21px; font-weight: 600; color: rgba(255, 255, 255, .82); line-height: 1.4; white-space: nowrap; }
+#s9 .s9-hero { position: absolute; left: 1264px; top: 56px; width: 464px; height: 745px; display: flex; flex-direction: column; padding: 32px 40px; border-radius: var(--radius); background: var(--navy); color: #fff; box-shadow: 0 10px 28px rgba(16, 42, 76, .18); }
+#s9 .s9-hero h3 { font-size: 30px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.2; color: #fff; }
+#s9 .s9-big { margin-top: 8px; display: flex; align-items: baseline; gap: 16px; white-space: nowrap; }
+#s9 .s9-big .kpi { font-size: 128px; color: #fff; letter-spacing: -0.05em; }
+#s9 .s9-big .of { font-size: 40px; font-weight: 700; color: rgba(255, 255, 255, .55); letter-spacing: -0.03em; line-height: 1; }
+#s9 .s9-hero .sub { margin-top: 8px; font-size: 21px; font-weight: 600; color: rgba(255, 255, 255, .82); line-height: 1.4; white-space: nowrap; }
 #s9 .s9-hbar { position: relative; flex: none; margin-top: 24px; height: 12px; border-radius: 6px; background: rgba(255, 255, 255, .16); }
 #s9 .s9-hbar i { position: absolute; left: 0; top: 0; height: 12px; width: 93.3%; border-radius: 6px; background: var(--accent); }
-#s9 .s9-rate { margin-top: 14px; display: flex; align-items: baseline; justify-content: space-between; line-height: 1; white-space: nowrap; }
+#s9 .s9-rate { margin-top: 16px; display: flex; align-items: baseline; justify-content: space-between; line-height: 1; white-space: nowrap; }
 #s9 .s9-rate span { font-size: 19px; font-weight: 700; color: rgba(255, 255, 255, .75); }
-#s9 .s9-rate b { font-size: 36px; font-weight: 800; color: #FF8FA3; letter-spacing: -0.03em; }
-#s9 .s9-hero .fig { flex: none; margin-top: auto; height: 268px; border: none; }
-#s9 .s9-hero .fig { display: grid; place-items: center; }
-#s9 .s9-hero .fig img { width: 286px; height: 268px; object-fit: cover; object-position: 50% 50%; }
-#s9 .s9-hero .hc { margin-top: 12px; font-size: 16px; font-weight: 600; line-height: 1; color: rgba(255, 255, 255, .62); white-space: nowrap; }
+#s9 .s9-rate b { font-size: 32px; font-weight: 800; color: #fff; letter-spacing: -0.03em; }
+#s9 .s9-hero .fig { flex: 1 1 auto; min-height: 0; margin-top: 24px; padding: 16px 32px 16px 20px; border: none; }
+#s9 .s9-hero .fig img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; }
+#s9 .s9-hero .hc { margin-top: 16px; font-size: 16px; font-weight: 600; line-height: 1; color: rgba(255, 255, 255, .62); white-space: nowrap; }
 </style>
 
 <div class="s9-tbl">
@@ -78,7 +84,8 @@
     연구 기여</p>
   <p class="s9-ch c2">
     <svg viewBox="0 0 26 26" aria-hidden="true"><path d="M4 22h18M7.5 18v-5M13 18V7M18.5 18v-8" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round"/></svg>
-    근거 수치</p>
+    <span>근거 수치</span><span class="ln"></span>
+    <span class="s9-lg"><i class="g"></i>비교 기준<i class="r"></i>향상분</span></p>
 
   <!-- 기여 1 -->
   <div class="s9-con r1">
@@ -87,7 +94,7 @@
   </div>
   <div class="s9-go r1"><i><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4.5L13 10l-5.5 5.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></i></div>
   <div class="s9-ev r1">
-    <p class="s9-mt"><b>도면 객체 인식 mAP@0.5</b><span>Baseline 대비</span></p>
+    <p class="s9-mt"><b>도면 객체 인식 mAP@0.5</b><span>· &nbsp;Baseline 대비</span></p>
     <div class="s9-pair">
       <div class="s9-kv">
         <p class="n">평면도</p>
@@ -131,7 +138,7 @@
   </div>
   <div class="s9-go r3"><i><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4.5L13 10l-5.5 5.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></i></div>
   <div class="s9-ev r3">
-    <p class="s9-mt"><b>축척 인식 정확도</b></p>
+    <p class="s9-mt"><b>축척 인식 정확도</b><span>· &nbsp;Tesseract OCR 대비</span></p>
     <div class="s9-pair">
       <div class="s9-kv">
         <p class="n">LMM(GPT-4o)</p>
@@ -139,27 +146,26 @@
         <div class="s9-bar"><i class="b0" style="width:36.9%"></i><i class="b1" style="left:36.9%;width:33.8%"></i></div>
       </div>
       <div class="s9-kv ref">
-        <p class="n">비교 기준</p>
-        <p class="v"><b>Tesseract OCR</b></p>
+        <p class="n">Tesseract OCR</p>
+        <p class="v"><span class="kpi num">0.369</span></p>
         <div class="s9-bar"><i class="b0 solo" style="width:36.9%"></i></div>
       </div>
     </div>
   </div>
 </div>
 
-<p class="s9-note"><b>mAP@0.5</b> 객체를 맞게 찾아낸 정도 &nbsp;·&nbsp; <b>F1-score</b> 정밀도·재현율의 조화평균 &nbsp;·&nbsp; 모두 1에 가까울수록 좋음</p>
+<p class="s9-note"><b>mAP@0.5</b> 객체를 맞게 찾아낸 정도 &nbsp;·&nbsp; <b>F1-score</b> 정밀도·재현율의 조화평균 (모두 1에 가까울수록 좋음) &nbsp;·&nbsp; <b>LMM</b> 대형 멀티모달 모델</p>
 
 <!-- 최종 결과 (4장 핵심 메시지) -->
 <p class="s9-ch c3">
   <svg viewBox="0 0 26 26" aria-hidden="true"><path d="M13 3.5l8.5 4.75v9.5L13 22.5l-8.5-4.75v-9.5z" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linejoin="round"/><path d="M4.5 8.25L13 13l8.5-4.75M13 13v9.5" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linejoin="round"/></svg>
   최종 결과</p>
 <aside class="s9-hero">
-  <p class="kl">KEY RESULT</p>
   <h3>최종 BIM 생성</h3>
   <p class="s9-big"><span class="kpi num">379</span><span class="of num">/ 406</span></p>
   <p class="sub">406개 객체 중 379개 자동 생성</p>
   <div class="s9-hbar"><i></i></div>
   <p class="s9-rate"><span>생성 완성도</span><b class="num">93.3%</b></p>
-  <div class="fig"><img src="assets/step4.png" alt="자동 생성된 BIM 모델"></div>
-  <p class="hc">자동 생성된 BIM 모델</p>
+  <div class="fig"><img src="assets/step4.png" alt="자동 생성된 3D BIM"></div>
+  <p class="hc">자동 생성된 3D BIM</p>
 </aside>

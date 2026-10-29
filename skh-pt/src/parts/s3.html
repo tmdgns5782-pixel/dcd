@@ -1,42 +1,46 @@
 <!-- s3: 이 파일만 편집. 스타일은 #s3 로 범위를 한정 -->
 <style>
-#s3 .body { }
-#s3 .s3-grid { display: grid; grid-template-columns: 816px 864px; column-gap: 48px; grid-template-rows: 44px 336px 248px; row-gap: 24px; }
+#s3 {
+  /* 정책 쪽은 네이비 틴트 단계로 낮추고, 현실 쪽이 무게를 갖게 한다 */
+  --s3-t1: color-mix(in srgb, var(--navy-2) 14%, var(--paper));
+  --s3-t2: color-mix(in srgb, var(--navy-2) 30%, var(--paper));
+  --s3-t3: color-mix(in srgb, var(--navy-2) 55%, var(--paper));
+}
+#s3 .s3-grid { display: grid; grid-template-columns: 816px 864px; column-gap: 48px; grid-template-rows: 44px 312px 240px; row-gap: 24px; }
 
 /* 열 머리 */
 #s3 .s3-colhd { display: flex; align-items: center; gap: 16px; }
-#s3 .s3-tag { display: inline-grid; place-items: center; height: 36px; padding: 0 16px; border-radius: 999px; font-size: 17px; font-weight: 800; letter-spacing: 0.04em; background: var(--navy); color: #fff; }
-#s3 .s3-colhd h2 { font-size: 28px; font-weight: 800; letter-spacing: -0.035em; color: var(--navy); line-height: 1.2; }
+#s3 .s3-colhd h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.035em; color: var(--navy); line-height: 1.2; }
+#s3 .s3-colhd::after { content:""; flex:1; height:2px; border-radius:1px; background:var(--navy); }
 
 /* 카드 공통 */
-#s3 .s3-card { position: relative; background: var(--surface); border-radius: var(--radius); padding: 32px; }
-#s3 .s3-ct { font-size: 23px; font-weight: 800; letter-spacing: -0.035em; color: var(--navy); line-height: 1.3; display: flex; align-items: center; gap: 12px; }
-#s3 .s3-n { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--navy); color: #fff; font-size: 16px; font-weight: 800; flex: none; }
+#s3 .s3-card { position: relative; }
+#s3 .s3-ct { display: flex; align-items: center; gap: 14px; }
 
-/* A. 공공공사 의무화 타임라인 */
-#s3 .s3-tl { position: absolute; left: 32px; right: 32px; bottom: 40px; height: 184px; }
+/* A. 공공공사 의무화 타임라인 (가로 위치: 칸 간격이 시간 순서대로 넓어짐, 단계 경계 = 해당 연도 점) */
+#s3 .s3-tl { position: absolute; left: 32px; right: 32px; bottom: 32px; height: 176px; }
 #s3 .s3-tl svg { position: absolute; left: 0; top: 0; }
 #s3 .s3-yr { position: absolute; top: 0; font-size: 22px; font-weight: 800; color: var(--navy); letter-spacing: -0.02em; line-height: 1; white-space: nowrap; }
 #s3 .s3-yr small { font-size: 16px; font-weight: 700; margin-left: 5px; color: var(--ink-3); letter-spacing: -0.02em; }
 #s3 .s3-sec { position: absolute; top: 34px; font-size: 19px; font-weight: 600; color: var(--ink-2); line-height: 1; white-space: nowrap; }
-#s3 .s3-th { position: absolute; top: 112px; height: 72px; display: flex; align-items: center; font-size: 20px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; white-space: nowrap; color: #fff; }
-#s3 .s3-th.t1 { color: var(--navy); }
+#s3 .s3-th { position: absolute; top: 104px; height: 72px; display: flex; align-items: center; font-size: 20px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; white-space: nowrap; color: var(--navy); }
+#s3 .s3-th.t3 { color: var(--paper); }
 
 /* B. 로드맵 */
-#s3 .s3-road { position: absolute; left: 32px; right: 32px; top: 92px; height: 100px; display: grid; grid-template-columns: 360px 1.5px 1fr; column-gap: 32px; }
+#s3 .s3-road { position: absolute; left: 32px; right: 32px; top: 96px; height: 112px; display: grid; grid-template-columns: 360px 1.5px 1fr; column-gap: 32px; }
 #s3 .s3-vr { background: var(--line-2); }
 #s3 .s3-rm { position: relative; }
 #s3 .s3-rm svg { position: absolute; left: 0; top: 0; }
 #s3 .s3-rm .r-yr { position: absolute; top: 0; font-size: 22px; font-weight: 800; color: var(--navy); line-height: 1; }
 #s3 .s3-rm .r-tx { position: absolute; top: 54px; font-size: 19px; font-weight: 600; color: var(--ink-2); line-height: 1.35; }
-#s3 .s3-lh h4 { font-size: 17px; font-weight: 700; color: var(--ink-3); letter-spacing: -0.02em; line-height: 1; margin-bottom: 14px; }
-#s3 .s3-lh .row { display: grid; grid-template-columns: 34px 1fr 52px; column-gap: 12px; align-items: center; height: 24px; }
-#s3 .s3-lh .row + .row { margin-top: 2px; }
-#s3 .s3-lh .y { font-size: 17px; font-weight: 700; color: var(--ink-3); }
+#s3 .s3-lh h4 { font-size: 17px; font-weight: 700; color: var(--ink-3); letter-spacing: -0.02em; line-height: 1; margin-bottom: 12px; }
+#s3 .s3-lh .row { display: grid; grid-template-columns: 34px 1fr 52px; column-gap: 12px; align-items: center; height: 22px; }
+#s3 .s3-lh .row + .row { margin-top: 8px; }
+#s3 .s3-lh .y { font-size: 17px; font-weight: 700; color: var(--ink-3); line-height: 1; }
 #s3 .s3-lh .trk { height: 12px; border-radius: 6px; background: var(--surface-2); position: relative; }
 #s3 .s3-lh .bar { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 6px; }
-#s3 .s3-lh .v { font-size: 18px; font-weight: 800; color: var(--navy); text-align: right; }
-#s3 .s3-src { position: absolute; left: 32px; bottom: 20px; font-size: var(--fs-src); font-weight: 500; color: var(--ink-3); line-height: 1.4; }
+#s3 .s3-lh .v { font-size: 18px; font-weight: 700; color: var(--navy-2); text-align: right; line-height: 1; }
+#s3 .s3-psrc { position: absolute; left: 0; top: 654px; }
 
 /* 현실 카드 */
 #s3 .s3-real { display: grid; grid-template-columns: 312px 456px; justify-content: space-between; }
@@ -45,13 +49,13 @@
 #s3 .s3-txt p b { font-weight: 800; color: var(--ink); }
 #s3 .s3-so { display: flex; gap: 10px; align-items: flex-start; padding-top: 14px; border-top: 1.5px solid var(--line-2); }
 #s3 .s3-so svg { flex: none; margin-top: 6px; }
-#s3 .s3-so span { font-size: 20px; font-weight: 700; color: var(--navy); line-height: 1.45; letter-spacing: -0.03em; }
+#s3 .s3-so span { font-size: 20px; font-weight: 700; color: var(--navy); line-height: 1.45; letter-spacing: -0.03em; white-space: nowrap; }
 
 /* 비용 곡선 */
-#s3 .s3-chart { position: relative; height: 272px; }
+#s3 .s3-chart { position: relative; height: 248px; }
 #s3 .s3-chart svg { position: absolute; left: 0; top: 0; }
 #s3 .s3-chart .lb { position: absolute; white-space: nowrap; line-height: 1; letter-spacing: -0.03em; }
-#s3 .s3-chart .ax { font-size: 15px; font-weight: 700; color: var(--ink-3); }
+#s3 .s3-chart .ax { font-size: 16px; font-weight: 700; color: var(--ink-3); }
 #s3 .s3-chart .ph { font-size: 17px; font-weight: 700; color: var(--ink-2); transform: translateX(-50%); }
 #s3 .s3-chart .c-bim { font-size: 17px; font-weight: 800; color: var(--navy); }
 #s3 .s3-chart .c-2d { font-size: 17px; font-weight: 700; color: var(--ink-3); }
@@ -59,135 +63,134 @@
 #s3 .s3-chart .src { position: absolute; right: 0; bottom: 0; white-space: nowrap; }
 
 /* 기존 건축물 그림 */
-#s3 .s3-pic { position: relative; height: 184px; }
+#s3 .s3-pic { position: relative; height: 176px; }
 #s3 .s3-pic svg { position: absolute; left: 0; top: 0; }
 #s3 .s3-pic .lb { position: absolute; font-size: 18px; font-weight: 700; color: var(--ink-2); line-height: 1; white-space: nowrap; transform: translateX(-50%); }
 #s3 .s3-pic .lb.strong { color: var(--navy); font-weight: 800; }
 #s3 .s3-pic .mid { position: absolute; font-size: 16px; font-weight: 700; color: var(--ink-3); line-height: 1; white-space: nowrap; transform: translateX(-50%); }
 
 /* 결론 줄 */
-#s3 .s3-concl { position: absolute; left: 0; right: 0; top: 700px; height: 52px; border-radius: 14px; background: var(--navy-tint); display: flex; align-items: center; justify-content: center; gap: 14px; }
+#s3 .s3-concl { position: absolute; left: 0; right: 0; top: 688px; height: 56px; border-radius: var(--radius-sm); background: var(--navy-tint); display: flex; align-items: center; justify-content: center; gap: 14px; }
 #s3 .s3-concl svg { flex: none; }
-#s3 .s3-concl span { font-size: 22px; font-weight: 700; color: var(--navy); letter-spacing: -0.03em; line-height: 1; }
+#s3 .s3-concl span { font-size: 24px; font-weight: 700; color: var(--navy); letter-spacing: -0.03em; line-height: 1; }
 #s3 .s3-concl span b { font-weight: 800; }
 </style>
 
 <div class="s3-grid">
   <!-- 열 머리 -->
-  <div class="s3-colhd"><span class="s3-tag">정책</span><h2>국토교통부, BIM 전면 도입 추진</h2></div>
-  <div class="s3-colhd"><span class="s3-tag">현실</span><h2>신규 건설 vs 기존 건축물</h2></div>
+  <div class="s3-colhd"><span class="chip tint">정책</span><h2>국토교통부, BIM 전면 도입 추진</h2></div>
+  <div class="s3-colhd"><span class="chip tint">현실</span><h2>두 경우 비교: 신규 건설 · 기존 건축물</h2></div>
 
   <!-- A. 공공공사 BIM 의무화 단계적 확대 -->
-  <div class="s3-card">
-    <h3 class="s3-ct">공공공사 BIM 의무화 단계적 확대</h3>
+  <div class="card s3-card">
+    <h3 class="h3">공공공사 BIM 의무화 단계적 확대</h3>
     <div class="s3-tl">
-      <svg width="752" height="184" viewBox="0 0 752 184" aria-hidden="true">
+      <svg width="752" height="176" viewBox="0 0 752 176" aria-hidden="true">
         <!-- 시간 축 -->
-        <line x1="30" y1="86" x2="738" y2="86" stroke="var(--line-2)" stroke-width="2"/>
-        <polygon points="748,86 738,81 738,91" fill="var(--line-2)"/>
-        <circle cx="30" cy="86" r="6" fill="var(--navy-2)"/>
-        <circle cx="162" cy="86" r="6" fill="var(--navy-2)"/>
-        <circle cx="294" cy="86" r="6" fill="var(--navy-2)"/>
-        <circle cx="436" cy="86" r="7" fill="var(--navy-2)"/>
-        <circle cx="616" cy="86" r="8" fill="var(--navy)"/>
-        <!-- 대상 사업 규모 단계 (진할수록 의무화 범위 확대) -->
-        <path d="M12 112 H392 L410 148 L392 184 H12 Q0 184 0 172 V124 Q0 112 12 112 Z" fill="#D6DFEB"/>
-        <path d="M398 112 H572 L590 148 L572 184 H398 L416 148 Z" fill="var(--navy-2)"/>
-        <path d="M578 112 H740 Q752 112 752 124 V172 Q752 184 740 184 H578 L596 148 Z" fill="var(--navy)"/>
+        <line x1="6" y1="82" x2="738" y2="82" stroke="var(--line-2)" stroke-width="2"/>
+        <polygon points="748,82 738,77 738,87" fill="var(--line-2)"/>
+        <circle cx="6" cy="82" r="6" fill="var(--navy-2)"/>
+        <circle cx="118" cy="82" r="6" fill="var(--navy-2)"/>
+        <circle cx="254" cy="82" r="6" fill="var(--navy-2)"/>
+        <circle cx="422" cy="82" r="6" fill="var(--navy-2)"/>
+        <circle cx="590" cy="82" r="6" fill="var(--navy-2)"/>
+        <!-- 대상 사업 규모 단계: 각 단계의 앞쪽 홈 끝 = 해당 연도 점 -->
+        <path d="M12 104 H402 L416 140 L402 176 H12 Q0 176 0 164 V116 Q0 104 12 104 Z" style="fill: var(--s3-t1)"/>
+        <path d="M408 104 H570 L584 140 L570 176 H408 L422 140 Z" style="fill: var(--s3-t2)"/>
+        <path d="M576 104 H740 Q752 104 752 116 V164 Q752 176 740 176 H576 L590 140 Z" fill="var(--navy-2)"/>
       </svg>
-      <span class="s3-yr" style="left:24px">'22<small>하반기</small></span>
-      <span class="s3-sec" style="left:24px">도로</span>
-      <span class="s3-yr" style="left:156px">'23</span>
-      <span class="s3-sec" style="left:156px">철도·건축</span>
-      <span class="s3-yr" style="left:288px">'24</span>
-      <span class="s3-sec" style="left:288px">하천·항만</span>
-      <span class="s3-yr" style="left:430px">'26</span>
-      <span class="s3-yr" style="left:610px">'28</span>
-      <span class="s3-th t1" style="left:24px">1,000억원 이상 신규 사업</span>
-      <span class="s3-th" style="left:430px">500억원 이상</span>
-      <span class="s3-th" style="left:610px">300억원 이상</span>
+      <span class="s3-yr" style="left:0">'22<small>하반기</small></span>
+      <span class="s3-sec" style="left:0">도로</span>
+      <span class="s3-yr" style="left:112px">'23</span>
+      <span class="s3-sec" style="left:112px">철도·건축</span>
+      <span class="s3-yr" style="left:248px">'24</span>
+      <span class="s3-sec" style="left:248px">하천·항만</span>
+      <span class="s3-yr" style="left:416px">'26</span>
+      <span class="s3-yr" style="left:584px">'28</span>
+      <span class="s3-th" style="left:24px">1,000억원 이상 신규 사업</span>
+      <span class="s3-th" style="left:438px">500억원 이상</span>
+      <span class="s3-th t3" style="left:606px">300억원 이상</span>
     </div>
   </div>
 
   <!-- ① 신규 건설 프로젝트 -->
-  <div class="s3-card s3-real">
+  <div class="card s3-card s3-real">
     <div class="s3-txt">
-      <h3 class="s3-ct"><span class="s3-n">1</span>신규 건설 프로젝트</h3>
+      <h3 class="s3-ct"><span class="no">1</span><span class="h3">신규 건설 프로젝트</span></h3>
       <p>2D 도면을 먼저 그린 뒤 BIM으로 옮기는 <b>'BIM 전환설계'</b>가 대부분</p>
       <div class="s3-so">
         <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10h13M11 5l5 5-5 5" fill="none" stroke="var(--navy)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <span>설계 후반 투입 인력 증가 ·<br>추가 비용</span>
+        <span>설계 후반 투입 인력 증가·추가 비용</span>
       </div>
     </div>
     <div class="s3-chart">
-      <svg width="456" height="230" viewBox="0 0 456 230" aria-hidden="true">
+      <svg width="456" height="192" viewBox="0 0 456 192" aria-hidden="true">
         <defs>
           <linearGradient id="s3-gap" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#2B4A78" stop-opacity="0.32"/>
-            <stop offset="1" stop-color="#2B4A78" stop-opacity="0.10"/>
+            <stop offset="0" style="stop-color: var(--navy-2); stop-opacity: 0.32"/>
+            <stop offset="1" style="stop-color: var(--navy-2); stop-opacity: 0.10"/>
           </linearGradient>
         </defs>
-        <g transform="translate(16 26)">
+        <g transform="translate(16 24)">
           <!-- 추가 비용 발생 영역 -->
-          <path d="M0 94.2 C5.8 84.5 22.2 49.2 35 35.9 C47.8 22.6 61.8 11.4 76.9 14.4 C92.0 17.4 110.6 38.4 125.8 53.9 C140.9 69.5 154.4 96.0 167.8 107.7 C181.2 119.4 192.9 122.4 206.3 124.3 C219.7 126.2 233.6 120.3 248.2 118.9 C262.8 117.5 277.3 114.3 293.6 115.8 C309.9 117.3 325.7 121.9 346.1 127.9 C366.5 133.9 404.4 147.7 416 151.7 L416 161.6 C404.4 156.5 366.5 138.1 346.1 131 C325.7 123.9 309.9 119.1 293.6 118.9 C277.3 118.8 262.8 126.1 248.2 130.1 C233.6 134.1 222.0 146.6 206.3 142.7 C190.6 138.8 170.7 114.7 153.8 106.8 C136.9 98.9 121.8 93.1 104.9 95.1 C88.0 97.1 69.9 107.8 52.4 118.9 C34.9 130.0 8.7 154.5 0 161.6 Z" fill="url(#s3-gap)"/>
+          <path d="M0 81.9 C5.8 73.5 22.2 42.8 35 31.2 C47.8 19.7 61.8 9.9 76.9 12.5 C92 15.1 110.6 33.4 125.8 46.9 C140.9 60.4 154.4 83.5 167.8 93.7 C181.2 103.8 192.9 106.4 206.3 108.1 C219.7 109.7 233.6 104.6 248.2 103.4 C262.8 102.2 277.3 99.4 293.6 100.7 C309.9 102 325.7 106 346.1 111.2 C366.5 116.4 404.4 128.4 416 131.9 L416 140.5 C404.4 136.1 366.5 120.1 346.1 113.9 C325.7 107.7 309.9 103.6 293.6 103.4 C277.3 103.3 262.8 109.7 248.2 113.1 C233.6 116.6 222 127.5 206.3 124.1 C190.6 120.7 170.7 99.7 153.8 92.9 C136.9 86 121.8 81 104.9 82.7 C88 84.4 69.9 93.7 52.4 103.4 C34.9 113 8.7 134.3 0 140.5 Z" fill="url(#s3-gap)"/>
           <!-- 인허가 구분선 -->
-          <line x1="206.3" y1="184" x2="206.3" y2="145" stroke="var(--gray-bar-2)" stroke-width="2" stroke-dasharray="5 5"/>
+          <line x1="206.3" y1="160" x2="206.3" y2="127" stroke="var(--gray-bar-2)" stroke-width="2" stroke-dasharray="5 5"/>
           <!-- 2D 설계 -->
-          <path d="M0 161.6 C8.7 154.5 34.9 130.0 52.4 118.9 C69.9 107.8 88.0 97.1 104.9 95.1 C121.8 93.1 136.9 98.9 153.8 106.8 C170.7 114.7 190.6 138.8 206.3 142.7 C222.0 146.6 233.6 134.1 248.2 130.1 C262.8 126.1 277.3 118.8 293.6 118.9 C309.9 119.1 325.7 123.9 346.1 131 C366.5 138.1 404.4 156.5 416 161.6" fill="none" stroke="var(--gray-bar-2)" stroke-width="3" stroke-linecap="round"/>
+          <path d="M0 140.5 C8.7 134.3 34.9 113 52.4 103.4 C69.9 93.7 88 84.4 104.9 82.7 C121.8 81 136.9 86 153.8 92.9 C170.7 99.7 190.6 120.7 206.3 124.1 C222 127.5 233.6 116.6 248.2 113.1 C262.8 109.7 277.3 103.3 293.6 103.4 C309.9 103.6 325.7 107.7 346.1 113.9 C366.5 120.1 404.4 136.1 416 140.5" fill="none" stroke="var(--gray-bar-2)" stroke-width="3" stroke-linecap="round"/>
           <!-- BIM 전환 설계 + 도면 작업 -->
-          <path d="M0 94.2 C5.8 84.5 22.2 49.2 35 35.9 C47.8 22.6 61.8 11.4 76.9 14.4 C92.0 17.4 110.6 38.4 125.8 53.9 C140.9 69.5 154.4 96.0 167.8 107.7 C181.2 119.4 192.9 122.4 206.3 124.3 C219.7 126.2 233.6 120.3 248.2 118.9 C262.8 117.5 277.3 114.3 293.6 115.8 C309.9 117.3 325.7 121.9 346.1 127.9 C366.5 133.9 404.4 147.7 416 151.7" fill="none" stroke="var(--navy)" stroke-width="3" stroke-linecap="round"/>
+          <path d="M0 81.9 C5.8 73.5 22.2 42.8 35 31.2 C47.8 19.7 61.8 9.9 76.9 12.5 C92 15.1 110.6 33.4 125.8 46.9 C140.9 60.4 154.4 83.5 167.8 93.7 C181.2 103.8 192.9 106.4 206.3 108.1 C219.7 109.7 233.6 104.6 248.2 103.4 C262.8 102.2 277.3 99.4 293.6 100.7 C309.9 102 325.7 106 346.1 111.2 C366.5 116.4 404.4 128.4 416 131.9" fill="none" stroke="var(--navy)" stroke-width="3" stroke-linecap="round"/>
           <!-- 추가 비용 지시선 -->
-          <circle cx="92" cy="58" r="4.5" fill="var(--navy)"/>
-          <line x1="96" y1="58" x2="152" y2="58" stroke="var(--navy)" stroke-width="1.5"/>
+          <circle cx="92" cy="50" r="4.5" fill="var(--navy)"/>
+          <line x1="96" y1="50" x2="152" y2="50" stroke="var(--navy)" stroke-width="1.5"/>
           <!-- 축 -->
-          <line x1="0" y1="184" x2="430" y2="184" stroke="var(--ink-3)" stroke-width="2" stroke-linecap="round"/>
-          <line x1="0" y1="-12" x2="0" y2="184" stroke="var(--ink-3)" stroke-width="2" stroke-linecap="round"/>
+          <line x1="0" y1="160" x2="430" y2="160" stroke="var(--ink-3)" stroke-width="2" stroke-linecap="round"/>
+          <line x1="0" y1="-12" x2="0" y2="160" stroke="var(--ink-3)" stroke-width="2" stroke-linecap="round"/>
           <polygon points="0,-20 -5,-10 5,-10" fill="var(--ink-3)"/>
-          <polygon points="438,184 428,179 428,189" fill="var(--ink-3)"/>
+          <polygon points="438,160 428,155 428,165" fill="var(--ink-3)"/>
         </g>
       </svg>
-      <span class="lb ax" style="left:28px; top:0">투입 인력</span>
-      <span class="lb c-bim" style="left:132px; top:20px">BIM 전환 설계 + 도면 작업</span>
-      <span class="lb c-add" style="left:174px; top:76px">추가 비용 발생</span>
-      <span class="lb c-2d" style="left:92px; top:136px">2D 설계</span>
-      <span class="lb ph" style="left:103px; top:222px">설계</span>
-      <span class="lb ph" style="left:222px; top:222px">인허가</span>
-      <span class="lb ph" style="left:338px; top:222px">시공</span>
+      <span class="lb ax" style="left:30px; top:0">투입 인력</span>
+      <span class="lb c-bim" style="left:132px; top:16px">BIM 전환 설계 + 도면 작업</span>
+      <span class="lb c-add" style="left:174px; top:66px">추가 비용 발생</span>
+      <span class="lb c-2d" style="left:92px; top:120px">2D 설계</span>
+      <span class="lb ph" style="left:103px; top:196px">설계</span>
+      <span class="lb ph" style="left:222px; top:196px">인허가</span>
+      <span class="lb ph" style="left:338px; top:196px">시공</span>
       <span class="src">출처: 진상윤, 「BIM은 독일까? 득일까?」, 건축문화신문, 2015</span>
     </div>
   </div>
 
   <!-- B. 2030 건축BIM 로드맵 -->
-  <div class="s3-card">
-    <h3 class="s3-ct">2030 건축BIM 로드맵</h3>
+  <div class="card s3-card">
+    <h3 class="h3">2030 건축BIM 로드맵</h3>
     <div class="s3-road">
       <div class="s3-rm">
         <svg width="360" height="60" viewBox="0 0 360 60" aria-hidden="true">
-          <line x1="13" y1="38" x2="186" y2="38" stroke="var(--navy-2)" stroke-width="2"/>
-          <polygon points="196,38 186,33 186,43" fill="var(--navy-2)"/>
-          <circle cx="8" cy="38" r="6.5" fill="var(--paper)" stroke="var(--navy-2)" stroke-width="2.5"/>
-          <circle cx="210" cy="38" r="8" fill="var(--navy)"/>
+          <line x1="13" y1="38" x2="190" y2="38" stroke="var(--navy-2)" stroke-width="2"/>
+          <polygon points="200,38 190,33 190,43" fill="var(--navy-2)"/>
+          <circle cx="8" cy="38" r="6" fill="var(--paper)" stroke="var(--navy-2)" stroke-width="2.5"/>
+          <circle cx="210" cy="38" r="6" fill="var(--navy-2)"/>
         </svg>
         <span class="r-yr" style="left:0">'25</span>
         <span class="r-tx" style="left:0">BIM 설계 기반 구축</span>
-        <span class="r-yr" style="left:202px">'30</span>
-        <span class="r-tx" style="left:202px">디지털 건축서비스<br>완전 구현</span>
+        <span class="r-yr" style="left:204px">'30</span>
+        <span class="r-tx" style="left:204px">디지털 건축서비스<br>완전 구현</span>
       </div>
       <div class="s3-vr"></div>
       <div class="s3-lh">
         <h4>공동주택(LH) BIM 의무화</h4>
-        <div class="row"><span class="y">'20</span><span class="trk"><i class="bar" style="width:25%; background:#B4C1D4"></i></span><span class="v">25%</span></div>
-        <div class="row"><span class="y">'22</span><span class="trk"><i class="bar" style="width:50%; background:#6F86A8"></i></span><span class="v">50%</span></div>
-        <div class="row"><span class="y">'24</span><span class="trk"><i class="bar" style="width:100%; background:var(--navy)"></i></span><span class="v">100%</span></div>
+        <div class="row"><span class="y">'20</span><span class="trk"><i class="bar" style="width:25%; background:var(--s3-t2)"></i></span><span class="v">25%</span></div>
+        <div class="row"><span class="y">'22</span><span class="trk"><i class="bar" style="width:50%; background:var(--s3-t3)"></i></span><span class="v">50%</span></div>
+        <div class="row"><span class="y">'24</span><span class="trk"><i class="bar" style="width:100%; background:var(--navy-2)"></i></span><span class="v">100%</span></div>
       </div>
     </div>
-    <p class="s3-src">출처: 국토교통부 「스마트 건설 활성화 방안」, 「2030 건축BIM 로드맵」</p>
   </div>
 
   <!-- ② 기존 건축물 -->
-  <div class="s3-card s3-real">
+  <div class="card s3-card s3-real">
     <div class="s3-txt">
-      <h3 class="s3-ct"><span class="s3-n">2</span>기존 건축물</h3>
+      <h3 class="s3-ct"><span class="no">2</span><span class="h3">기존 건축물</span></h3>
       <p>BIM 없이 <b>2D 도면만</b> 남아 있음</p>
       <div class="s3-so">
         <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10h13M11 5l5 5-5 5" fill="none" stroke="var(--navy)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -195,28 +198,32 @@
       </div>
     </div>
     <div class="s3-pic">
-      <svg width="456" height="184" viewBox="0 0 456 184" aria-hidden="true">
-        <!-- 2D 도면 -->
-        <path d="M70 24 H122 L142 44 V128 H70 Z" fill="var(--paper)" stroke="var(--navy-2)" stroke-width="2" stroke-linejoin="round"/>
-        <path d="M122 24 V44 H142" fill="none" stroke="var(--navy-2)" stroke-width="2" stroke-linejoin="round"/>
-        <rect x="82" y="52" width="48" height="62" fill="none" stroke="var(--ink-3)" stroke-width="1.5"/>
-        <line x1="82" y1="80" x2="108" y2="80" stroke="var(--ink-3)" stroke-width="1.5"/>
-        <line x1="108" y1="52" x2="108" y2="100" stroke="var(--ink-3)" stroke-width="1.5"/>
-        <line x1="108" y1="100" x2="130" y2="100" stroke="var(--ink-3)" stroke-width="1.5"/>
-        <!-- 새로 구축 화살표 -->
-        <line x1="170" y1="76" x2="282" y2="76" stroke="var(--navy)" stroke-width="2" stroke-dasharray="6 6" stroke-linecap="round"/>
-        <polygon points="294,76 282,70 282,82" fill="var(--navy)"/>
-        <!-- 3D BIM (아직 없음: 점선) -->
-        <polygon points="370,26 410,48 370,70 330,48" fill="var(--navy-tint)" stroke="var(--navy)" stroke-width="2" stroke-dasharray="5 5" stroke-linejoin="round"/>
-        <polygon points="330,48 370,70 370,118 330,96" fill="var(--paper)" stroke="var(--navy)" stroke-width="2" stroke-dasharray="5 5" stroke-linejoin="round"/>
-        <polygon points="370,70 410,48 410,96 370,118" fill="#F7F9FC" stroke="var(--navy)" stroke-width="2" stroke-dasharray="5 5" stroke-linejoin="round"/>
+      <svg width="456" height="176" viewBox="0 0 456 176" aria-hidden="true">
+        <g transform="translate(0 -4)">
+          <!-- 2D 도면 -->
+          <path d="M70 24 H122 L142 44 V128 H70 Z" fill="var(--paper)" stroke="var(--navy-2)" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M122 24 V44 H142" fill="none" stroke="var(--navy-2)" stroke-width="2" stroke-linejoin="round"/>
+          <rect x="82" y="52" width="48" height="62" fill="none" stroke="var(--ink-3)" stroke-width="1.5"/>
+          <line x1="82" y1="80" x2="108" y2="80" stroke="var(--ink-3)" stroke-width="1.5"/>
+          <line x1="108" y1="52" x2="108" y2="100" stroke="var(--ink-3)" stroke-width="1.5"/>
+          <line x1="108" y1="100" x2="130" y2="100" stroke="var(--ink-3)" stroke-width="1.5"/>
+          <!-- 새로 구축 화살표 -->
+          <line x1="170" y1="76" x2="282" y2="76" stroke="var(--navy)" stroke-width="2" stroke-dasharray="6 6" stroke-linecap="round"/>
+          <polygon points="294,76 282,70 282,82" fill="var(--navy)"/>
+          <!-- 3D BIM (아직 없음: 점선) -->
+          <polygon points="370,26 410,48 370,70 330,48" fill="var(--navy-tint)" stroke="var(--navy)" stroke-width="2" stroke-dasharray="5 5" stroke-linejoin="round"/>
+          <polygon points="330,48 370,70 370,118 330,96" fill="var(--paper)" stroke="var(--navy)" stroke-width="2" stroke-dasharray="5 5" stroke-linejoin="round"/>
+          <polygon points="370,70 410,48 410,96 370,118" fill="var(--surface)" stroke="var(--navy)" stroke-width="2" stroke-dasharray="5 5" stroke-linejoin="round"/>
+        </g>
       </svg>
-      <span class="lb" style="left:106px; top:146px">2D 도면</span>
-      <span class="mid" style="left:226px; top:50px">새로 구축</span>
-      <span class="lb strong" style="left:370px; top:146px">3D BIM</span>
+      <span class="lb" style="left:106px; top:142px">2D 도면</span>
+      <span class="mid" style="left:226px; top:46px">새로 구축</span>
+      <span class="lb strong" style="left:370px; top:142px">3D BIM</span>
     </div>
   </div>
 </div>
+
+<p class="src s3-psrc">출처: 국토교통부 「스마트 건설 활성화 방안」, 「2030 건축BIM 로드맵」</p>
 
 <div class="s3-concl">
   <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path d="M3 11h15M12 5l6 6-6 6" fill="none" stroke="var(--navy)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>

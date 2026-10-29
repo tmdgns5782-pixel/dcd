@@ -1,37 +1,40 @@
 <!-- s11: 직무 과제 ↔ 연구 접점 (3행) + 핵심 메시지(제안 문구). 이 파일만 편집. 스타일은 #s11 로 범위를 한정 -->
 <style>
-/* 격자: [직무 과제 카드 784] [이음 40] [연구 접점 카드 904 = 연구 내용 | → | 활용(틴트 면 392)] = 1728
-   세로: 열 머리 40 · 16 · 행 3개(각 168, 사이 16) → 592 · 핵심 메시지 바닥 18 (S4·S5와 같은 바닥선) */
+/* 격자: [직무 과제 카드 840] [이음 64] [연구 접점 카드 824 = 연구 내용 | → | 활용(틴트 면 448)] = 1728
+   세로: 열 머리 40 · 16 · 행 3개(각 168, 사이 16) → 592 · 핵심 메시지 바닥 18 (S4·S5와 같은 바닥선)
+   이음은 S5·S9처럼 간격 한가운데 네이비 원 + 가는 선 */
 #s11 .s11-ch { position: absolute; top: 0; height: 40px; display: flex; align-items: center; gap: 14px; font-size: 24px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; white-space: nowrap; color: var(--navy); }
 #s11 .s11-ch::after { content: ""; flex: 1; height: 2px; border-radius: 1px; background: var(--navy); }
 #s11 .s11-ch svg { flex: none; width: 26px; height: 26px; }
-#s11 .s11-ch.c1 { left: 0; width: 784px; }
-#s11 .s11-ch.c2 { left: 824px; width: 904px; }
+#s11 .s11-ch.c1 { left: 0; width: 840px; }
+#s11 .s11-ch.c2 { left: 904px; width: 824px; }
 
 #s11 .s11-row { position: absolute; left: 0; width: 1728px; height: 168px; }
 #s11 .s11-row.r1 { top: 56px; } #s11 .s11-row.r2 { top: 240px; } #s11 .s11-row.r3 { top: 424px; }
 
 /* 직무 과제 칸 */
-#s11 .s11-task { position: absolute; left: 0; top: 0; width: 784px; height: 168px; display: flex; align-items: center; gap: 28px; padding: 0 56px 0 36px; border-radius: var(--radius); background: var(--surface); }
+#s11 .s11-task { position: absolute; left: 0; top: 0; width: 840px; height: 168px; display: flex; align-items: center; gap: 32px; padding: 0 40px 0 36px; border-radius: var(--radius); background: var(--surface); }
 #s11 .s11-ic { flex: none; width: 80px; height: 80px; border-radius: 20px; background: var(--paper); display: grid; place-items: center; box-shadow: 0 2px 6px rgba(16, 42, 76, .06); }
 #s11 .s11-ic svg { width: 40px; height: 40px; }
 #s11 .s11-ic .g { fill: none; stroke: var(--navy); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 #s11 .s11-ic .w { fill: var(--paper); }
-#s11 .s11-tx { width: 272px; flex: none; }
-#s11 .s11-tx .k { font-size: 15px; font-weight: 800; letter-spacing: 0.12em; line-height: 1; color: var(--ink-3); }
+#s11 .s11-tx { width: 296px; flex: none; }
+#s11 .s11-tx .k { font-size: 16px; font-weight: 800; letter-spacing: 0.12em; line-height: 1; color: var(--ink-3); }
 #s11 .s11-tx h3 { margin-top: 12px; font-size: 28px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.3; color: var(--navy); }
-#s11 .s11-task .d { flex: 1; padding-left: 28px; border-left: 1.5px solid var(--line-2); font-size: 22px; font-weight: 500; letter-spacing: -0.025em; line-height: 1.5; color: var(--ink-2); white-space: nowrap; }
+#s11 .s11-task .d { flex: 1; padding-left: 32px; border-left: 1.5px solid var(--line-2); font-size: 22px; font-weight: 500; letter-spacing: -0.025em; line-height: 1.5; color: var(--ink-2); white-space: nowrap; }
 
-/* 이음: 두 카드의 맞닿는 자리 */
-#s11 .s11-link { position: absolute; left: 770px; top: 50px; width: 68px; height: 68px; border-radius: 50%; border: 6px solid var(--paper); background: var(--navy); display: grid; place-items: center; }
-#s11 .s11-link svg { width: 24px; height: 24px; }
+/* 이음: 두 카드 사이 간격 한가운데 (S5·S9와 같은 언어, 아이콘만 '맞닿음') */
+#s11 .s11-link { position: absolute; left: 840px; top: 0; width: 64px; height: 168px; }
+#s11 .s11-link::before { content: ""; position: absolute; left: 0; right: 0; top: 83px; height: 2px; background: var(--line-2); }
+#s11 .s11-link i { position: absolute; left: 8px; top: 60px; width: 48px; height: 48px; border-radius: 50%; background: var(--navy); display: grid; place-items: center; }
+#s11 .s11-link svg { width: 22px; height: 22px; }
 
-/* 연구 접점 칸 */
-#s11 .s11-res { position: absolute; left: 824px; top: 0; width: 904px; height: 168px; border-radius: var(--radius); background: var(--paper); border: 2px solid var(--navy); box-shadow: 0 6px 18px rgba(16, 42, 76, .08); }
-#s11 .s11-res .a { position: absolute; left: 58px; top: 0; bottom: 0; display: flex; align-items: center; font-size: 25px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.4; color: var(--navy); white-space: nowrap; }
-#s11 .s11-ar { position: absolute; left: 404px; top: 72px; width: 32px; height: 20px; }
-#s11 .s11-out { position: absolute; right: 0; top: 0; bottom: 0; width: 420px; display: flex; flex-direction: column; justify-content: center; padding: 0 36px; border-radius: 0 18px 18px 0; background: var(--navy-tint); }
-#s11 .s11-out .b { font-size: 25px; font-weight: 800; letter-spacing: -0.035em; line-height: 1.4; color: var(--navy); white-space: nowrap; }
+/* 연구 접점 칸: 연구 내용(보조) → 활용(초점) */
+#s11 .s11-res { position: absolute; left: 904px; top: 0; width: 824px; height: 168px; border-radius: var(--radius); background: var(--paper); border: 2px solid var(--navy); box-shadow: 0 6px 18px rgba(16, 42, 76, .08); }
+#s11 .s11-res .a { position: absolute; left: 38px; top: 0; bottom: 0; display: flex; align-items: center; font-size: 23px; font-weight: 700; letter-spacing: -0.035em; line-height: 1.45; color: var(--ink); white-space: nowrap; }
+#s11 .s11-ar { position: absolute; left: 292px; top: 70px; width: 40px; height: 24px; }
+#s11 .s11-out { position: absolute; right: 0; top: 0; bottom: 0; width: 448px; display: flex; flex-direction: column; justify-content: center; padding: 0 40px; border-radius: 0 18px 18px 0; background: var(--navy-tint); }
+#s11 .s11-out .b { font-size: 26px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.4; color: var(--navy); white-space: nowrap; }
 
 /* 핵심 메시지 (S4·S5와 같은 바닥선) */
 #s11 .s11-key { position: absolute; left: 0; right: 0; bottom: 18px; }
@@ -52,12 +55,12 @@
     <div class="s11-tx"><p class="k">과제 1</p><h3>Virtual FAB 구축</h3></div>
     <p class="d">여러 출처의 도면·모델 데이터를<br>하나로 통합</p>
   </div>
+  <div class="s11-link"><i><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></g></svg></i></div>
   <div class="s11-res">
     <p class="a">서로 다른 도면의<br>불완전한 정보를 짝지어</p>
-    <svg class="s11-ar" viewBox="0 0 32 20" aria-hidden="true"><path d="M2 10h26M21 3.5l7 6.5-7 6.5" fill="none" stroke="var(--navy-2)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg class="s11-ar" viewBox="0 0 40 24" aria-hidden="true"><path d="M2 12h34M27 4l9 8-9 8" fill="none" stroke="var(--navy-2)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <div class="s11-out"><p class="b">하나의 3D 모델로 통합</p></div>
   </div>
-  <i class="s11-link"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></g></svg></i>
 </div>
 
 <!-- 2 기존 시설의 디지털 전환 -->
@@ -67,27 +70,27 @@
     <div class="s11-tx"><p class="k">과제 2</p><h3>기존 시설의 디지털 전환</h3></div>
     <p class="d">이미지 도면만 남은<br>기존 시설이 많음</p>
   </div>
+  <div class="s11-link"><i><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></g></svg></i></div>
   <div class="s11-res">
     <p class="a">CAD 정보 없이<br>이미지 도면에서 BIM 생성</p>
-    <svg class="s11-ar" viewBox="0 0 32 20" aria-hidden="true"><path d="M2 10h26M21 3.5l7 6.5-7 6.5" fill="none" stroke="var(--navy-2)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg class="s11-ar" viewBox="0 0 40 24" aria-hidden="true"><path d="M2 12h34M27 4l9 8-9 8" fill="none" stroke="var(--navy-2)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <div class="s11-out"><p class="b">디지털 전환 기간 단축</p></div>
   </div>
-  <i class="s11-link"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></g></svg></i>
 </div>
 
 <!-- 3 5D(물량·원가) 관리 -->
 <div class="s11-row r3">
   <div class="s11-task">
-    <span class="s11-ic"><svg viewBox="0 0 40 40" aria-hidden="true"><g class="g"><path d="M12 11l8.5 4.75L12 20.5l-8.5-4.75z"/><path d="M3.5 15.75v11L12 31.5l8.5-4.75v-11"/><path d="M12 20.5v11"/><ellipse cx="30" cy="11" rx="7" ry="3"/><path d="M23 11v19a7 3 0 0 0 14 0V11"/><path d="M23 17.5a7 3 0 0 0 14 0M23 24a7 3 0 0 0 14 0"/></g></svg></span>
+    <span class="s11-ic"><svg viewBox="0 0 40 40" aria-hidden="true"><g class="g"><path d="M11.5 12l9 5-9 5-9-5z"/><path d="M2.5 17v13l9 5 9-5V17"/><path d="M11.5 22v13"/><ellipse cx="30" cy="8" rx="7" ry="3"/><path d="M23 8v24a7 3 0 0 0 14 0V8"/><path d="M23 16a7 3 0 0 0 14 0M23 24a7 3 0 0 0 14 0"/></g></svg></span>
     <div class="s11-tx"><p class="k">과제 3</p><h3>5D(물량·원가) 관리</h3></div>
     <p class="d">BIM 데이터가 정확해야<br>물량·원가 관리가 의미 있음</p>
   </div>
+  <div class="s11-link"><i><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></g></svg></i></div>
   <div class="s11-res">
     <p class="a">축척 보정·생성 완성도<br>검증 경험</p>
-    <svg class="s11-ar" viewBox="0 0 32 20" aria-hidden="true"><path d="M2 10h26M21 3.5l7 6.5-7 6.5" fill="none" stroke="var(--navy-2)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg class="s11-ar" viewBox="0 0 40 24" aria-hidden="true"><path d="M2 12h34M27 4l9 8-9 8" fill="none" stroke="var(--navy-2)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <div class="s11-out"><p class="b">모델 데이터 품질 검증에<br>바로 활용</p></div>
   </div>
-  <i class="s11-link"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></g></svg></i>
 </div>
 
 <div class="keybar s11-key">

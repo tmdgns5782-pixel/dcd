@@ -1,84 +1,86 @@
 <!-- s10: 성능 검증 상세 (근거 대시보드). 이 파일만 편집. 스타일은 #s10 로 범위를 한정 -->
 <style>
-/* 격자: [STEP 2 도면 인식 576] 32 [STEP 3 객체 매칭 560] 32 [STEP 4 BIM 생성 528] = 1728
-   세로: 열 머리 36 · 20 · 위 패널 400 · 24 · 아래 패널 321 → 바닥선 801 (S5·S9와 같은 바닥선) */
+/* 격자: [STEP 2 도면 객체 인식 576] 32 [STEP 3 축척 보정 · 대응 객체 매칭 560] 32 [STEP 4 BIM 자동 생성 528] = 1728
+   세로: 열 머리 36 · 24 · 위 패널 400 · 24 · 아래 패널 317 → 바닥선 801 (S5·S9와 같은 바닥선) */
 #s10 .s10-grid { position: absolute; left: 0; top: 0; width: 1728px; height: 801px; display: grid;
   grid-template-columns: 576px 560px 528px; column-gap: 32px;
-  grid-template-rows: 36px 20px 400px 24px 321px; }
+  grid-template-rows: 36px 24px 400px 24px 317px; }
 #s10 .c1 { grid-column: 1; } #s10 .c2 { grid-column: 2; } #s10 .c3 { grid-column: 3; }
 #s10 .rh { grid-row: 1; } #s10 .rt { grid-row: 3; } #s10 .rb { grid-row: 5; } #s10 .rf { grid-row: 3 / 6; }
 
-/* 열 머리: STEP 표시 + 단계 이름 + 선 (S7과 같은 모양) */
-#s10 .s10-ch { display: flex; align-items: center; gap: 14px; height: 36px; white-space: nowrap; }
+/* 열 머리: STEP 표시 + 단계 이름 + 선 (S7·S8과 같은 모양·이름) */
+#s10 .s10-ch { display: flex; align-items: center; gap: 16px; height: 36px; white-space: nowrap; }
 #s10 .s10-ch .st { font-size: 15px; font-weight: 800; letter-spacing: 0.12em; color: var(--navy-2); line-height: 1; }
-#s10 .s10-ch h3 { font-size: 26px; font-weight: 800; letter-spacing: -0.035em; color: var(--navy); line-height: 1; }
-#s10 .s10-ch::after { content: ""; flex: 1; height: 2px; border-radius: 1px; background: var(--navy); margin-left: 6px; }
+#s10 .s10-ch h3 { font-size: 26px; font-weight: 800; letter-spacing: -0.035em; color: var(--navy); line-height: 1; margin-right: 4px; }
+#s10 .s10-ch::after { content: ""; flex: 1; height: 2px; border-radius: 1px; background: var(--navy); margin-left: 8px; }
 
-/* 패널 공통 */
+/* 패널 공통 — 글자 단계: 제목 26 · 본문 19 · 캡션 16 (+ 패널마다 수치 하나) */
 #s10 .pn { position: relative; display: flex; flex-direction: column; padding: 28px 32px; border-radius: var(--radius);
   background: var(--paper); border: 1.5px solid var(--line); box-shadow: 0 4px 16px rgba(16, 42, 76, .05); }
 #s10 .pn-hd { display: flex; align-items: center; justify-content: space-between; height: 34px; white-space: nowrap; }
-#s10 .pn-hd h4 { font-size: 26px; font-weight: 800; letter-spacing: -0.035em; line-height: 1; color: var(--navy); }
-#s10 .pn-gl { margin-top: 10px; display: flex; align-items: center; height: 26px; font-size: 18px; font-weight: 500; letter-spacing: -0.025em; line-height: 1; color: var(--ink-3); white-space: nowrap; }
+#s10 .pn-hd h4 { font-size: var(--fs-h3); font-weight: 800; letter-spacing: -0.035em; line-height: 1; color: var(--navy); }
+#s10 .pn-gl { margin-top: 8px; display: flex; align-items: center; height: 26px; font-size: var(--fs-small); font-weight: 500; letter-spacing: -0.025em; line-height: 1; color: var(--ink-3); white-space: nowrap; }
 #s10 .pn-gl b { font-weight: 800; color: var(--navy-2); letter-spacing: -0.01em; }
 #s10 .pn-gl i { flex: none; width: 1.5px; height: 16px; margin: 0 12px; background: var(--line-2); }
 
 /* 오른쪽 위 표지: 데이터 범위 */
-#s10 .tag { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 16px 0 14px; border-radius: 999px; background: var(--surface); font-size: 16px; font-weight: 700; color: var(--ink-2); line-height: 1; letter-spacing: -0.02em; }
+#s10 .tag { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 16px 0 14px; border-radius: 999px; background: var(--surface); font-size: var(--fs-cap); font-weight: 700; color: var(--ink-2); line-height: 1; letter-spacing: -0.02em; }
 #s10 .tag svg { flex: none; width: 18px; height: 18px; }
-#s10 .lg { display: flex; align-items: center; gap: 16px; font-size: 16px; font-weight: 700; color: var(--ink-2); line-height: 1; }
+#s10 .lg { display: flex; align-items: center; gap: 16px; font-size: var(--fs-cap); font-weight: 700; color: var(--ink-2); line-height: 1; }
 #s10 .lg span { display: inline-flex; align-items: center; gap: 8px; }
 #s10 .lg i { flex: none; width: 14px; height: 14px; border-radius: 3px; background: var(--gray-bar); }
 #s10 .lg i.p { background: var(--accent); }
 #s10 .lg i.n { background: var(--navy-2); }
 #s10 .lg i.e { background: var(--surface-2); border: 1.5px solid var(--gray-bar); }
-#s10 .vs { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700; color: var(--ink-3); line-height: 1; }
-#s10 .vs .delta { height: 30px; font-size: 17px; }
+#s10 .vs { display: flex; align-items: center; gap: 8px; font-size: var(--fs-cap); font-weight: 700; color: var(--ink-3); line-height: 1; }
+/* %p 칩 3개(①×2, ③×1)는 같은 크기 */
+#s10 .delta { height: 28px; padding: 0 10px; border-radius: 6px; font-size: 17px; }
 
-/* 세로 막대 차트 (0~1 같은 눈금) — 그림 영역 높이 150 */
-#s10 .vb { position: relative; margin-top: 24px; height: 250px; }
-#s10 .vb .gl { position: absolute; left: 40px; right: 0; height: 0; border-top: 1px solid var(--line); }
-#s10 .vb .gl.base { border-top: 2px solid var(--line-2); }
-#s10 .vb .yl { position: absolute; left: 0; width: 30px; text-align: right; font-size: 15px; font-weight: 600; color: var(--ink-3); line-height: 1; margin-top: -8px; font-variant-numeric: tabular-nums; }
+/* 세로 막대 차트 (0~1 같은 눈금: 1.0 = 150px) — 높이 248, 기준선 y=184, 1.0 눈금 y=34 */
+#s10 .vb { position: relative; flex: none; margin-top: 24px; height: 248px; }
+#s10 .vb .gl { position: absolute; left: 40px; right: 0; height: 0; border-top: 2px solid var(--line-2); }
+/* 세로축: 0~1.0 (값 라벨과 겹치지 않도록 가로 눈금선 대신 축 + 1.0 눈금) */
+#s10 .vb .ax { position: absolute; left: 40px; top: 34px; width: 0; height: 150px; border-left: 1.5px solid var(--line-2); }
+#s10 .vb .tk { position: absolute; left: 35px; width: 6px; height: 0; border-top: 1.5px solid var(--line-2); }
+#s10 .vb .yl { position: absolute; left: 0; width: 30px; text-align: right; font-size: var(--fs-cap); font-weight: 600; color: var(--ink-3); line-height: 1; margin-top: -8px; font-variant-numeric: tabular-nums; }
 #s10 .vb .bar { position: absolute; bottom: 64px; width: 52px; border-radius: 4px 4px 0 0; background: var(--gray-bar); }
 #s10 .vb .bar.p { background: var(--accent); }
-#s10 .vb .val { position: absolute; transform: translateX(-50%); padding: 2px 6px; background: var(--paper); white-space: nowrap; font-size: 20px; font-weight: 700; color: var(--ink-3); line-height: 1; font-variant-numeric: tabular-nums; }
-#s10 .vb .val.p { font-size: 26px; font-weight: 800; color: var(--navy); letter-spacing: -0.03em; }
-#s10 .vb .xl { position: absolute; top: 198px; text-align: center; white-space: nowrap; line-height: 1; }
-#s10 .vb .xl b { display: inline-flex; align-items: center; gap: 8px; height: 26px; font-size: 19px; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; }
-#s10 .vb .xl b .delta { height: 26px; padding: 0 8px; font-size: 15px; border-radius: 6px; }
-#s10 .vb .xl small { display: block; margin-top: 8px; font-size: 16px; font-weight: 600; color: var(--ink-3); }
+/* 값 라벨: 막대 위 8px, 바탕 없음(눈금선이 뒤로 지나감) */
+#s10 .vb .val { position: absolute; transform: translateX(-50%); white-space: nowrap; font-size: var(--fs-small); font-weight: 700; color: var(--ink-3); line-height: 1; font-variant-numeric: tabular-nums; }
+#s10 .vb .val.p { font-size: var(--fs-h3); font-weight: 800; color: var(--navy); letter-spacing: -0.03em; }
+#s10 .vb .xl { position: absolute; top: 196px; text-align: center; white-space: nowrap; line-height: 1; }
+#s10 .vb .xl b { display: inline-flex; align-items: center; gap: 8px; height: 28px; font-size: var(--fs-small); font-weight: 800; color: var(--ink); letter-spacing: -0.02em; }
+#s10 .vb .xl small { display: block; margin-top: 8px; font-size: var(--fs-cap); font-weight: 600; color: var(--ink-3); }
 #s10 .vb .xl.p b { color: var(--navy); }
 #s10 .vb .ref { position: absolute; height: 0; border-top: 2px dashed var(--gray-bar-2); }
 
-/* 고리 지표 (작은 다중) */
-#s10 .rings { flex: 1; display: flex; align-items: center; justify-content: space-around; padding-top: 18px; }
-#s10 .rg { display: flex; flex-direction: column; align-items: center; }
+/* 고리 지표 (작은 다중) — 두 패널 모두 같은 간격(고리 124 + 48) */
+#s10 .rings { flex: 1; display: flex; align-items: center; justify-content: center; gap: 48px; padding-top: 16px; }
+#s10 .rg { display: flex; flex-direction: column; align-items: center; width: 124px; }
 #s10 .rg .o { position: relative; width: 124px; height: 124px; }
 #s10 .rg .o svg { position: absolute; left: 0; top: 0; width: 124px; height: 124px; }
-#s10 .rg .o b { position: absolute; left: 0; right: 0; top: 48px; text-align: center; font-size: 26px; font-weight: 800; letter-spacing: -0.035em; line-height: 28px; color: var(--navy); font-variant-numeric: tabular-nums; }
-#s10 .rg p { margin-top: 14px; font-size: 19px; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; line-height: 1; white-space: nowrap; }
+#s10 .rg .o b { position: absolute; left: 0; right: 0; top: 48px; text-align: center; font-size: var(--fs-h3); font-weight: 800; letter-spacing: -0.035em; line-height: 28px; color: var(--navy); font-variant-numeric: tabular-nums; }
+#s10 .rg p { margin-top: 16px; font-size: var(--fs-small); font-weight: 800; color: var(--ink); letter-spacing: -0.02em; line-height: 1; white-space: nowrap; }
 
-/* STEP 4: BIM 생성 */
-#s10 .pf { padding: 28px 32px 30px; }
-#s10 .kp { margin-top: 24px; padding: 24px 28px 22px; border-radius: 16px; background: var(--surface); }
-#s10 .kp-k { display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; color: var(--ink-3); line-height: 1; white-space: nowrap; }
-#s10 .kp-v { margin-top: 12px; display: flex; align-items: baseline; justify-content: space-between; white-space: nowrap; }
-#s10 .kp-v .v { display: flex; align-items: baseline; gap: 10px; }
-#s10 .kp-v .v .kpi { font-size: 72px; }
-#s10 .kp-v .v .of { font-size: 30px; font-weight: 700; color: var(--gray-bar-2); letter-spacing: -0.03em; line-height: 1; }
-#s10 .kp-v > .kpi { font-size: 52px; }
-#s10 .kp-bar { position: relative; margin-top: 20px; height: 12px; border-radius: 6px; background: var(--surface-2); }
-#s10 .kp-bar i { position: absolute; left: 0; top: 0; height: 12px; width: 93.3%; border-radius: 6px; background: var(--accent); }
-#s10 .kp-s { margin-top: 14px; font-size: 18px; font-weight: 600; color: var(--ink-2); line-height: 1; white-space: nowrap; }
+/* STEP 4: BIM 자동 생성 */
+#s10 .pf { padding: 28px 32px 32px; }
+#s10 .kp { margin-top: 24px; padding: 32px 28px; border-radius: 16px; background: var(--surface); }
+/* 영웅 수치는 생성 완성도 하나(빨강). 합계 379 / 406은 오른쪽에 보조 수치로 */
+#s10 .kp-v { display: flex; align-items: baseline; justify-content: space-between; white-space: nowrap; }
+#s10 .kp-v .kpi { font-size: 72px; }
+#s10 .kp-v .of { position: relative; display: flex; align-items: baseline; gap: 8px; font-size: var(--fs-h3); font-weight: 800; letter-spacing: -0.03em; line-height: 1; color: var(--gray-bar-2); font-variant-numeric: tabular-nums; }
+#s10 .kp-v .of b { font-weight: 800; color: var(--navy); }
+#s10 .kp-v .of .k { position: absolute; right: 0; bottom: 100%; margin-bottom: 8px; font-size: var(--fs-cap); font-weight: 700; letter-spacing: -0.02em; color: var(--ink-3); }
+#s10 .kp-bar { position: relative; margin-top: 24px; height: 12px; border-radius: 6px; background: var(--surface-2); }
+#s10 .kp-bar i { position: absolute; left: 0; top: 0; height: 12px; width: 93.3%; border-radius: 6px; background: var(--navy-2); }
 
-#s10 .bd { margin-top: 30px; }
+#s10 .bd { margin-top: 40px; }
 #s10 .bd-hd { display: flex; align-items: center; justify-content: space-between; height: 24px; white-space: nowrap; }
-#s10 .bd-hd p { font-size: 19px; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; line-height: 1; }
-#s10 .el { margin-top: 20px; }
-#s10 .el-t { display: flex; align-items: baseline; gap: 12px; height: 24px; line-height: 1; white-space: nowrap; }
-#s10 .el-t b { font-size: 19px; font-weight: 800; color: var(--ink); width: 40px; }
-#s10 .el-t span { font-size: 19px; font-weight: 600; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+#s10 .bd-hd p { font-size: var(--fs-small); font-weight: 800; color: var(--ink); letter-spacing: -0.02em; line-height: 1; }
+#s10 .el { margin-top: 32px; }
+#s10 .el-t { display: flex; align-items: baseline; gap: 16px; height: 24px; line-height: 1; white-space: nowrap; }
+#s10 .el-t b { font-size: var(--fs-small); font-weight: 800; color: var(--ink); width: 40px; }
+#s10 .el-t span { font-size: var(--fs-small); font-weight: 600; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 #s10 .el-t span em { font-weight: 800; color: var(--navy); }
 #s10 .el-b { position: relative; margin-top: 8px; height: 16px; }
 #s10 .el-b i { position: absolute; top: 0; height: 16px; }
@@ -86,35 +88,34 @@
 #s10 .el-b .g.full { border-radius: 4px; }
 #s10 .el-b .m { background: var(--surface-2); border: 1.5px solid var(--gray-bar); border-radius: 0 4px 4px 0; }
 
-#s10 .iou { margin-top: auto; display: flex; align-items: center; gap: 18px; padding-top: 22px; border-top: 1.5px solid var(--line); }
+#s10 .iou { margin-top: auto; display: flex; align-items: center; gap: 16px; padding-top: 24px; border-top: 1.5px solid var(--line); }
 #s10 .iou svg { flex: none; width: 52px; height: 52px; }
 #s10 .iou .t { flex: 1; }
-#s10 .iou .t b { display: block; font-size: 19px; font-weight: 800; color: var(--navy); line-height: 1; }
-#s10 .iou .t span { display: block; margin-top: 8px; font-size: 16px; font-weight: 600; color: var(--ink-3); line-height: 1.3; }
-#s10 .iou .v { font-size: 34px; font-weight: 800; color: var(--navy-2); letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+#s10 .iou .t b { display: block; font-size: var(--fs-small); font-weight: 800; color: var(--navy); line-height: 1; }
+#s10 .iou .t span { display: block; margin-top: 8px; font-size: var(--fs-cap); font-weight: 600; color: var(--ink-3); line-height: 1.3; }
+#s10 .iou .v { font-size: var(--fs-h3); font-weight: 800; color: var(--navy-2); letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
 </style>
 
 <div class="s10-grid">
-  <!-- 열 머리 -->
-  <div class="s10-ch c1 rh"><span class="st">STEP 2</span><h3>도면 인식</h3></div>
-  <div class="s10-ch c2 rh"><span class="st">STEP 3</span><h3>객체 매칭</h3></div>
-  <div class="s10-ch c3 rh"><span class="st">STEP 4</span><h3>BIM 생성</h3></div>
+  <!-- 열 머리 (S7·S8 단계 이름) -->
+  <div class="s10-ch c1 rh"><span class="st">STEP 2</span><h3>도면 객체 인식</h3></div>
+  <div class="s10-ch c2 rh"><span class="st">STEP 3</span><h3>축척 보정 · 대응 객체 매칭</h3></div>
+  <div class="s10-ch c3 rh"><span class="st">STEP 4</span><h3>BIM 자동 생성</h3></div>
 
   <!-- ① 객체 인식 mAP@0.5 -->
   <section class="pn c1 rt">
     <div class="pn-hd"><h4>객체 인식</h4><div class="lg"><span><i></i>Baseline</span><span><i class="p"></i>제안 방법</span></div></div>
     <p class="pn-gl"><b>mAP@0.5</b><i></i>객체를 맞게 찾아낸 정도, 1에 가까울수록 좋음</p>
     <div class="vb">
-      <span class="yl" style="top:36px">1.0</span><span class="gl" style="top:36px"></span>
-      <span class="yl" style="top:111px">0.5</span><span class="gl" style="top:111px"></span>
-      <span class="yl" style="top:186px">0</span><span class="gl base" style="top:186px"></span>
-      <!-- 평면도: 그룹 중심 x=148 (막대 52, 사이 10) · 그림 영역 40~512의 중심 276 기준 대칭 -->
-      <i class="bar" style="left:91px;height:76px"></i><span class="val" style="left:117px;top:78px">0.507</span>
-      <i class="bar p" style="left:153px;height:140px"></i><span class="val p" style="left:179px;top:8px">0.934</span>
+      <span class="yl" style="top:34px">1.0</span><i class="tk" style="top:34px"></i><i class="ax"></i>
+      <span class="yl" style="top:184px">0</span><i class="gl" style="top:183px"></i>
+      <!-- 평면도: 그룹 중심 x=148 (막대 52, 사이 10) · 그림 영역 40~509의 중심 기준 대칭 -->
+      <i class="bar" style="left:91px;height:76px"></i><span class="val" style="left:117px;top:81px">0.507</span>
+      <i class="bar p" style="left:153px;height:140px"></i><span class="val p" style="left:179px;top:10px">0.934</span>
       <p class="xl" style="left:30px;width:236px"><b>평면도 <span class="delta">+42.7%p</span></b><small>학습 이미지 72,792장 (타일 포함)</small></p>
       <!-- 입면도: 그룹 중심 x=404 -->
-      <i class="bar" style="left:347px;height:53px"></i><span class="val" style="left:373px;top:101px">0.355</span>
-      <i class="bar p" style="left:409px;height:126px"></i><span class="val p" style="left:435px;top:22px">0.838</span>
+      <i class="bar" style="left:347px;height:53px"></i><span class="val" style="left:373px;top:104px">0.355</span>
+      <i class="bar p" style="left:409px;height:126px"></i><span class="val p" style="left:435px;top:24px">0.838</span>
       <p class="xl" style="left:286px;width:236px"><b>입면도 <span class="delta">+48.3%p</span></b><small>학습 이미지 16,992장 (타일 포함)</small></p>
     </div>
   </section>
@@ -136,16 +137,15 @@
     <div class="pn-hd"><h4>축척 인식</h4><div class="vs">Tesseract OCR 대비 <span class="delta">+33.8%p</span></div></div>
     <p class="pn-gl"><b>정확도</b><i></i>도면의 축척을 맞게 읽어 낸 비율</p>
     <div class="vb">
-      <span class="yl" style="top:36px">1.0</span><span class="gl" style="top:36px"></span>
-      <span class="yl" style="top:111px">0.5</span><span class="gl" style="top:111px"></span>
-      <span class="yl" style="top:186px">0</span><span class="gl base" style="top:186px"></span>
+      <span class="yl" style="top:34px">1.0</span><i class="tk" style="top:34px"></i><i class="ax"></i>
+      <span class="yl" style="top:184px">0</span><i class="gl" style="top:183px"></i>
       <!-- 열 3개: 중심 x = 116 / 268 / 420 (막대 52) -->
-      <i class="ref" style="left:294px;width:100px;top:130px"></i>
-      <i class="bar" style="left:90px;height:30px"></i><span class="val" style="left:116px;top:124px">0.198</span>
-      <i class="bar" style="left:242px;height:55px"></i><span class="val" style="left:268px;top:99px">0.369</span>
-      <i class="bar p" style="left:394px;height:106px"></i><span class="val p" style="left:420px;top:42px">0.707</span>
+      <i class="ref" style="left:294px;width:100px;top:128px"></i>
+      <i class="bar" style="left:90px;height:30px"></i><span class="val" style="left:116px;top:127px">0.198</span>
+      <i class="bar" style="left:242px;height:55px"></i><span class="val" style="left:268px;top:102px">0.369</span>
+      <i class="bar p" style="left:394px;height:106px"></i><span class="val p" style="left:420px;top:44px">0.707</span>
       <p class="xl" style="left:46px;width:140px"><b>EasyOCR</b><small>기존 OCR</small></p>
-      <p class="xl" style="left:198px;width:140px"><b>Tesseract</b><small>기존 OCR</small></p>
+      <p class="xl" style="left:198px;width:140px"><b>Tesseract OCR</b><small>기존 OCR</small></p>
       <p class="xl p" style="left:350px;width:140px"><b>LMM(GPT-4o)</b><small>제안 방법</small></p>
     </div>
   </section>
@@ -154,35 +154,34 @@
   <section class="pn c2 rb">
     <div class="pn-hd"><h4>대응 객체 매칭</h4>
       <span class="tag"><svg viewBox="0 0 18 18" aria-hidden="true"><path d="M2.5 16h13M4.5 16V5.5L9 2.5l4.5 3V16" fill="none" stroke="var(--ink-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.5 8h3M7.5 11.5h3" fill="none" stroke="var(--ink-3)" stroke-width="2" stroke-linecap="round"/></svg>8개 동 · 개구부 3,458개</span></div>
-    <p class="pn-gl"><b>F1-score</b><i></i>정밀도·재현율의 조화평균</p>
+    <p class="pn-gl"><b>F1-score</b><i></i>짝을 맞게 지은 정도 (정밀도·재현율의 조화평균)</p>
     <div class="rings">
       <div class="rg"><div class="o"><svg viewBox="0 0 124 124" aria-hidden="true"><circle cx="62" cy="62" r="55" fill="none" stroke="var(--surface-2)" stroke-width="8"/><path d="M62 7A55 55 0 1 1 38.58 12.23" fill="none" stroke="var(--navy-2)" stroke-width="8"/></svg><b>0.93</b></div><p>창문</p></div>
       <div class="rg"><div class="o"><svg viewBox="0 0 124 124" aria-hidden="true"><circle cx="62" cy="62" r="55" fill="none" stroke="var(--surface-2)" stroke-width="8"/><path d="M62 7A55 55 0 1 1 45.00 9.69" fill="none" stroke="var(--navy-2)" stroke-width="8"/></svg><b>0.95</b></div><p>문</p></div>
     </div>
   </section>
 
-  <!-- ⑤ BIM 생성 -->
+  <!-- ⑤ BIM 요소 생성 결과 (건물 1동 실증) -->
   <section class="pn pf c3 rf">
-    <div class="pn-hd"><h4>BIM 요소 생성</h4></div>
+    <div class="pn-hd"><h4>생성 결과</h4>
+      <span class="tag"><svg viewBox="0 0 18 18" aria-hidden="true"><path d="M2.5 16h13M4.5 16V5.5L9 2.5l4.5 3V16" fill="none" stroke="var(--ink-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.5 8h3M7.5 11.5h3" fill="none" stroke="var(--ink-3)" stroke-width="2" stroke-linecap="round"/></svg>건물 1동</span></div>
     <p class="pn-gl"><b>생성 완성도</b><i></i>정답 객체 중 자동 생성된 비율</p>
     <div class="kp">
-      <div class="kp-k"><span>합계</span><span>생성 완성도</span></div>
-      <div class="kp-v"><p class="v"><span class="kpi num">379</span><span class="of num">/ 406</span></p><p class="kpi accent num">93.3<small>%</small></p></div>
+      <div class="kp-v"><p class="kpi accent num">93.3<small>%</small></p><p class="of"><span class="k">합계</span><b>379</b><span>/ 406</span></p></div>
       <div class="kp-bar"><i></i></div>
-      <p class="kp-s">406개 객체 중 379개 자동 생성</p>
     </div>
     <div class="bd">
       <div class="bd-hd"><p>요소별 생성 수</p><div class="lg"><span><i class="n"></i>자동 생성</span><span><i class="e"></i>미생성</span></div></div>
-      <!-- 막대 길이 = 정답 객체 수(최대 189 = 464px 기준), 채움 = 생성 수 -->
+      <!-- 막대 길이 = 정답 객체 수(최대 189 = 461px = 패널 안쪽 폭, 2.439px/개), 채움 = 생성 수, 사이 2px -->
       <div class="el"><p class="el-t"><b>벽</b><span><em>135</em> / 153</span></p>
-        <div class="el-b"><i class="g" style="width:331px"></i><i class="m" style="left:333px;width:43px"></i></div></div>
+        <div class="el-b"><i class="g" style="width:329px"></i><i class="m" style="left:331px;width:42px"></i></div></div>
       <div class="el"><p class="el-t"><b>문</b><span><em>64</em> / 64</span></p>
-        <div class="el-b"><i class="g full" style="width:157px"></i></div></div>
+        <div class="el-b"><i class="g full" style="width:156px"></i></div></div>
       <div class="el"><p class="el-t"><b>창문</b><span><em>180</em> / 189</span></p>
-        <div class="el-b"><i class="g" style="width:442px"></i><i class="m" style="left:444px;width:20px"></i></div></div>
+        <div class="el-b"><i class="g" style="width:439px"></i><i class="m" style="left:441px;width:20px"></i></div></div>
     </div>
     <div class="iou">
-      <svg viewBox="0 0 52 52" aria-hidden="true"><rect x="20" y="13" width="12" height="19" fill="#C9D6EA"/><rect x="5" y="13" width="27" height="34" rx="3" fill="none" stroke="var(--gray-bar-2)" stroke-width="2"/><rect x="20" y="5" width="27" height="27" rx="3" fill="none" stroke="var(--navy-2)" stroke-width="2"/></svg>
+      <svg viewBox="0 0 52 52" aria-hidden="true"><rect x="20" y="13" width="12" height="19" fill="var(--navy-tint)"/><rect x="5" y="13" width="27" height="34" rx="3" fill="none" stroke="var(--gray-bar-2)" stroke-width="2"/><rect x="20" y="5" width="27" height="27" rx="3" fill="none" stroke="var(--navy-2)" stroke-width="2"/></svg>
       <div class="t"><b>체적 IoU</b><span>생성 모델과 정답 모델의 부피 겹침 비율</span></div>
       <p class="v">0.693</p>
     </div>

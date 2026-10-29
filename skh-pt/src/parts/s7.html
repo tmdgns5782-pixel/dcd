@@ -1,29 +1,31 @@
 <!-- s7: ① 도면 객체 인식 · 축척 보정. 이 파일만 편집. 스타일은 #s7 로 범위를 한정 -->
 <style>
-/* 격자: 왼쪽(STEP 2 객체 인식) 1096 | 40 | 오른쪽(STEP 3 축척 보정) 592 = 1728 */
-#s7 .s7-l { position: absolute; left: 0; top: 0; width: 1096px; }
+/* 격자: 왼쪽(STEP 2 객체 인식) 1104 | 32 | 오른쪽(STEP 3 기법: 축척 보정) 592 = 1728 */
+#s7 .s7-l { position: absolute; left: 0; top: 0; width: 1104px; }
 #s7 .s7-r { position: absolute; left: 1136px; top: 0; width: 592px; }
 
 /* 열 머리: STEP 표시 + 단계 이름 + 기법 칩 + 선 */
-#s7 .s7-ch { display: flex; align-items: center; gap: 14px; height: 36px; white-space: nowrap; }
+#s7 .s7-ch { display: flex; align-items: center; gap: 16px; height: 36px; white-space: nowrap; }
 #s7 .s7-ch .st { font-size: 15px; font-weight: 800; letter-spacing: 0.12em; color: var(--navy-2); line-height: 1; }
+#s7 .s7-ch .st i { font-style: normal; font-size: 16px; font-weight: 700; letter-spacing: 0; color: var(--navy-2); margin-left: 3px; }
 #s7 .s7-ch h3 { font-size: 26px; font-weight: 800; letter-spacing: -0.035em; color: var(--navy); line-height: 1; margin-right: 4px; }
-#s7 .s7-ch .chip { height: 34px; font-size: 16px; padding: 0 14px; }
-#s7 .s7-ch::after { content: ""; flex: 1; height: 2px; border-radius: 1px; background: var(--navy); margin-left: 6px; }
+#s7 .s7-ch .chip { height: 34px; font-size: 16px; padding: 0 16px; }
+#s7 .s7-ch .chip .gl { font-weight: 600; color: var(--navy-2); margin-left: -2px; }
+#s7 .s7-ch::after { content: ""; flex: 1; height: 2px; border-radius: 1px; background: var(--navy); margin-left: 8px; }
 
 /* 블록 제목 줄 */
-#s7 .s7-rt { display: flex; align-items: center; gap: 12px; height: 34px; margin-top: 22px; white-space: nowrap; }
+#s7 .s7-rt { display: flex; align-items: center; gap: 12px; height: 34px; margin-top: 24px; white-space: nowrap; }
 #s7 .s7-rt svg { flex: none; width: 28px; height: 28px; }
 #s7 .s7-rt h4 { font-size: 24px; font-weight: 800; letter-spacing: -0.035em; color: var(--ink); line-height: 1; }
-#s7 .s7-rt .sep { width: 1.5px; height: 20px; background: var(--line-2); margin: 0 6px; }
+#s7 .s7-rt .sep { width: 1.5px; height: 20px; background: var(--line-2); margin: 0 4px; }
 #s7 .s7-rt p { font-size: 21px; font-weight: 500; letter-spacing: -0.025em; color: var(--ink-2); line-height: 1; }
 #s7 .s7-rt p b { font-weight: 700; color: var(--navy); }
 
 /* 연구 그림 틀 */
-#s7 .s7-fig { margin-top: 14px; padding: 18px 21px 16px; }
+#s7 .s7-fig { margin-top: 16px; padding: 16px 24px; }
 #s7 .s7-fig .im { position: relative; margin: 0 auto; }
 #s7 .s7-fig .im img { width: 100%; height: 100%; object-fit: cover; }
-#s7 .s7-caps { position: relative; margin: 10px auto 0; height: 22px; }
+#s7 .s7-caps { position: relative; margin: 8px auto 0; height: 22px; }
 #s7 .s7-caps span { position: absolute; top: 0; width: 220px; margin-left: -110px; text-align: center; font-size: 16px; font-weight: 600; line-height: 22px; color: var(--ink-2); white-space: nowrap; }
 #s7 .s7-caps span b { font-weight: 800; color: var(--navy); }
 
@@ -32,21 +34,19 @@
 #s7 .fa .im img { object-position: 0 -4px; }
 #s7 .fa .s7-caps { width: 1050px; }
 /* 입면도 스트립: 2400×919 → 폭 900(×0.375), 그림 부분만 */
-#s7 .fb { padding-bottom: 19px; }
 #s7 .fb .im { width: 900px; height: 300px; }
 #s7 .fb .im img { object-position: 0 -3px; }
 #s7 .fb .s7-caps { width: 900px; }
 
 /* 오른쪽: 축척 보정 카드 */
-#s7 .s7-card { position: relative; margin-top: 20px; height: 745px; padding: 30px 32px; }
+#s7 .s7-card { position: relative; margin-top: 24px; height: 738px; padding: 32px; }
 #s7 .s7-desc { font-size: 22px; font-weight: 500; line-height: 1.5; letter-spacing: -0.025em; color: var(--ink-2); }
-#s7 .s7-desc b { font-weight: 700; color: var(--ink); }
 #s7 .s7-ex { position: absolute; left: 32px; top: 128px; display: flex; align-items: center; gap: 12px; width: 528px; }
 #s7 .s7-ex .tag { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 8px; background: var(--paper); border: 1.5px solid var(--line-2); font-size: 15px; font-weight: 800; letter-spacing: 0.04em; color: var(--ink-3); line-height: 1; }
 #s7 .s7-ex .t { font-size: 16px; font-weight: 700; color: var(--ink-3); line-height: 1; }
 #s7 .s7-ex::after { content: ""; flex: 1; height: 1.5px; background: var(--line-2); }
 
-#s7 .s7-dia { position: absolute; left: 32px; top: 177px; width: 528px; height: 538px; }
+#s7 .s7-dia { position: absolute; left: 32px; top: 172px; width: 528px; height: 534px; }
 #s7 .s7-dia > svg { position: absolute; left: 0; top: 0; }
 #s7 .s7-dim { position: absolute; font-size: 17px; font-weight: 700; color: var(--ink-2); line-height: 1; white-space: nowrap; font-variant-numeric: tabular-nums; }
 #s7 .s7-dim small { font-size: 15px; font-weight: 600; color: var(--ink-3); margin-left: 3px; }
@@ -62,7 +62,7 @@
 #s7 .s7-lmm .o .v { font-size: 24px; font-weight: 800; color: var(--navy); line-height: 1; white-space: nowrap; }
 
 /* 결과 */
-#s7 .s7-out { position: absolute; left: 0; top: 424px; width: 528px; height: 114px; border-radius: 16px; background: var(--paper); border: 1.5px solid var(--line); }
+#s7 .s7-out { position: absolute; left: 0; top: 420px; width: 528px; height: 114px; border-radius: 16px; background: var(--paper); border: 1.5px solid var(--line); }
 #s7 .s7-out > svg { position: absolute; left: 22px; top: 19.5px; }
 #s7 .s7-eq { position: absolute; left: 214px; top: 22px; white-space: nowrap; line-height: 1; }
 #s7 .s7-eq .a { font-size: 26px; font-weight: 700; color: var(--ink-2); }
@@ -77,7 +77,7 @@
   <div class="s7-ch">
     <span class="st">STEP 2</span>
     <h3>도면 객체 인식</h3>
-    <span class="chip tint">YOLO + SAHI</span>
+    <span class="chip tint">YOLO + SAHI <span class="gl">(작은 객체 분할 추론)</span></span>
     <span class="chip tint">DBSCAN</span>
   </div>
 
@@ -100,7 +100,7 @@
   </div>
 
   <!-- (b) 입면도 인식 -->
-  <div class="s7-rt" style="margin-top:30px">
+  <div class="s7-rt" style="margin-top:32px">
     <svg viewBox="0 0 28 28" aria-hidden="true"><g fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 25V4h16v21"/><path d="M3 25h22"/><path d="M10 8.5h2.5M15.5 8.5H18M10 13.5h2.5M15.5 13.5H18M10 18.5h2.5M15.5 18.5H18"/></g></svg>
     <h4>입면도 인식</h4>
     <span class="sep"></span>
@@ -116,16 +116,16 @@
   </div>
 </div>
 
-<!-- ================= 오른쪽: STEP 3 축척 보정 ================= -->
+<!-- ================= 오른쪽: STEP 3 기법 — 축척 보정 ================= -->
 <div class="s7-r">
   <div class="s7-ch">
-    <span class="st">STEP 3</span>
+    <span class="st">STEP 3<i>기법</i></span>
     <h3>축척 보정</h3>
     <span class="chip tint">LMM(GPT-4o)</span>
   </div>
 
   <div class="card s7-card">
-    <p class="s7-desc"><b>LMM(GPT-4o)</b>이 도면의 축척·용지 크기를 읽어<br>픽셀을 실제 길이로 변환</p>
+    <p class="s7-desc">LMM이 도면의 축척·용지 크기를 읽어<br>픽셀을 실제 길이로 변환</p>
     <div class="s7-ex"><span class="tag">예시</span><span class="t">도면 이미지</span></div>
 
     <div class="s7-dia">
@@ -179,16 +179,16 @@
       <div class="s7-lmm">
         <div class="n">
           <svg viewBox="0 0 30 30" aria-hidden="true"><g fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="16" height="16" rx="2.5"/><rect x="11.5" y="11.5" width="7" height="7" rx="1"/><path d="M11 3v4M15 3v4M19 3v4M11 23v4M15 23v4M19 23v4M3 11h4M3 15h4M3 19h4M23 11h4M23 15h4M23 19h4"/></g></svg>
-          <p>LMM<small>(GPT-4o)</small></p>
+          <p>LMM</p>
         </div>
         <div class="o">
-          <span class="k">축척 · 용지 크기</span>
+          <span class="k">축척·용지 크기</span>
           <span class="v">1/200 (A3)</span>
         </div>
       </div>
-      <svg style="left:0; top:388px" width="528" height="36" viewBox="0 0 528 36" aria-hidden="true">
-        <line x1="264" y1="6" x2="264" y2="22" stroke="var(--navy-2)" stroke-width="2" stroke-linecap="round"/>
-        <polygon points="264,32 258,20 270,20" fill="var(--navy-2)"/>
+      <svg style="left:0; top:388px" width="528" height="32" viewBox="0 0 528 32" aria-hidden="true">
+        <line x1="264" y1="6" x2="264" y2="19" stroke="var(--navy-2)" stroke-width="2" stroke-linecap="round"/>
+        <polygon points="264,29 258,17 270,17" fill="var(--navy-2)"/>
       </svg>
 
       <!-- 결과: 1 px = 33.88 mm -->
@@ -206,5 +206,4 @@
       </div>
     </div>
   </div>
-</div>
 </div>
