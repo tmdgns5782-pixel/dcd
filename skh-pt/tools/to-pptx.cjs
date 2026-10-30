@@ -299,19 +299,21 @@ function extract(slideIndex) {
     }
   }
   const lines = [];
+  let bi = 0;
   for (const [, blk] of blocks) {
     let cur = null;
+    bi++;
     for (const gl of blk.glyphs) {
       const mid = (gl.t + gl.b) / 2;
       const newLine = !cur || Math.abs(mid - cur.mid) > (gl.b - gl.t) * 0.5 || gl.l < cur.lastR - 2;
-      if (newLine) { cur = { glyphs: [], mid, lastR: -1e9 }; lines.push({ align: blk.align, cur }); }
+      if (newLine) { cur = { glyphs: [], mid, lastR: -1e9 }; lines.push({ align: blk.align, cur, bi }); }
       cur.glyphs.push(gl);
       cur.lastR = gl.r;
     }
   }
   // 한 줄 안에 그림(인라인 SVG 아이콘 등)이 끼어 글자 사이가 벌어지면 그 자리에서 상자를 나눈다
   const segments = [];
-  for (const { align, cur } of lines) {
+  for (const { align, cur, bi } of lines) {
     let seg = [];
     const parts = [seg];
     cur.glyphs.forEach((gl, i) => {
@@ -319,9 +321,9 @@ function extract(slideIndex) {
       if (prev && gl.l - prev.r > Math.max(3, gl.style.size * 0.2)) { seg = []; parts.push(seg); }
       seg.push(gl);
     });
-    parts.forEach((gs) => segments.push({ align: parts.length > 1 ? 'left' : align, cur: { glyphs: gs } }));
+    parts.forEach((gs) => segments.push({ align: parts.length > 1 ? 'left' : align, cur: { glyphs: gs }, bi, split: parts.length > 1 }));
   }
-  const textLines = segments.map(({ align, cur }) => {
+  const textLines = segments.map(({ align, cur, bi, split }) => {
     let gs = cur.glyphs;
     while (gs.length && gs[0].ch === ' ') gs = gs.slice(1);
     while (gs.length && gs[gs.length - 1].ch === ' ') gs = gs.slice(0, -1);
@@ -336,7 +338,7 @@ function extract(slideIndex) {
     const big = gs.filter((g) => g.style.size === maxSize);
     const top = Math.min(...big.map((g) => g.t));
     const bottom = Math.max(...big.map((g) => g.b));
-    return { align, left: gs[0].l, right: gs[gs.length - 1].r, top, bottom, runs: runs.map(({ text, style }) => ({ text, style })) };
+    return { align, bi, split, left: gs[0].l, right: gs[gs.length - 1].r, top, bottom, runs: runs.map(({ text, style }) => ({ text, style })) };
   }).filter(Boolean);
 
   return { size: { w: S.width, h: S.height }, items, edges: [...edges], text: textLines };
@@ -782,6 +784,34 @@ function boxSpecs(it, r) {
 }
 
 // ---------------------------------------------------------------- Node 쪽
+// 여러 줄 문단의 세로 위치 미세 보정(0 = 남는 줄 간격이 모두 글자 위에 놓인다고 보고 맞춤)
+const TEXT_DY = parseFloat(process.env.TEXT_DY || '0');
+function groupParagraphs(lines) {
+  const out = [];
+  const cen = (ln) => (ln.top + ln.bottom) / 2;
+  for (const ln of lines) {
+    const p = out[out.length - 1];
+    const last = p && p.lines[p.lines.length - 1];
+    let ok = !!p && !ln.split && !last.split && last.bi === ln.bi && last.align === ln.align && ln.top > last.bottom - 2;
+    if (ok) {
+      const first = p.lines[0];
+      const a = /center/.test(ln.align) ? 'c' : /right|end/.test(ln.align) ? 'r' : 'l';
+      if (a === 'l') ok = Math.abs(ln.left - first.left) <= 2;
+      else if (a === 'r') ok = Math.abs(ln.right - first.right) <= 2;
+      else ok = Math.abs((ln.left + ln.right) / 2 - (first.left + first.right) / 2) <= 3;
+      const gap = cen(ln) - cen(last);
+      if (ok && p.lines.length >= 2) ok = Math.abs(gap - p.pitch) <= 1.5;
+      if (ok && gap < (ln.bottom - ln.top) * 0.9) ok = false;
+      if (ok && p.lines.length === 1) p.pitch = gap;
+    }
+    if (ok) {
+      p.lines.push(ln);
+      p.pitch = (cen(ln) - cen(p.lines[0])) / (p.lines.length - 1);
+    } else out.push({ lines: [ln], pitch: 0 });
+  }
+  return out;
+}
+
 function order(items, edges) {
   const idx = new Map(items.map((it, i) => [it.id, i]));
   const out = new Map(items.map((it) => [it.id, []]));
@@ -899,26 +929,50 @@ async function convert(file) {
       }
     }
 
-    for (const ln of data.text) {
-      const runs = ln.runs.map((r) => ({
-        text: r.text,
-        options: {
-          fontFace: faceFor(r.style.weight), bold: boldFor(r.style.weight) || undefined, fontSize: +(r.style.size * ptPerPx).toFixed(2), color: r.style.color,
-          transparency: r.style.alpha < 0.999 ? Math.round((1 - r.style.alpha) * 100) : undefined,
-          charSpacing: r.style.ls ? +(r.style.ls * ptPerPx).toFixed(2) : undefined, lang: 'ko-KR',
-        },
-      }));
-      const width = ln.right - ln.left;
-      const slack = Math.max(8, width * 0.06);
-      const align = /center/.test(ln.align) ? 'center' : /right|end/.test(ln.align) ? 'right' : 'left';
-      let x = ln.left;
-      if (align === 'center') x -= slack / 2; else if (align === 'right') x -= slack;
-      slide.addText(runs, {
-        x: x * k, y: ln.top * k, w: (width + slack) * k, h: (ln.bottom - ln.top) * k,
-        margin: 0, valign: 'middle', align, wrap: false, isTextBox: true, fit: 'none',
-        objectName: runs.map((r) => r.text).join('').slice(0, 40),
+    // 같은 블록에서 이어지는 줄(정렬선·줄 간격이 일정한 줄)은 한 텍스트 상자의 문단으로 묶는다 → 문장 단위로 편집
+    for (const para of groupParagraphs(data.text)) {
+      const L = para.lines;
+      const alignOf = (a) => (/center/.test(a) ? 'center' : /right|end/.test(a) ? 'right' : 'left');
+      const align = alignOf(L[0].align);
+      const runs = [];
+      L.forEach((ln, li) => {
+        ln.runs.forEach((r, ri) => runs.push({
+          text: r.text,
+          options: {
+            fontFace: faceFor(r.style.weight), bold: boldFor(r.style.weight) || undefined, fontSize: +(r.style.size * ptPerPx).toFixed(2), color: r.style.color,
+            transparency: r.style.alpha < 0.999 ? Math.round((1 - r.style.alpha) * 100) : undefined,
+            charSpacing: r.style.ls ? +(r.style.ls * ptPerPx).toFixed(2) : undefined, lang: 'ko-KR',
+            breakLine: li < L.length - 1 && ri === ln.runs.length - 1 ? true : undefined,
+          },
+        }));
       });
+      const maxW = Math.max(...L.map((ln) => ln.right - ln.left));
+      const slack = Math.max(8, maxW * 0.06);
+      const w = maxW + slack;
+      let x;
+      if (align === 'center') x = L.reduce((a, ln) => a + (ln.left + ln.right) / 2, 0) / L.length - w / 2;
+      else if (align === 'right') x = Math.max(...L.map((ln) => ln.right)) - w;
+      else x = Math.min(...L.map((ln) => ln.left));
+      const name = runs.map((r) => r.text).join('').slice(0, 40);
+      if (L.length === 1) {
+        const ln = L[0];
+        slide.addText(runs, {
+          x: x * k, y: ln.top * k, w: w * k, h: (ln.bottom - ln.top) * k,
+          margin: 0, valign: 'middle', align, wrap: false, isTextBox: true, fit: 'none', objectName: name,
+        });
+      } else {
+        const pitch = para.pitch;
+        // 고정 줄 간격에서는 남는 공간(줄 간격 − 글자 높이)이 글자 위에 놓인다 → 첫 줄 글자 위끝에서 그만큼 올려 둔다
+        const gh = L[0].bottom - L[0].top;
+        const y0 = L[0].top - Math.max(0, pitch - gh) * (1 - TEXT_DY);
+        slide.addText(runs, {
+          x: x * k, y: y0 * k, w: w * k, h: pitch * L.length * k,
+          margin: 0, valign: 'top', align, wrap: false, isTextBox: true, fit: 'none', objectName: name,
+          lineSpacing: +(pitch * ptPerPx).toFixed(2), paraSpaceBefore: 0, paraSpaceAfter: 0,
+        });
+      }
       stats.lines++;
+      stats.paras = (stats.paras || 0) + (L.length > 1 ? 1 : 0);
     }
   }
   await browser.close();
@@ -927,7 +981,7 @@ async function convert(file) {
   const out = path.join(outDir, `${name}.pptx`);
   await pres.writeFile({ fileName: out });
   await postProcess(out, specs);
-  console.log(`${path.relative(process.cwd(), out)}: ${nSlides} slides, ${stats.shapes} shapes, ${stats.images} images, ${stats.lines} text lines`);
+  console.log(`${path.relative(process.cwd(), out)}: ${nSlides} slides, ${stats.shapes} shapes, ${stats.images} images, ${stats.lines} text boxes (${stats.paras || 0} multi-line paragraphs)`);
 }
 
 async function postProcess(file, specs) {
