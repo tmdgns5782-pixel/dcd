@@ -230,6 +230,16 @@ function extract(slideIndex) {
     }
     // 사진·로고 등: 그림 조각
     const it = { id, kind: 'raster', rects, tag, cls: name };
+    // 그림이 놓인 바탕색(가장 가까운 불투명 배경)을 기록 → 그 색 위에 합성해 투명 가장자리 번짐을 없앤다
+    if (isImg) {
+      let bgc = null;
+      for (let e = el.parentElement; e && !bgc; e = e.parentElement) {
+        const c = parseColor(getComputedStyle(e).backgroundColor);
+        if (c && c.a >= 0.999) bgc = c.hex;
+        if (e === slide) break;
+      }
+      it.flatten = bgc || 'FFFFFF';
+    }
     const b = el.getBoundingClientRect();
     const pad = 12;
     it.clip = rel({ left: b.left - pad, top: b.top - pad, width: b.width + pad * 2, height: b.height + pad * 2 });
@@ -282,9 +292,27 @@ function extract(slideIndex) {
       size: parseFloat(cs.fontSize), weight: parseInt(cs.fontWeight, 10), color: col.hex, alpha: col.a * op,
       ls: cs.letterSpacing === 'normal' ? 0 : parseFloat(cs.letterSpacing),
     };
+    // 고정폭 숫자(tabular-nums)는 PowerPoint에 없다 → 같은 폭이 되도록 글자 간격을 더한다
+    if (/tabular-nums/.test(cs.fontVariantNumeric) && /\d/.test(node.data)) {
+      const txt = node.data.replace(/\s+/g, ' ').trim();
+      if (txt) {
+        const m = document.createElement('span');
+        m.style.cssText = `position:absolute;left:-9999px;top:0;white-space:pre;visibility:hidden;font-family:${cs.fontFamily};font-size:${cs.fontSize};font-weight:${cs.fontWeight};letter-spacing:${cs.letterSpacing};text-transform:${cs.textTransform};font-variant-numeric:normal`;
+        m.textContent = txt;
+        document.body.appendChild(m);
+        const prop = m.getBoundingClientRect().width;
+        m.style.fontVariantNumeric = 'tabular-nums';
+        const tab = m.getBoundingClientRect().width;
+        m.remove();
+        style.ls += (tab - prop) / [...txt].length;
+      }
+    }
     const key = JSON.stringify(style);
     const upper = cs.textTransform === 'uppercase';
-    if (!blocks.has(block)) blocks.set(block, { align: bcs.textAlign, glyphs: [] });
+    if (!blocks.has(block)) {
+      const icons = [...block.querySelectorAll('svg, img')].map((e) => { const r = e.getBoundingClientRect(); return { l: r.left - S.left, r: r.right - S.left, t: r.top - S.top, b: r.bottom - S.top }; });
+      blocks.set(block, { align: bcs.textAlign, glyphs: [], icons });
+    }
     const g = blocks.get(block).glyphs;
     for (let i = 0; i < node.data.length; i++) {
       range.setStart(node, i); range.setEnd(node, i + 1);
@@ -306,19 +334,29 @@ function extract(slideIndex) {
     for (const gl of blk.glyphs) {
       const mid = (gl.t + gl.b) / 2;
       const newLine = !cur || Math.abs(mid - cur.mid) > (gl.b - gl.t) * 0.5 || gl.l < cur.lastR - 2;
-      if (newLine) { cur = { glyphs: [], mid, lastR: -1e9 }; lines.push({ align: blk.align, cur, bi }); }
+      if (newLine) { cur = { glyphs: [], mid, lastR: -1e9 }; lines.push({ align: blk.align, cur, bi, blk }); }
       cur.glyphs.push(gl);
       cur.lastR = gl.r;
     }
   }
   // 한 줄 안에 그림(인라인 SVG 아이콘 등)이 끼어 글자 사이가 벌어지면 그 자리에서 상자를 나눈다
   const segments = [];
-  for (const { align, cur, bi } of lines) {
+  // 줄 안의 빈틈: 사이에 아이콘(인라인 SVG·그림)이 있거나 아주 넓으면 상자를 나누고,
+  // CSS 여백(margin·gap)으로 띄운 자리는 공백 문자로 채운다(PowerPoint에는 여백이 없다)
+  for (const { align, cur, bi, blk } of lines) {
     let seg = [];
     const parts = [seg];
     cur.glyphs.forEach((gl, i) => {
       const prev = cur.glyphs[i - 1];
-      if (prev && gl.l - prev.r > Math.max(3, gl.style.size * 0.2)) { seg = []; parts.push(seg); }
+      const gap = prev ? gl.l - prev.r : 0;
+      if (prev && gap > Math.max(2, gl.style.size * 0.1)) {
+        const icon = blk.icons.some((ic) => ic.l < gl.l && ic.r > prev.r && ic.b > Math.min(gl.t, prev.t) && ic.t < Math.max(gl.b, prev.b));
+        if (icon || gap > gl.style.size * 1.6) { seg = []; parts.push(seg); }
+        else if (prev.ch !== ' ' && gl.ch !== ' ') {
+          const n = Math.max(1, Math.round(gap / (gl.style.size * 0.26)));
+          for (let k = 0; k < n; k++) seg.push({ ...prev, ch: ' ', l: prev.r, r: prev.r });
+        }
+      }
       seg.push(gl);
     });
     parts.forEach((gs) => segments.push({ align: parts.length > 1 ? 'left' : align, cur: { glyphs: gs }, bi, split: parts.length > 1 }));
@@ -784,6 +822,37 @@ function boxSpecs(it, r) {
 }
 
 // ---------------------------------------------------------------- Node 쪽
+// 완전 투명 픽셀의 RGB가 검정이면 확대·축소할 때 가장자리에 회색 선이 생긴다 → 이웃 불투명 색으로 채우고, 먼 곳은 흰색
+function bleed(px, W, H) {
+  let front = [];
+  const done = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) if (px[i * 4 + 3] > 0) done[i] = 1;
+  for (let i = 0; i < W * H; i++) if (!done[i]) {
+    const x = i % W, y = (i / W) | 0;
+    if ((x > 0 && done[i - 1]) || (x < W - 1 && done[i + 1]) || (y > 0 && done[i - W]) || (y < H - 1 && done[i + W])) front.push(i);
+  }
+  for (let iter = 0; iter < 4 && front.length; iter++) {
+    const next = [];
+    const fill = [];
+    for (const i of front) {
+      if (done[i]) continue;
+      const x = i % W, y = (i / W) | 0;
+      let r = 0, g = 0, b = 0, n = 0;
+      for (const j of [x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1, y > 0 ? i - W : -1, y < H - 1 ? i + W : -1]) {
+        if (j >= 0 && done[j]) { r += px[j * 4]; g += px[j * 4 + 1]; b += px[j * 4 + 2]; n++; }
+      }
+      if (n) fill.push([i, r / n, g / n, b / n]);
+    }
+    for (const [i, r, g, b] of fill) {
+      px[i * 4] = r; px[i * 4 + 1] = g; px[i * 4 + 2] = b; done[i] = 1;
+      const x = i % W, y = (i / W) | 0;
+      for (const j of [x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1, y > 0 ? i - W : -1, y < H - 1 ? i + W : -1]) if (j >= 0 && !done[j]) next.push(j);
+    }
+    front = next;
+  }
+  for (let i = 0; i < W * H; i++) if (!done[i]) { px[i * 4] = 255; px[i * 4 + 1] = 255; px[i * 4 + 2] = 255; }
+}
+
 // 여러 줄 문단의 세로 위치 미세 보정(0 = 남는 줄 간격이 모두 글자 위에 놓인다고 보고 맞춤)
 const TEXT_DY = parseFloat(process.env.TEXT_DY || '0');
 function groupParagraphs(lines) {
@@ -919,7 +988,13 @@ async function convert(file) {
           if (raw[(yy * info.width + xx) * 4 + 3] > 0) { if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (yy < y0) y0 = yy; if (yy > y1) y1 = yy; }
         }
         if (x1 < 0) continue;
-        const png = await sharp(shot).extract({ left: x0, top: y0, width: x1 - x0 + 1, height: y1 - y0 + 1 }).png({ compressionLevel: 9 }).toBuffer();
+        const W = x1 - x0 + 1, H = y1 - y0 + 1;
+        const px = Buffer.alloc(W * H * 4);
+        for (let yy = 0; yy < H; yy++) raw.copy(px, yy * W * 4, ((yy + y0) * info.width + x0) * 4, ((yy + y0) * info.width + x0 + W) * 4);
+        bleed(px, W, H);
+        let img2 = sharp(px, { raw: { width: W, height: H, channels: 4 } });
+        if (it.flatten) img2 = img2.flatten({ background: '#' + it.flatten });
+        const png = await img2.png({ compressionLevel: 9 }).toBuffer();
         slide.addImage({
           data: 'image/png;base64,' + png.toString('base64'),
           x: (c.x + x0 / DSF) * k, y: (c.y + y0 / DSF) * k, w: ((x1 - x0 + 1) / DSF) * k, h: ((y1 - y0 + 1) / DSF) * k,
@@ -942,7 +1017,7 @@ async function convert(file) {
             fontFace: faceFor(r.style.weight), bold: boldFor(r.style.weight) || undefined, fontSize: +(r.style.size * ptPerPx).toFixed(2), color: r.style.color,
             transparency: r.style.alpha < 0.999 ? Math.round((1 - r.style.alpha) * 100) : undefined,
             charSpacing: r.style.ls ? +(r.style.ls * ptPerPx).toFixed(2) : undefined, lang: 'ko-KR',
-            breakLine: li < L.length - 1 && ri === ln.runs.length - 1 ? true : undefined,
+            softBreakBefore: li > 0 && ri === 0 ? true : undefined,
           },
         }));
       });
@@ -996,6 +1071,11 @@ async function postProcess(file, specs) {
       if (!m || !specs.has(m[1])) return seg;
       const id = seg.match(/<p:cNvPr id="(\d+)"/)[1];
       return spXml(id, specs.get(m[1]));
+    });
+    xml = xml.replace(/<a:p>([\s\S]*?)<\/a:p>/g, (m, inner) => {
+      let seen = false;
+      const out = inner.replace(/<a:pPr\b[^>]*\/>|<a:pPr\b[^>]*>[\s\S]*?<\/a:pPr>/g, (pp) => { if (seen) return ''; seen = true; return pp; });
+      return `<a:p>${out}</a:p>`;
     });
     // 한글 글꼴이 테마 기본(맑은 고딕 등)으로 바뀌지 않도록 동아시아 글꼴(ea)도 같은 이름으로 지정
     xml = xml.replace(/<a:latin typeface="([^"]+)"([^>]*)\/>(?!<a:ea)/g, (m, face, rest) => `<a:latin typeface="${face}"${rest}/><a:ea typeface="${face}"${rest}/>`);
