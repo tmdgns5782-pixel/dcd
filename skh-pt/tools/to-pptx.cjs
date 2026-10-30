@@ -232,13 +232,15 @@ function extract(slideIndex) {
     const it = { id, kind: 'raster', rects, tag, cls: name };
     // 그림이 놓인 바탕색(가장 가까운 불투명 배경)을 기록 → 그 색 위에 합성해 투명 가장자리 번짐을 없앤다
     if (isImg) {
+      // 단색 바탕 상자 안의 그림만 그 색 위에 합성한다. 그라데이션이거나 바탕 상자가 없으면 투명도를 살린다(가장자리 번짐은 bleed로 처리)
       let bgc = null;
-      for (let e = el.parentElement; e && !bgc; e = e.parentElement) {
-        const c = parseColor(getComputedStyle(e).backgroundColor);
-        if (c && c.a >= 0.999) bgc = c.hex;
-        if (e === slide) break;
+      for (let e = el.parentElement; e && e !== slide; e = e.parentElement) {   // 슬라이드 바탕까지 가면(뒤에 다른 면이 깔렸을 수 있음) 투명도 유지
+        const ecs = getComputedStyle(e);
+        if (ecs.backgroundImage && ecs.backgroundImage !== 'none') break;
+        const c = parseColor(ecs.backgroundColor);
+        if (c && c.a >= 0.999) { bgc = c.hex; break; }
       }
-      it.flatten = bgc || 'FFFFFF';
+      if (bgc) it.flatten = bgc;
     }
     const b = el.getBoundingClientRect();
     const pad = 12;
