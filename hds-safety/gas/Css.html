@@ -365,7 +365,6 @@ a.link-brand, .link.brand { color: var(--brand); }
 .input:disabled, .select:disabled, .textarea:disabled, .input[readonly], .textarea[readonly] { background: var(--raised); color: var(--muted); border-color: var(--border); }
 .input:disabled, .select:disabled, .textarea:disabled { cursor: not-allowed; }
 .input[type="date"], .input[type="time"], .input[type="datetime-local"], .input[type="month"] { font-variant-numeric: tabular-nums; }
-.input.num { text-align: right; }
 .field.has-err .input, .field.has-err .select, .field.has-err .textarea, .input.has-err, .select.has-err, .textarea.has-err { border-color: var(--negative); }
 .field.has-err .input:focus, .field.has-err .select:focus, .field.has-err .textarea:focus { box-shadow: 0 0 0 1px var(--negative); }
 .field.has-err .field-label { color: var(--negative); }
@@ -589,10 +588,11 @@ body:has(dialog.dlg[open]) { overflow: hidden; }
 .mx-grp { font-size: var(--fs-small); color: var(--muted); text-align: left !important; padding-left: 8px !important; border-left: 1px solid var(--rule); }
 .matrix thead th:first-child { left: 0; z-index: 3; text-align: left; padding-left: var(--card-pad); }
 .mx-row {
-  position: sticky; left: 0; z-index: 1; height: 36px; padding: 0 16px 0 var(--card-pad); min-width: 232px;
+  position: sticky; left: 0; z-index: 1; height: 36px; padding: 0 96px 0 var(--card-pad); min-width: 232px;
   text-align: left; font-weight: 500; color: var(--text); white-space: nowrap; border-right: 1px solid var(--rule);
 }
-.mx-row small { float: right; margin-left: 16px; font-size: var(--fs-small); line-height: 18px; font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; }
+.mx-row small { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: var(--fs-small); line-height: 18px; font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.matrix thead th.mx-row { padding-right: 16px; }
 .mx-row small.t-neg { color: var(--negative); }
 .mx-row a, .mx-row .link { color: var(--text); }
 .matrix tbody td { height: 36px; padding: 0 2px; text-align: center; vertical-align: middle; }
@@ -702,7 +702,7 @@ button.mk-na:hover { background: transparent; }
 .muted { color: var(--muted); }
 .faint { color: var(--faint); }
 .num { font-variant-numeric: tabular-nums; }
-.mono { font-family: var(--mono); font-size: 13px; }
+.mono { font-family: var(--mono); font-size: 13px; white-space: nowrap; }
 .nowrap { white-space: nowrap; }
 .stack { display: flex; flex-direction: column; gap: 8px; }
 .stack-16 { display: flex; flex-direction: column; gap: 16px; }
@@ -794,7 +794,6 @@ button.mk-na:hover { background: transparent; }
 
   /* 패널 */
   .panel-hd { flex-wrap: wrap; }
-  .panel-actions { flex: 1 1 100%; justify-content: flex-start; }
 
   /* 표 → 두 줄 블록 (data-label), .keep 은 자체 가로 스크롤 */
   .tbl:not(.keep), .tbl:not(.keep) tbody, .tbl:not(.keep) tr, .tbl:not(.keep) td { display: block; }
@@ -814,6 +813,8 @@ button.mk-na:hover { background: transparent; }
   .tbl:not(.keep) td:empty { display: none; }
   .tbl:not(.keep) tr.click:hover { outline: 0; }
   .tbl:not(.keep) tr.click:active { background: var(--raised); }
+  .tbl:not(.keep) tr.on, .tbl:not(.keep) tr[aria-selected="true"] { background: var(--active); }
+  .tbl:not(.keep) tr.on td, .tbl:not(.keep) tr[aria-selected="true"] td { background: transparent; }
   .flush > .tbl-wrap .tbl:not(.keep) tr, .flush > .tbl:not(.keep) tr { padding-left: var(--card-pad); padding-right: var(--card-pad); }
   .flush > .tbl-wrap .tbl:not(.keep) td, .flush > .tbl:not(.keep) td { padding-left: 0 !important; padding-right: 0 !important; }
   .tbl-wrap { overflow-x: visible; }
@@ -841,7 +842,7 @@ button.mk-na:hover { background: transparent; }
 
   /* 현황판: 자체 스크롤, 사업장 열 고정 */
   .matrix-wrap { max-height: none; }
-  .mx-row { min-width: 148px; max-width: 168px; padding-left: 16px; padding-right: 8px; overflow: hidden; text-overflow: ellipsis; }
+  .mx-row { min-width: 148px; max-width: 168px; padding-left: 16px; padding-right: 8px !important; overflow: hidden; text-overflow: ellipsis; }
   .mx-row small { display: none; }
   .matrix thead th:first-child { padding-left: 16px; }
   .matrix tbody td { height: 44px; }

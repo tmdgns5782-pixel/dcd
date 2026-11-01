@@ -699,7 +699,7 @@
     }
     main.innerHTML = '<div class="st-page st-inbox' + (id ? ' has-detail' : '') + '">' +
       '<div class="st-inbox-head">' + titleRow('받은 요청', sub, '', '') + '</div>' +
-      '<div class="st-split"><div class="st-pane-list"><div class="toolbar st-toolbar">' + tabs + '</div>' + listHtml + '</div>' +
+      '<div class="st-split"><div class="st-pane-list"><div class="st-tabrow">' + tabs + '</div>' + listHtml + '</div>' +
       '<div class="st-pane-detail">' + (detail || '<div class="st-detail-empty empty">왼쪽 목록에서 요청이나 공지를 고르세요.</div>') + '</div></div></div>';
     if (id && window.matchMedia && window.matchMedia('(max-width: 900px)').matches) window.scrollTo(0, 0);
   }
@@ -810,7 +810,7 @@
       (list.length > shown.length ? '<div class="st-more"><span class="muted">' + list.length + '건 중 ' + shown.length + '건</span><button type="button" class="btn" data-act="st.recMore">40건 더 보기</button></div>' : '')
       : '<div class="empty">' + (all.length ? '이 조건에 맞는 기록이 없습니다.' : '아직 쓴 기록이 없습니다. <a href="#/home">오늘 할 일</a>에서 시작하세요.') + '</div>';
     main.innerHTML = '<div class="st-page st-records">' + titleRow('우리 기록', esc(sub), '', '<button type="button" class="btn" data-href="#/forms">' + ic('plus', 16) + '새 기록</button>') +
-      '<div class="toolbar st-toolbar">' + tabs + '<span class="spacer"></span>' + formSel + '</div>' +
+      '<div class="st-tabrow">' + tabs + formSel + '</div>' +
       '<p class="st-count muted">' + list.length + '건</p>' + body + '</div>';
   }
 
@@ -846,7 +846,7 @@
     ], actState.tab);
     var body = list.length ? '<ul class="list st-actlist">' + list.map(actLine).join('') + '</ul>'
       : '<div class="empty">' + (actState.tab === 'open' ? '미결 조치가 없습니다. 점검에서 주의·불량이 나오면 여기로 들어옵니다.' : '이 목록에 해당하는 조치가 없습니다.') + '</div>';
-    main.innerHTML = '<div class="st-page st-acts">' + titleRow('조치', sub, '', '') + '<div class="toolbar st-toolbar">' + tabs + '</div>' + body + '</div>';
+    main.innerHTML = '<div class="st-page st-acts">' + titleRow('조치', sub, '', '') + '<div class="st-tabrow">' + tabs + '</div>' + body + '</div>';
     var id = h.parts[1];
     if (id && !document.querySelector('dialog.st-act-sheet')) openAct(id, true);
   }
