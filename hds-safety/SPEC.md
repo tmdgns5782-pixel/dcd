@@ -195,7 +195,7 @@ facts (분석용 요약, 클라이언트 `App.engine.factsOf(def, rec)` 가 만�
 | records.save | any(own, viewer 불가) | {record} | {record} (임시저장. id 없으면 발급. status 는 '작성중' 유지, 반려 기록은 '반려' 유지) |
 | records.submit | any(own, viewer 불가) | {record, stageId?, acts:[actCandidate]} | {record, acts:[생성·갱신된 조치]} |
 | records.review | hqWrite | {id, decision:'확인'|'반려'|'확인취소', note} | {record} |
-| records.delete | any(own) | {id, reason} | {} (작성중·반려만 사업장 삭제 가능, 본사 hqWrite 는 언제나. soft delete) |
+| records.delete | any(own) | {id, reason} | {} (작성중·반려만 사업장 삭제 가능 — 단, 단계 보고가 있는 기록과 반려된 F04·F10 은 사업장 삭제 불가. 본사 hqWrite 는 언제나. soft delete) |
 | acts.save | any(own) | {act} | {act} (본사 수동 등록 포함) |
 | acts.transition | any(own) | {id, to, note, photo?, owner?, due?} | {act} (확인은 hqWrite 또는 사업장 '소장' 역할 이름 무관 — 사업장도 '확인' 가능하되 history 에 남김) |
 | sites.save | admin | {site} | {site} (새로 만들 때 token 자동 발급) |
@@ -209,7 +209,7 @@ facts (분석용 요약, 클라이언트 `App.engine.factsOf(def, rec)` 가 만�
 | requests.save | hqWrite | {request} | {request} (새로 만들면 대상 사업장 담당자 메일 발송 — settings.mail.onRequest) |
 | requests.close | hqWrite | {id, status} | {request} |
 | requests.remind | hqWrite | {id, sites?} | {sent, skipped} |
-| reads.mark | any | {refId} | {read} |
+| reads.mark | write(viewer 제외) | {refId} | {read} (사업장은 받은 REQ 만, 본사는 요청 또는 '<기록번호>#<단계>') |
 | files.put | any(own) | {dataUrl, name, kind, recordId?, site?} | {file} (최대 8MB) |
 | files.get | any(own) | {id} | {id, name, mime, dataUrl} |
 | settings.save | admin | {settings} | {settings} |

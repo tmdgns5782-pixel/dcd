@@ -1248,7 +1248,7 @@
       if (!stt.photo && !stt.nophoto) { fieldErr(root, 'nophoto', '고친 뒤 사진을 넣거나 사진이 없는 이유를 고르세요'); ok = false; }
       if (!ok) return;
       var a = actById(stt.id) || {};
-      var p = { note: note + (stt.photo ? '' : ' [사진 없음: ' + stt.nophoto + ']'), owner: a.owner || me().name || '' };
+      var p = { note: note, owner: a.owner || me().name || '' };
       if (stt.photo) p.photo = stt.photo; else p.noPhotoReason = stt.nophoto;
       var go = a.status === '조치중' ? Promise.resolve() : transition(stt, '조치중', { note: '조치 시작', owner: p.owner }, null);
       setBusy(el, true, '보내는 중…');

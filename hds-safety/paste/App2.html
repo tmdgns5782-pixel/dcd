@@ -1782,10 +1782,13 @@
   function empty(text, action) { return '<div class="empty">' + esc(text) + (action ? ' ' + action : '') + '</div>'; }
   function errBox(e, act) { return '<div class="err">' + esc(errText(e) || '불러오지 못했습니다.') + ' <button class="btn ghost sm" data-act="' + (act || 'hq.retry') + '">다시 시도</button></div>'; }
   function skel(h, w) { return '<div class="skel" style="height:' + h + 'px;width:' + w + '"></div>'; }
+  /* 값 없는 KPI 는 App.ui.kpis 와 같은 작은 회색 대시(.kpi-value .dash, 16px)로 — 큰 대시는 로딩처럼 보인다 */
+  function kpiEmpty(v) { return v === null || v === undefined || v === '' || (typeof v === 'number' && !isFinite(v)) || (typeof v === 'string' && v.replace(/<[^>]*>/g, '').trim() === '—'); }
   function kpis(items, lead) {
     return '<div class="kpis" style="--n:' + items.length + '">' + items.map(function (k, i) {
-      return '<div class="kpi' + (lead === i ? ' is-lead' : '') + '"><div class="kpi-label">' + esc(k.label) + '</div><div class="kpi-value num">' + k.value +
-        (k.unit ? '<span class="unit">' + esc(k.unit) + '</span>' : '') + '</div><div class="kpi-sub">' + (k.sub || '') + '</div></div>';
+      var miss = kpiEmpty(k.value);
+      return '<div class="kpi' + (lead === i ? ' is-lead' : '') + '"><div class="kpi-label">' + esc(k.label) + '</div><div class="kpi-value num">' + (miss ? '<span class="dash" aria-label="값 없음">—</span>' : k.value) +
+        (k.unit && !miss ? '<span class="unit">' + esc(k.unit) + '</span>' : '') + '</div><div class="kpi-sub">' + (k.sub || '') + '</div></div>';
     }).join('') + '</div>';
   }
   function bar(ratio, tone) {
@@ -1924,7 +1927,7 @@
     var list = req.sites || [];
     var act = activeSites();
     if (!list.length || list.indexOf('*') >= 0) return act;
-    return list.map(siteById).filter(Boolean);
+    return list.map(siteById).filter(function (s) { return s && s.status !== '종료'; });   // 서버 Dispatch.targetsOf 와 같이 종료 사업장 제외
   }
   function isTarget(req, siteId) { var l = req.sites || []; return !l.length || l.indexOf('*') >= 0 || l.indexOf(siteId) >= 0; }
   function cellReq(site, req, ctx) {
@@ -2164,9 +2167,10 @@
     var t = ctx.today, out = [], sites = activeSites();
     var siteSet = {}; sites.forEach(function (s) { siteSet[s.id] = s; });
     var R = recs();
-    // 미확인 사고·작업중지(1단계 보고 포함)
+    // 미확인 사고·작업중지(1단계 보고 포함) — 검토함 큐와 같은 기준(본사가 확인한 단계 보고는 빠짐)
+    var inQueue = {}; reviewQueue().forEach(function (x) { inQueue[x.r.id] = 1; });
     R.filter(function (r) {
-      return (r.form === 'F04' || r.form === 'F10') && siteSet[r.site] && (r.status === '제출' || (r.status === '작성중' && (r.stageDone || []).length));
+      return (r.form === 'F04' || r.form === 'F10') && siteSet[r.site] && inQueue[r.id];
     }).forEach(function (r) {
       var s = siteSet[r.site], v = (r.facts && r.facts.v) || {};
       var what = fshort(r.form) + (v.kind ? ' · ' + v.kind : v.swType ? ' · ' + v.swType : '') + (v.area ? ' · ' + v.area : '');
@@ -2507,17 +2511,28 @@
     var def = FORM(RF.forms.filter(function (c) { var x = ftype(FORM(c)); return x !== 'event' && x !== 'daily'; })[0]);
     return def ? collectingPeriod(def).key : periodOf(t, today()).key;
   }
-  function readRF(form) {
+  function readRF(form, ev) {
     if (!form || !RF) return;
     var v = function (n) { var el = form.querySelector('[name="' + n + '"]'); return el ? el.value : ''; };
     RF.title = v('title').trim(); RF.message = v('message'); RF.due = v('due');
-    var pk = form.querySelector('[name="periodKey"]'); if (pk) { if (pk.value !== RF.periodKey) RF.periodTouched = true; RF.periodKey = pk.value; }
+    /* 기간은 사용자가 select 를 직접 바꿨을 때만 '고정'한다. 양식 체크로 화면을 다시 그리기 전의 select·비활성 칸 값을 사용자 선택으로 오인하지 않는다. */
+    var pk = form.querySelector('select[name="periodKey"]');
+    if (pk && !pk.disabled) {
+      if (ev && ev.target === pk) RF.periodTouched = true;
+      if (RF.periodTouched) RF.periodKey = pk.value;
+    }
     if (RF.kind === 'form') RF.forms = [].slice.call(form.querySelectorAll('input[name="form"]:checked')).map(function (x) { return x.value; });
     if (RF.targetMode === 'tag') RF.tags = [].slice.call(form.querySelectorAll('input[name="tag"]:checked')).map(function (x) { return x.value; });
     if (RF.targetMode === 'pick') RF.sites = [].slice.call(form.querySelectorAll('input[name="site"]:checked')).map(function (x) { return x.value; });
     var ack = form.querySelector('[name="ack"]'); RF.ackRequired = !!(ack && ack.checked);
     ['d3', 'd1', 'overdue'].forEach(function (k) { var el = form.querySelector('[name="rm_' + k + '"]'); RF.remind[k] = !!(el && el.checked); });
+    if (RF.periodTouched && RF.periodKey && !rfPeriodFits(RF.periodKey)) RF.periodTouched = false;
     if (!RF.periodTouched) RF.periodKey = suggestedPeriod();
+  }
+  function rfPeriodFits(key) {
+    var t = rfType(); if (!t) return true;
+    var p = periodFromKey(key); if (!p) return false;
+    return (t === 'season' ? 'monthly' : t) === (p.type === 'season' ? 'monthly' : p.type);
   }
   function fieldWrap(label, inner, o) {
     o = o || {};
@@ -2602,8 +2617,8 @@
     var form = main.querySelector('form.hq-rf');
     var prev = main.querySelector('.hq-mail-wrap');
     var subEl = main.querySelector('.title-row .sub');
-    var update = function () {
-      readRF(form); prev.innerHTML = mailPreview();
+    var update = function (ev) {
+      readRF(form, ev); prev.innerHTML = mailPreview();
       var n = rfSites().length;
       var hint = form.querySelector('.hq-target-n'); if (hint) hint.textContent = n;
       if (subEl && !editing) subEl.innerHTML = '대상 ' + n + '곳 · 마감 ' + (RF.due ? md(RF.due) + '(' + wday(RF.due) + ')' : '—') + (RF.kind === 'form' && RF.forms.length ? ' · ' + esc(RF.forms.map(fshort).join(', ')) : '');
@@ -2612,8 +2627,8 @@
     form.addEventListener('change', function (ev) {
       var n = ev.target && ev.target.name;
       if (n === 'file') { uploadFiles(ev.target.files); return; }
-      if (n === 'form' || n === 'tag' || n === 'site' || n === 'due') { readRF(form); rerender(); return; }
-      update();
+      if (n === 'form' || n === 'tag' || n === 'site' || n === 'due') { readRF(form, ev); rerender(); return; }
+      update(ev);
     });
     form.addEventListener('submit', function (ev) { ev.preventDefault(); readRF(form); saveRF(); });
   }
@@ -2699,7 +2714,13 @@
         var stg = (r.parts || []).filter(function (p) { return p.rec && p.cls === 'mk-draft' && (p.rec.stageDone || []).length; })[0];
         var lab = notice ? (r.read ? '열람' : (r.cls === 'mk-miss' ? '미열람' : '대기')) : (r.cls === 'mk-wait' ? '마감 전' : r.cls === 'mk-miss' ? '미제출' : r.cls === 'mk-draft' ? (stg ? stageLabel(stg.rec).replace(/\(.*$/, '') : '작성중') : m.label);
         var tone = notice ? (r.read ? 'pos' : r.cls === 'mk-miss' ? 'neg' : 'neu') : m.tone;
-        var links = (r.parts || []).filter(function (p) { return p.rec; }).map(function (p) { return '<a class="mono" href="#/rec/' + esc(p.rec.id) + '">' + esc(p.rec.id) + '</a>'; }).join('<br>');
+        /* 여러 양식 요청에서 일부만 낸 사업장: 'n/m' 을 붙여 어디까지 왔는지 보인다 */
+        var np = (r.parts || []).length, nd = (r.parts || []).filter(function (p) { return DONE[p.cls]; }).length;
+        if (!notice && np > 1 && !r.done && nd > 0) {
+          if (r.cls === 'mk-wait' || r.cls === 'mk-miss') { lab = '일부 제출'; tone = r.cls === 'mk-miss' ? 'neg' : 'warn'; }
+          lab += ' ' + nd + '/' + np;
+        }
+        var links = (r.parts || []).filter(function (p) { return p.rec; }).map(function (p) { return (np > 1 ? '<span class="faint">' + esc(fshort(p.code)) + '</span> ' : '') + '<a class="mono" href="#/rec/' + esc(p.rec.id) + '">' + esc(p.rec.id) + '</a>'; }).join('<br>');
         var recs1 = (r.parts || []).filter(function (p) { return p.rec; });
         var l2 = [r.read ? '열람 ' + esc(relTime(r.read.at)) : '미열람'];
         if (!notice && r.submittedAt) l2.push('제출 ' + esc(String(r.submittedAt).slice(5, 10).replace('-', '/')));
@@ -2731,25 +2752,39 @@
 
   /* ═════════ 6. 검토함 (hq:review) ═════════ */
   var RV = { form: '', site: '', sel: '', seq: 0, limit: 100 };
+  /* 재제출 = 반려된 뒤 다시 낸 기록. 단계형 양식은 단계마다 rev 가 오르므로 rev 로 판정하지 않는다 */
+  function isResubmit(r) { return !!r && r.status === '제출' && !!(r.returnNote || r.returnedAt); }
+  /* 큐에 들어온 시각: 재제출은 서버 submittedAt 이 최초 제출값으로 남을 수 있어 마지막 갱신 시각(재제출 시각)을 쓴다 */
+  function queueAt(r) { return (isResubmit(r) ? (r.updatedAt || r.submittedAt) : (r.submittedAt || r.updatedAt)) || ''; }
   function ackKey(r) { var d = r.stageDone || []; return r.id + '#' + (d[d.length - 1] || ''); }
   function reviewQueue() {
-    var acked = {}; reads().forEach(function (x) { acked[x.refId] = 1; });
+    /* 단계 보고 '확인' 표시는 본사가 찍은 것(site 'HQ')만 인정한다 — 사업장 세션이 같은 키로 찍은 표시는 무시 */
+    var acked = {}; reads().forEach(function (x) { if (x && x.site === 'HQ') acked[x.refId] = 1; });
     return recs().filter(function (r) {
       if (r.status === '제출') return App.needsReview ? App.needsReview(r) : true;
       return r.status === '작성중' && (r.stageDone || []).length && !acked[ackKey(r)];
     }).map(function (r) {
       var stage = r.status === '작성중', incident = r.form === 'F04' || r.form === 'F10';
       var tier = (incident || stage) ? 2 : (r.form === 'F07' ? 0 : 1);
-      return { r: r, stage: stage, top: tier === 2, tier: tier, at: r.submittedAt || r.updatedAt || '' };
+      return { r: r, stage: stage, top: tier === 2, tier: tier, at: stage ? (r.submittedAt || r.updatedAt || '') : queueAt(r) };
     }).sort(function (a, b) { return (b.tier - a.tier) || String(a.at).localeCompare(String(b.at)); });
   }
   function renderReview(main, args, query) {
-    if (query.id) { RV.sel = query.id; CUR.query = {}; setHash('#/review'); }
+    var gone = '';
     if (query.form != null) RV.form = query.form;
     if (query.site != null) RV.site = query.site;
     var all = reviewQueue();
+    if (query.id) {
+      CUR.query = {}; setHash('#/review');
+      var hit = all.filter(function (x) { return x.r.id === query.id; })[0];
+      if (hit) {
+        RV.sel = query.id;
+        if ((RV.form && hit.r.form !== RV.form) || (RV.site && hit.r.site !== RV.site)) { RV.form = ''; RV.site = ''; }
+      } else { gone = query.id; RV.sel = ''; }
+    }
     var list = all.filter(function (x) { return (!RV.form || x.r.form === RV.form) && (!RV.site || x.r.site === RV.site); });
-    if (!list.some(function (x) { return x.r.id === RV.sel; })) RV.sel = list.length && !isPhone() ? list[0].r.id : '';
+    if (!list.some(function (x) { return x.r.id === RV.sel; })) RV.sel = list.length && !isPhone() && !gone ? list[0].r.id : '';
+    var phoneSel = isPhone() && !!RV.sel;
     var oldest = all.filter(function (x) { return !x.stage; }).map(function (x) { return x.at; }).filter(Boolean).sort()[0];
     var inc = all.filter(function (x) { return x.top; }).length;
     var sub = all.length ? '확인 대기 ' + all.length + '건' + (inc ? ' · <span class="t-neg">사건·단계 보고 ' + inc + '건</span> 먼저' : '') + (oldest ? ' · 가장 오래된 제출 ' + relTime(oldest) : '') : '확인할 기록이 없습니다. 새로 제출되면 여기에 쌓입니다.';
@@ -2765,15 +2800,17 @@
       var r = x.r, s = siteById(r.site);
       return '<li class="li click hq-rv-item' + (r.id === RV.sel ? ' on' : '') + '" role="option" aria-selected="' + (r.id === RV.sel) + '" data-act="hq.rvSel" data-id="' + esc(r.id) + '">' +
         dot(x.top ? 'neg' : 'neu') + '<div class="li-main"><div class="li-title"><b>' + esc(fshort(r.form)) + '</b> · ' + esc(s ? s.id + ' ' + s.name : r.site) + '</div>' +
-        '<div class="li-sub">' + esc(r.author || '작성자 없음') + ' · ' + (x.stage ? esc(stageLabel(r)) + ' · ' : '') + esc(relTime(x.at)) + (r.rev > 1 ? ' · 재제출' : '') + '</div></div></li>';
+        '<div class="li-sub">' + esc(r.author || '작성자 없음') + ' · ' + (x.stage ? esc(stageLabel(r)) + ' · ' : '') + esc(relTime(x.at)) + (isResubmit(r) ? ' · 재제출' : '') + '</div></div></li>';
     }).join('') + '</ul>' : empty(all.length ? '이 조건에 맞는 확인 대기가 없습니다.' : '확인할 기록이 없습니다.', all.length ? '<button type="button" class="btn ghost sm" data-act="hq.rvClear">필터 지우기</button>' : '');
     var listPanel = panel({ title: '확인 대기', sub: list.length + '건 · 사건·단계 보고 → 보고서 → 일일점검, 각각 오래된 순', body: listHtml, foot: more, flush: !!list.length, cls: 'span-4 hq-rv-left' });
-    var prevPanel = '<section class="panel span-8 hq-rv-right hide-phone" id="hq-rv-prev">' + (RV.sel ? '<div class="panel-bd">' + skel(22, '50%') + '<div style="height:12px"></div>' + skel(14, '80%') + '<div style="height:24px"></div>' + skel(160, '100%') + '</div>' : '<div class="panel-bd">' + empty(list.length ? '왼쪽에서 기록을 고르십시오.' : '미리 볼 기록이 없습니다.') + '</div>') + '</section>';
-    frame(main, titleRow('검토함', sub, '') + tool + '<div class="grid align-start hq-rv">' + listPanel + prevPanel + '</div>');
+    var prevPanel = '<section class="panel span-8 hq-rv-right" id="hq-rv-prev">' + (RV.sel ? '<div class="panel-bd">' + skel(22, '50%') + '<div style="height:12px"></div>' + skel(14, '80%') + '<div style="height:24px"></div>' + skel(160, '100%') + '</div>' : '<div class="panel-bd">' + empty(list.length ? '왼쪽에서 기록을 고르십시오.' : '미리 볼 기록이 없습니다.') + '</div>') + '</section>';
+    var back = phoneSel ? '<button type="button" class="btn sm only-phone" data-act="hq.rvBack">' + ic('chevron-left') + '<span>목록</span></button>' : '';
+    var goneNote = gone ? '<ul class="findings hq-rv-gone"><li class="finding pos"><b>이미 처리된 건입니다.</b> <span class="mono">' + esc(gone) + '</span> 기록은 확인 대기에 없습니다. <a href="#/rec/' + esc(gone) + '">기록 보기</a></li></ul>' : '';
+    frame(main, titleRow('검토함', sub, back) + goneNote + (phoneSel ? '' : tool) + '<div class="grid align-start hq-rv' + (phoneSel ? ' has-sel' : '') + '">' + listPanel + prevPanel + '</div>');
     var fs = main.querySelector('.hq-rv-form'), ss = main.querySelector('.hq-rv-site');
     if (fs) fs.addEventListener('change', function () { RV.form = fs.value; rerender(); });
     if (ss) ss.addEventListener('change', function () { RV.site = ss.value; rerender(); });
-    if (RV.sel && !isPhone()) loadPreview(RV.sel, list);
+    if (RV.sel) loadPreview(RV.sel, list);
     bindKeys();
   }
   function loadPreview(id, list) {
@@ -2782,10 +2819,10 @@
     if (!x) return;
     var r = x.r, s = siteById(r.site), def = FORM(r.form);
     var head = '<header class="panel-hd"><div><h2>' + esc(def ? def.title : r.form) + '</h2><p class="panel-sub"><span class="mono">' + esc(r.id) + '</span> · ' + esc(s ? s.id + ' ' + s.name : r.site) + ' · ' + esc(r.author || '') +
-      ' · ' + esc(x.stage ? stageLabel(r) : '제출 ' + String(x.at).replace('T', ' ').slice(0, 16)) + (r.rev > 1 ? ' · ' + r.rev + '차 제출' : '') + '</p></div><div class="panel-actions">' + recPill(r) +
+      ' · ' + esc(x.stage ? stageLabel(r) : '제출 ' + String(x.at).replace('T', ' ').slice(0, 16)) + (isResubmit(r) ? ' · 반려 후 재제출' : '') + '</p></div><div class="panel-actions">' + recPill(r) +
       '<a class="btn ghost sm" href="#/rec/' + esc(r.id) + '">' + ic('external') + '<span>기록 열기</span></a></div></header>';
     var w = canWrite();
-    var foot = '<footer class="panel-ft hq-rv-ft">' + (r.returnNote && r.rev > 1 ? '<span class="muted ellipsis">지난 반려 사유: ' + esc(r.returnNote) + '</span>' : '') + '<span class="spacer"></span>' +
+    var foot = '<footer class="panel-ft hq-rv-ft">' + (isResubmit(r) && r.returnNote ? '<span class="muted ellipsis">지난 반려 사유: ' + esc(r.returnNote) + '</span>' : '') + '<span class="spacer"></span>' +
       '<button type="button" class="btn ghost" data-act="hq.rvNext">다음 건으로</button>' +
       (w ? (x.stage ? '<button type="button" class="btn danger" data-act="hq.rvReturn" data-id="' + esc(r.id) + '">반려</button><button type="button" class="btn primary" data-act="hq.rvAck" data-id="' + esc(r.id) + '">' + ic('check') + '<span>보고 확인</span></button>'
         : '<button type="button" class="btn danger" data-act="hq.rvReturn" data-id="' + esc(r.id) + '">반려</button><button type="button" class="btn primary" data-act="hq.rvOk" data-id="' + esc(r.id) + '">' + ic('check') + '<span>확인</span></button>') : '') + '</footer>';
@@ -2808,7 +2845,8 @@
     return reviewQueue().filter(function (x) { return (!RV.form || x.r.form === RV.form) && (!RV.site || x.r.site === RV.site); });
   }
   function rvSelect(id) {
-    if (isPhone()) { go('#/rec/' + id); return; }
+    /* 휴대폰: 기록 상세로 보내지 않고 검토함 안에서 미리보기를 연다(단계 보고의 [보고 확인]은 여기에만 있다) */
+    if (isPhone()) { RV.sel = id; rerender(); try { window.scrollTo(0, 0); } catch (e) { /* 스크롤 실패는 무시 */ } return; }
     RV.sel = id;
     var items = document.querySelectorAll('.hq-rv-item'), found = false;
     [].forEach.call(items, function (li) { if (li.getAttribute('data-id') === id) found = true; });
@@ -2863,7 +2901,7 @@
   function ackStage(r) {
     var nextId = rvAfter(r.id);
     return App.api('reads.mark', { refId: ackKey(r) }).then(function (res) {
-      var rd = (res && res.read) || { id: 'local-' + Date.now(), refId: ackKey(r), site: r.site, by: '', at: nowIso() };
+      var rd = (res && res.read) || { id: 'local-' + Date.now(), refId: ackKey(r), site: 'HQ', by: '', at: nowIso() };
       (S().reads || (S().reads = [])).push(rd);
       toast(r.id + ' ' + stageLabel(r).replace(/\(.*$/, '') + '를 확인했습니다.', 'pos');
       RV.sel = nextId; bumpNav(); rerender();
@@ -2948,7 +2986,9 @@
     'hq.reqCopy': function (el) {
       var id = el.getAttribute('data-id'), urls = (S().boot && S().boot.urls) || {};
       var base = urls.app || (window.BOOT && window.BOOT.url) || location.href.split('#')[0];
-      var link = base + '#/requests/' + id;
+      /* GAS 웹앱은 iframe 안이라 최상위 '#/…' 해시가 앱에 전달되지 않는다 — 서버가 BOOT.view 로 넘기는 ?v=<화면> 형식(Dispatch.siteLink 와 같은 규칙) */
+      base = String(base).replace(/([?&])v=[^&#]*(&|$)/, function (m0, a, b) { return b ? a : ''; });
+      var link = base + (base.indexOf('?') >= 0 ? '&' : '?') + 'v=' + encodeURIComponent('requests/' + id);
       if (App.copy) { Promise.resolve(App.copy(link)).then(function () { toast('요청 링크를 복사했습니다.', 'pos'); }).catch(function () { toast('복사하지 못했습니다.', 'neg'); }); }
     },
     'hq.fileGet': function (el) {
@@ -2968,6 +3008,7 @@
     'hq.rfAttDel': function (el) { var f = CUR.main.querySelector('form.hq-rf'); readRF(f); RF.attachments.splice(Number(el.getAttribute('data-i')), 1); rerender(); },
     'hq.rvSel': function (el) { rvSelect(el.getAttribute('data-id')); },
     'hq.rvNext': function () { rvMove(1); },
+    'hq.rvBack': function () { RV.sel = ''; rerender(); },
     'hq.rvMore': function () { RV.limit += 100; rerender(); },
     'hq.rvClear': function (el, ev) { if (ev && ev.preventDefault) ev.preventDefault(); RV.form = ''; RV.site = ''; rerender(); },
     'hq.rvReload': function () { if (RV.sel) loadPreview(RV.sel); },
@@ -2975,7 +3016,7 @@
     'hq.rvAck': function (el) { var id = el.getAttribute('data-id'); var x = reviewQueue().filter(function (y) { return y.r.id === id; })[0]; if (x) ackStage(x.r); },
     'hq.rvReturn': function (el) {
       var id = el.getAttribute('data-id');
-      var ask = App.promptText ? App.promptText({ title: id + ' 반려', label: '반려 사유(사업장에 그대로 보입니다)', multiline: true, placeholder: '고칠 곳과 이유를 적어 주십시오' }) : Promise.resolve(window.prompt('반려 사유'));
+      var ask = App.promptText ? App.promptText({ title: id + ' 반려', label: '반려 사유', hint: '사업장에 그대로 보입니다', multiline: true, required: true, ok: '반려', danger: true, placeholder: '고칠 곳과 이유를 적어 주십시오' }) : Promise.resolve(window.prompt('반려 사유'));
       Promise.resolve(ask).then(function (note) {
         if (note == null) return;
         note = String(note).trim();
@@ -3164,8 +3205,9 @@
   }
   function kpis(items) {
     return '<div class="kpis" style="--n:' + items.length + '">' + items.map(function (k) {
+      var v = k.value, miss = v === null || v === undefined || v === '' || (typeof v === 'number' && !isFinite(v)) || (typeof v === 'string' && v.replace(/<[^>]*>/g, '').trim() === '—');
       return '<div class="kpi' + (k.lead ? ' is-lead' : '') + '"><div class="kpi-label">' + esc(k.label) + '</div>' +
-        '<div class="kpi-value num">' + k.value + (k.unit ? '<span class="unit">' + esc(k.unit) + '</span>' : '') + '</div>' +
+        '<div class="kpi-value num">' + (miss ? '<span class="dash" aria-label="값 없음">—</span>' : v + (k.unit ? '<span class="unit">' + esc(k.unit) + '</span>' : '')) + '</div>' +
         (k.sub ? '<div class="kpi-sub">' + k.sub + '</div>' : '') + '</div>';
     }).join('') + '</div>';
   }
@@ -3567,8 +3609,10 @@
     }
     var wait = all.filter(function (r) { return r.status === '제출'; });
     if (wait.length) {
-      wait.sort(function (a, b) { return (a.submittedAt || '').localeCompare(b.submittedAt || ''); });
-      return '확인 대기 기록이 ' + num(wait.length) + '건이고, 가장 오래된 제출은 ' + esc(relDay(wait[0].submittedAt || wait[0].date)) + '입니다.';
+      /* 재제출 기록은 최초 제출값이 남아 있을 수 있어 재제출 시각(updatedAt)으로 센다 */
+      var subAt = function (r) { return ((r.returnNote ? r.updatedAt : '') || r.submittedAt || ''); };
+      wait.sort(function (a, b) { return subAt(a).localeCompare(subAt(b)); });
+      return '확인 대기 기록이 ' + num(wait.length) + '건이고, 가장 오래된 제출은 ' + esc(relDay(subAt(wait[0]) || wait[0].date)) + '입니다.';
     }
     var wk = all.filter(function (r) { return daysBetween(r.date, t) >= 0 && daysBetween(r.date, t) < 7; }).length;
     return all.length ? '최근 7일에 ' + num(wk) + '건이 들어왔고, 확인을 기다리는 기록은 없습니다.' : '';
@@ -3791,7 +3835,7 @@
       });
     }
     if (typeof E.downloadXlsx === 'function') return Promise.resolve(E.downloadXlsx(name, [sheet]));
-    var csv = '﻿' + sheet.rows.map(function (r) {
+    var csv = '\uFEFF' + sheet.rows.map(function (r) {
       return r.map(function (c) { var s = String(c == null ? '' : c); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(',');
     }).join('\n');
     if (App.download) App.download(name.replace(/\.xlsx$/, '.csv'), csv, 'text/csv;charset=utf-8');
@@ -3856,6 +3900,13 @@
     if (d < 0) return '<span class="t-neg num nowrap">경과 ' + (-d) + '일</span>';
     if (d === 0) return '<span class="t-warn nowrap">오늘 마감</span>';
     return '<span class="num nowrap">D-' + d + '</span>';
+  }
+  /* 대화상자 기한 옆 보조 표기: 열린 조치는 D-n·경과, 기한을 넘겨 완료한 조치는 늦은 날수, 그 밖은 날짜만 */
+  function dueNote(a) {
+    if (!a.due) return '';
+    if (actOpen(a)) return ' ' + dueHtml(a);
+    var late = a.doneAt ? daysBetween(a.due, String(a.doneAt).slice(0, 10)) : 0;
+    return late > 0 ? ' <span class="t-warn num nowrap">' + late + '일 늦게 완료</span>' : '';
   }
   function actSrcText(a) {
     if (a.srcId || a.srcForm) return esc(formShort(a.srcForm) || a.srcForm || '') + (a.srcItem ? ' · ' + esc(a.srcItem) : '');
@@ -4077,7 +4128,7 @@
       '<div><dt>출처</dt><dd>' + src + '</dd></div>' +
       (a.type ? '<div><dt>조치 방식</dt><dd>' + esc(a.type) + '</dd></div>' : '') +
       '<div><dt>담당</dt><dd>' + (a.owner ? esc(a.owner) : DASH) + '</dd></div>' +
-      '<div><dt>기한</dt><dd>' + (a.due ? '<span class="num">' + esc(a.due) + '</span> ' + dueHtml(a) : DASH) + '</dd></div>' +
+      '<div><dt>기한</dt><dd>' + (a.due ? '<span class="num">' + esc(a.due) + '</span>' + dueNote(a) : DASH) + '</dd></div>' +
       '<div><dt>등록</dt><dd class="num">' + esc(fmtDT(a.createdAt)) + '</dd></div>' +
       (a.doneNote ? '<div><dt>조치 내용</dt><dd class="hq-pre">' + esc(a.doneNote) + '</dd></div>' : '') +
       (a.doneAt ? '<div><dt>완료</dt><dd><span class="num">' + esc(fmtDT(a.doneAt)) + '</span> ' + esc(a.doneBy || '') + '</dd></div>' : '') +
@@ -4184,7 +4235,7 @@
     if (to === '완료') {
       if (!note) { setErr(el, '#mv-note', '무엇을 조치했는지 적어 주세요.'); return; }
       if (!file && !a.photoAfter && !noPhoto) { setErr(el, '#mv-nophoto', '개선 후 사진을 올리거나 사진이 없는 이유를 고르세요.'); return; }
-      if (noPhoto && !file) { payload.noPhotoReason = noPhoto; payload.note = note + ' [사진 없음: ' + noPhoto + ']'; }
+      if (noPhoto && !file) payload.noPhotoReason = noPhoto;   // 사유는 서버가 메모에 한 번 덧붙인다(acts.transition)
     }
     if ((to === '보류' || to === '고객사 이관') && !note) { setErr(el, '#mv-note', to === '보류' ? '보류 사유를 적어 주세요.' : '고객사에 넘긴 내용을 적어 주세요.'); return; }
     if (to === '보류') { var due = val(el, '#mv-due'); if (due) payload.due = due; }

@@ -2031,6 +2031,8 @@
       if (token) App.api('auth.logout', {}, { silent: true, noAuthRedirect: true }).catch(function () { /* 이미 끊긴 세션 */ });
       store.del(K.token);
       if (wasSite) store.del(K.name);
+      /* 이 기기에 보관한 작성 중 초안(hds.draft:…)도 지운다 — 공용 기기에서 다음 사람에게 보이지 않게 */
+      try { var dk = []; for (var di = 0; di < localStorage.length; di++) { var kk = localStorage.key(di); if (kk && kk.indexOf('hds.draft:') === 0) dk.push(kk); } dk.forEach(function (kk) { localStorage.removeItem(kk); }); } catch (e) { /* 저장소 차단 */ }
       resetState();
       if (wasSite && siteTokenNow()) renderSiteLogin({}); else renderLogin({});
     },

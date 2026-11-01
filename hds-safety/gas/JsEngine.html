@@ -2357,6 +2357,7 @@
         try { if (typeof App.putIndex === 'function') App.putIndex(r.id ? r : rec); } catch (e) { /* 무시 */ }
         var made = (res && res.acts) || [];
         made.forEach(function (a) { try { if (typeof App.putAct === 'function') App.putAct(a); } catch (e) { /* 무시 */ } });
+        ((res && res.prunedActs) || []).forEach(function (a) { try { if (typeof App.putAct === 'function') App.putAct(a); } catch (e) { /* 무시 */ } });
         cacheRec(rec);
         ed.dirty = false; ed.busy = false;
         toast((stage && !last ? stage.label + ' 단계를 보고했습니다' : '제출했습니다') + (made.length ? ' · 조치 ' + made.length + '건 등록' : ''), 'pos');

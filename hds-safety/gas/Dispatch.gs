@@ -733,7 +733,7 @@ var Dispatch = (function () {
     if (att.length) kv.push(['첨부', att.map(function (a) { return str(a.name) + (a.size ? ' (' + fmtSize(a.size) + ')' : ''); }).join('\n')]);
     kv.push(['요청 번호', req.id]);
     blocks.push({ type: 'kv', title: '안내', rows: kv });
-    var link = siteLink(site);
+    var link = siteLink(site, 'inbox/' + req.id);
     return template(isNotice ? 'notice' : 'request', {
       settings: st,
       preheader: (req.due ? fmtDay(req.due) + '까지 · ' : '') + (site.name || site.id),
@@ -1262,7 +1262,7 @@ var Dispatch = (function () {
           rows: rows,
           more: late.length > 40 ? '외 ' + (late.length - 40) + '건은 조치대장에서 확인하세요.' : ''
         }],
-        button: appUrl() ? { label: '조치대장 열기', url: appUrl() + '#/acts' } : null
+        button: appUrl() ? { label: '조치대장 열기', url: withParam(appUrl(), 'v', 'acts') } : null
       });
       if (to.length) res.hqMail = mail(to, tag(st) + '기한경과 위험도 높음 조치 ' + late.length + '건', html, { who: 'system', ref: 'cron:acts', settings: st });
       else log('system', 'mail', 'cron:acts', '보내지 않음(본사 수신 메일 미설정) · 기한경과 높음 조치 ' + late.length + '건');

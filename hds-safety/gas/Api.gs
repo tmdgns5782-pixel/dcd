@@ -326,6 +326,15 @@ var Api = (function () {
     return out;
   }
 
+  /** 조치가 본사 비공개 단계(HQ_PRIVATE_STAGES) 섹션에서 나왔으면 사업장 세션에는 보이지 않는다(예: F10 D+30 불리한 처우 확인). */
+  function actVisibleTo(a, me) {
+    if (!a || !me || me.kind !== 'site') return true;
+    var parts = hqParts(a.srcForm);
+    if (!parts || !parts.privSecs.length) return true;
+    var sec = String(a.key || '').split('#')[1] || '';
+    return parts.privSecs.indexOf(sec) < 0;
+  }
+
   /** facts 에서 본사 전용(priv=true 면 비공개만) 칸·섹션 값을 뺀 사본. */
   function stripFacts(facts, parts, priv) {
     if (!isObj(facts)) return facts;
@@ -453,7 +462,7 @@ var Api = (function () {
     var requests = Db.all('requests').filter(function (r) { return !isSite || reqVisibleToSite(r, me.site); })
       .map(function (r) { return isSite ? reqForSite(r, me.site) : r; });
     var reads = Db.all('reads').filter(function (r) { return mine(r.site); });
-    var acts = Db.all('acts').filter(function (a) { return !a.deleted && mine(a.site); });
+    var acts = Db.all('acts').filter(function (a) { return !a.deleted && mine(a.site) && actVisibleTo(a, me); });
     var index = Db.all('records').filter(function (r) {
       if (r.deleted || !mine(r.site)) return false;
       if (r.status === '작성중' || r.status === '반려') return true;
