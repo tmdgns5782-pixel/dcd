@@ -75,6 +75,8 @@
 @media (max-width: 640px) {
   .hq-pick, .hq-pick-tags { grid-template-columns: minmax(0, 1fr); }
   .hq-rate { min-width: 0; }
+  .hq-rq-tbl .r-key .bar { display: none; }   /* 두 줄 행: 오른쪽엔 회수 숫자만, 제목 폭을 넓게 */
+  .hq-rq-tbl .r-key .hq-rate .num { min-width: 0; }
   .hq-exc .li-side { width: auto; }
   .hq-exc .li-title, .hq-exc .li-sub, .hq-rv-item .li-title { white-space: normal; }
   .hq-mini .mx-row { max-width: 150px; }
@@ -123,6 +125,9 @@
 .hq-act-tbl td:first-child, .hq-act-tbl th:first-child { padding-left: var(--card-pad, 20px); }
 .hq-act-tbl td:last-child, .hq-act-tbl th:last-child { padding-right: var(--card-pad, 20px); }
 .hq-act-tbl .hq-act-title { max-width: none; }
+/* 조치 내용은 두 줄까지(넘치면 말줄임, 전체는 title), 담당은 보조줄 맨 앞이라 먼저 잘리지 않음 */
+.hq-act-t { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; white-space: normal; overflow-wrap: anywhere; }
+.hq-own { color: var(--text); }
 .hq-act-tbl th.hq-sitec { width: 140px; }
 .hq-act-tbl th.hq-c-lv { width: 72px; }
 .hq-act-tbl th.hq-c-due { width: 104px; }
@@ -240,6 +245,7 @@
   .hq-act-tbl.tbl:not(.keep) td.hq-c-lv { grid-column: 2; grid-row: 2; }
   .hq-act-tbl.tbl:not(.keep) td.hq-c-due { grid-column: 3; grid-row: 2; justify-self: end; }
   .hq-act-tbl .hq-l2 { display: none; }
+  .hq-act-tbl .hq-act-t { -webkit-line-clamp: 1; line-clamp: 1; }   /* 휴대폰은 두 줄 행 규칙: 내용 한 줄 */
 }
 /* ===== [hq-b] 끝 ===== */
 /* ===== [analytics-a] 시작 ===== */

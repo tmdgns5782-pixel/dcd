@@ -12,9 +12,9 @@
 3) HTML 파일 6개 — 파일 옆 [+] > HTML 로 아래 이름 그대로 만듭니다(.html 은 편집기가 붙입니다. 대소문자 그대로).
    새 파일에 들어 있는 기본 내용은 모두 지우고 붙여넣습니다.
    - Index      ← paste/Index.html (1KB)
-   - Styles     ← paste/Styles.html (132KB)
-   - App        ← paste/App.html (446KB)
-   - App2       ← paste/App2.html (379KB)
+   - Styles     ← paste/Styles.html (135KB)
+   - App        ← paste/App.html (449KB)
+   - App2       ← paste/App2.html (383KB)
    - App3       ← paste/App3.html (288KB)
    - FormsData  ← paste/FormsData.html (460KB)
    큰 파일은 텍스트 편집기에서 전체 선택(Ctrl+A)·복사 후 붙여넣고, 끝부분이 잘리지 않았는지 마지막 줄을 확인합니다.

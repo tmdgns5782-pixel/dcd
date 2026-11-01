@@ -1191,6 +1191,27 @@
   /* 본사 전용 단계(who 가 '본사…'로 시작하거나 role:'hq'): 사업장 세션은 읽기만 하고 보고할 수 없다 */
   function isHqStage(st) { return !!st && (st.role === 'hq' || /^본사/.test(String(st.who || ''))); }
   function hqStageBlocked() { return isHqStage(stageNow()) && !isHQ(); }
+  /* 본사 전용 단계 섹션이 담는 data 키(fields 섹션은 칸 id, 그 밖은 섹션 id) */
+  function hqDataKeys(def) {
+    var out = [];
+    (def.stages || []).forEach(function (st) {
+      if (!isHqStage(st)) return;
+      (st.sections || []).forEach(function (sid) {
+        var s = secById(def, sid); if (!s) return;
+        if (s.type === 'fields') (s.fields || []).forEach(function (f) { if (f && f.id) out.push(f.id); });
+        else out.push(s.id);
+      });
+    });
+    return out;
+  }
+  /* 사업장 세션이 보내는 기록: 본사 전용 단계 칸은 열 때 받은 값 그대로(사업장 쪽 변경·자동 계산이 섞이지 않게) */
+  function keepHqData(ed, record) {
+    if (!ed || !ed.hqBase || !record || !record.data) return record;
+    Object.keys(ed.hqBase).forEach(function (k) {
+      if (ed.hqBase[k] === undefined) delete record.data[k]; else record.data[k] = clone(ed.hqBase[k]);
+    });
+    return record;
+  }
   function isLastStage() { return !ED.def.stages || ED.stage >= ED.def.stages.length - 1; }
   function submitLabel() {
     var rec = ED.rec, st = stageNow();
@@ -1568,7 +1589,9 @@
     }
   }
   function bodyHtml() {
-    return (showHead() ? headHtml() : '') + secsNow().map(sectionHtml).join('');
+    var h = (showHead() ? headHtml() : '') + secsNow().map(sectionHtml).join('');
+    /* 본사 전용 단계를 사업장이 열면 읽기 전용: fieldset disabled 가 안의 입력·버튼을 모두 막는다 */
+    return hqStageBlocked() ? '<fieldset class="fe-ro" disabled aria-label="본사 전용 단계(읽기 전용)">' + h + '</fieldset>' : h;
   }
   function editorHtml() {
     var rec = ED.rec, def = ED.def;
@@ -1711,8 +1734,9 @@
     if (h.obj[h.prop] === v) return h;
     h.obj[h.prop] = v; return h;
   }
+  function inReadOnly(el) { return !!(el && el.closest && el.closest('.fe-ro')); }
   function onInput(e) {
-    var el = e.target; if (!ED || !el.getAttribute) return;
+    var el = e.target; if (!ED || !el.getAttribute || inReadOnly(el)) return;
     if (el.hasAttribute('data-fe-addp')) return;
     var key = el.getAttribute('data-fe-k'); if (!key) return;
     if (el.tagName === 'TEXTAREA') autosize(el);
@@ -1730,7 +1754,7 @@
     changed({ secs: secs });
   }
   function onChange(e) {
-    var el = e.target; if (!ED || !el.getAttribute) return;
+    var el = e.target; if (!ED || !el.getAttribute || inReadOnly(el)) return;
     if (el.type === 'file') { onFile(el); return; }
     if (el.hasAttribute('data-fe-paper')) {
       var sg = ED.rec.data[el.getAttribute('data-fe-sec-id')] = asObj(ED.rec.data[el.getAttribute('data-fe-sec-id')]);
@@ -1742,7 +1766,7 @@
     takeInput(key, el);
   }
   function onKey(e) {
-    var el = e.target;
+    var el = e.target; if (inReadOnly(el)) return;
     if (el.hasAttribute && el.hasAttribute('data-fe-addp') && e.key === 'Enter') { e.preventDefault(); addPerson(el.getAttribute('data-fe-addp'), el); return; }
     if (/^[1-4]$/.test(e.key) && el.tagName === 'BUTTON' && el.closest && el.closest('.fe-chk')) {
       var bs = el.closest('.fe-chk').querySelectorAll('[data-fe-j]'); var b = bs[Number(e.key) - 1]; if (b) { e.preventDefault(); b.click(); }
@@ -1837,7 +1861,7 @@
   }
   function onClick(e) {
     var ed = ED; if (!ed) return;
-    var b = e.target.closest ? e.target.closest('button') : null; if (!b || !ed.root.contains(b) || b.disabled) return;
+    var b = e.target.closest ? e.target.closest('button') : null; if (!b || !ed.root.contains(b) || b.disabled || inReadOnly(b)) return;
     if (b.hasAttribute('data-fe-j')) { judgeClick(b); return; }
     if (b.hasAttribute('data-fe-v')) { segClick(b); return; }
     if (b.hasAttribute('data-fe-stage')) { stageGo(Number(b.getAttribute('data-fe-stage'))); return; }
@@ -2022,7 +2046,7 @@
     clearTimeout(ed.timer);
     var wasNew = !ed.rec.id, ver = ed.ver;
     computeAll(ed.def, ed.rec);
-    var payload = clone(ed.rec); payload.period = periodKeyOf(ed.def, ed.rec);
+    var payload = keepHqData(ed, clone(ed.rec)); payload.period = periodKeyOf(ed.def, ed.rec);
     ed.saveState = 'saving'; paintSave(ed);
     var finish = function () {
       ed.saving = null; paintSave(ed);
@@ -2074,7 +2098,7 @@
       return wait.then(function () { return rec.id ? null : doSave(ed, 'submit'); }).then(function () {
         if (!rec.id) throw new Error('기록 번호를 받지 못했습니다. 잠시 뒤 다시 눌러 주세요.');
         computeAll(def, rec);
-        var record = clone(rec); record.period = periodKeyOf(def, rec); record.facts = factsOf(def, rec);
+        var record = keepHqData(ed, clone(rec)); record.period = periodKeyOf(def, rec); record.facts = factsOf(def, rec);
         return App.api('records.submit', { record: record, stageId: stage ? stage.id : undefined, acts: actsFromRecord(def, rec) }, { silent: true });
       }).then(function (res) {
         var r = (res && res.record) || {}; mergeMeta(rec, r);
@@ -2118,7 +2142,11 @@
     if (ED) leaveEditor(true);
     ED = { def: def, rec: rec, stage: def.stages ? Math.min(asArr(rec.stageDone).length, def.stages.length - 1) : 0, showErr: false, errs: [],
       dirty: false, ver: 0, saving: null, savePending: false, timer: 0, saveState: '', lastSaved: null, busy: false,
-      main: main, root: null, route: currentHash(), req: opt.req || findRequest(rec.requestId), dup: opt.dup || null, isNew: !rec.id, io: null };
+      main: main, root: null, route: currentHash(), req: opt.req || findRequest(rec.requestId), dup: opt.dup || null, isNew: !rec.id, io: null, hqBase: null };
+    if (!isHQ() && def.stages) {
+      var hk = hqDataKeys(def);
+      if (hk.length) { ED.hqBase = {}; rec.data = asObj(rec.data); hk.forEach(function (k) { ED.hqBase[k] = rec.data[k] === undefined ? undefined : clone(rec.data[k]); }); }
+    }
     if (rec.status === '반려' && def.stages) ED.stage = Math.max(0, Math.min(asArr(rec.stageDone).length, def.stages.length) - 1);
     computeAll(def, rec);
     hookGlobal();
@@ -2447,7 +2475,7 @@
     });
   }
   function kpiValue(k) {
-    if (isEmpty(k.value)) return '<span class="faint">—</span>';
+    if (isEmpty(k.value) || String(k.value).trim() === '—') return '<span class="dash" aria-label="값 없음">—</span>';   /* 값 없는 KPI: 16px 회색 대시(App.ui.kpis 와 같게) */
     if (isNumLike(k.value)) return esc(fmtNum(k.value)) + (k.unit ? '<span class="unit">' + esc(k.unit) + '</span>' : '');
     return esc(k.value);
   }
@@ -3070,18 +3098,21 @@
     }).join('') + '</div>';
     var list = forms.filter(function (f) { return FS.cat === 'all' || catOf(f) === FS.cat; });
     var wr = canWrite();
-    var head = '<thead><tr><th><span class="rv-fno">번호</span>양식 이름</th><th>주기</th>' + (site ? '<th>다음 마감</th>' : '') + '<th>문서번호</th><th>버전</th><th>작성자</th><th class="num">최근 작성일</th><th class="rv-act-col"><span class="sr-only">동작</span></th></tr></thead>';
+    var head = '<thead><tr><th><span class="rv-fno">번호</span>양식 이름</th><th>주기</th>' + (site ? '<th>다음 마감</th>' : '') + '<th class="rv-wide">문서번호</th><th class="rv-wide">버전</th><th class="rv-wide">작성자</th><th class="num rv-wide">최근 작성일</th><th class="rv-act-col"><span class="sr-only">동작</span></th></tr></thead>';
     var rows = list.map(function (f) {
       var code = esc(f.code);
       var isReq = site && req.indexOf(f.code) >= 0;
       return '<tr>' +
-        '<td class="rv-fcell"><div class="rv-fcell-in"><span class="rv-fno num faint">' + esc(f.no || '') + '</span><div class="rv-fmain"><button type="button" class="rv-link rv-fname" data-act="fe.forms-info" data-code="' + code + '">' + esc(f.title) + '</button><div class="faint rv-fsub">' + esc(f.code) + ' · ' + esc(CAT_NAME[f.category] || f.category || '') + (isReq ? ' · 필수' : '') + '</div></div></div></td>' +
+        '<td class="rv-fcell"><div class="rv-fcell-in"><span class="rv-fno num faint">' + esc(f.no || '') + '</span><div class="rv-fmain"><button type="button" class="rv-link rv-fname" data-act="fe.forms-info" data-code="' + code + '">' + esc(f.title) + '</button><div class="faint rv-fsub">' + esc(f.code) + ' · ' + esc(CAT_NAME[f.category] || f.category || '') + (isReq ? ' · 필수' : '') + '</div>' +
+          // 태블릿(641~1399px)에서는 넓은 열을 숨기고 이 둘째 줄로 보여 준다(CssEngine .rv-fmeta)
+          '<div class="faint rv-fsub rv-fmeta">' + [f.docNo ? '<span class="mono">' + esc(f.docNo) + '</span>' : '', f.version ? esc(f.version) : '', f.fillBy ? esc(fillSummary(f.fillBy)) : '', '최근 ' + (last[f.code] ? '<span class="num">' + esc(last[f.code]) + '</span>' : '—')].filter(Boolean).join(' · ') + '</div>' +
+          '</div></div></td>' +
         '<td class="nowrap" data-label="주기">' + esc(freqLabel(f)) + '</td>' +
         (site ? '<td class="rv-sched" data-label="다음 마감">' + schedHtml(sched[f.code], f) + '</td>' : '') +
-        '<td class="mono nowrap" data-label="문서번호">' + esc(f.docNo || '') + '</td>' +
-        '<td class="nowrap" data-label="버전">' + esc(f.version || '') + '</td>' +
-        '<td data-label="작성자"><span title="' + esc(f.fillBy || '') + '">' + esc(fillSummary(f.fillBy)) + '</span></td>' +
-        '<td class="num nowrap" data-label="최근 작성일">' + (last[f.code] ? esc(last[f.code]) : '<span class="faint">—</span>') + '</td>' +
+        '<td class="mono nowrap rv-wide" data-label="문서번호">' + esc(f.docNo || '') + '</td>' +
+        '<td class="nowrap rv-wide" data-label="버전">' + esc(f.version || '') + '</td>' +
+        '<td class="rv-wide" data-label="작성자"><span title="' + esc(f.fillBy || '') + '">' + esc(fillSummary(f.fillBy)) + '</span></td>' +
+        '<td class="num nowrap rv-wide" data-label="최근 작성일">' + (last[f.code] ? esc(last[f.code]) : '<span class="faint">—</span>') + '</td>' +
         '<td class="act rv-act-col"><div class="rv-row-acts">' +
           (wr ? '<button type="button" class="btn sm" data-act="fe.forms-new" data-code="' + code + '">새로 쓰기</button>' : '') +
           '<button type="button" class="icon-btn" data-act="fe.forms-blank" data-code="' + code + '" aria-label="빈 양식 인쇄" title="빈 양식 인쇄">' + icon('print') + '</button>' +

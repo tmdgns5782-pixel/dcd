@@ -1126,10 +1126,11 @@
     return '<div class="kpis' + (opts.cls ? ' ' + opts.cls : '') + '" style="--n:' + Math.max(1, items.length) + '">' + items.map(function (k) {
       var v = k.value;
       var vHtml;
-      if (v === null || v === undefined || v === '' || (typeof v === 'number' && !isFinite(v))) vHtml = '<span class="dash" aria-label="값 없음">—</span>';
+      var miss = v === null || v === undefined || v === '' || (typeof v === 'number' && !isFinite(v)) || (typeof v === 'string' && v.replace(/<[^>]*>/g, '').trim() === '—');
+      if (miss) vHtml = '<span class="dash" aria-label="값 없음">—</span>';
       else if (typeof v === 'number') vHtml = num(v, k.d || 0);
       else vHtml = k.html ? String(v) : esc(v);
-      var hasV = !(v === null || v === undefined || v === '');
+      var hasV = !miss;
       return '<div class="kpi' + (k.lead ? ' is-lead' : '') + (k.href ? ' click' : '') + '"' + (k.href ? ' data-href="' + esc(k.href) + '" tabindex="0"' : '') + '>' +
         '<div class="kpi-label">' + esc(k.label || '') + '</div>' +
         '<div class="kpi-value num' + (k.tone ? ' t-' + k.tone : '') + '">' + vHtml + (k.unit && hasV ? '<span class="unit">' + esc(k.unit) + '</span>' : '') + '</div>' +

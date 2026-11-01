@@ -79,6 +79,9 @@
 
 /* 섹션 */
 .fe-body { display: grid; gap: 16px; min-width: 0; }
+/* 본사 전용 단계(사업장 세션): fieldset disabled 로 감싼 읽기 전용 본문 — 레이아웃은 .fe-body 와 같게 */
+.fe-ro { display: grid; gap: 16px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.fe-ro button:disabled { cursor: not-allowed; }
 .fe-sec { min-width: 0; border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--surface); scroll-margin-top: 16px; }
 .fe-sec-hd { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px 16px; padding: 16px var(--card-pad) 0; }
 .fe-sec-tt { min-width: 0; }
@@ -388,7 +391,21 @@
 .rv-fno { flex: none; display: inline-block; width: 36px; text-align: right; }
 .rv-fmain { min-width: 0; }
 .rv-act-col { width: 1%; text-align: right; }
+/* 머리 칸의 .sr-only(absolute)가 표 밖 .sheet 를 기준으로 잡혀 시트를 옆으로 밀지 않게 */
+.rv-forms th.rv-act-col { position: relative; }
 .rv-row-acts { display: flex; align-items: center; justify-content: flex-end; gap: 4px; white-space: nowrap; }
+/* 둘째 줄 메타(문서번호·버전·작성자·최근 작성일)는 태블릿에서만 — 데스크톱은 열, 휴대폰은 data-label 블록 */
+.rv-fmeta { display: none; }
+@media (min-width: 641px) and (max-width: 1399px) {
+  .rv-forms .rv-wide { display: none; }
+  .rv-forms .rv-fmeta { display: block; }
+  .rv-fcell { min-width: 220px; }
+}
+@media (min-width: 641px) and (max-width: 800px) {
+  .rv-fcell { min-width: 160px; }
+  .rv-forms td.rv-sched { min-width: 0; white-space: normal; }
+  .rv-forms .rv-row-acts { flex-wrap: wrap; justify-content: flex-end; white-space: normal; max-width: 112px; }
+}
 @media (max-width: 640px) {
   .rv-fcell { min-width: 0; }
   .rv-forms td.rv-fcell { display: block !important; }

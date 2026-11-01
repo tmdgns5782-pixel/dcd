@@ -616,10 +616,12 @@
     return '<div class="kpis an-kpis" style="--n:' + items.length + '">' + items.map(function (k) {
       return '<div class="kpi' + (k.lead ? ' is-lead' : '') + (k.href ? ' click an-kpi-link' : '') + '"' + (k.href ? ' data-href="' + esc(k.href) + '" role="link" tabindex="0"' : '') + '>'
         + '<div class="kpi-label">' + esc(k.label) + '</div>'
-        + '<div class="kpi-value num">' + k.value + (k.unit ? '<span class="unit">' + esc(k.unit) + '</span>' : '') + '</div>'
+        + '<div class="kpi-value num">' + (kpiMiss(k.value) ? '<span class="dash" aria-label="값 없음">—</span>' : k.value + (k.unit ? '<span class="unit">' + esc(k.unit) + '</span>' : '')) + '</div>'
         + (k.sub ? '<div class="kpi-sub">' + k.sub + '</div>' : '') + '</div>';
     }).join('') + '</div>';
   }
+  /* 값 없는 KPI(null·빈 값·'—' 또는 '—' 한 글자만 감싼 조각): 모든 화면 같은 16px 회색 대시로 */
+  function kpiMiss(v) { return v == null || v === '' || String(v).replace(/<[^>]*>/g, '').trim() === '—'; }
   function na(text) { return '<span class="an-na">' + esc(text || '해당없음') + '</span>'; }
   function panel(o) {
     return '<section class="panel ' + (o.span ? 'span-' + o.span : '') + (o.cls ? ' ' + o.cls : '') + '"' + (o.id ? ' id="' + o.id + '"' : '') + '>'
@@ -1869,8 +1871,8 @@
   /* ================= 마크업 도우미(계약 클래스) ================= */
   function kpis(items) {
     return '<div class="kpis" style="--n:' + items.length + '">' + items.map(function (k) {
-      var miss = k.value === '—';
-      return '<div class="kpi' + (k.lead ? ' is-lead' : '') + '"><div class="kpi-label">' + esc(k.label) + '</div><div class="kpi-value num' + (miss ? ' faint' : '') + '">' + esc(k.value) +
+      var miss = k.value == null || k.value === '' || String(k.value).trim() === '—';   /* 값 없는 KPI: 16px 회색 대시(App.ui.kpis 와 같게) */
+      return '<div class="kpi' + (k.lead ? ' is-lead' : '') + '"><div class="kpi-label">' + esc(k.label) + '</div><div class="kpi-value num">' + (miss ? '<span class="dash" aria-label="값 없음">—</span>' : esc(k.value)) +
         (k.unit && !miss ? '<span class="unit">' + esc(k.unit) + '</span>' : '') + '</div>' + (k.sub ? '<div class="kpi-sub">' + k.sub + '</div>' : '') + '</div>';
     }).join('') + '</div>';
   }

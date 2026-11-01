@@ -260,7 +260,8 @@ a.kpi:hover .kpi-label, button.kpi:hover .kpi-label { color: var(--text); text-d
 .tbl td.id, .tbl td .id { font-family: var(--mono); font-size: 13px; white-space: nowrap; }
 .tbl td.act { text-align: right; white-space: nowrap; width: 1%; }
 .tbl td.dash, .tbl .dash { color: var(--faint); }
-.tbl-wrap.scroll .tbl thead th { position: sticky; top: 0; z-index: 1; }
+.tbl .r-l2 { display: none; }   /* 두 줄 행의 휴대폰 보조줄: 데스크톱에선 각 열이 보여 줌 */
+.tbl-wrap.scroll .tbl thead th { position: sticky; top: 0; z-index: 1; box-shadow: inset 0 -1px 0 var(--border); }   /* 붙은 머리 줄도 아래 선 유지(collapse 테두리는 스크롤 때 사라짐) */
 /* 눌러서 여는 행: 채움 대신 1px 외곽선(§7.8) — 선택은 내비 알약과 같은 --active */
 .tbl tr.click { cursor: pointer; }
 .tbl tr.click:hover { outline: 1px solid var(--control); outline-offset: -1px; }
@@ -826,6 +827,17 @@ button.mk-na:hover { background: transparent; }
   .tbl-wrap:has(.keep) { overflow-x: auto; }
   .tbl.keep { width: max-content; min-width: 100%; }
   .tbl.keep th:first-child, .tbl.keep td:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface); }
+  /* 두 줄 행(.tbl.rows2, taste §12): 1줄 = .r-main 식별(말줄임) + .r-key 핵심 숫자·상태·한 동작(오른쪽),
+     2줄 = .r-main 안 .r-l2(13px 회색 보조, 한 줄 말줄임). 나머지 칸은 휴대폰에서 숨김(.r-pre 는 앞에 남기는 작은 칸) */
+  .tbl.rows2:not(.keep) tr { flex-wrap: nowrap; align-items: center; gap: 12px; padding: 10px 0; min-height: 56px; }
+  .tbl.rows2:not(.keep) td { display: none; }
+  .tbl.rows2:not(.keep) td::before { content: none !important; }
+  .tbl.rows2:not(.keep) td.r-main { display: block; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--text); }
+  .tbl.rows2:not(.keep) td.r-main b { font-weight: 600; }
+  .tbl.rows2:not(.keep) td.r-key { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex: none; max-width: 50%; white-space: nowrap; font-size: 14px; line-height: 20px; color: var(--text); }
+  .tbl.rows2:not(.keep) td.r-pre { display: flex; align-items: center; flex: none; }
+  .tbl.rows2:not(.keep) .r-l2 { display: block; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; line-height: 18px; font-weight: 400; color: var(--muted); }
+  .tbl.rows2:not(.keep) .r-l2 .pill { vertical-align: 1px; }
 
   /* 터치 목표 44px */
   .btn { height: 44px; padding: 0 16px; }
@@ -977,6 +989,9 @@ button.mk-na:hover { background: transparent; }
 
 /* 섹션 */
 .fe-body { display: grid; gap: 16px; min-width: 0; }
+/* 본사 전용 단계(사업장 세션): fieldset disabled 로 감싼 읽기 전용 본문 — 레이아웃은 .fe-body 와 같게 */
+.fe-ro { display: grid; gap: 16px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.fe-ro button:disabled { cursor: not-allowed; }
 .fe-sec { min-width: 0; border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--surface); scroll-margin-top: 16px; }
 .fe-sec-hd { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px 16px; padding: 16px var(--card-pad) 0; }
 .fe-sec-tt { min-width: 0; }
@@ -1286,7 +1301,21 @@ button.mk-na:hover { background: transparent; }
 .rv-fno { flex: none; display: inline-block; width: 36px; text-align: right; }
 .rv-fmain { min-width: 0; }
 .rv-act-col { width: 1%; text-align: right; }
+/* 머리 칸의 .sr-only(absolute)가 표 밖 .sheet 를 기준으로 잡혀 시트를 옆으로 밀지 않게 */
+.rv-forms th.rv-act-col { position: relative; }
 .rv-row-acts { display: flex; align-items: center; justify-content: flex-end; gap: 4px; white-space: nowrap; }
+/* 둘째 줄 메타(문서번호·버전·작성자·최근 작성일)는 태블릿에서만 — 데스크톱은 열, 휴대폰은 data-label 블록 */
+.rv-fmeta { display: none; }
+@media (min-width: 641px) and (max-width: 1399px) {
+  .rv-forms .rv-wide { display: none; }
+  .rv-forms .rv-fmeta { display: block; }
+  .rv-fcell { min-width: 220px; }
+}
+@media (min-width: 641px) and (max-width: 800px) {
+  .rv-fcell { min-width: 160px; }
+  .rv-forms td.rv-sched { min-width: 0; white-space: normal; }
+  .rv-forms .rv-row-acts { flex-wrap: wrap; justify-content: flex-end; white-space: normal; max-width: 112px; }
+}
 @media (max-width: 640px) {
   .rv-fcell { min-width: 0; }
   .rv-forms td.rv-fcell { display: block !important; }
@@ -1479,6 +1508,8 @@ body.rv-printing #print-root { display: block; min-height: 100vh; }
 @media (max-width: 640px) {
   .hq-pick, .hq-pick-tags { grid-template-columns: minmax(0, 1fr); }
   .hq-rate { min-width: 0; }
+  .hq-rq-tbl .r-key .bar { display: none; }   /* 두 줄 행: 오른쪽엔 회수 숫자만, 제목 폭을 넓게 */
+  .hq-rq-tbl .r-key .hq-rate .num { min-width: 0; }
   .hq-exc .li-side { width: auto; }
   .hq-exc .li-title, .hq-exc .li-sub, .hq-rv-item .li-title { white-space: normal; }
   .hq-mini .mx-row { max-width: 150px; }
@@ -1527,6 +1558,9 @@ body.rv-printing #print-root { display: block; min-height: 100vh; }
 .hq-act-tbl td:first-child, .hq-act-tbl th:first-child { padding-left: var(--card-pad, 20px); }
 .hq-act-tbl td:last-child, .hq-act-tbl th:last-child { padding-right: var(--card-pad, 20px); }
 .hq-act-tbl .hq-act-title { max-width: none; }
+/* 조치 내용은 두 줄까지(넘치면 말줄임, 전체는 title), 담당은 보조줄 맨 앞이라 먼저 잘리지 않음 */
+.hq-act-t { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; white-space: normal; overflow-wrap: anywhere; }
+.hq-own { color: var(--text); }
 .hq-act-tbl th.hq-sitec { width: 140px; }
 .hq-act-tbl th.hq-c-lv { width: 72px; }
 .hq-act-tbl th.hq-c-due { width: 104px; }
@@ -1644,6 +1678,7 @@ body.rv-printing #print-root { display: block; min-height: 100vh; }
   .hq-act-tbl.tbl:not(.keep) td.hq-c-lv { grid-column: 2; grid-row: 2; }
   .hq-act-tbl.tbl:not(.keep) td.hq-c-due { grid-column: 3; grid-row: 2; justify-self: end; }
   .hq-act-tbl .hq-l2 { display: none; }
+  .hq-act-tbl .hq-act-t { -webkit-line-clamp: 1; line-clamp: 1; }   /* 휴대폰은 두 줄 행 규칙: 내용 한 줄 */
 }
 /* ===== [hq-b] 끝 ===== */
 /* ===== [analytics-a] 시작 ===== */

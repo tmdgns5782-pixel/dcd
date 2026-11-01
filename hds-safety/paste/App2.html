@@ -2002,16 +2002,37 @@
         cols.push({ kind: 'req', req: r, label: r.title, title: r.title + ' · 마감 ' + (r.due || '—') });
       });
     }
-    /* 요청 열이 정기 열과 같은 양식·같은 회차면(예: 3분기 보호구 실사 요청 = 보호구실사 3분기) 행 제출률에 한 번만 넣는다 */
-    cols.forEach(function (col) {
+    /* 요청 열이 정기 열과 같은 양식·같은 회차면(예: 3분기 보호구 실사 요청 = 보호구실사 3분기) 행 제출률에 한 번만 넣는다.
+       한 번만 세되 둘 중 더 엄격한 쪽(마감이 지나 미제출인 쪽)을 쓴다 — 요청 마감이 정기 마감보다 이르면 요청 쪽 기한경과가 숨지 않게 */
+    cols.forEach(function (col, i) {
       if (col.kind !== 'req' || !col.req.periodKey) return;
+      var pairs = [];
       col.dup = (col.req.forms || []).every(function (code) {
-        return cols.some(function (x) { return x.kind === 'form' && x.code === code && x.period && x.period.key === col.req.periodKey; });
+        var j = -1;
+        cols.forEach(function (x, k) { if (j < 0 && x.kind === 'form' && x.code === code && x.period && x.period.key === col.req.periodKey) j = k; });
+        if (j >= 0) pairs.push(j);
+        return j >= 0;
       });
+      if (col.dup) pairs.forEach(function (j) { (cols[j].dupReqs = cols[j].dupReqs || []).push(i); });
     });
+    function rowRate(cells) {
+      var sum = 0, cnt = 0;
+      cols.forEach(function (col, i) {
+        if (col.dup) return;
+        var c = cells[i], cand = [];
+        if (c.frac != null && c.expected) cand.push(c.frac);
+        (col.dupReqs || []).forEach(function (k) {
+          var rc = cells[k];
+          if (!rc || !rc.req || !rc.expected) return;
+          (rc.parts || []).forEach(function (p) { if (p.code === col.code) cand.push(DONE[p.cls] ? 1 : 0); });
+        });
+        if (cand.length) { sum += Math.min.apply(null, cand); cnt++; }
+      });
+      return cnt ? sum / cnt : null;
+    }
     var kinds = {}, missing = [];
     var rows = sites.map(function (s) {
-      var req = o.collecting ? null : requiredCodes(s, P), sum = 0, cnt = 0, miss = [];
+      var req = o.collecting ? null : requiredCodes(s, P), miss = [];
       var cells = cols.map(function (col) {
         var c;
         if (col.kind === 'req') c = cellReq(s, col.req, ctx);
@@ -2019,7 +2040,6 @@
         else if (o.collecting && requiredCodes(s, col.period).indexOf(col.code) < 0) c = { cls: 'mk-na', parts: [], n: 0, done: 0, expected: 0, frac: null };
         else c = cellRegular(s, col.def, col.period, ctx);
         kinds[c.cls] = 1;
-        if (c.frac != null && c.expected && !col.dup) { sum += c.frac; cnt++; }
         if (c.cls === 'mk-miss' || c.cls === 'mk-returned') {
           var od = 0;
           (c.parts || []).forEach(function (p) { if (p.cls === 'mk-miss' && p.due) od = Math.max(od, daysDiff(p.due, ctx.today)); });
@@ -2029,7 +2049,7 @@
         return c;
       });
       if (miss.length) missing.push({ site: s, items: miss, overdue: Math.max.apply(null, miss.map(function (m) { return m.overdue; })) });
-      return { site: s, cells: cells, rate: cnt ? sum / cnt : null };
+      return { site: s, cells: cells, rate: rowRate(cells) };
     });
     cols.forEach(function (col, i) {
       var d = 0, e = 0, w = 0, wd = 0;
@@ -2066,7 +2086,7 @@
       var sub = c.kind === 'req' ? '<em class="hq-mx-per">요청</em>' : (c.per ? '<em class="hq-mx-per">' + esc(c.per) + '</em>' : '');
       var lab = c.kind === 'req' ? (c.label.length > 9 ? c.label.slice(0, 8) + '…' : c.label) : c.label;
       var rateTxt = c.rate == null && c.pre ? '마감 전' : pctText(c.rate);
-      var tip = c.title + (c.kind === 'form' && ftype(c.def) === 'daily' ? '' : (c.past ? ' · 마감 지난 ' + c.past + '건 중 ' + c.pastDone + '건 제출' : '') + (c.pre ? ' · 마감 전 ' + c.pre + '건(제출 ' + c.preDone + ')' : '')) + (c.dup ? ' · 같은 회차 정기 열과 겹쳐 사업장 제출률에는 한 번만 셉니다' : '');
+      var tip = c.title + (c.kind === 'form' && ftype(c.def) === 'daily' ? '' : (c.past ? ' · 마감 지난 ' + c.past + '건 중 ' + c.pastDone + '건 제출' : '') + (c.pre ? ' · 마감 전 ' + c.pre + '건(제출 ' + c.preDone + ')' : '')) + (c.dup ? ' · 같은 회차 정기 열과 겹쳐 사업장 제출률에는 한 번만, 더 엄격한 쪽(마감 지난 쪽) 상태로 셉니다' : '');
       return '<th class="mx-col' + (c.kind === 'req' ? ' hq-mx-req' : '') + '" title="' + esc(tip) + '"><span>' + esc(lab) + '</span>' + sub +
         (o.noRate ? '' : '<small class="num">' + rateTxt + '</small>') + '</th>';
     }).join('') + '</tr></thead>';
@@ -2277,10 +2297,11 @@
     var recentN = openN ? Math.max(5, Math.min(8, Math.round((Math.min(openN, 4) * 77 + 24) / 48))) : 5;
     var recent = recs().filter(function (r) { return r.form !== 'F07' && (r.submittedAt || (r.stageDone || []).length); })
       .sort(function (a, b) { return String(b.submittedAt || b.updatedAt || '').localeCompare(String(a.submittedAt || a.updatedAt || '')); }).slice(0, recentN);
-    var recentBody = recent.length ? '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>기록</th><th>사업장</th><th>상태</th><th class="num">들어온 때</th></tr></thead><tbody>' +
+    var recentBody = recent.length ? '<div class="tbl-wrap"><table class="tbl rows2"><thead><tr><th>기록</th><th>사업장</th><th>상태</th><th class="num">들어온 때</th></tr></thead><tbody>' +
       recent.map(function (r) {
-        return '<tr class="click" data-href="#/rec/' + esc(r.id) + '"><td data-label="기록"><b>' + esc(fshort(r.form)) + '</b> <span class="mono faint">' + esc(r.id) + '</span></td>' +
-          '<td data-label="사업장">' + esc(siteLabel(r.site)) + '</td><td data-label="상태">' + recPill(r) + '</td><td class="num" data-label="들어온 때">' + esc(relTime(r.submittedAt || r.updatedAt)) + '</td></tr>';
+        return '<tr class="click" data-href="#/rec/' + esc(r.id) + '"><td class="r-main" data-label="기록"><b>' + esc(fshort(r.form)) + '</b> <span class="mono faint hide-phone">' + esc(r.id) + '</span>' +
+          '<span class="r-l2">' + esc(siteLabel(r.site)) + ' · ' + esc(relTime(r.submittedAt || r.updatedAt)) + '</span></td>' +
+          '<td data-label="사업장">' + esc(siteLabel(r.site)) + '</td><td class="r-key" data-label="상태">' + recPill(r) + '</td><td class="num" data-label="들어온 때">' + esc(relTime(r.submittedAt || r.updatedAt)) + '</td></tr>';
       }).join('') + '</tbody></table></div>' : empty('아직 들어온 기록이 없습니다.');
     var recentPanel = panel({ title: '최근 들어온 기록', sub: '일일점검 제외', actions: '<a class="btn ghost sm" href="#/records">기록 조회</a>', body: recentBody, flush: !!recent.length, cls: 'span-6' });
 
@@ -2344,7 +2365,7 @@
     var mx = panel({ title: '사업장 × 양식', sub: esc(P.from + ' ~ ' + P.to) + ' · 사업장 ' + sites.length + '곳 · 열 ' + M.cols.length + '개', actions: legendHtml(M.kinds),
       body: phoneSum + matrixHtml(M, { reqOnly: CS.reqOnly }), flush: true, cls: 'hq-col-panel' });
     // 미제출 사업장
-    var missBody = M.missing.length ? '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>사업장</th><th>미제출·반려</th><th class="num">최장 경과</th><th></th></tr></thead><tbody>' +
+    var missBody = M.missing.length ? '<div class="tbl-wrap"><table class="tbl rows2"><thead><tr><th>사업장</th><th>미제출·반려</th><th class="num">최장 경과</th><th></th></tr></thead><tbody>' +
       M.missing.map(function (m) {
         var forms = m.items.map(function (it) {
           var lab = it.col.kind === 'req' ? '요청 ' + it.col.req.title : it.col.label;
@@ -2358,8 +2379,10 @@
         var btn = '';
         if (canWrite() && regs.length) btn = '<a class="btn sm" href="' + esc(prefillHref({ forms: uniq(regs).join(','), sites: m.site.id, period: rk, title: missTitle(rk, P), due: addDays(today(), 3) })) + '">요청</a>';
         else if (canWrite() && openReq) btn = '<button type="button" class="btn sm" data-act="hq.siteRemind" data-id="' + esc(openReq.col.req.id) + '" data-site="' + esc(m.site.id) + '">독촉</button>';
-        return '<tr><td data-label="사업장"><a href="#/sites/' + esc(m.site.id) + '"><b>' + esc(m.site.id) + '</b> ' + esc(m.site.name) + '</a></td><td data-label="미제출·반려">' + forms + '</td>' +
-          '<td class="num" data-label="최장 경과">' + (m.overdue ? '<span class="t-neg">' + m.overdue + '일</span>' : '<span class="faint">—</span>') + '</td><td class="num">' + btn + '</td></tr>';
+        var odTxt = m.overdue ? '<span class="t-neg">' + m.overdue + '일</span>' : '<span class="faint">—</span>';
+        return '<tr><td class="r-main" data-label="사업장"><a href="#/sites/' + esc(m.site.id) + '"><b>' + esc(m.site.id) + '</b> ' + esc(m.site.name) + '</a>' +
+          '<span class="r-l2">' + (m.overdue ? '최장 ' + odTxt + ' 경과 · ' : '') + m.items.length + '건 · ' + forms + '</span></td><td data-label="미제출·반려">' + forms + '</td>' +
+          '<td class="num" data-label="최장 경과">' + odTxt + '</td><td class="num' + (btn ? ' r-key' : '') + '">' + btn + '</td></tr>';
       }).join('') + '</tbody></table></div>' : empty('이 기간에 기한이 지난 미제출·반려가 없습니다.');
     var missPanel = panel({ title: '미제출 사업장', sub: M.missing.length ? M.missing.length + '곳 · 기한경과 큰 순' : '', body: missBody, flush: !!M.missing.length, cls: 'span-8',
       actions: canWrite() && regMiss.length ? '<button type="button" class="btn sm" data-act="hq.colRequestAll">미제출 전체에 요청 보내기</button>' : '' });
@@ -2419,16 +2442,18 @@
     var tb = tabs('rq', [
       { value: 'open', label: '진행', count: lists.open.length }, { value: 'closed', label: '마감', count: lists.closed.length },
       { value: 'all', label: '전체', count: lists.all.length }, { value: 'notice', label: '공지', count: lists.notice.length }], RQ.tab, 'hq.reqTab');
-    var body = list.length ? '<div class="tbl-wrap"><table class="tbl hq-rq-tbl"><thead><tr><th>제목</th><th>종류</th><th>양식</th><th class="num">대상</th><th class="num">마감</th><th class="hq-rq-rate">회수율</th></tr></thead><tbody>' +
+    var body = list.length ? '<div class="tbl-wrap"><table class="tbl rows2 hq-rq-tbl"><thead><tr><th>제목</th><th>종류</th><th>양식</th><th class="num">대상</th><th class="num">마감</th><th class="hq-rq-rate">회수율</th></tr></thead><tbody>' +
       list.map(function (q) {
         var st = stats[q.id], notice = q.kind === 'notice';
         var miss = st.missing.slice(0, 4).map(function (m) { return m.site.id; }).join('·') + (st.missing.length > 4 ? ' 외 ' + (st.missing.length - 4) + '곳' : '');
-        return '<tr class="click" data-href="#/requests/' + esc(q.id) + '"><td data-label="제목"><b>' + esc(q.title) + '</b>' +
-          (st.missing.length && q.status === '진행' ? '<div class="li-sub">미' + (notice ? '열람' : '회수') + ' ' + esc(miss) + '</div>' : '<div class="li-sub mono">' + esc(q.id) + '</div>') + '</td>' +
+        var missTxt = st.missing.length && q.status === '진행' ? '미' + (notice ? '열람' : '회수') + ' ' + miss : '';
+        return '<tr class="click" data-href="#/requests/' + esc(q.id) + '"><td class="r-main" data-label="제목"><b>' + esc(q.title) + '</b>' +
+          (missTxt ? '<div class="li-sub hide-phone">' + esc(missTxt) + '</div>' : '<div class="li-sub mono hide-phone">' + esc(q.id) + '</div>') +
+          '<span class="r-l2">' + (notice ? '공지' : esc((q.forms || []).map(fshort).join(', '))) + ' · ' + (q.status === '마감' ? '마감됨' : dueText(q.due, q.status !== '진행')) + (missTxt ? ' · ' + esc(missTxt) : '') + '</span></td>' +
           '<td data-label="종류">' + (notice ? pill('공지', 'neu') : pill('양식 요청', 'acc')) + (q.status === '마감' ? ' ' + pill('마감', 'neu') : '') + '</td>' +
           '<td data-label="양식">' + (notice ? '<span class="faint">—</span>' : esc((q.forms || []).map(fshort).join(', '))) + '</td>' +
           '<td class="num" data-label="대상">' + st.total + '곳</td><td class="num" data-label="마감">' + dueText(q.due, q.status !== '진행') + '</td>' +
-          '<td data-label="' + (notice ? '열람률' : '회수율') + '"><div class="hq-rate">' + bar(st.rate, st.overdue && st.missing.length && q.status === '진행' ? 'neg' : '') +
+          '<td class="r-key" data-label="' + (notice ? '열람률' : '회수율') + '"><div class="hq-rate">' + bar(st.rate, st.overdue && st.missing.length && q.status === '진행' ? 'neg' : '') +
           '<span class="num">' + st.done + '/' + st.total + ' · ' + pctText(st.rate) + '</span></div></td></tr>';
       }).join('') + '</tbody></table></div>'
       : empty(RQ.tab === 'notice' ? '보낸 공지가 없습니다.' : RQ.tab === 'closed' ? '마감한 요청이 없습니다.' : '진행 중인 요청이 없습니다.', canWrite() ? '<a href="#/requests/new">새 요청 만들기</a>' : '');
@@ -2668,15 +2693,20 @@
     ], 0);
     var order = { 'mk-miss': 0, 'mk-returned': 1, 'mk-draft': 2, 'mk-wait': 3, 'mk-late': 4, 'mk-ok': 5, 'mk-confirmed': 6 };
     var rows = st.rows.slice().sort(function (a, b) { return (order[a.cls] - order[b.cls]) || a.site.id.localeCompare(b.site.id); });
-    var tbl = rows.length ? '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>사업장</th><th>열람</th><th>상태</th>' + (notice ? '' : '<th>제출 기록</th><th class="num">제출일</th>') + '<th class="num">독촉</th></tr></thead><tbody>' +
+    var tbl = rows.length ? '<div class="tbl-wrap"><table class="tbl rows2"><thead><tr><th>사업장</th><th>열람</th><th>상태</th>' + (notice ? '' : '<th>제출 기록</th><th class="num">제출일</th>') + '<th class="num">독촉</th></tr></thead><tbody>' +
       rows.map(function (r) {
         var m = MK[r.cls] || MK['mk-wait'];
         var stg = (r.parts || []).filter(function (p) { return p.rec && p.cls === 'mk-draft' && (p.rec.stageDone || []).length; })[0];
         var lab = notice ? (r.read ? '열람' : (r.cls === 'mk-miss' ? '미열람' : '대기')) : (r.cls === 'mk-wait' ? '마감 전' : r.cls === 'mk-miss' ? '미제출' : r.cls === 'mk-draft' ? (stg ? stageLabel(stg.rec).replace(/\(.*$/, '') : '작성중') : m.label);
         var tone = notice ? (r.read ? 'pos' : r.cls === 'mk-miss' ? 'neg' : 'neu') : m.tone;
         var links = (r.parts || []).filter(function (p) { return p.rec; }).map(function (p) { return '<a class="mono" href="#/rec/' + esc(p.rec.id) + '">' + esc(p.rec.id) + '</a>'; }).join('<br>');
-        return '<tr><td data-label="사업장"><a href="#/sites/' + esc(r.site.id) + '"><b>' + esc(r.site.id) + '</b> ' + esc(r.site.name) + '</a></td>' +
-          '<td data-label="열람">' + (r.read ? esc(relTime(r.read.at)) : '<span class="faint">—</span>') + '</td><td data-label="상태">' + pill(lab, tone) + '</td>' +
+        var recs1 = (r.parts || []).filter(function (p) { return p.rec; });
+        var l2 = [r.read ? '열람 ' + esc(relTime(r.read.at)) : '미열람'];
+        if (!notice && r.submittedAt) l2.push('제출 ' + esc(String(r.submittedAt).slice(5, 10).replace('-', '/')));
+        if (!notice && recs1.length) l2.push('<a class="mono" href="#/rec/' + esc(recs1[0].rec.id) + '">' + esc(recs1[0].rec.id) + '</a>' + (recs1.length > 1 ? ' 외 ' + (recs1.length - 1) + '건' : ''));
+        if (!r.done && q.lastRemindAt) l2.push('독촉 ' + esc(String(q.lastRemindAt).replace('T', ' ').slice(5, 10).replace('-', '/')));
+        return '<tr><td class="r-main" data-label="사업장"><a href="#/sites/' + esc(r.site.id) + '"><b>' + esc(r.site.id) + '</b> ' + esc(r.site.name) + '</a><span class="r-l2">' + l2.join(' · ') + '</span></td>' +
+          '<td data-label="열람">' + (r.read ? esc(relTime(r.read.at)) : '<span class="faint">—</span>') + '</td><td class="r-key" data-label="상태">' + pill(lab, tone) + '</td>' +
           (notice ? '' : '<td data-label="제출 기록">' + (links || '<span class="faint">—</span>') + '</td><td class="num" data-label="제출일">' + (r.submittedAt ? esc(String(r.submittedAt).slice(0, 10)) : '<span class="faint">—</span>') + '</td>') +
           '<td class="num" data-label="독촉">' + (!r.done && q.lastRemindAt ? esc(String(q.lastRemindAt).replace('T', ' ').slice(5, 16)) : '<span class="faint">—</span>') + '</td></tr>';
       }).join('') + '</tbody></table></div>' : empty('대상 사업장이 없습니다.');
@@ -3477,7 +3507,8 @@
 
   /* ======================= 기록 조회 #/records ======================= */
   var REC_TABS = [['', '전체'], ['작성중', '작성중'], ['제출', '제출'], ['확인', '확인'], ['반려', '반려']];
-  var RS = { st: null, sel: {}, limit: 100, extra: {}, root: null, list: [] };
+  var REC_PAGE = 50;   /* 긴 목록은 50행씩 + 더 보기(조치대장과 같은 규칙) */
+  var RS = { st: null, sel: {}, limit: REC_PAGE, extra: {}, root: null, list: [] };
   var QCACHE = typeof WeakMap === 'function' ? new WeakMap() : null;
 
   function factsText(f) {
@@ -3571,17 +3602,18 @@
     return '<tr class="click">' +
       '<td class="hq-ck hide-phone"><label><input type="checkbox" data-id="' + esc(r.id) + '"' + (RS.sel[r.id] ? ' checked' : '') + ' aria-label="' + esc(r.id) + ' 선택"></label></td>' +
       '<td class="mono hq-idc" data-label="기록번호" title="' + esc(r.id) + '"' + h + '>' + esc(r.id) + '</td>' +
-      '<td data-label="양식"' + h + '>' + esc(formShort(r.form)) + (r.shift ? ' <span class="faint">' + esc(r.shift) + '</span>' : '') + '</td>' +
+      '<td class="r-main" data-label="양식"' + h + '>' + esc(formShort(r.form)) + (r.shift ? ' <span class="faint">' + esc(r.shift) + '</span>' : '') +
+        '<span class="r-l2">' + esc(r.site + ' ' + siteName(r.site)) + ' · ' + esc(r.date || '') + (r.author ? ' · ' + esc(r.author) : '') + ' · <span class="mono">' + esc(r.id) + '</span></span></td>' +
       '<td data-label="사업장"' + h + '>' + siteLabel(r.site) + '</td>' +
       '<td class="num" data-label="작성일"' + h + '>' + esc(r.date || '') + '</td>' +
       '<td data-label="작성자"' + h + '>' + (r.author ? esc(r.author) : DASH) + '</td>' +
-      '<td data-label="상태"' + h + '>' + recPill(r) + '</td>' +
+      '<td class="r-key" data-label="상태"' + h + '>' + recPill(r) + '</td>' +
       '<td class="num" data-label="제출일"' + h + '>' + sub + '</td></tr>';
   }
   function recTable(rows) {
     if (!rows.length) return '';
     var allOn = rows.length && rows.every(function (r) { return RS.sel[r.id]; });
-    return '<div class="tbl-wrap scroll"><table class="tbl hq-rec-tbl"><thead><tr>' +
+    return '<div class="tbl-wrap scroll"><table class="tbl rows2 hq-rec-tbl"><thead><tr>' +
       '<th class="hq-ck hide-phone"><label><input type="checkbox" data-all="1"' + (allOn ? ' checked' : '') + ' aria-label="보이는 기록 모두 선택"></label></th>' +
       '<th>기록번호</th><th>양식</th><th>사업장</th><th class="num">작성일</th><th>작성자</th><th>상태</th><th class="num">제출일</th>' +
       '</tr></thead><tbody>' + rows.map(recRow).join('') + '</tbody></table></div>';
@@ -3617,13 +3649,13 @@
     slot(root, 'body').innerHTML = body;
     var more = rows.length > shown.length;
     var ft = slot(root, 'foot');
-    ft.innerHTML = more ? '<span class="muted num">' + num(rows.length) + '건 중 1–' + num(shown.length) + '</span><button class="btn sm" type="button" data-act="hq.rec.more">100건 더 보기</button>' :
+    ft.innerHTML = more ? '<span class="muted num">' + num(rows.length) + '건 중 1–' + num(shown.length) + '</span><button class="btn sm" type="button" data-act="hq.rec.more">' + num(Math.min(REC_PAGE, rows.length - shown.length)) + '건 더 보기</button>' :
       (rows.length ? '<span class="muted num">' + num(rows.length) + '건 모두 표시</span>' : '');
     ft.hidden = !rows.length;
   }
   function recSync() {
     replaceHash('#/records' + qs({ form: RS.st.form, site: RS.st.site, status: RS.st.status, from: RS.st.from, to: RS.st.to, q: RS.st.q }));
-    RS.limit = 100;
+    RS.limit = REC_PAGE;
     ensureOldRange();
     drawRecResults();
   }
@@ -3642,7 +3674,7 @@
   function viewRecords(main, args, query) {
     var q = parseQuery(query);
     RS.st = { form: q.form || '', site: q.site || '', status: q.status || '', from: q.from || '', to: q.to || '', q: q.q || '' };
-    RS.sel = {}; RS.limit = 100;
+    RS.sel = {}; RS.limit = REC_PAGE;
     var html = titleRow('기록 조회', recFinding()) + recToolbar(RS.st) +
       panel({ cls: 'hq-rec', title: '기록', sub: '', subSlot: 'count', actions: '', actSlot: 'bulk', flush: true, bodySlot: 'body', foot: ' ', footSlot: 'foot' });
     var root = RS.root = mount(main, 'records', html);
@@ -3769,7 +3801,7 @@
   Object.assign(App.actions, {
     'hq.rec.tab': function (el) { if (!RS.st) return; RS.st.status = el.getAttribute('data-value') || ''; recSync(); },
     'hq.rec.reset': function () { go('#/records'); },
-    'hq.rec.more': function () { RS.limit += 100; drawRecResults(); },
+    'hq.rec.more': function () { RS.limit += REC_PAGE; drawRecResults(); },
     'hq.rec.clear': function () {
       RS.sel = {};
       if (alive(RS.root)) Array.prototype.forEach.call(RS.root.querySelectorAll('.hq-ck input'), function (c) { c.checked = false; });
@@ -3911,12 +3943,12 @@
     return panel({ title: title, sub: keys.length ? '많은 순 ' + keys.length + '곳' : '', body: body, flush: !!keys.length });
   }
 
-  /* 5열: 조치(내용 + 번호·출처·담당 보조줄) · 사업장 · 수준 · 기한 · 상태. 휴대폰은 1줄 내용+상태, 2줄 사업장·담당·수준·기한 */
+  /* 5열: 조치(내용 2줄까지 + 담당·번호·출처 보조줄) · 사업장 · 수준 · 기한 · 상태. 휴대폰은 1줄 내용+상태, 2줄 사업장·담당·수준·기한 */
   function actRow(a) {
     var own = a.owner ? esc(a.owner) : '';
     return '<tr class="click" data-act="hq.act.open" data-id="' + esc(a.id) + '">' +
-      '<td data-label="" class="hq-act-title" title="' + esc(a.id) + '"><div class="ellipsis">' + esc(a.title || '(제목 없음)') + '</div>' +
-        '<div class="hq-l2 muted ellipsis"><span class="mono">' + esc(a.id) + '</span> · ' + actSrcText(a) + (own ? ' · 담당 ' + own : '') + '</div></td>' +
+      '<td data-label="" class="hq-act-title"><div class="hq-act-t" title="' + esc((a.title || '(제목 없음)') + ' · ' + a.id) + '">' + esc(a.title || '(제목 없음)') + '</div>' +
+        '<div class="hq-l2 muted ellipsis">' + (own ? '<span class="hq-own">담당 ' + own + '</span> · ' : '') + '<span class="mono">' + esc(a.id) + '</span> · ' + actSrcText(a) + '</div></td>' +
       '<td data-label="" class="hq-sitec" title="' + esc(a.site + ' ' + siteName(a.site)) + '"><div class="ellipsis">' + esc(siteName(a.site)) + (own ? '<span class="only-phone"> · ' + own + '</span>' : '') + '</div></td>' +
       '<td data-label="" class="hq-c-lv">' + levelPill(a.level) + '</td>' +
       '<td data-label="" class="nowrap hq-c-due">' + dueHtml(a) + '</td>' +
@@ -3949,7 +3981,7 @@
     }
     slot(root, 'body').innerHTML = body;
     var ft = slot(root, 'foot');
-    ft.innerHTML = rows.length > shown.length ? '<span class="muted num">' + num(rows.length) + '건 중 1–' + num(shown.length) + '</span><button class="btn sm" type="button" data-act="hq.act.more">50건 더 보기</button>' : '';
+    ft.innerHTML = rows.length > shown.length ? '<span class="muted num">' + num(rows.length) + '건 중 1–' + num(shown.length) + '</span><button class="btn sm" type="button" data-act="hq.act.more">' + num(Math.min(50, rows.length - shown.length)) + '건 더 보기</button>' : '';
     ft.hidden = !(rows.length > shown.length);
   }
   function actSync() {
@@ -4279,20 +4311,21 @@
     if (!list.length) {
       body = empty('등록된 사업장이 없습니다.', isAdmin() ? '<a href="#/sites/new">첫 사업장 추가</a>' : '관리자에게 사업장 등록을 요청하세요.');
     } else {
-      body = '<div class="tbl-wrap"><table class="tbl hq-sites-tbl"><thead><tr><th>코드</th><th>이름</th><th>고객사</th><th>유형</th><th>업무구성</th><th>근무조</th><th class="num">인원</th><th class="num">최근 입력</th><th>상태</th></tr></thead><tbody>' +
+      body = '<div class="tbl-wrap"><table class="tbl rows2 hq-sites-tbl"><thead><tr><th>코드</th><th>이름</th><th>고객사</th><th>유형</th><th>업무구성</th><th>근무조</th><th class="num">인원</th><th class="num">최근 입력</th><th>상태</th></tr></thead><tbody>' +
         list.map(function (s) {
           var h = ' data-href="#/sites/' + encodeURIComponent(s.id) + '"';
           var ppl = peopleOfSite(s.id).filter(function (p) { return p.active !== false; }).length;
           var ld = last[s.id], gap = ld ? daysBetween(ld, t) : null;
           var lastHtml = ld ? '<span class="num' + (s.status !== '종료' && gap >= 3 ? ' t-neg' : '') + '" title="' + esc(ld) + '">' + esc(relDay(ld)) + '</span>' : (s.status === '종료' ? DASH : '<span class="t-neg">입력 없음</span>');
           return '<tr class="click"' + h + '><td class="mono" data-label="코드">' + esc(s.id) + '</td>' +
-            '<td data-label="이름"><b>' + esc(s.name) + '</b>' + (s.managerEmail ? '' : ' <span class="pill warn" title="담당자 이메일 없음">메일 없음</span>') + '</td>' +
+            '<td class="r-main" data-label="이름"><b>' + esc(s.name) + '</b>' + (s.managerEmail ? '' : ' <span class="pill warn" title="담당자 이메일 없음">메일 없음</span>') +
+              '<span class="r-l2"><span class="mono">' + esc(s.id) + '</span>' + [s.client, s.type, num(ppl) + '명', (s.shifts || []).join('/'), s.status === '종료' ? '종료' : ''].filter(Boolean).map(function (x) { return ' · ' + esc(x); }).join('') + '</span></td>' +
             '<td data-label="고객사">' + (s.client ? esc(s.client) : DASH) + '</td>' +
             '<td data-label="유형">' + (s.type ? esc(s.type) : DASH) + '</td>' +
             '<td data-label="업무구성">' + ((s.tags || []).length ? esc((s.tags || []).join('·')) : DASH) + '</td>' +
             '<td data-label="근무조">' + ((s.shifts || []).length ? esc((s.shifts || []).join('/')) : DASH) + '</td>' +
             '<td class="num" data-label="인원">' + num(ppl) + '<span class="faint">명</span></td>' +
-            '<td class="num" data-label="최근 입력">' + lastHtml + '</td>' +
+            '<td class="num r-key" data-label="최근 입력">' + lastHtml + '</td>' +
             '<td data-label="상태">' + pill(s.status || '운영', s.status === '종료' ? 'neu' : 'pos') + '</td></tr>';
         }).join('') + '</tbody></table></div>';
     }
@@ -4383,14 +4416,16 @@
     var ppl = peopleOfSite(s.id).sort(function (a, b) { return (a.active === false) - (b.active === false) || String(a.name).localeCompare(String(b.name), 'ko'); });
     var on = ppl.filter(function (p) { return p.active !== false; }).length;
     var cw = canWrite();
-    var body = ppl.length ? '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>이름</th><th>직무</th><th>역할</th><th class="num">연락처 끝 4자리</th><th>상태</th>' + (cw ? '<th class="num"><span class="sr-only">관리</span></th>' : '') + '</tr></thead><tbody>' +
+    var body = ppl.length ? '<div class="tbl-wrap"><table class="tbl rows2"><thead><tr><th>이름</th><th>직무</th><th>역할</th><th class="num">연락처 끝 4자리</th><th>상태</th>' + (cw ? '<th class="num"><span class="sr-only">관리</span></th>' : '') + '</tr></thead><tbody>' +
       ppl.map(function (p) {
-        return '<tr' + (p.active === false ? ' class="hq-off"' : '') + '><td data-label="이름"><b>' + esc(p.name) + '</b></td><td data-label="직무">' + (p.job ? esc(p.job) : DASH) + '</td>' +
+        var l2 = [p.job, p.role, p.phone4 ? '끝자리 ' + p.phone4 : '', p.active === false ? '비활성' : ''].filter(Boolean).map(esc).join(' · ');
+        return '<tr' + (p.active === false ? ' class="hq-off"' : '') + '><td class="r-main" data-label="이름"><b>' + esc(p.name) + '</b><span class="r-l2">' + (l2 || '직무 미입력') + '</span></td><td data-label="직무">' + (p.job ? esc(p.job) : DASH) + '</td>' +
           '<td data-label="역할">' + (p.role ? esc(p.role) : DASH) + '</td><td class="num mono" data-label="연락처">' + (p.phone4 ? esc(p.phone4) : DASH) + '</td>' +
           '<td data-label="상태">' + (p.active === false ? pill('비활성', 'neu') : pill('재직', 'pos')) + '</td>' +
-          (cw ? '<td class="num" data-label="관리"><button class="btn ghost sm" type="button" data-act="hq.site.person" data-id="' + esc(p.id) + '">수정</button>' +
-            (p.active === false ? '<button class="btn ghost sm" type="button" data-act="hq.site.personOn" data-id="' + esc(p.id) + '">다시 사용</button>' :
-              '<button class="btn ghost sm" type="button" data-act="hq.site.personOff" data-id="' + esc(p.id) + '">비활성</button>') + '</td>' : '') + '</tr>';
+          (cw ? '<td class="num r-key" data-label="관리"><button class="btn ghost sm hide-phone" type="button" data-act="hq.site.person" data-id="' + esc(p.id) + '">수정</button>' +
+            '<button class="icon-btn only-phone" type="button" data-act="hq.site.personMenu" data-id="' + esc(p.id) + '" aria-label="' + esc(p.name) + ' 관리">' + (icon('more') || '⋯') + '</button>' +
+            (p.active === false ? '<button class="btn ghost sm hide-phone" type="button" data-act="hq.site.personOn" data-id="' + esc(p.id) + '">다시 사용</button>' :
+              '<button class="btn ghost sm hide-phone" type="button" data-act="hq.site.personOff" data-id="' + esc(p.id) + '">비활성</button>') + '</td>' : '') + '</tr>';
       }).join('') + '</tbody></table></div>' : empty('명부가 비어 있습니다. 일일점검의 인수자·교육 참석자 선택에 쓰입니다.', cw ? '<button class="btn ghost sm" type="button" data-act="hq.site.paste" data-site="' + esc(s.id) + '">엑셀에서 붙여넣기</button>' : '');
     var actions = cw ? '<button class="btn sm" type="button" data-act="hq.site.person" data-site="' + esc(s.id) + '">' + icon('plus') + '<span>한 명 추가</span></button>' +
       '<button class="btn sm" type="button" data-act="hq.site.paste" data-site="' + esc(s.id) + '">' + icon('clipboard') + '<span>엑셀 붙여넣기</span></button>' : '';
@@ -4636,6 +4671,17 @@
         if (p) personDlg(p.site, p);
       } else personDlg(el.getAttribute('data-site'));
     },
+    'hq.site.personMenu': function (el) {
+      var pid = el.getAttribute('data-id');
+      var p = (S().people || []).filter(function (x) { return x.id === pid; })[0];
+      if (!p) return;
+      var A = App.actions;
+      var items = [{ label: '수정', icon: 'edit', onClick: function () { A['hq.site.person'](el); } },
+        p.active === false ? { label: '다시 사용', icon: 'refresh', onClick: function () { A['hq.site.personOn'](el); } }
+          : { label: '비활성', icon: 'x', danger: true, onClick: function () { A['hq.site.personOff'](el); } }];
+      if (typeof App.menu === 'function') App.menu(el, items);
+      else A['hq.site.person'](el);
+    },
     'hq.site.personOff': function (el) {
       var pid = el.getAttribute('data-id'), p = (S().people || []).filter(function (x) { return x.id === pid; })[0];
       if (!p) return;
@@ -4681,14 +4727,15 @@
     if (!isAdmin()) { mount(main, 'users', titleRow('사용자') + empty('사용자 관리는 관리자만 할 수 있습니다.', '<a href="#/home">종합 현황으로</a>')); return; }
     var list = usersAll().sort(function (a, b) { return (a.active === false) - (b.active === false) || ['admin', 'hq', 'viewer'].indexOf(a.role) - ['admin', 'hq', 'viewer'].indexOf(b.role) || String(a.id).localeCompare(String(b.id)); });
     var myId = me().id;
-    var body = list.length ? '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>아이디</th><th>이름</th><th>이메일</th><th>역할</th><th class="num">마지막 로그인</th><th>상태</th><th class="num"><span class="sr-only">관리</span></th></tr></thead><tbody>' +
+    var body = list.length ? '<div class="tbl-wrap"><table class="tbl rows2"><thead><tr><th>아이디</th><th>이름</th><th>이메일</th><th>역할</th><th class="num">마지막 로그인</th><th>상태</th><th class="num"><span class="sr-only">관리</span></th></tr></thead><tbody>' +
       list.map(function (u) {
         return '<tr' + (u.active === false ? ' class="hq-off"' : '') + '><td class="mono" data-label="아이디">' + esc(u.id) + (u.id === myId ? ' <span class="pill acc">나</span>' : '') + '</td>' +
-          '<td data-label="이름"><b>' + esc(u.name || '') + '</b></td><td data-label="이메일">' + (u.email ? esc(u.email) : DASH) + '</td>' +
+          '<td class="r-main" data-label="이름"><b>' + esc(u.name || u.id) + '</b>' + (u.id === myId ? ' <span class="pill acc only-phone">나</span>' : '') +
+            '<span class="r-l2"><span class="mono">' + esc(u.id) + '</span> · ' + esc(ROLE_LABEL[u.role] || u.role || '') + ' · ' + (u.lastLoginAt ? '로그인 ' + esc(relDay(u.lastLoginAt)) : '로그인 없음') + (u.active === false ? ' · 중지' : '') + '</span></td><td data-label="이메일">' + (u.email ? esc(u.email) : DASH) + '</td>' +
           '<td data-label="역할">' + esc(ROLE_LABEL[u.role] || u.role || '') + '</td>' +
           '<td class="num" data-label="마지막 로그인"' + (u.lastLoginAt ? ' title="' + esc(fmtDT(u.lastLoginAt)) + '"' : '') + '>' + (u.lastLoginAt ? esc(relDay(u.lastLoginAt)) : '<span class="faint">없음</span>') + '</td>' +
           '<td data-label="상태">' + (u.active === false ? pill('중지', 'neu') : pill('사용', 'pos')) + '</td>' +
-          '<td class="num" data-label="관리"><button class="icon-btn" type="button" data-act="hq.user.menu" data-id="' + esc(u.id) + '" aria-label="' + esc(u.id) + ' 관리">' + (icon('more') || '⋯') + '</button></td></tr>';
+          '<td class="num r-key" data-label="관리"><button class="icon-btn" type="button" data-act="hq.user.menu" data-id="' + esc(u.id) + '" aria-label="' + esc(u.id) + ' 관리">' + (icon('more') || '⋯') + '</button></td></tr>';
       }).join('') + '</tbody></table></div>' : empty('본사 계정이 없습니다.', '<button class="btn ghost sm" type="button" data-act="hq.user.new">첫 계정 만들기</button>');
     mount(main, 'users', titleRow('사용자', usersFinding(list), '<button class="btn primary" type="button" data-act="hq.user.new">' + icon('plus') + '<span>사용자 추가</span></button>') +
       '<div class="grid align-start"><div class="span-8">' + panel({ title: '본사 계정', sub: '사업장 담당자는 계정 없이 사업장 링크로 들어옵니다', body: body, flush: !!list.length }) + '</div>' +
@@ -5129,7 +5176,7 @@
     }).join('') + '</ul>' }));
     var none = [['사업장', sites], ['기록', recs], ['조치', acts], ['요청', reqs]].filter(function (x) { return !x[1].length; }).map(function (x) { return x[0]; });
     var html = titleRow('검색', sub) + form +
-      (total ? '<div class="stack-16">' + blocks.join('') + '</div>' + (none.length ? '<p class="muted hq-mt">' + esc(none.join('·')) + '에서는 찾지 못했습니다.</p>' : '') :
+      (total ? '<div class="stack-16">' + blocks.join('') + '</div>' + (none.length ? '<p class="muted">' + esc(none.join('·')) + '에서는 찾지 못했습니다.</p>' : '') :
         (exact ? blocks.join('') : '') + panel({ title: '결과', body: empty('‘' + esc(q) + '’ 에 맞는 결과가 없습니다. 기록번호 일부(예: 261031)나 사업장 이름으로 찾아 보세요.') }));
     bindSearchForm(mount(main, 'search', html));
   }
