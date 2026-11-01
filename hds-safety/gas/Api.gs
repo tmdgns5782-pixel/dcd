@@ -39,7 +39,6 @@ var Api = (function () {
   var DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
   var EMAIL_RE = /^[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[^\s@<>()",;:]{2,}$/;
   var PERIOD_RE = /^(\d{4}|\d{4}-(0[1-9]|1[0-2])|\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])|\d{4}-Q[1-4]|\d{4}-H[12])$/;
-  var BLOCK_MIME = /^(text\/html|application\/(x-)?javascript|text\/javascript|application\/x-msdownload|application\/x-sh|application\/xhtml\+xml)$/;
   var MAX_PAYLOAD = 40 * 1024 * 1024;
   var MAX_DATA_CHARS = 5 * 1024 * 1024;
   var LIM = { title: 200, memo: 4000, name: 50, short: 30, id: 60 };
@@ -267,11 +266,114 @@ var Api = (function () {
     return { id: f.id, site: f.site, recordId: f.recordId, name: f.name, mime: f.mime, size: f.size, kind: f.kind, createdAt: f.createdAt, createdBy: f.createdBy };
   }
 
-  function indexRow(r) {
+  function indexRow(r, me) {
     var o = {};
     REC_INDEX_KEYS.forEach(function (k) { o[k] = r[k] === undefined ? (k === 'stageDone' ? [] : (k === 'facts' ? {} : '')) : r[k]; });
     if (r.deleted) o.deleted = true;
+    if (me && me.kind === 'site') {
+      var parts = hqParts(r.form);
+      if (parts && parts.hasPriv) o.facts = stripFacts(o.facts, parts, true);
+    }
     return o;
+  }
+
+  /*
+   * 본사 전용 단계(hqOnlyStage: FD stage.role==='hq' 또는 담당이 '본사'로 시작)의 칸.
+   * - 쓰기: 사업장 세션은 이 칸을 바꿀 수 없다(저장·제출 때 기존 값으로 되돌림).
+   * - 읽기: 사업장 세션에는 '비공개' 칸을 내려보내지 않는다 —
+   *   본사 전용 단계의 민감 칸(sensitive), 그리고 HQ_PRIVATE_STAGES 의 단계 전체
+   *   (F10 작업중지권: 사후관리·D+30 불리한 처우 확인은 본사가 행사자에게 직접 확인하는 내용이라 관리감독자·사업장이 보면 안 된다).
+   *   F01 본사 검토·F03 본사 처리처럼 사업장에 돌려주는 회신은 그대로 보인다.
+   */
+  var HQ_PRIVATE_STAGES = { F10: ['s3', 's4'] };
+  var HQ_PARTS = {};
+  function hqParts(code) {
+    if (!code) return null;
+    if (has(HQ_PARTS, code)) return HQ_PARTS[code];
+    var def = null;
+    try { def = Db.form(code); } catch (e) { def = null; }
+    var out = null;
+    if (def && Array.isArray(def.stages) && def.stages.length) {
+      var secs = {};
+      (def.sections || []).forEach(function (s) { if (s && s.id) secs[s.id] = s; });
+      var o = { keys: [], fields: [], secs: [], privKeys: [], privFields: [], privSecs: [], hasPriv: false };
+      var priv = HQ_PRIVATE_STAGES[def.code] || [];
+      def.stages.forEach(function (st) {
+        if (!hqOnlyStage(st)) return;
+        var whole = priv.indexOf(st.id) >= 0;
+        (st.sections || []).forEach(function (sid) {
+          var sec = secs[sid];
+          if (!sec) return;
+          o.secs.push(sid);
+          if (whole) o.privSecs.push(sid);
+          if (sec.type === 'fields') {
+            (sec.fields || []).forEach(function (f) {
+              if (!f || !f.id) return;
+              o.keys.push(f.id);
+              o.fields.push(f.id);
+              if (whole || f.sensitive) { o.privKeys.push(f.id); o.privFields.push(f.id); }
+            });
+          } else {
+            o.keys.push(sid, sid + '_paper');
+            if (whole) o.privKeys.push(sid, sid + '_paper');
+          }
+        });
+      });
+      o.hasPriv = o.privKeys.length > 0;
+      if (o.keys.length) out = o;
+    }
+    HQ_PARTS[code] = out;
+    return out;
+  }
+
+  /** facts 에서 본사 전용(priv=true 면 비공개만) 칸·섹션 값을 뺀 사본. */
+  function stripFacts(facts, parts, priv) {
+    if (!isObj(facts)) return facts;
+    var f = clone(facts);
+    var fields = priv ? parts.privFields : parts.fields;
+    var secs = priv ? parts.privSecs : parts.secs;
+    if (isObj(f.v)) fields.forEach(function (id) { delete f.v[id]; delete f.v[id + '#n']; });
+    if (isObj(f.t)) secs.forEach(function (sid) { delete f.t[sid]; });
+    if (isObj(f.k)) secs.forEach(function (sid) { delete f.k[sid]; });
+    return f;
+  }
+
+  /** 사업장 세션에 내려보낼 기록(비공개 칸 제외). 본사면 그대로. */
+  function recFor(r, me) {
+    if (!r || !me || me.kind !== 'site') return r;
+    var parts = hqParts(r.form);
+    if (!parts || !parts.hasPriv) return r;
+    var o = clone(r);
+    if (isObj(o.data)) parts.privKeys.forEach(function (k) { delete o.data[k]; });
+    o.facts = stripFacts(o.facts, parts, true);
+    return o;
+  }
+
+  /**
+   * 사업장 세션이 보낸 기록: 본사 전용 단계 칸은 기존 값으로 되돌린다(새 값은 무시).
+   * facts 도 같은 칸은 기존 값으로(사업장 화면은 그 칸을 모르므로 빠진 채로 계산해 보낸다).
+   */
+  function keepHqParts(rec, cur, me) {
+    if (!me || me.kind !== 'site') return;
+    var parts = hqParts(rec.form);
+    if (!parts) return;
+    var old = (cur && isObj(cur.data)) ? cur.data : {};
+    parts.keys.forEach(function (k) {
+      if (has(old, k)) rec.data[k] = clone(old[k]); else delete rec.data[k];
+    });
+    var of = (cur && isObj(cur.facts)) ? cur.facts : {};
+    var nf = isObj(rec.facts) ? rec.facts : (rec.facts = {});
+    function put(bucket, key) {
+      var src = isObj(of[bucket]) ? of[bucket] : {};
+      if (has(src, key)) {
+        if (!isObj(nf[bucket])) nf[bucket] = {};
+        nf[bucket][key] = clone(src[key]);
+      } else if (isObj(nf[bucket])) {
+        delete nf[bucket][key];
+      }
+    }
+    parts.fields.forEach(function (id) { put('v', id); put('v', id + '#n'); });
+    parts.secs.forEach(function (sid) { put('t', sid); put('k', sid); });
   }
 
   /** 설정에서 비밀 값은 빼고, 사업장 세션에는 본사 수신 메일 목록을 숨긴다. */
@@ -298,6 +400,24 @@ var Api = (function () {
     if (ss.indexOf('*') < 0 && ss.indexOf(siteId) < 0) return false;
     if (r.openAt && String(r.openAt) > now()) return false;
     return true;
+  }
+
+  /**
+   * 사업장 세션에 내려보낼 요청: 다른 사업장 목록·독촉 이력(=다른 사업장 미제출 여부)·본사 담당자 이름은 뺀다.
+   * sites 는 전체 요청이면 ['*'], 아니면 [자기 사업장]. remind.sent 는 자기 사업장 값만.
+   */
+  function reqForSite(r, siteId) {
+    var o = clone(r);
+    var ss = Array.isArray(r.sites) ? r.sites : [];
+    o.sites = ss.indexOf('*') >= 0 ? ['*'] : [siteId];
+    var rm = isObj(r.remind) ? r.remind : {};
+    var mine = {};
+    if (isObj(rm.sent) && has(rm.sent, siteId)) mine[siteId] = rm.sent[siteId];
+    o.remind = { sent: mine };
+    if (rm.beforeDays !== undefined) o.remind.beforeDays = rm.beforeDays;
+    o.createdBy = '본사';
+    delete o.lastRemindAt;
+    return o;
   }
 
   /* ======================================================================
@@ -330,7 +450,8 @@ var Api = (function () {
     var sites = Db.all('sites').filter(function (s) { return mine(s.id); }).map(function (s) { return pubSite(s, me); });
     var people = Db.all('people').filter(function (x) { return mine(x.site); });
     var users = isAdmin(me) ? Db.all('users').map(pubUser) : [];
-    var requests = Db.all('requests').filter(function (r) { return !isSite || reqVisibleToSite(r, me.site); });
+    var requests = Db.all('requests').filter(function (r) { return !isSite || reqVisibleToSite(r, me.site); })
+      .map(function (r) { return isSite ? reqForSite(r, me.site) : r; });
     var reads = Db.all('reads').filter(function (r) { return mine(r.site); });
     var acts = Db.all('acts').filter(function (a) { return !a.deleted && mine(a.site); });
     var index = Db.all('records').filter(function (r) {
@@ -338,7 +459,7 @@ var Api = (function () {
       if (r.status === '작성중' || r.status === '반려') return true;
       var d = r.date || String(r.updatedAt || '').slice(0, 10);
       return d >= since;
-    }).map(indexRow);
+    }).map(function (r) { return indexRow(r, me); });
 
     var urls = { app: appUrl() };
     if (me.kind === 'hq') {
@@ -387,11 +508,11 @@ var Api = (function () {
       if (from && d < from) return false;
       if (to && d > to) return false;
       return true;
-    }).map(indexRow);
+    }).map(function (r) { return indexRow(r, me); });
   }
 
   function hRecordsGet(p, me) {
-    return loadRecord(p.id, me);
+    return recFor(loadRecord(p.id, me), me);
   }
 
   function hRecordsBulkGet(p, me) {
@@ -400,7 +521,7 @@ var Api = (function () {
     ids.forEach(function (id) {
       var r = Db.get('records', id);
       if (!r || !Auth.canSite(me, r.site) || (r.deleted && me.kind === 'site')) return;
-      out.push(r);
+      out.push(recFor(r, me));
     });
     return out;
   }
@@ -484,10 +605,159 @@ var Api = (function () {
     if (src.facts !== undefined) rec.facts = plainObj(src.facts, '분석 요약', 400000);
     if (!isObj(rec.facts)) rec.facts = {};
     if (!cur) rec.formVersion = def.version || '';
+    keepHqParts(rec, cur, me);
     if (!Array.isArray(rec.stageDone)) rec.stageDone = [];
     rec.period = periodFor(def, rec, src.period);
     rec.updatedAt = now();
     return { cur: cur, rec: rec, def: def };
+  }
+
+  /* ----------------------------------------------------------------------
+   * 서버 쪽 입력 검사 — 화면 검사(App.engine.validate)를 API 직접 호출로 건너뛰지 못하게 핵심만 다시 본다.
+   * 화면보다 엄하지 않게(화면이 통과시키는 기록은 여기서도 통과) 같은 규칙의 부분집합만 쓴다.
+   *  - 저장·제출 모두: 숫자·날짜·일시·시각 칸의 값 모양(숫자 칸에 글자, 날짜 칸에 아무 글자 거부).
+   *  - 제출만: 필수 칸(보이는 칸만, showIf), 숫자 최소·최대, 표 최소 행·행별 필수 칸, 점검표 판정·사유, 사진 최소 장수.
+   *    단계형 양식은 제출하는 단계까지의 섹션만.
+   * -------------------------------------------------------------------- */
+
+  var TYPE_RE = {
+    date: /^\d{4}-\d{2}-\d{2}$/,
+    datetime: /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2})?$/,
+    time: /^\d{2}:\d{2}(:\d{2})?$/
+  };
+  var NUM_STR = /^-?\d+(\.\d+)?$/;
+
+  function emptyVal(v) { return v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0); }
+  function numOf(v) {
+    if (typeof v === 'number') return isFinite(v) ? v : null;
+    if (typeof v === 'string' && NUM_STR.test(v.trim())) return Number(v.trim());
+    return null;
+  }
+
+  /** 화면 엔진 showOk 와 같은 규칙. tags = 사업장 직무 태그(없으면 모든 항목을 보인다). */
+  function showOkSrv(cond, data, tags) {
+    if (!cond) return true;
+    data = data || {};
+    if (cond.siteTag) return !tags.length || tags.indexOf(cond.siteTag) >= 0;
+    if (cond.field) {
+      var v = data[cond.field];
+      var alt = v === true ? '예' : v === false ? '아니오' : v === '예' ? true : v === '아니오' ? false : v;
+      if (cond.in) {
+        if (Array.isArray(v)) return v.some(function (x) { return cond.in.indexOf(x) >= 0; });
+        return cond.in.indexOf(v) >= 0 || cond.in.indexOf(alt) >= 0;
+      }
+      if (cond.notIn) return Array.isArray(v) ? !v.some(function (x) { return cond.notIn.indexOf(x) >= 0; }) : (cond.notIn.indexOf(v) < 0 && !emptyVal(v));
+      var n = (v === '' || v === null || v === undefined || v === true || v === false || isNaN(Number(v))) ? null : Number(v);
+      if (cond.gte !== undefined) return n !== null && n >= cond.gte;
+      if (cond.lte !== undefined) return n !== null && n <= cond.lte;
+      if (cond.eq !== undefined) return v === cond.eq || alt === cond.eq;
+      if (cond.notEmpty) return !emptyVal(v);
+    }
+    return true;
+  }
+
+  /** 값 모양 검사(빈 값은 통과). → 오류 문장 또는 '' */
+  function typeErr(f, v, where) {
+    if (emptyVal(v) || !f || f.type === 'computed') return '';
+    var label = where + (f.label || f.id);
+    if (f.type === 'number') {
+      if (numOf(v) === null) return label + ': 숫자를 입력하세요';
+    } else if (TYPE_RE[f.type]) {
+      if (typeof v !== 'string' || !TYPE_RE[f.type].test(v)) {
+        return label + ': ' + (f.type === 'date' ? '날짜(YYYY-MM-DD)' : f.type === 'time' ? '시각(HH:mm)' : '일시(YYYY-MM-DDTHH:mm)') + ' 형식이 아닙니다';
+      }
+    }
+    return '';
+  }
+
+  /** 제출 때 칸 하나 검사(필수·숫자 범위). */
+  function fieldErrs(f, v, where, out) {
+    if (!f || !f.id) return;
+    var label = where + (f.label || f.id);
+    var te = typeErr(f, v, where);
+    if (te) { out.push(te); return; }
+    if (f.type !== 'computed' && f.required && emptyVal(v)) { out.push(label + ': 필수 입력입니다'); return; }
+    if (f.type === 'number' && !emptyVal(v)) {
+      var n = numOf(v);
+      if (f.min !== undefined && f.min !== null && n < f.min) out.push(label + ': ' + f.min + ' 이상이어야 합니다');
+      if (f.max !== undefined && f.max !== null && n > f.max) out.push(label + ': ' + f.max + ' 이하여야 합니다');
+    }
+  }
+
+  /**
+   * 기록 검사. submitIdx: 제출이면 단계 번호(단계 없는 양식은 0), 임시저장이면 -1(값 모양만).
+   * → 오류 문장 배열
+   */
+  function recordErrs(def, rec, submitIdx, me, prev) {
+    var out = [];
+    var d = isObj(rec.data) ? rec.data : {};
+    var submit = submitIdx >= 0;
+    // 임시저장은 이번에 바뀐 값만 모양을 본다(예전에 저장된 값 때문에 자동 저장이 막히지 않게). 제출은 전부.
+    var pd = !submit && prev && isObj(prev.data) ? prev.data : null;
+    function same(k) { return !!pd && JSON.stringify(pd[k]) === JSON.stringify(d[k]); }
+    var site = null;
+    try { site = Db.get('sites', rec.site); } catch (e) { site = null; }
+    var tags = site && Array.isArray(site.tags) ? site.tags : [];
+    var secStage = {};
+    (def.stages || []).forEach(function (st, i) { (st.sections || []).forEach(function (sid) { if (secStage[sid] === undefined) secStage[sid] = i; }); });
+    var hq = me && me.kind === 'site' ? hqParts(def.code) : null;
+    function inScope(s) {
+      if (!submit) return false;
+      if (hq && hq.secs.indexOf(s.id) >= 0) return false;
+      return !def.stages || (secStage[s.id] || 0) <= submitIdx;
+    }
+    if (submit) {
+      if (!String(rec.author || '').trim()) out.push('작성자: 필수 입력입니다');
+      if (def.frequency && def.frequency.shifts && !rec.shift) out.push('근무조: 고르세요');
+    }
+    (def.header || []).forEach(function (f) {
+      if (!f || !f.id) return;
+      if (submit) { if (showOkSrv(f.showIf, d, tags)) fieldErrs(f, d[f.id], '', out); }
+      else if (!same(f.id)) { var e0 = typeErr(f, d[f.id], ''); if (e0) out.push(e0); }
+    });
+    (def.sections || []).forEach(function (s) {
+      if (!s || !s.id) return;
+      var scope = inScope(s);
+      var title = (s.title || '') ? s.title + ' ' : '';
+      if (s.type === 'fields') {
+        (s.fields || []).forEach(function (f) {
+          if (!f || !f.id) return;
+          if (scope && showOkSrv(f.showIf, d, tags)) fieldErrs(f, d[f.id], '', out);
+          else if (submit || !same(f.id)) { var e1 = typeErr(f, d[f.id], ''); if (e1) out.push(e1); }
+        });
+      } else if (s.type === 'table') {
+        var rows = Array.isArray(d[s.id]) ? d[s.id] : [];
+        if (scope && (s.minRows || 0) > rows.length) out.push((s.title || '표') + ': ' + s.minRows + '행 이상 입력하세요');
+        if (!submit && same(s.id)) return;
+        rows.forEach(function (row, i) {
+          if (!isObj(row)) return;
+          (s.columns || []).forEach(function (c) {
+            var where = (s.title || '표') + ' ' + (i + 1) + '행 ';
+            if (scope) fieldErrs(c, row[c.id], where, out);
+            else { var e2 = typeErr(c, row[c.id], where); if (e2) out.push(e2); }
+          });
+        });
+      } else if (s.type === 'checklist' && scope) {
+        var got = isObj(d[s.id]) ? d[s.id] : {};
+        (s.items || []).forEach(function (it) {
+          if (!it || !it.code || !showOkSrv(it.showIf, d, tags)) return;
+          var x = got[it.code];
+          if (!isObj(x) || !x.r) out.push(title + it.code + ': 판정을 고르세요');
+          else if ((s.noteRequiredOn || []).indexOf(x.r) >= 0 && !String(x.note || '').trim()) out.push(title + it.code + ": '" + x.r + "'이면 내용(사유)을 적어야 합니다");
+        });
+      } else if (s.type === 'photos' && scope) {
+        var ph = Array.isArray(d[s.id]) ? d[s.id] : [];
+        if ((s.minCount || 0) > ph.length) out.push((s.title || '사진') + ': 사진 ' + s.minCount + '장 이상 필요합니다');
+      }
+    });
+    return out;
+  }
+
+  function checkRecord(def, rec, submitIdx, me, prev) {
+    var errs = recordErrs(def, rec, submitIdx, me, prev);
+    if (!errs.length) return;
+    var head = submitIdx >= 0 ? '제출할 수 없습니다. 입력이 빠졌거나 맞지 않는 칸이 ' : '저장할 수 없습니다. 형식이 맞지 않는 칸이 ';
+    fail('INVALID', head + errs.length + '곳 있습니다: ' + errs.slice(0, 5).join(' · ') + (errs.length > 5 ? ' 외 ' + (errs.length - 5) + '곳' : ''));
   }
 
   /** 기록 번호 발급(잠금 안). 본사 대리 입력은 끝이 H1, H2… */
@@ -515,12 +785,13 @@ var Api = (function () {
     var isNew = !x.cur;
     // 리드 결정: 제출된 기록은 임시저장으로 몰래 바뀌지 않는다 — [수정 제출](records.submit, rev+1)로만 고친다.
     if (!isNew && x.cur.status === '제출') fail('CONFLICT', '제출된 기록은 임시저장할 수 없습니다. 고친 내용은 [수정 제출]로 반영하세요');
+    checkRecord(x.def, rec, -1, me, x.cur);
     if (isNew) rec.id = newRecordId(x.def, rec.site, rec.date, me);
     writeRecord(rec, isNew);
     if (rec.status !== '작성중' || rec.stageDone.length) views('onRecord', rec, ctx);
     // 자동 임시저장(3초마다)이 감사 기록을 채우지 않도록 새로 만들 때만 남긴다. 제출·검토·삭제는 각 핸들러가 남긴다.
     if (isNew) audit(ctx, 'record', rec.id, formName(x.def) + ' 새로 작성(임시저장)');
-    return { record: rec };
+    return { record: recFor(rec, me) };
   }
 
   /** 단계형 양식: 단계 하나를 끝낸 것으로 표시하고 상태를 정한다. → 끝낸 단계 정의 */
@@ -549,7 +820,7 @@ var Api = (function () {
     }
     var idx = ids.indexOf(sid);
     if (idx < 0) fail('INVALID', '이 양식에 없는 단계입니다: ' + sid);
-    if (me && me.kind === 'site' && hqOnlyStage(stages[idx]) && done.indexOf(sid) < 0) fail('FORBIDDEN', '본사가 쓰는 단계입니다(' + (stages[idx].label || sid) + '). 사업장에서는 제출할 수 없습니다');
+    if (me && me.kind === 'site' && hqOnlyStage(stages[idx])) fail('FORBIDDEN', '본사가 쓰는 단계입니다(' + (stages[idx].label || sid) + '). 사업장에서는 제출할 수 없습니다');
     if (done.indexOf(sid) < 0) {
       for (var j = 0; j < idx; j++) {
         if (done.indexOf(ids[j]) < 0) fail('INVALID', '앞 단계(' + (stages[j].label || ids[j]) + ')를 먼저 제출하세요');
@@ -670,6 +941,56 @@ var Api = (function () {
     return out;
   }
 
+  /**
+   * 수정·재제출로 더는 후보가 아닌 자동 조치 정리(잠금 안). 후보 목록(p.acts)을 배열로 받았을 때만.
+   * - 이 기록에서 자동 등록된 조치(key '<기록번호>#<섹션>#…', 섹션이 조치를 만드는 점검표·표) 중 이번 후보에 없는 것:
+   *   손대지 않은 '등록' 상태면 삭제(이력 남김), 사람이 손댄 열린 조치(조치중·보류)는 이력에 안내만 한 번 남긴다.
+   * - 사업장 세션은 본사 전용 단계 섹션의 조치를 건드리지 않는다(그 섹션은 사업장 화면이 후보를 만들지 않는다).
+   * → 바뀐 조치 목록
+   */
+  function pruneActs(def, rec, cands, me) {
+    if (!Array.isArray(cands)) return [];
+    var actSecs = {};
+    (def.sections || []).forEach(function (s) {
+      if (s && s.id && s.act && (s.type === 'checklist' || s.type === 'table')) actSecs[s.id] = true;
+    });
+    var parts = me.kind === 'site' ? hqParts(def.code) : null;
+    if (parts) parts.secs.forEach(function (sid) { delete actSecs[sid]; });
+    var keep = {};
+    cands.forEach(function (c) {
+      if (!isObj(c)) return;
+      var raw = clip(c.key, 300);
+      if (raw) keep[normKey(raw, rec.id)] = true;
+    });
+    var head = rec.id + '#';
+    var NOTE_GONE = '원 항목을 고쳐 다시 제출 — 더는 조치 대상(주의·불량 등)이 아니어서 자동 정리(' + rec.id + ' rev ' + rec.rev + ')';
+    var NOTE_KEEP = '원 항목을 고쳐 다시 제출 — 이번 제출에서는 조치 대상이 아님. 진행 중이라 그대로 둠(' + rec.id + ')';
+    var t = now();
+    var out = [];
+    Db.all('acts', { fresh: true }).forEach(function (a) {
+      if (a.deleted || a.srcId !== rec.id) return;
+      var key = String(a.key || '');
+      if (key.indexOf(head) !== 0 || keep[key]) return;
+      var sec = key.slice(head.length).split('#')[0];
+      if (!actSecs[sec]) return;
+      var hist = Array.isArray(a.history) ? a.history : [];
+      var nx = clone(a);
+      if (a.status === '등록') {
+        nx.deleted = true;
+        nx.history = hist.concat([histEntry(me, a.status, a.status, NOTE_GONE)]);
+      } else if (ACT_OPEN.indexOf(a.status) >= 0) {
+        if (hist.some(function (h) { return h && String(h.note || '').indexOf('원 항목을 고쳐 다시 제출 — 이번 제출에서는') === 0; })) return;
+        nx.history = hist.concat([histEntry(me, a.status, a.status, NOTE_KEEP)]);
+      } else {
+        return; // 완료·확인·고객사 이관은 그대로
+      }
+      nx.updatedAt = t;
+      out.push(nx);
+    });
+    if (out.length) Db.upsertMany('acts', out);
+    return out;
+  }
+
   function hRecordsSubmit(p, me, ctx) {
     var x = prepRecord(p, me);
     var rec = x.rec, def = x.def, cur = x.cur;
@@ -680,25 +1001,39 @@ var Api = (function () {
     var wasReturned = cur && cur.status === '반려';
     if (def.stages && def.stages.length) {
       stage = applyStage(def, rec, p.stageId, me);
+      checkRecord(def, rec, Math.max(0, def.stages.indexOf(stage)), me);
     } else {
+      checkRecord(def, rec, 0, me);
       rec.status = '제출';
       rec.submittedAt = rec.submittedAt || now();
+    }
+    // 반려 뒤 다시 제출하면 제출 시각을 지금으로(검토함 정렬·'가장 오래된 제출'·취합 현황판 기한 판정은 받아들일 수 있는 마지막 제출 기준).
+    // 최초 제출 시각은 감사 기록(log)에 남긴다.
+    var firstSubmittedAt = '';
+    if (wasReturned && rec.status === '제출') {
+      firstSubmittedAt = cur.submittedAt || '';
+      rec.submittedAt = now();
     }
     rec.rev = (Number(cur && cur.rev) || 0) + 1;
     rec.updatedAt = now();
     writeRecord(rec, isNew);
     var acts = upsertActs(def, rec, p.acts, me);
+    var pruned = cur ? pruneActs(def, rec, p.acts, me) : [];
     views('onRecord', rec, ctx);
     acts.forEach(function (a) { views('onAct', a, ctx); });
+    pruned.forEach(function (a) { views('onAct', a, ctx); });
 
     var what = formName(def) + (stage ? ' ' + (stage.label || stage.id) + ' 단계' : '') + (wasReturned ? ' 다시 제출' : ' 제출');
-    audit(ctx, 'submit', rec.id, what + ' (rev ' + rec.rev + (acts.length ? ', 조치 ' + acts.length + '건' : '') + ')');
+    var gone = pruned.filter(function (a) { return a.deleted; }).length;
+    audit(ctx, 'submit', rec.id, what + ' (rev ' + rec.rev + (acts.length ? ', 조치 ' + acts.length + '건' : '') + (gone ? ', 해소된 자동 조치 ' + gone + '건 정리' : '') +
+      (firstSubmittedAt ? ', 이전 제출 ' + String(firstSubmittedAt).replace('T', ' ').slice(0, 16) : '') + ')');
     var done = clone(rec);
     later(ctx, 'Dispatch.onRecordSubmitted', function () {
       var D = mod('Dispatch');
       if (D && typeof D.onRecordSubmitted === 'function') D.onRecordSubmitted(done, me, prev);
     });
-    return { record: rec, acts: acts };
+    // prunedActs: 이번 재제출로 정리(삭제 표시)되거나 안내 이력이 붙은 자동 조치 — 화면 캐시 갱신용(App.putAct 가 deleted 를 지운다).
+    return { record: recFor(rec, me), acts: acts, prunedActs: pruned };
   }
 
   function hRecordsReview(p, me, ctx) {
@@ -747,6 +1082,9 @@ var Api = (function () {
     return { record: r };
   }
 
+  /** 본사에 한 번이라도 보고된(반려 포함) 기록은 사업장이 지울 수 없는 양식 — 사고(F04)·작업중지(F10). */
+  var SITE_NO_DELETE_FORMS = ['F04', 'F10'];
+
   function hRecordsDelete(p, me, ctx) {
     Db.all('records', { fresh: true });
     var r = clone(loadRecord(p.id, me));
@@ -756,8 +1094,11 @@ var Api = (function () {
       if (r.status !== '작성중' && r.status !== '반려') {
         fail('FORBIDDEN', '제출한 기록은 사업장에서 지울 수 없습니다. 본사에 삭제를 요청하세요');
       }
-      if (r.status === '작성중' && (r.stageDone || []).length) {
-        fail('FORBIDDEN', '단계 보고가 올라간 기록은 사업장에서 지울 수 없습니다. 본사에 삭제를 요청하세요');
+      if ((r.stageDone || []).length) {
+        fail('FORBIDDEN', '단계 보고가 올라간 기록은 ' + (r.status === '반려' ? '반려됐더라도 ' : '') + '사업장에서 지울 수 없습니다. 고쳐서 다시 보고하거나 본사에 삭제를 요청하세요');
+      }
+      if (r.status === '반려' && SITE_NO_DELETE_FORMS.indexOf(r.form) >= 0) {
+        fail('FORBIDDEN', '본사에 보고된 사고·작업중지 기록은 사업장에서 지울 수 없습니다. 고쳐서 다시 제출하거나 본사에 삭제를 요청하세요');
       }
     } else {
       if (!isHqWriter(me)) forbid(me, r.id, '기록 삭제 시도(열람 권한)', '열람 권한으로는 지울 수 없습니다');
@@ -842,7 +1183,16 @@ var Api = (function () {
     var noPhoto = photo ? '' : str(p.noPhotoReason, 200, '사진 없음 사유');
     if (noPhoto) note = (note ? note + ' · ' : '') + '사진 없음 사유: ' + noPhoto;
     if (p.owner !== undefined && p.owner !== null) a.owner = str(p.owner, LIM.name, '담당자');
-    if (p.due) a.due = ymd(p.due, '기한');
+    var oldDue = a.due || '';
+    if (p.due) {
+      var nd = ymd(p.due, '기한');
+      if (nd !== oldDue) {
+        // 기한은 본사가 정한다 — 사업장이 기한경과 표시를 스스로 없애지 못하게.
+        if (me.kind === 'site') forbid(me, a.id, '조치 기한 변경 시도(' + oldDue + ' → ' + nd + ')', '조치 기한은 본사만 바꿀 수 있습니다. 기한 조정이 필요하면 본사에 요청하세요');
+        a.due = nd;
+        note = (note ? note + ' · ' : '') + '기한 ' + (oldDue || '없음') + ' → ' + nd;
+      }
+    }
     var from = a.status;
     applyTransition(a, to, note, photo, me);
     Db.upsert('acts', a);
@@ -880,17 +1230,26 @@ var Api = (function () {
       var changed = ['title', 'detail', 'level', 'type', 'due', 'owner', 'srcItem', 'photoBefore', 'photoAfter'].filter(function (k) {
         return String(before[k] || '') !== String(a[k] || '');
       });
+      // 위험 수준·기한은 본사가 정한다(사업장이 기한경과·높음 표시를 스스로 없애지 못하게).
+      var hqOnly = changed.filter(function (k) { return k === 'level' || k === 'due'; });
+      if (hqOnly.length && me.kind === 'site') {
+        forbid(me, a.id, '조치 ' + hqOnly.join('·') + ' 변경 시도', '조치의 위험 수준·기한은 본사만 바꿀 수 있습니다. 조정이 필요하면 본사에 요청하세요');
+      }
+      var LABEL = { level: '위험 수준', due: '기한' };
+      var diffText = changed.map(function (k) {
+        return LABEL[k] ? LABEL[k] + ' ' + (before[k] || '없음') + ' → ' + (a[k] || '없음') : k;
+      });
       var toStatus = src.status ? String(src.status) : '';
       if (toStatus && toStatus !== before.status) {
         applyTransition(a, toStatus, str(src.note, LIM.memo, '메모'), photoRef(src.photo), me);
       }
       if (changed.length) {
-        a.history = (Array.isArray(a.history) ? a.history : []).concat([histEntry(me, a.status, a.status, '내용 수정(' + changed.join(', ') + ')')]);
+        a.history = (Array.isArray(a.history) ? a.history : []).concat([histEntry(me, a.status, a.status, '내용 수정(' + diffText.join(', ') + ')')]);
         a.updatedAt = t;
       }
       if (!changed.length && !(toStatus && toStatus !== before.status)) return { act: a };
       Db.upsert('acts', a);
-      audit(ctx, 'act', a.id, '조치 수정' + (changed.length ? ': ' + changed.join(', ') : ''));
+      audit(ctx, 'act', a.id, '조치 수정' + (changed.length ? ': ' + diffText.join(', ') : ''));
     } else {
       var site = scopeSite(me, src.site ? str(src.site, 8, '사업장') : '', 'acts');
       if (!site) fail('INVALID', '사업장을 고르세요');
@@ -1042,6 +1401,7 @@ var Api = (function () {
       var site = scopeSite(me, src.site ? str(src.site, 8, '사업장') : '', 'people');
       if (!site) fail('INVALID', '사업장을 고르세요');
       getSite(site);
+      peopleRoom(site, 1);
       x = { id: 'P-' + Db.uuid8(), site: site, name: '', job: '', role: '', phone4: '', active: true, createdAt: t, updatedAt: t };
     }
     if (src.name !== undefined || !src.id) x.name = str(src.name, LIM.short, '이름', true);
@@ -1055,15 +1415,30 @@ var Api = (function () {
     return { person: x };
   }
 
+  /** 인원 명부 상한: 한 번에 올리는 행, 사업장당 재직 인원, 사업장당 전체 행(퇴사 포함). */
+  var PEOPLE_BULK_MAX = 1000;
+  var PEOPLE_SITE_MAX = 2000;
+  var PEOPLE_SITE_ROWS = 5000;
+  function peopleRoom(site, more) {
+    var activeN = 0, rowsN = 0;
+    Db.all('people').forEach(function (x) { if (x.site === site) { rowsN++; if (x.active !== false) activeN++; } });
+    if (activeN + more > PEOPLE_SITE_MAX || rowsN + more > PEOPLE_SITE_ROWS) {
+      fail('INVALID', '한 사업장에 등록할 수 있는 인원(' + PEOPLE_SITE_MAX + '명)을 넘습니다. 그만둔 인원을 정리한 뒤 다시 등록하세요');
+    }
+  }
+
   function hPeopleBulk(p, me, ctx) {
     var site = scopeSite(me, p.site ? str(p.site, 8, '사업장') : '', 'people.bulk');
     if (!site) fail('INVALID', '사업장을 고르세요');
     getSite(site);
     if (!Array.isArray(p.rows)) fail('INVALID', '명부 행이 없습니다');
-    if (p.rows.length > 2000) fail('INVALID', '한 번에 2,000명까지 올릴 수 있습니다');
+    if (p.rows.length > PEOPLE_BULK_MAX) fail('INVALID', '한 번에 ' + PEOPLE_BULK_MAX + '명까지 올릴 수 있습니다');
     var existing = {};
+    var activeN = 0, rowsN = 0;
     Db.all('people', { fresh: true }).forEach(function (x) {
-      if (x.site === site && x.active !== false) existing[String(x.name || '').replace(/\s+/g, '')] = true;
+      if (x.site !== site) return;
+      rowsN++;
+      if (x.active !== false) { activeN++; existing[String(x.name || '').replace(/\s+/g, '')] = true; }
     });
     var t = now();
     var add = [], skipped = 0;
@@ -1078,6 +1453,9 @@ var Api = (function () {
         phone4: phone4(row.phone4), active: true, createdAt: t, updatedAt: t
       });
     });
+    if (activeN + add.length > PEOPLE_SITE_MAX || rowsN + add.length > PEOPLE_SITE_ROWS) {
+      fail('INVALID', '한 사업장에 등록할 수 있는 인원(' + PEOPLE_SITE_MAX + '명)을 넘습니다. 그만둔 인원을 정리한 뒤 다시 올리세요');
+    }
     if (add.length) Db.upsertMany('people', add);
     audit(ctx, 'people', site, '인원 일괄 등록 ' + add.length + '명' + (skipped ? ' (건너뜀 ' + skipped + ')' : ''));
     return { added: add.length, skipped: skipped };
@@ -1211,11 +1589,26 @@ var Api = (function () {
     return out;
   }
 
+  /**
+   * 열람·확인 표시. 실제로 있는 것에만 남긴다(아무 번호나 넣어 reads 행을 불리지 못하게):
+   * - 사업장: 우리 사업장이 받은 요청·공지(REQ-…)만.
+   * - 본사(열람 권한 제외 — perm 'write'): 요청 번호, 또는 단계 보고 확인 표시 '<기록번호>#<단계>'(그 기록이 있어야 함).
+   * (refId, 사업장)마다 한 행이라 행 수는 요청 수 × 사업장 수를 넘지 않는다.
+   */
   function hReadsMark(p, me) {
-    var refId = str(p.refId, LIM.id, '대상 번호', true);
+    var refId = str(p.refId, LIM.id + 12, '대상 번호', true);
     if (me.kind === 'site') {
       var r = Db.get('requests', refId);
-      if (r && !reqVisibleToSite(r, me.site)) forbid(me, refId, '받지 않은 요청 열람 표시 시도', '우리 사업장이 받은 요청이 아닙니다');
+      if (!r) fail('NOTFOUND', '요청·공지를 찾을 수 없습니다: ' + refId);
+      if (!reqVisibleToSite(r, me.site)) forbid(me, refId, '받지 않은 요청 열람 표시 시도', '우리 사업장이 받은 요청이 아닙니다');
+    } else {
+      var hash = refId.indexOf('#');
+      if (hash > 0) {
+        var rec = Db.get('records', refId.slice(0, hash));
+        if (!rec || rec.deleted) fail('NOTFOUND', '기록을 찾을 수 없습니다: ' + refId.slice(0, hash));
+      } else if (!Db.get('requests', refId)) {
+        fail('NOTFOUND', '요청·공지를 찾을 수 없습니다: ' + refId);
+      }
     }
     return callMod('Dispatch', 'markRead', [p, me]);
   }
@@ -1229,27 +1622,133 @@ var Api = (function () {
     return v.length > 120 ? v.slice(0, 120) : v;
   }
 
+  /*
+   * 올릴 수 있는 파일(허용 목록). 확장자 → 받는 MIME, 파일 앞 바이트 모양(magic).
+   * 사진(jpg·png·webp·gif·heic), PDF, 사무문서(엑셀·워드·파워포인트·한글), 텍스트(txt·csv)만.
+   * .html·.svg·.js·.exe 처럼 목록에 없는 확장자, 확장자와 맞지 않는 MIME·내용은 거부한다(본사가 내려받아 여는 파일이므로).
+   */
+  var OOXML = 'application/vnd.openxmlformats-officedocument.';
+  var FILE_TYPES = {
+    jpg: { mimes: ['image/jpeg', 'image/jpg', 'image/pjpeg'], magic: 'jpg', image: true },
+    png: { mimes: ['image/png'], magic: 'png', image: true },
+    webp: { mimes: ['image/webp'], magic: 'webp', image: true },
+    gif: { mimes: ['image/gif'], magic: 'gif', image: true },
+    heic: { mimes: ['image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence'], magic: 'ftyp', image: true },
+    pdf: { mimes: ['application/pdf'], magic: 'pdf' },
+    xlsx: { mimes: [OOXML + 'spreadsheetml.sheet'], magic: 'zip' },
+    docx: { mimes: [OOXML + 'wordprocessingml.document'], magic: 'zip' },
+    pptx: { mimes: [OOXML + 'presentationml.presentation'], magic: 'zip' },
+    hwpx: { mimes: ['application/vnd.hancom.hwpx', 'application/hwp+zip', 'application/haansofthwpx'], magic: 'zip' },
+    xls: { mimes: ['application/vnd.ms-excel'], magic: 'ole' },
+    doc: { mimes: ['application/msword'], magic: 'ole' },
+    ppt: { mimes: ['application/vnd.ms-powerpoint'], magic: 'ole' },
+    hwp: { mimes: ['application/x-hwp', 'application/haansofthwp', 'application/vnd.hancom.hwp'], magic: 'ole' },
+    txt: { mimes: ['text/plain'], magic: '' },
+    csv: { mimes: ['text/csv', 'application/csv', 'text/comma-separated-values', 'application/vnd.ms-excel', 'text/plain'], magic: '' }
+  };
+  var EXT_ALIAS = { jpeg: 'jpg', jpe: 'jpg', heif: 'heic' };
+  /** 브라우저가 형식을 모를 때 주는 MIME — 확장자로 판단한다. */
+  var GENERIC_MIME = ['', 'application/octet-stream', 'binary/octet-stream', 'application/x-zip-compressed', 'application/zip'];
+
   function extOf(mime) {
-    var m = {
-      'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/heic': 'heic', 'application/pdf': 'pdf',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx', 'text/plain': 'txt', 'text/csv': 'csv'
-    };
-    return m[mime] || 'bin';
+    var ks = Object.keys(FILE_TYPES);
+    for (var i = 0; i < ks.length; i++) if (FILE_TYPES[ks[i]].mimes[0] === mime) return ks[i];
+    for (var j = 0; j < ks.length; j++) if (FILE_TYPES[ks[j]].mimes.indexOf(mime) >= 0) return ks[j];
+    return '';
+  }
+
+  /** 파일 앞 바이트로 본 모양: 'jpg'|'png'|'gif'|'webp'|'ftyp'|'pdf'|'zip'|'ole'|''. (GAS 바이트는 부호 있음) */
+  function magicOf(bytes) {
+    var b = [];
+    for (var i = 0; i < 16 && i < bytes.length; i++) b.push(bytes[i] & 0xff);
+    function at(off, arr) { for (var k = 0; k < arr.length; k++) if (b[off + k] !== arr[k]) return false; return true; }
+    if (at(0, [0xff, 0xd8, 0xff])) return 'jpg';
+    if (at(0, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) return 'png';
+    if (at(0, [0x47, 0x49, 0x46, 0x38])) return 'gif';
+    if (at(0, [0x52, 0x49, 0x46, 0x46]) && at(8, [0x57, 0x45, 0x42, 0x50])) return 'webp';
+    if (at(4, [0x66, 0x74, 0x79, 0x70])) return 'ftyp';
+    if (at(0, [0x25, 0x50, 0x44, 0x46])) return 'pdf';
+    if (at(0, [0x50, 0x4b, 0x03, 0x04])) return 'zip';
+    if (at(0, [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])) return 'ole';
+    return '';
+  }
+  var MAGIC_EXT = { jpg: 'jpg', png: 'png', gif: 'gif', webp: 'webp', ftyp: 'heic' };
+
+  /**
+   * 받은 파일 검사 → { mime, name, bytes }. 허용 목록 밖·확장자/MIME/내용 불일치·깨진 base64 는 INVALID.
+   * name 이 비었으면 기본 이름, 확장자가 없으면 형식에 맞는 확장자를 붙인다.
+   */
+  function checkUpload(rawMime, rawName, body, kind) {
+    var mime = String(rawMime || '').trim().toLowerCase();
+    var name = cleanFileName(rawName);
+    var em = /\.([A-Za-z0-9]{1,8})$/.exec(name);
+    var ext = em ? em[1].toLowerCase() : '';
+    ext = EXT_ALIAS[ext] || ext;
+    var generic = GENERIC_MIME.indexOf(mime) >= 0;
+    if (ext && !FILE_TYPES[ext]) fail('INVALID', '이 형식의 파일은 올릴 수 없습니다(.' + em[1] + '). 사진·PDF·엑셀·워드·한글·파워포인트·txt·csv 만 올릴 수 있습니다');
+    var type = ext || (generic ? '' : extOf(mime));
+    if (!type) fail('INVALID', '이 형식의 파일은 올릴 수 없습니다' + (mime ? ': ' + mime : '') + '. 사진·PDF·엑셀·워드·한글·파워포인트·txt·csv 만 올릴 수 있습니다');
+    var T = FILE_TYPES[type];
+    if (!generic && T.mimes.indexOf(mime) < 0) {
+      // 사진끼리는 브라우저가 압축하며 형식을 바꿀 수 있어 내용으로 다시 판단한다.
+      if (!(T.image && /^image\//.test(mime) && extOf(mime) && FILE_TYPES[extOf(mime)].image)) {
+        fail('INVALID', '파일 이름(.' + type + ')과 형식(' + mime + ')이 맞지 않습니다');
+      }
+    }
+    var bytes;
+    try { bytes = Utilities.base64Decode(body); } catch (e) { fail('INVALID', '파일 내용이 깨졌습니다(base64 해독 실패). 다시 골라 올려 주세요'); }
+    if (!bytes || !bytes.length) fail('INVALID', '빈 파일입니다');
+    if (bytes.length > APP.maxFileBytes) fail('INVALID', '파일이 너무 큽니다. 8MB 까지 올릴 수 있습니다');
+    var mg = magicOf(bytes);
+    if (T.image) {
+      if (!MAGIC_EXT[mg]) fail('INVALID', '사진 파일이 아닙니다. 사진(jpg·png·webp·gif·heic)만 올릴 수 있습니다');
+      var real = MAGIC_EXT[mg];
+      if (real !== type) {
+        T = FILE_TYPES[real];
+        if (ext) name = name.slice(0, name.length - em[0].length) + '.' + real;
+        type = real;
+      }
+    } else if (T.magic && mg !== T.magic) {
+      fail('INVALID', '파일 내용이 .' + type + ' 형식이 아닙니다');
+    } else if (!T.magic) {
+      // 글자 파일: 그림·문서 묶음·실행 파일 같은 이진 파일이 아닌지만 본다.
+      if (mg) fail('INVALID', '파일 내용이 .' + type + ' 글자 파일이 아닙니다');
+    }
+    var outMime = T.mimes.indexOf(mime) >= 0 ? mime : T.mimes[0];
+    if (!name) name = (kind === 'photo' ? '사진' : kind === 'sign' ? '서명' : '첨부') + '-' + now().replace(/[^0-9]/g, '').slice(2, 14);
+    if (!ext) name += '.' + type;
+    return { mime: outMime, name: name, bytes: bytes };
+  }
+
+  /*
+   * 사업장 링크만 아는 사람이 드라이브·시트를 채우지 못하게 사업장·하루 단위 상한.
+   * 휴대폰 사진은 줄여서(1600px) 올리므로 한 장 0.3~0.6MB — 하루 300장·300MB 면 점검이 아주 많은 날도 넉넉하다.
+   */
+  var SITE_FILES_PER_DAY = 300;
+  var SITE_BYTES_PER_DAY = 300 * 1024 * 1024;
+  function siteFileQuota(site, addBytes) {
+    var day = today();
+    var n = 0, bytes = 0;
+    Db.all('files').forEach(function (f) {
+      if (f.site !== site || String(f.createdAt || '').slice(0, 10) !== day) return;
+      n++;
+      bytes += Number(f.size) || 0;
+    });
+    if (n + 1 > SITE_FILES_PER_DAY || bytes + addBytes > SITE_BYTES_PER_DAY) {
+      fail('INVALID', '오늘 이 사업장에서 올릴 수 있는 파일 한도(' + SITE_FILES_PER_DAY + '개·' + Math.round(SITE_BYTES_PER_DAY / 1048576) + 'MB)를 넘었습니다. 내일 다시 올리거나 본사에 문의하세요');
+    }
   }
 
   function hFilesPut(p, me, ctx) {
     var dataUrl = p.dataUrl;
     if (typeof dataUrl !== 'string' || !dataUrl) fail('INVALID', '파일 내용이 없습니다');
     var m = /^data:([^;,]*)((?:;[^;,]*)*),/.exec(dataUrl.slice(0, 400));
-    if (!m || !/;base64/i.test(m[2] || '')) fail('INVALID', '파일 형식이 맞지 않습니다(base64 데이터 URL 이어야 합니다)');
-    var mime = (m[1] || 'application/octet-stream').toLowerCase();
-    if (BLOCK_MIME.test(mime)) fail('INVALID', '이 형식의 파일은 올릴 수 없습니다: ' + mime);
+    if (!m || !/;\s*base64\s*(;|$)/i.test(m[2] || '')) fail('INVALID', '파일 형식이 맞지 않습니다(base64 데이터 URL 이어야 합니다)');
     var b64 = dataUrl.length - m[0].length;
     var padN = /==$/.test(dataUrl) ? 2 : (/=$/.test(dataUrl) ? 1 : 0);
-    var bytes = Math.floor(b64 * 3 / 4) - padN;
-    if (bytes <= 0) fail('INVALID', '빈 파일입니다');
-    if (bytes > APP.maxFileBytes) fail('INVALID', '파일이 너무 큽니다. 8MB 까지 올릴 수 있습니다');
+    var approx = Math.floor(b64 * 3 / 4) - padN;
+    if (approx <= 0) fail('INVALID', '빈 파일입니다');
+    if (approx > APP.maxFileBytes) fail('INVALID', '파일이 너무 큽니다. 8MB 까지 올릴 수 있습니다');
     var kind = FILE_KINDS.indexOf(p.kind) >= 0 ? p.kind : 'attach';
     var recordId = str(p.recordId, LIM.id, '기록 번호');
     var site = me.kind === 'site' ? scopeSite(me, p.site ? str(p.site, 8, '사업장') : '', 'files.put') : (p.site ? str(p.site, 8, '사업장').toUpperCase() : '');
@@ -1262,11 +1761,13 @@ var Api = (function () {
       }
     }
     if (site && me.kind === 'hq') getSite(site);
-    var name = cleanFileName(p.name) || ((kind === 'photo' ? '사진' : kind === 'sign' ? '서명' : '첨부') + '-' + now().replace(/[^0-9]/g, '').slice(2, 14) + '.' + extOf(mime));
-    var saved = Db.saveDataUrl(dataUrl, name, site);
+    var up = checkUpload(m[1], p.name, dataUrl.slice(m[0].length), kind);
+    if ((kind === 'photo' || kind === 'sign') && !/^image\//.test(up.mime)) fail('INVALID', '사진·서명은 그림 파일만 올릴 수 있습니다');
+    if (me.kind === 'site') siteFileQuota(site, up.bytes.length);
+    var saved = Db.saveBytes(up.bytes, up.mime, up.name, site);
     var f = {
-      id: 'FILE-' + Db.uuid8(), site: site, recordId: recordId, name: name, mime: (saved && saved.mime) || mime,
-      size: Number(saved && saved.size) || bytes, driveId: saved.driveId, kind: kind, createdAt: now(), createdBy: whoOf(me)
+      id: 'FILE-' + Db.uuid8(), site: site, recordId: recordId, name: up.name, mime: up.mime,
+      size: Number(saved && saved.size) || up.bytes.length, driveId: saved.driveId, kind: kind, createdAt: now(), createdBy: whoOf(me)
     };
     Db.withLock(function () { Db.insert('files', f); });
     return { file: pubFile(f) };
@@ -1595,7 +2096,7 @@ var Api = (function () {
     'requests.save': { perm: 'hqWrite', fn: hRequestsSave },
     'requests.close': { perm: 'hqWrite', lock: true, fn: hRequestsClose },
     'requests.remind': { perm: 'hqWrite', fn: hRequestsRemind },
-    'reads.mark': { perm: 'any', lock: true, fn: hReadsMark },
+    'reads.mark': { perm: 'write', lock: true, fn: hReadsMark },
 
     'files.put': { perm: 'write', fn: hFilesPut },
     'files.get': { perm: 'any', fn: hFilesGet },

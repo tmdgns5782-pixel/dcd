@@ -432,13 +432,27 @@ var Views = (function () {
 
   /* =========================================================== 시트 쓰기 */
 
+  /**
+   * 칸에 쓸 값. 사용자 입력이 시트에서 수식·값으로 해석되지 않게 한다.
+   * - '=', '+', '-', '@', 탭·줄바꿈으로 시작하는 글자는 모든 열에서 앞에 따옴표(구글 시트는 '+1+1'·'-A1' 도 수식으로 본다).
+   * - 숫자 열('n')은 숫자만 숫자로 쓰고, 숫자로 못 바꾸는 글자는 따옴표로 글자 처리.
+   * - 날짜 열('d')은 YYYY-MM-DD[ HH:mm[:ss]] 모양만 그대로, 나머지는 따옴표로 글자 처리.
+   *   ('@' 서식이 아닌 열이라 글자가 자동 변환되지 않게.)
+   */
+  var FORMULA_LEAD = /^[=+\-@\t\r\n]/;
+  var DATE_TEXT = /^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}(:\d{2})?)?$/;
+  var NUM_TEXT = /^-?\d+(\.\d+)?$/;
   function clean(v, kind) {
     if (v === null || v === undefined) return '';
     if (typeof v === 'number') return isFinite(v) ? v : '';
     if (typeof v === 'boolean') return v ? '예' : '아니오';
     var s = String(v);
     if (s.length > CELL_MAX) s = s.slice(0, CELL_MAX);
-    if (s.charAt(0) === '=') s = "'" + s;
+    if (s === '') return '';
+    if (kind === 'n' && NUM_TEXT.test(s)) return Number(s);
+    if (FORMULA_LEAD.test(s)) return "'" + s;
+    if (kind === 'n') return "'" + s;
+    if (kind === 'd' && !DATE_TEXT.test(s)) return "'" + s;
     return s;
   }
 

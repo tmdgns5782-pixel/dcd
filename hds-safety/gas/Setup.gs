@@ -131,7 +131,7 @@ function setup(opts) {
 /**
  * 이 실행이 스크립트 소유자 본인인지(편집기 [실행], 소유자가 설치한 트리거).
  * 웹앱은 '나(배포자)로 실행'이라 실행 계정(effective)은 늘 소유자이고, 방문자(active)는 익명이면 빈 값, 다른 구글 계정이면 그 주소다.
- * 실제 GAS 는 userinfo.email 범위가 있어 effective 주소가 늘 있다. 둘 다 비면 신원이 없는 로컬 모의 실행으로 본다.
+ * 실제 GAS 는 userinfo.email 범위(appsscript.json)가 있어 effective 주소가 늘 있다. effective 를 못 읽으면 거부한다(ALLOW_SETUP=1 로만 허용).
  * 이름이 _ 로 끝나 google.script.run 으로는 부를 수 없다.
  */
 function ownerRun_() {
@@ -141,7 +141,9 @@ function ownerRun_() {
   var act = '', eff = '';
   try { act = String(Session.getActiveUser().getEmail() || '').trim().toLowerCase(); } catch (e) { act = ''; }
   try { eff = String(Session.getEffectiveUser().getEmail() || '').trim().toLowerCase(); } catch (e) { eff = ''; }
-  if (!eff) return !act;
+  // 실행 계정 주소를 못 읽으면(userinfo.email 범위 누락 등) 신원 불명 — 소유자로 보지 않는다(실패 시 닫힘).
+  // 이럴 때 편집기에서 꼭 실행해야 하면 스크립트 속성 ALLOW_SETUP=1 을 잠깐 넣고 실행한 뒤 지운다.
+  if (!eff) return false;
   return act === eff;
 }
 

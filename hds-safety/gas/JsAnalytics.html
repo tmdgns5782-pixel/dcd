@@ -895,12 +895,14 @@
 
     var recent = D.f04.slice().sort(function (a, b) { return String(A.fv(b, 'occurredAt') || A.dateOf(b)).localeCompare(String(A.fv(a, 'occurredAt') || A.dateOf(a))); }).slice(0, 10);
     var kindTone = { '재해': 'neg', '무상해': 'warn', '아차사고': 'neu' };
-    var recentHtml = recent.length ? '<div class="tbl-wrap"><table class="tbl an-tbl"><thead><tr><th class="num">발생 일시</th><th>사업장</th><th>구분</th><th>재해형태</th><th>기인물</th><th>장소</th><th>진행</th></tr></thead><tbody>'
+    var recentHtml = recent.length ? '<div class="tbl-wrap"><table class="tbl rows2 an-tbl"><thead><tr><th class="num">발생 일시</th><th>사업장</th><th>구분</th><th>재해형태</th><th>기인물</th><th>장소</th><th>진행</th></tr></thead><tbody>'
       + recent.map(function (r) {
         var si = stageInfo(r), at = String(A.fv(r, 'occurredAt') || A.dateOf(r)).replace('T', ' ').slice(0, 16);
+        /* 휴대폰 두 줄 행: 1줄 사업장 + 구분, 2줄 발생 일시 · 진행 · 재해형태 · 기인물 · 장소 */
+        var l2 = [esc(at), si.closed ? '종결' : esc(si.label + ' 보고'), esc(short(A.fv(r, 'accType')) || ''), esc(short(A.fv(r, 'agent')) || ''), esc(short(A.fv(r, 'area')) || '')].filter(Boolean).join(' · ');
         return '<tr class="click" data-href="' + esc(recHref(r)) + '"><td class="num nowrap" data-label="발생 일시">' + esc(at) + '</td>'
-          + '<td data-label="사업장">' + esc(siteName(r.site)) + '</td>'
-          + '<td data-label="구분">' + pill(A.fv(r, 'kind') || '—', kindTone[A.fv(r, 'kind')] || 'neu') + '</td>'
+          + '<td class="r-main" data-label="사업장">' + esc(siteName(r.site)) + '<span class="r-l2">' + l2 + '</span></td>'
+          + '<td class="r-key" data-label="구분">' + pill(A.fv(r, 'kind') || '—', kindTone[A.fv(r, 'kind')] || 'neu') + '</td>'
           + '<td data-label="재해형태">' + esc(short(A.fv(r, 'accType')) || '—') + '</td>'
           + '<td data-label="기인물">' + esc(short(A.fv(r, 'agent')) || '—') + '</td>'
           + '<td data-label="장소">' + esc(short(A.fv(r, 'area')) || '—') + '</td>'
@@ -1101,10 +1103,12 @@
         return '<li class="li"><div class="li-main"><div class="li-title">' + esc(x.s.name || x.s.id) + '</div><div class="li-sub num">기한 ' + esc(x.st.due || '—') + '</div></div><div class="li-side">' + pill(x.st.label, 'warn') + '</div></li>';
       }).join('') + '</ul>' : empty('기한이 지났거나 30일 안에 오는 사업장이 없습니다.'));
 
-    var tbl = table.length ? '<div class="tbl-wrap"><table class="tbl an-tbl"><thead><tr><th>사업장</th><th class="num">최근 평가</th><th>구분</th><th>진행</th><th class="num">위험요인</th><th class="num">높음</th><th class="num">참여 회의(1년)</th><th class="num">다음 기한</th><th>상태</th></tr></thead><tbody>'
+    var tbl = table.length ? '<div class="tbl-wrap"><table class="tbl rows2 an-tbl"><thead><tr><th>사업장</th><th class="num">최근 평가</th><th>구분</th><th>진행</th><th class="num">위험요인</th><th class="num">높음</th><th class="num">참여 회의(1년)</th><th class="num">다음 기한</th><th>상태</th></tr></thead><tbody>'
       + table.map(function (x) {
         var href = x.r ? recHref(x.r) : '#/sites/' + encodeURIComponent(x.s.id);
-        return '<tr class="click" data-href="' + esc(href) + '"><td data-label="사업장"><b class="an-strong">' + esc(x.s.name || x.s.id) + '</b> <span class="muted mono">' + esc(x.s.id) + '</span></td>'
+        /* 휴대폰 두 줄 행: 1줄 사업장 + 상태, 2줄 최근 평가 · 구분 · 위험요인(높음) · 다음 기한 */
+        var l2 = [x.st.ev ? '최근 <span class="num">' + esc(x.st.ev) + '</span>' : '평가 없음', x.type && x.type !== '—' ? esc(x.type) : '', x.g ? '위험요인 ' + num(x.g.total) + '(높음 ' + num(x.g.before['높음']) + ')' : '', x.st.due ? '다음 <span class="num">' + esc(x.st.due) + '</span>' : ''].filter(Boolean).join(' · ');
+        return '<tr class="click" data-href="' + esc(href) + '"><td class="r-main" data-label="사업장"><b class="an-strong">' + esc(x.s.name || x.s.id) + '</b> <span class="muted mono">' + esc(x.s.id) + '</span><span class="r-l2">' + l2 + '</span></td>'
           + '<td class="num" data-label="최근 평가">' + (x.st.ev ? esc(x.st.ev) : '<span class="muted">—</span>') + '</td>'
           + '<td data-label="구분">' + esc(x.type) + '</td>'
           + '<td data-label="진행">' + (x.si ? (x.si.closed ? '완료' : esc(x.si.label)) : '<span class="muted">—</span>') + '</td>'
@@ -1112,7 +1116,7 @@
           + '<td class="num" data-label="높음">' + (x.g ? num(x.g.before['높음']) : '<span class="muted">—</span>') + '</td>'
           + '<td class="num" data-label="참여 회의">' + num(x.meets) + '</td>'
           + '<td class="num" data-label="다음 기한">' + (x.st.due ? esc(x.st.due) : '<span class="muted">—</span>') + '</td>'
-          + '<td data-label="상태">' + (!x.need ? '<span class="muted">필수 아님</span>' : x.st.tone ? pill(x.st.label, x.st.tone) : '<span class="muted">' + esc(x.st.label) + '</span>') + '</td></tr>';
+          + '<td class="r-key" data-label="상태">' + (!x.need ? '<span class="muted">필수 아님</span>' : x.st.tone ? pill(x.st.label, x.st.tone) : '<span class="muted">' + esc(x.st.label) + '</span>') + '</td></tr>';
       }).join('') + '</tbody></table></div>' : empty('이 범위에 운영 중인 사업장이 없습니다.');
 
     var html = k
@@ -1882,17 +1886,32 @@
   function empty(t) { return '<div class="empty">' + t + '</div>'; }
   function pill(t, tone) { return '<span class="pill ' + (tone || 'neu') + '">' + esc(t) + '</span>'; }
   function bar(r, tone) { var w = r == null ? 0 : Math.max(0, Math.min(1, r)) * 100; return '<div class="bar' + (tone ? ' ' + tone : '') + '"><i style="width:' + w.toFixed(1) + '%"></i></div>'; }
+  /* 표. 휴대폰 두 줄 행(.tbl.rows2): 칸에 main(식별 — 1줄 왼쪽, 아래에 o.l2(r) 보조줄) · rkey(핵심 값 — 1줄 오른쪽) 을 표시하면
+     휴대폰에서 나머지 칸은 숨기고 그 값은 보조줄로 보여 준다. keyLabel·keyUnit 은 휴대폰에서만 rkey 값 앞뒤에 붙는 글(머리 줄이 안 보이므로). */
   function table(cols, list, o) {
     o = o || {};
     if (!list.length) return empty(o.empty || '이 범위에 해당하는 기록이 없습니다.');
-    return '<div class="tbl-wrap"><table class="tbl ' + (o.cls || '') + '"><thead><tr>' + cols.map(function (c) {
+    var r2 = cols.some(function (c) { return c.main; });
+    function tdCls(c) { var k = [c.num ? 'num' : '', c.main && r2 ? 'r-main' : '', c.rkey && r2 ? 'r-key' : ''].filter(Boolean).join(' '); return k ? ' class="' + k + '"' : ''; }
+    function cell(c, r) {
+      var h = c.render(r);
+      if (!r2) return h;
+      if (c.main && o.l2) { var l2 = o.l2(r); if (l2) h += '<span class="r-l2">' + l2 + '</span>'; }
+      if (c.rkey) {
+        var kl = typeof c.keyLabel === 'function' ? c.keyLabel(r) : c.keyLabel, ku = typeof c.keyUnit === 'function' ? c.keyUnit(r) : c.keyUnit;
+        if (kl) h = '<span class="only-phone anb-klab">' + esc(kl) + '</span>' + h;
+        if (ku) h += '<span class="only-phone anb-kunit">' + esc(ku) + '</span>';
+      }
+      return h;
+    }
+    return '<div class="tbl-wrap"><table class="tbl ' + (r2 ? 'rows2 ' : '') + (o.cls || '') + '"><thead><tr>' + cols.map(function (c) {
       var lab = esc(c.label);
       if (o.sortAct && c.sort) lab = '<button type="button" class="anb-sort' + (o.sortKey === c.key ? ' on' : '') + '" data-act="' + o.sortAct + '" data-key="' + c.key + '">' + lab + (o.sortKey === c.key ? (o.desc ? ' ↓' : ' ↑') : '') + '</button>';
       return '<th' + (c.num ? ' class="num"' : '') + (c.width ? ' style="width:' + c.width + '"' : '') + '>' + lab + '</th>';
     }).join('') + '</tr></thead><tbody>' + list.map(function (r) {
       var href = o.href ? o.href(r) : '';
       return '<tr class="' + (href ? 'click ' : '') + (o.rowCls ? o.rowCls(r) : '') + '"' + (href ? ' data-href="' + esc(href) + '"' : '') + '>' + cols.map(function (c) {
-        return '<td' + (c.num ? ' class="num"' : '') + ' data-label="' + esc(c.label) + '">' + c.render(r) + '</td>';
+        return '<td' + tdCls(c) + ' data-label="' + esc(c.label) + '">' + cell(c, r) + '</td>';
       }).join('') + '</tr>';
     }).join('') + '</tbody></table></div>';
   }
@@ -1958,13 +1977,14 @@
     ]);
     // 사업장별 제출률
     var siteTbl = table([
-      { label: '사업장', render: function (r) { return '<b>' + esc(r.name) + '</b>' + (r === low && r.rate < 0.9 ? ' ' + pill('최저', 'neg') : '') + '<div class="faint small">' + esc(r.shifts.filter(Boolean).join('·') || '근무조 1') + '</div>'; } },
+      { label: '사업장', main: true, render: function (r) { return '<b>' + esc(r.name) + '</b>' + (r === low && r.rate < 0.9 ? ' ' + pill('최저', 'neg') : '') + '<div class="faint small hide-phone">' + esc(r.shifts.filter(Boolean).join('·') || '근무조 1') + '</div>'; } },
       { label: '기대', num: true, render: function (r) { return num(r.exp); } },
       { label: '제출', num: true, render: function (r) { return num(r.done); } },
       { label: '미제출', num: true, render: function (r) { return num(r.miss); } },
-      { label: '제출률', num: true, width: '28%', render: function (r) { return '<div class="anb-rate"><span class="num">' + pct(r.rate) + '</span>' + bar(r.rate, r === low && r.rate < 0.7 ? 'neg' : '') + '</div>'; } },
+      { label: '제출률', num: true, rkey: true, width: '28%', render: function (r) { return '<div class="anb-rate"><span class="num">' + pct(r.rate) + '</span>' + bar(r.rate, r === low && r.rate < 0.7 ? 'neg' : '') + '</div>'; } },
       { label: '기한 내', num: true, render: function (r) { return pct(r.ontimeRate); } }
-    ], sorted, { empty: '지난 근무일이 있는 사업장이 없습니다.', rowCls: function (r) { return r.id === dailySite ? 'is-sel' : ''; } });
+    ], sorted, { empty: '지난 근무일이 있는 사업장이 없습니다.', rowCls: function (r) { return r.id === dailySite ? 'is-sel' : ''; },
+      l2: function (r) { return '미제출 ' + num(r.miss) + ' · 제출 ' + num(r.done) + '/' + num(r.exp) + ' · 기한 내 ' + pct(r.ontimeRate) + ' · ' + esc(r.shifts.filter(Boolean).join('·') || '근무조 1'); } });
     var pick = '<select class="select sm" data-an="daily-site" aria-label="달력 사업장"><option value="">전체 사업장(최근 4주)</option>' +
       s.siteObjs.map(function (x) { return '<option value="' + esc(x.id) + '"' + (x.id === dailySite ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select>';
     var cal, calFoot = calLegend(), hasCal = !!(window.Charts && window.Charts.heatCal);
@@ -2050,7 +2070,7 @@
     var sub = (below.length ? half.label + ' 근로자 정기교육 법정 시간 미달 ' + (personal ? belowN + '명(' + below.length + '곳)' : below.length + '곳') : half.label + ' 근로자 정기교육 법정 시간을 모든 사업장이 채웠습니다') +
       (dmiss.length ? ', 비상훈련 미실시 ' + dmiss.length + '곳' : ', 비상훈련은 모두 실시') + ' — 반기 마감까지 ' + Math.max(0, left) + '일.';
     var body = kpis([
-      { label: '교육 실시', value: num(n1.length), unit: '회', lead: true, sub: s.label + ' · ' + sitesSub(s) },
+      { label: '교육 실시', value: num(n1.length), unit: '회', lead: true, sub: esc(s.label) + ' · ' + sitesSub(s) },
       { label: '교육 시간', value: num(hours, 1), unit: '시간', sub: '회차 시간의 합' },
       { label: '참석 연인원', value: num(att), unit: '명', sub: '같은 사람 두 번이면 2' },
       { label: '참석률', value: pct(attRate), sub: '대상 인원을 적은 ' + tg.length + '회 기준' }
@@ -2060,34 +2080,41 @@
     n1.forEach(function (r) { var c = V(r, 'course') || '미분류', o = byCourse[c] || (byCourse[c] = { k: c, n: 0, h: 0, p: 0, mh: 0 }); o.n++; o.h += eduHours(r) || 0; var a = nV(r, 'attendCount'); o.p += a != null ? a : (peopleN(r, 'attendees') || 0); o.mh += nV(r, 'manHours') || 0; });
     var courses = Object.keys(byCourse).map(function (k) { return byCourse[k]; }).sort(function (a, b) { return b.h - a.h; });
     var courseTbl = table([
-      { label: '교육 과정', render: function (r) { return esc(r.k); } },
+      { label: '교육 과정', main: true, render: function (r) { return esc(r.k); } },
       { label: '회', num: true, render: function (r) { return num(r.n); } },
-      { label: '시간', num: true, render: function (r) { return num(r.h, 1); } },
+      { label: '시간', num: true, rkey: true, keyUnit: '시간', render: function (r) { return num(r.h, 1); } },
       { label: '참석 연인원', num: true, render: function (r) { return num(r.p); } },
       { label: '인·시간', num: true, render: function (r) { return r.mh ? num(r.mh, 1) : '—'; } }
-    ], courses, { empty: '이 범위에 실시한 교육(2단계 실시 결과)이 없습니다.' });
+    ], courses, { empty: '이 범위에 실시한 교육(2단계 실시 결과)이 없습니다.',
+      l2: function (r) { return num(r.n) + '회 · 참석 연인원 ' + num(r.p) + '명' + (r.mh ? ' · ' + num(r.mh, 1) + '인·시간' : ''); } });
     // 사업장별 법정 기준
     var hasStd = !!std.worker;
-    var cols = [{ label: '사업장', render: function (r) { return '<b>' + esc(r.name) + '</b>'; } },
-      { label: '정기교육 실시', num: true, render: function (r) { return num(r.hours, 1) + '<span class="faint">시간 · ' + r.sessions + '회</span>'; } }];
-    if (hasStd) cols.push({ label: '법정 시간 충족', num: true, width: '26%', render: function (r) {
+    var cols = [{ label: '사업장', main: true, render: function (r) { return '<b>' + esc(r.name) + '</b>'; } },
+      { label: '정기교육 실시', num: true, rkey: !hasStd, render: function (r) { return num(r.hours, 1) + '<span class="faint">시간 · ' + r.sessions + '회</span>'; } }];
+    if (hasStd) cols.push({ label: '법정 시간 충족', num: true, rkey: true, width: '26%', render: function (r) {
       if (r.basis === 'person') return '<div class="anb-rate"><span class="num">' + num(r.ok) + '/' + num(r.persons) + '명' + (r.below ? ' <span class="t-warn">미달 ' + num(r.below) + '</span>' : '') + '</span>' + bar(r.q, r.below && left <= 30 ? 'neg' : '') + '</div>';
       var q = r.std ? r.hours / r.std : null;
       return '<div class="anb-rate"><span class="num">' + (r.pending ? '<span class="faint">명부 불러오는 중 · </span>' : '') + pct(q == null ? null : Math.min(q, 9.99)) + '</span>' + bar(q, q != null && q < 1 && left <= 30 ? 'neg' : '') + '</div>';
     } });
     if (std.supervisor) cols.push({ label: '관리감독자(연)', num: true, render: function (r) { return num(r.sup, 1) + '<span class="faint"> / ' + r.supStd + '시간</span>'; } });
     cols.push({ label: '비상훈련', render: function (r) { var d = drills.filter(function (x) { return x.id === r.id; })[0]; return d.done ? '<span class="muted">실시</span>' : d.planned ? pill('계획만', 'warn') : pill('미실시', left <= 30 ? 'neg' : 'warn'); } });
-    var siteTbl = table(cols, es, { empty: '범위에 사업장이 없습니다.', href: function (r) { return '#/sites/' + r.id; } });
+    var siteTbl = table(cols, es, { empty: '범위에 사업장이 없습니다.', href: function (r) { return '#/sites/' + r.id; },
+      l2: function (r) {
+        var d = drills.filter(function (x) { return x.id === r.id; })[0] || {};
+        return (d.done ? '비상훈련 실시' : d.planned ? pill('훈련 계획만', 'warn') : pill('훈련 미실시', left <= 30 ? 'neg' : 'warn')) +
+          ' · 정기교육 ' + num(r.hours, 1) + '시간·' + r.sessions + '회' + (std.supervisor ? ' · 관리감독자 ' + num(r.sup, 1) + '/' + r.supStd + '시간' : '');
+      } });
     // 비상훈련 목록
     var dRows = rows('N2', { from: prevHalf.from, to: half.to, sites: s.sites, label: '' }).filter(function (r) { return stageDone(r, 's2'); }).sort(function (a, b) { return n2DrillDate(a) < n2DrillDate(b) ? 1 : -1; });
     var drillTbl = table([
       { label: '훈련일', num: true, render: function (r) { return '<span class="nowrap">' + esc(n2DrillDate(r)) + '</span>'; } },
-      { label: '사업장', render: function (r) { return esc(siteName(r.site)); } },
+      { label: '사업장', main: true, render: function (r) { return esc(siteName(r.site)); } },
       { label: '시나리오', render: function (r) { return esc(V(r, 'scenario') || '—'); } },
       { label: '유형', render: function (r) { return esc(V(r, 'drillType') || '—'); } },
-      { label: '참여율', num: true, render: function (r) { return pct(partRate(r)); } },
+      { label: '참여율', num: true, rkey: true, keyLabel: '참여 ', render: function (r) { return pct(partRate(r)); } },
       { label: '전파→대피', num: true, render: function (r) { var m = nV(r, 'cResp'); return m == null ? '—' : num(m) + '분'; } }
-    ], dRows.slice(0, 8), { empty: prevHalf.label + '·' + half.label + '에 실시한 훈련이 없습니다.', href: function (r) { return '#/rec/' + r.id; } });
+    ], dRows.slice(0, 8), { empty: prevHalf.label + '·' + half.label + '에 실시한 훈련이 없습니다.', href: function (r) { return '#/rec/' + r.id; },
+      l2: function (r) { var m = nV(r, 'cResp'); return '<span class="num">' + esc(n2DrillDate(r)) + '</span> · ' + esc(V(r, 'scenario') || '—') + ' · ' + esc(V(r, 'drillType') || '—') + (m == null ? '' : ' · 전파→대피 ' + num(m) + '분'); } });
     var resp = dRows.map(function (r) { return nV(r, 'cResp'); }).filter(function (v) { return v != null; });
     var dType = ranked(countBy(dRows, function (r) { return V(r, 'scenario'); })).slice(0, 6);
     var drillSide = (dType.length ? chart('hbars', dType.map(function (x) { return { label: x.k, value: x.n }; }), { format: fInt }) : empty('실시한 훈련이 없습니다.')) +
@@ -2106,7 +2133,7 @@
     body += '<div class="grid">' +
       panel({ span: 7, title: '사업장별 법정 교육 시간', sub: stdSub, body: siteTbl, flush: true }) +
       '<div class="span-5 anb-stack">' +
-        panel({ title: '교육 과정별 시간·인원', sub: s.label + ' · 실시 ' + n1.length + '회', body: courseTbl, flush: true }) +
+        panel({ title: '교육 과정별 시간·인원', sub: esc(s.label) + ' · 실시 ' + n1.length + '회', body: courseTbl, flush: true }) +
         panel({ title: '훈련 시나리오', sub: '실시한 훈련 ' + dRows.length + '회', body: drillSide }) +
       '</div>' +
       panel({ span: 12, title: '비상대응훈련', sub: esc(prevHalf.label) + '부터 최근 순', body: drillTbl, flush: true }) +
@@ -2131,7 +2158,7 @@
     var body = kpis([
       { label: '기한경과', value: num(over.length), unit: '건', lead: true, sub: over.length ? '<span class="t-neg">높음 ' + overHigh.length + '건</span> · 지금 기준' : '지금 기준' },
       { label: '미결', value: num(open.length), unit: '건', sub: '등록·조치중 · 보류·이관 ' + all.filter(function (a) { return a.status === '보류' || a.status === '고객사 이관'; }).length + '건 별도' },
-      { label: '신규 · 완료', value: num(created.length) + ' · ' + num(closed.length), unit: '건', sub: s.label },
+      { label: '신규 · 완료', value: num(created.length) + ' · ' + num(closed.length), unit: '건', sub: esc(s.label) },
       { label: '기한 준수율', value: pct(ratio(onTime.length, withDue.length)), sub: '범위 안 완료 ' + withDue.length + '건 중 ' + onTime.length + '건' }
     ].concat(arA ? [{ label: '조치 이행률', value: arA.rate == null ? '—' : num(arA.rate * 100, 1), unit: '%', sub: arA.due ? '기한 도래 ' + num(arA.due) + '건 중 완료 ' + num(arA.done) + '건(개요와 같은 값)' : '이 기간에 기한이 든 조치 없음' }] : []));
     var ms = monthsBetween(s.from, endOf(s) < s.from ? s.from : endOf(s));
@@ -2154,23 +2181,23 @@
     open.forEach(function (a) { var o = src[a.srcForm || '본사 등록']; o.o[a.id] = 1; if (isOverdue(a, t)) o.ov[a.id] = 1; });
     var srcRows = Object.keys(src).map(function (k) { var o = src[k]; return { k: k, c: Object.keys(o.c).length, o: Object.keys(o.o).length, ov: Object.keys(o.ov).length }; }).sort(function (a, b) { return b.c - a.c || b.o - a.o; });
     var srcTbl = table([
-      { label: '출처', render: function (r) { var f = form(r.k); return esc(f ? r.k + ' ' + (f.short || f.title) : r.k); } },
+      { label: '출처', main: true, render: function (r) { var f = form(r.k); return esc(f ? r.k + ' ' + (f.short || f.title) : r.k); } },
       { label: '신규', num: true, render: function (r) { return num(r.c); } },
       { label: '미결', num: true, render: function (r) { return num(r.o); } },
-      { label: '기한경과', num: true, render: function (r) { return r.ov ? '<span class="t-neg">' + num(r.ov) + '</span>' : '0'; } }
-    ], srcRows.slice(0, 8), { empty: '이 범위에 조치가 없습니다.' });
+      { label: '기한경과', num: true, rkey: true, keyLabel: '기한경과 ', render: function (r) { return r.ov ? '<span class="t-neg">' + num(r.ov) + '</span>' : '0'; } }
+    ], srcRows.slice(0, 8), { empty: '이 범위에 조치가 없습니다.', l2: function (r) { return '신규 ' + num(r.c) + ' · 미결 ' + num(r.o); } });
     // 수준별 기한 준수율
     var lvRows = ['높음', '보통', '낮음'].map(function (lv) {
       var c = withDue.filter(function (a) { return a.level === lv; }), ok = c.filter(function (a) { return dateOf(a.doneAt) <= a.due; }).length;
       return { lv: lv, n: c.length, ok: ok, r: ratio(ok, c.length), ov: over.filter(function (a) { return a.level === lv; }).length };
     });
     var lvTbl = table([
-      { label: '수준', render: function (r) { return App.ui && App.ui.level ? App.ui.level(r.lv) : pill(r.lv, r.lv === '높음' ? 'neg' : r.lv === '보통' ? 'warn' : 'neu'); } },
+      { label: '수준', main: true, render: function (r) { return App.ui && App.ui.level ? App.ui.level(r.lv) : pill(r.lv, r.lv === '높음' ? 'neg' : r.lv === '보통' ? 'warn' : 'neu'); } },
       { label: '완료', num: true, render: function (r) { return num(r.n); } },
       { label: '기한 내', num: true, render: function (r) { return num(r.ok); } },
-      { label: '준수율', num: true, width: '30%', render: function (r) { return '<div class="anb-rate"><span class="num">' + pct(r.r) + '</span>' + bar(r.r) + '</div>'; } },
+      { label: '준수율', num: true, rkey: true, width: '30%', render: function (r) { return '<div class="anb-rate"><span class="num">' + pct(r.r) + '</span>' + bar(r.r) + '</div>'; } },
       { label: '지금 기한경과', num: true, render: function (r) { return r.ov ? '<span class="t-neg">' + num(r.ov) + '</span>' : '0'; } }
-    ], lvRows);
+    ], lvRows, { l2: function (r) { return '완료 ' + num(r.n) + ' · 기한 내 ' + num(r.ok) + ' · 지금 기한경과 ' + (r.ov ? '<span class="t-neg">' + num(r.ov) + '</span>' : '0'); } });
     // 오래된 미결
     var olds = open.slice().sort(function (a, b) { return String(a.createdAt) < String(b.createdAt) ? -1 : 1; }).slice(0, 8);
     var oldList = olds.length ? '<ul class="list">' + olds.map(function (a) {
@@ -2219,24 +2246,30 @@
       { label: '30일 안 평가', value: num(soon.length), unit: '곳', sub: soon.length ? esc(soon.map(function (x) { return x.name; }).slice(0, 2).join(', ')) + (soon.length > 2 ? ' 외' : '') : '평가 예정일 기준' }
     ]);
     var siteTbl = table([
-      { label: '사업장', render: function (r) { return '<b>' + esc(r.name) + '</b>'; } },
-      { label: '준비도', num: true, width: '26%', render: function (r) { return '<div class="anb-rate"><span class="num">' + pctN(r.ready) + '</span>' + bar(r.ready == null ? null : r.ready / 100, r.ready != null && r.ready < 70 ? 'neg' : '') + '</div>'; } },
+      { label: '사업장', main: true, render: function (r) { return '<b>' + esc(r.name) + '</b>'; } },
+      { label: '준비도', num: true, rkey: true, width: '26%', render: function (r) { return '<div class="anb-rate"><span class="num">' + pctN(r.ready) + '</span>' + bar(r.ready == null ? null : r.ready / 100, r.ready != null && r.ready < 70 ? 'neg' : '') + '</div>'; } },
       { label: '모의 Part I', num: true, render: function (r) { return r.partI == null ? '<span class="faint">—</span>' : num(r.partI, 1); } },
       { label: 'D1', num: true, render: function (r) { return r.d1 == null ? '<span class="faint">—</span>' : num(r.d1); } },
       { label: '불량·없음', num: true, render: function (r) { return r.bad ? '<span class="t-neg">' + r.bad + '</span>' : '0'; } },
       { label: '다음 평가', num: true, render: function (r) { if (!r.next) return '<span class="faint">—</span>'; var d = diff(t, r.next); return '<span class="nowrap">' + esc(r.next) + (d >= 0 ? ' <span class="' + (d <= 30 ? 't-warn' : 'faint') + '">D-' + d + '</span>' : '') + '</span>'; } }
-    ], per, { empty: 'HEC 평가 대상 사업장이 없습니다.', href: function (r) { return r.mockId ? '#/rec/' + r.mockId : ''; } });
+    ], per, { empty: 'HEC 평가 대상 사업장이 없습니다.', href: function (r) { return r.mockId ? '#/rec/' + r.mockId : ''; },
+      l2: function (r) {
+        var d = r.next ? diff(t, r.next) : null;
+        return '모의 Part I ' + (r.partI == null ? '—' : num(r.partI, 1)) + ' · D1 ' + (r.d1 == null ? '—' : num(r.d1)) + ' · 불량·없음 ' + (r.bad ? '<span class="t-neg">' + r.bad + '</span>' : '0') +
+          (r.next ? ' · 다음 평가 <span class="num">' + esc(r.next) + '</span>' + (d >= 0 ? ' <span class="' + (d <= 30 ? 't-warn' : '') + '">D-' + d + '</span>' : '') : '');
+      } });
     var weakBody = weak.length ? chart('hbars', weak.slice(0, 6).map(function (r) { return { label: r.it.code + ' ' + trunc(r.it.name, 26), value: r.n, sub: [r.b ? '불량 ' + r.b : '', r.x ? '증빙 없음 ' + r.x : '', r.w ? '주의 ' + r.w : ''].filter(Boolean).join(' · ') }; }), { format: function (v) { return num(v) + '곳'; }, highlight: 0 }) : empty('모든 항목이 양호이거나 해당없음입니다.');
     // 증빙 부족 → 양식
     var need = {};
     weak.filter(function (r) { return r.x > 0; }).forEach(function (r) { hecFormsOf(r.it).forEach(function (f) { var o = need[f] || (need[f] = { f: f, items: [], sites: {} }); o.items.push(r.it.code); r.sites.forEach(function (id) { if (grid[r.it.code + '|' + id].k === 'x') o.sites[id] = 1; }); }); });
     var needRows = Object.keys(need).map(function (k) { var o = need[k]; return { f: k, items: o.items, sites: Object.keys(o.sites) }; }).sort(function (a, b) { return b.sites.length - a.sites.length || b.items.length - a.items.length; });
     var needTbl = table([
-      { label: '증빙 양식', render: function (r) { var f = form(r.f); return '<b class="mono">' + esc(r.f) + '</b> ' + esc(f ? f.short || f.title : ''); } },
+      { label: '증빙 양식', main: true, render: function (r) { var f = form(r.f); return '<b class="mono">' + esc(r.f) + '</b> ' + esc(f ? f.short || f.title : ''); } },
       { label: '항목', render: function (r) { return '<span class="mono small">' + esc(r.items.slice(0, 5).join(' ')) + (r.items.length > 5 ? ' 외 ' + (r.items.length - 5) : '') + '</span>'; } },
-      { label: '사업장', num: true, render: function (r) { return num(r.sites.length) + '곳'; } },
-      { label: '', render: function (r) { return isHQ() ? '<a class="btn sm" href="#/requests/new?form=' + encodeURIComponent(r.f) + '&sites=' + encodeURIComponent(r.sites.join(',')) + '">요청 만들기</a>' : ''; } }
-    ], needRows, { empty: '증빙이 없는 항목이 없습니다.' });
+      { label: '사업장', num: true, rkey: !isHQ(), render: function (r) { return num(r.sites.length) + '곳'; } },
+      { label: '', rkey: isHQ(), render: function (r) { return isHQ() ? '<a class="btn sm" href="#/requests/new?form=' + encodeURIComponent(r.f) + '&sites=' + encodeURIComponent(r.sites.join(',')) + '">요청 만들기</a>' : ''; } }
+    ], needRows, { empty: '증빙이 없는 항목이 없습니다.',
+      l2: function (r) { return '사업장 ' + num(r.sites.length) + '곳 · <span class="mono">' + esc(r.items.slice(0, 5).join(' ')) + '</span>' + (r.items.length > 5 ? ' 외 ' + (r.items.length - 5) : ''); } });
     body += '<div class="grid">' +
       panel({ span: 7, title: '사업장별 준비도·모의 점수', sub: '준비도 낮은 순 · 모의 점수는 최근 분기 점검(N4) 기준', body: siteTbl, flush: true }) +
       panel({ span: 5, title: '가장 약한 항목', sub: '불량·증빙 없음 사업장 수', body: weakBody }) +
@@ -2303,8 +2336,8 @@
       : ranks.length ? '종합 점수 ' + esc(ranks[0].name) + ' ' + ranks[0].total + '점이 가장 낮습니다.' : '비교할 사업장이 없습니다.';
     var riskTone = { ok: '', soon: 'warn', over: 'neg', none: 'neg', 'new': '' };   /* 정상·개설 직후는 회색 글자, 색은 조치가 필요한 상태만 */
     var tbl = table([
-      { key: 'name', sort: true, label: '사업장', render: function (x) { return '<b>' + esc(x.name) + '</b>' + (bottom[x.id] ? ' ' + pill('하위', 'neg') : ''); } },
-      { key: 'total', sort: true, label: '종합', num: true, width: '15%', render: function (x) { return '<div class="anb-rate"><span class="num"><b>' + (x.total == null ? '—' : x.total) + '</b></span>' + bar(x.total == null ? null : x.total / 100) + '</div>'; } },
+      { key: 'name', sort: true, main: true, label: '사업장', render: function (x) { return '<b>' + esc(x.name) + '</b>' + (bottom[x.id] ? ' ' + pill('하위', 'neg') : ''); } },
+      { key: 'total', sort: true, label: '종합', num: true, rkey: true, width: '15%', render: function (x) { return '<div class="anb-rate"><span class="num"><b>' + (x.total == null ? '—' : x.total) + '</b></span>' + bar(x.total == null ? null : x.total / 100) + '</div>'; } },
       { key: 'daily', sort: true, label: '일일점검', num: true, render: function (x) { return pct(x.d.rate); } },
       { key: 'periodic', sort: true, label: '정기 양식', num: true, render: function (x) { return pct(x.p.rate) + '<div class="faint small">' + x.p.got + '/' + x.p.exp + '</div>'; } },
       { key: 'inc', sort: true, label: '재해·무상해·아차', num: true, render: function (x) { return num(x.inc) + ' · ' + num(x.noInj) + ' · ' + num(x.nm); } },
@@ -2313,13 +2346,21 @@
       { key: 'edu', sort: true, label: '정기교육', num: true, render: function (x) { return x.e.basis === 'person' ? num(x.e.ok) + '/' + num(x.e.persons) + '명' : num(x.e.hours, 1) + (x.e.std ? '/' + x.e.std : '') + '시간'; } },
       { key: 'drill', sort: true, label: '비상훈련', render: function (x) { return x.dr.done ? '<span class="muted">실시</span>' : pill('훈련 없음', 'warn'); } },
       { key: 'hec', sort: true, label: 'HEC', num: true, render: function (x) { return x.hec == null ? '<span class="faint">—</span>' : pctN(x.hec); } }
-    ], list, { cls: 'anb-score', sortAct: 'an.bSort', sortKey: key, desc: desc, empty: '범위에 사업장이 없습니다.', href: function (x) { return '#/sites/' + x.id; } });
+    ], list, { cls: 'anb-score', sortAct: 'an.bSort', sortKey: key, desc: desc, empty: '범위에 사업장이 없습니다.', href: function (x) { return '#/sites/' + x.id; },
+      l2: function (x) {
+        return (riskTone[x.r.state] ? pill('위험성평가 ' + x.r.label, riskTone[x.r.state]) + ' · ' : '') + (x.dr.done ? '' : pill('훈련 없음', 'warn') + ' · ') +
+          '일일 ' + pct(x.d.rate) + ' · 정기 ' + pct(x.p.rate) + ' · 미결 ' + num(x.open) + (x.over ? '(<span class="t-neg">경과 ' + x.over + '</span>)' : '') +
+          (x.hec == null ? '' : ' · HEC ' + pctN(x.hec)) + ' · 재해·무상해·아차 ' + num(x.inc) + '·' + num(x.noInj) + '·' + num(x.nm);
+      } });
     var barsBody = ranks.length ? chart('hbars', ranks.slice().reverse().map(function (x) { return { label: x.name, value: x.total, low: !!bottom[x.id], sub: bottom[x.id] ? '하위 3' : '', href: '#/sites/' + x.id }; }), { format: function (v) { return num(v) + '점'; }, highlight: function (r) { return r.low; } }) : empty('비교할 사업장이 없습니다.');
-    var wt = '<div class="tbl-wrap"><table class="tbl anb-wt"><thead><tr><th>지표</th><th class="num">가중치</th><th>계산</th></tr></thead><tbody>' + WEIGHTS.map(function (w) {
-      return '<tr><td data-label="지표">' + esc(w.label) + '</td><td class="num" data-label="가중치">' + w.w + '%</td><td data-label="계산" class="muted">' + esc(w.how) + '</td></tr>';
-    }).join('') + '<tr><td data-label="지표">재해·아차</td><td class="num" data-label="가중치">0%</td><td data-label="계산" class="muted">보고를 위축시키지 않도록 점수에 넣지 않고 표에만 보여 줍니다.</td></tr></tbody></table></div>';
+    var wtRow = function (lab, w, how) {   /* 휴대폰: 지표 · 가중치 한 줄, 계산 설명은 아래 줄(줄바꿈 허용) */
+      return '<tr><td class="r-main" data-label="지표">' + esc(lab) + '<span class="r-l2">' + esc(how) + '</span></td><td class="num r-key" data-label="가중치">' + w + '%</td><td data-label="계산" class="muted">' + esc(how) + '</td></tr>';
+    };
+    var wt = '<div class="tbl-wrap"><table class="tbl rows2 anb-wt"><thead><tr><th>지표</th><th class="num">가중치</th><th>계산</th></tr></thead><tbody>' + WEIGHTS.map(function (w) {
+      return wtRow(w.label, w.w, w.how);
+    }).join('') + wtRow('재해·아차', 0, '보고를 위축시키지 않도록 점수에 넣지 않고 표에만 보여 줍니다.') + '</tbody></table></div>';
     var body = '<div class="grid">' +
-      panel({ span: 12, title: '사업장 스코어카드', sub: s.label + ' · 미결 조치·위험성평가·HEC 는 지금 기준, 교육·훈련은 ' + esc(half.label) + ' · 재해·무상해·아차는 반려된 보고 제외 · 머리글을 누르면 정렬', body: tbl, flush: true }) +
+      panel({ span: 12, title: '사업장 스코어카드', sub: esc(s.label) + ' · 미결 조치·위험성평가·HEC 는 지금 기준, 교육·훈련은 ' + esc(half.label) + ' · 재해·무상해·아차는 반려된 보고 제외 · 머리글을 누르면 정렬', body: tbl, flush: true }) +
       panel({ span: 12, title: '종합 점수', sub: '높은 순 · 하위 3곳 강조', body: barsBody }) +
       panel({ span: 12, title: '종합 점수 계산 방법', sub: '가중 평균(0~100점), 값이 없는 지표는 빼고 환산', body: wt, flush: true }) +
       '</div>';
@@ -2373,7 +2414,7 @@
       : esc(code) + ' ' + num(list.length) + '건(' + nSites + '곳)' + (top ? ' — ' + esc(top.f.label) + ' \'' + esc(trunc(top.rk[0].k, 24)) + '\' ' + top.rk[0].n + '건(기록의 ' + pct(top.rk[0].n / list.length) + ')이 가장 많습니다.' : '.');
     var body = '<div class="toolbar anb-formbar">' + sel + '<span class="muted">' + esc(def.title) + ' · ' + esc((def.frequency && def.frequency.type) || '') + '</span><span class="spacer"></span><a class="btn ghost sm" href="#/records?form=' + esc(code) + '">기록 조회</a></div>';
     body += kpis([
-      { label: '기록', value: num(list.length), unit: '건', lead: true, sub: s.label },
+      { label: '기록', value: num(list.length), unit: '건', lead: true, sub: esc(s.label) },
       { label: '사업장', value: num(nSites), unit: '곳', sub: '범위 ' + s.siteObjs.length + '곳 중' },
       { label: '확인 완료', value: pct(ratio(confirmed, list.length)), sub: confirmed + '건 · 단계보고 ' + staged + '건' },
       { label: '최근 제출', value: last || '—', sub: last ? diff(last, today()) + '일 전' : '' }
@@ -2383,7 +2424,7 @@
     list.forEach(function (r) { var i = bucketOf(b, evDate(r)); if (i >= 0) mv[i]++; });
     var siteRk = ranked(countBy(list, function (r) { return siteName(r.site); }));
     var html = '<div class="grid">' +
-      panel({ span: 12, title: b.unit + '별 건수', sub: s.label + (code === 'F09' ? ' · 보고 대상 달 기준' : ''), body: list.length ? chart('bars', { labels: b.list.map(function (x) { return x.label; }), values: mv }, { format: fInt, height: 190 }) : empty('이 범위에 제출된 기록이 없습니다.') }) +
+      panel({ span: 12, title: b.unit + '별 건수', sub: esc(s.label) + (code === 'F09' ? ' · 보고 대상 달 기준' : ''), body: list.length ? chart('bars', { labels: b.list.map(function (x) { return x.label; }), values: mv }, { format: fInt, height: 190 }) : empty('이 범위에 제출된 기록이 없습니다.') }) +
       '</div><div class="grid an-pack" data-cols="3">' +
       panel({ span: 4, title: '사업장별 건수', sub: '많은 순', body: siteRk.length ? chart('hbars', siteRk.slice(0, 8).map(function (x) { return { label: x.k, value: x.n }; }), { format: fInt }) : empty('기록이 없습니다.') });
     dists.forEach(function (d) {
@@ -2393,26 +2434,27 @@
     });
     html += '</div><div class="grid">';
     if (nums.length) html += panel({ span: 12, title: '숫자 항목', sub: '응답한 기록 기준', flush: true, body: table([
-      { label: '항목', render: function (r) { return esc(r.f.label); } },
+      { label: '항목', main: true, render: function (r) { return esc(r.f.label); } },
       { label: '응답', num: true, render: function (r) { return num(r.n); } },
-      { label: '합계', num: true, render: function (r) { return num(r.sum, 1); } },
+      { label: '합계', num: true, rkey: true, keyUnit: function (r) { return r.f.unit ? ' ' + r.f.unit : ''; }, render: function (r) { return num(r.sum, 1); } },
       { label: '평균', num: true, render: function (r) { return num(r.avg, 1); } },
       { label: '최대', num: true, render: function (r) { return num(r.max, 1); } },
       { label: '단위', render: function (r) { return '<span class="muted">' + esc(r.f.unit || '') + '</span>'; } }
-    ], nums) });
+    ], nums, { l2: function (r) { return '응답 ' + num(r.n) + '건 · 평균 ' + num(r.avg, 1) + ' · 최대 ' + num(r.max, 1) + (r.f.unit ? ' ' + esc(r.f.unit) : ''); } }) });
     checkSections(def).forEach(function (sec) {
       var tl = checkTally(list, sec.id), its = (sec.items || []).map(function (it) { var o = tl[it.code] || { g: 0, w: 0, b: 0, na: 0 }; return { it: it, o: o, n: o.g + o.w + o.b }; }).filter(function (x) { return x.n + x.o.na > 0; });
       its.sort(function (a, b) { return ratio(b.o.w + b.o.b, b.n || 1) - ratio(a.o.w + a.o.b, a.n || 1) || b.o.b - a.o.b; });
       var shown = its.slice(0, 12);
       html += panel({ span: 12, title: sec.title || '체크리스트', sub: '항목별 판정 분포 · 주의·불량 비율 높은 순 ' + shown.length + '/' + (sec.items || []).length + '항목', flush: true, actions: stackLegend(),
         body: table([
-          { label: '항목', render: function (r) { return '<span class="mono">' + esc(r.it.code) + '</span> ' + esc(trunc(r.it.text || r.it.name || '', 60)); } },
-          { label: '판정', width: '30%', render: function (r) { return stack100(r.o); } },
+          { label: '항목', main: true, render: function (r) { return '<span class="mono">' + esc(r.it.code) + '</span> ' + esc(trunc(r.it.text || r.it.name || '', 60)); } },
+          { label: '판정', rkey: true, width: '30%', render: function (r) { return stack100(r.o); } },
           { label: '양호', num: true, render: function (r) { return num(r.o.g); } },
           { label: '주의', num: true, render: function (r) { return num(r.o.w); } },
           { label: '불량', num: true, render: function (r) { return r.o.b ? '<span class="t-neg">' + num(r.o.b) + '</span>' : '0'; } },
           { label: '해당없음', num: true, render: function (r) { return num(r.o.na); } }
-        ], shown, { empty: '이 범위에 판정 기록이 없습니다.' }) });
+        ], shown, { empty: '이 범위에 판정 기록이 없습니다.',
+          l2: function (r) { return '양호 ' + num(r.o.g) + ' · 주의 ' + num(r.o.w) + ' · 불량 ' + (r.o.b ? '<span class="t-neg">' + num(r.o.b) + '</span>' : '0') + ' · 해당없음 ' + num(r.o.na); } }) });
     });
     (def.sections || []).filter(function (x) { return x.type === 'table'; }).forEach(function (sec) {
       var cols = (sec.columns || []).filter(function (c) { return c.type === 'select' && !c.sensitive; }), ncol = (sec.columns || []).filter(function (c) { return c.type === 'number'; });
@@ -2447,7 +2489,7 @@
     if (!App.api) { show('<p>서버에 연결되지 않았습니다.</p>'); return; }
     App.api('ai.insight', { scope: { from: s.from, to: s.to, sites: s.all ? [] : s.sites }, digest: dg }, { silent: true }).then(function (d) {
       var text = String((d && d.text) || '').trim();
-      show(text ? '<div class="anb-ai">' + text.split(/\n{2,}/).map(function (p) { return '<p>' + esc(p).replace(/\n/g, '<br>') + '</p>'; }).join('') + '</div><p class="faint small">규칙 기반 숫자(기록 ' + s.label + ')를 AI 가 요약한 글입니다. 판단 전에 각 화면의 숫자를 확인해 주세요.</p>' : '<p class="muted">요약 결과가 비어 있습니다.</p>');
+      show(text ? '<div class="anb-ai">' + text.split(/\n{2,}/).map(function (p) { return '<p>' + esc(p).replace(/\n/g, '<br>') + '</p>'; }).join('') + '</div><p class="faint small">규칙 기반 숫자(기록 ' + esc(s.label) + ')를 AI 가 요약한 글입니다. 판단 전에 각 화면의 숫자를 확인해 주세요.</p>' : '<p class="muted">요약 결과가 비어 있습니다.</p>');
     }).catch(function (e) {
       var msg = String((e && e.message) || '');
       var nokey = /키|key|설정|API/i.test(msg) || (e && e.code === 'INVALID');

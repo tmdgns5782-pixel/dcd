@@ -83,7 +83,7 @@
   .hq-plabel { min-width: 0; }
   .hq-col-panel .panel-actions { max-width: 100%; }
   .hq-rv-left .panel-bd { max-height: none; }
-  /* 취합 현황 휴대폰: 컨트롤 두 줄(범위+요청 열 / 기간 이동+업무구성), 기간 줄은 숨기고 범례는 가로 한 줄 */
+  /* 취합 현황 휴대폰: 컨트롤 두 줄(범위+요청 열 / 기간 이동+업무구성), 기간 줄은 숨기고 범례는 줄바꿈해 기호 설명을 모두 보인다 */
   .hq-col-tools .seg { display: inline-flex; width: auto; flex: 1 1 auto; order: 0; }
   .hq-col-tools .seg button { flex: 1 1 0; }
   .hq-col-tools .check { order: 1; flex: none; }
@@ -91,7 +91,9 @@
   .hq-col-tools .hq-col-tag { order: 3; }
   .hq-col-tools .spacer { display: none; }
   .hq-col-panel .panel-sub { display: none; }
-  .hq-col-panel .mk-legend { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
+  .hq-col-panel .mk-legend { flex-wrap: wrap; gap: 6px 12px; }
+  /* 검토함 휴대폰: 기록을 고르면 목록 대신 미리보기(보고 확인·반려 버튼 포함)를 보인다 */
+  .hq-rv.has-sel .hq-rv-left, .hq-rv:not(.has-sel) .hq-rv-right { display: none; }
 }
 /* ===== [hq-a] 끝 ===== */
 /* ===== [hq-b] 시작 ===== */
@@ -381,7 +383,9 @@ a.anb-hkb:focus-visible { outline: 2px solid var(--accent, #223189); outline-off
 .anb-hecwrap { max-height: 640px; overflow: auto; }
 .anb-hec td { text-align: center; padding: 2px 4px; }
 .anb-hec th.mx-row { text-align: left; font-weight: 400; min-width: 240px; max-width: 320px; }
-.anb-hec th.mx-row small { display: block; color: var(--faint, #676b84); font-size: 11px; }
+/* 항목 행: 출처 양식 태그를 오른쪽 절대 위치(공통 .mx-row small) 대신 항목명 아래 줄에 둔다 — 열 폭이 좁아도 글자가 겹치지 않게 */
+.anb-hec tbody tr:not(.anb-hg) th.mx-row { height: auto; padding-top: 6px; padding-bottom: 6px; padding-right: 16px; white-space: normal; line-height: 18px; }
+.anb-hec th.mx-row small { position: static; transform: none; display: block; margin-top: 1px; color: var(--faint, #676b84); font-size: 11px; line-height: 14px; white-space: normal; }
 .anb-hec tr.anb-hg th { font-size: var(--fs-small, 12px); font-weight: 600; color: var(--muted, #555a75); padding-top: 12px; background: var(--surface, #fff); }
 .anb-hec thead th { position: sticky; top: 0; background: var(--surface, #fff); z-index: 1; }
 
@@ -419,7 +423,19 @@ a.anb-hkb:focus-visible { outline: 2px solid var(--accent, #223189); outline-off
 
 @media (max-width: 640px) {
   .anb-rate { grid-template-columns: 40px minmax(48px, 1fr); }
-  .anb-hec th.mx-row { min-width: 168px; }
+  .anb-hec th.mx-row { min-width: 148px; width: 156px; max-width: 168px; }
+  .anb-hec tbody tr:not(.anb-hg) th.mx-row { white-space: normal; text-overflow: clip; }
+  /* 분석 표 두 줄 행(.tbl.rows2): 오른쪽 핵심 값 — 비율은 숫자 + 짧은 막대, 판정 분포는 고정 폭 막대 */
+  .tbl.rows2 .r-key .anb-rate { grid-template-columns: auto 48px; gap: 6px; }
+  .tbl.rows2 .r-key .anb-rate .bar { min-width: 48px; }
+  .tbl.rows2 .r-key .anb-st { width: 72px; min-width: 72px; }
+  .tbl.rows2 .r-key .anb-klab { color: var(--muted, #555a75); font-size: 13px; }
+  .tbl.rows2 .r-key .anb-kunit { color: var(--muted, #555a75); font-size: 13px; margin-left: 1px; }
+  .tbl.rows2 .r-key .t-neg { font-weight: 600; }
+  /* 점수 계산 방법: 설명이 본문이므로 보조줄을 줄바꿈해 모두 보여 준다 */
+  .anb-wt.rows2:not(.keep) td.r-main { white-space: normal; }
+  .anb-wt.rows2:not(.keep) .r-l2 { white-space: normal; }
+  .anb-hec th.mx-row small { display: block; font-size: var(--fs-small, 12px); line-height: 16px; margin-top: 2px; }
   .anb-formbar .select { max-width: none; width: 100%; }
   .anb-tcols { grid-template-columns: 1fr; }
   .anb-pad { display: none; }
@@ -459,7 +475,30 @@ a.anb-hkb:focus-visible { outline: 2px solid var(--accent, #223189); outline-off
 .btn.st-sos .st-cta-sub { color: var(--pill-neg-ink); }
 .st-cta-meta { padding: 0 2px; font-size: 13px; line-height: 18px; color: var(--muted); }
 .st-cta-meta b { color: var(--text); font-weight: 600; }
-.st-119 { color: var(--negative); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+/* 근무조 칩(조별 상태 · 직접 고르기) */
+.st-shifts { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; }
+.st-shift {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; min-width: 0; min-height: 44px; padding: 4px 8px;
+  border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface); color: var(--text);
+  font: inherit; cursor: pointer; text-align: center;
+}
+.st-shift:hover { background: var(--raised); }
+.st-shift:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.st-shift.on { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); }
+.st-shift-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; line-height: 18px; font-weight: 600; }
+.st-shift-st { font-size: var(--fs-small); line-height: 16px; color: var(--muted); }
+.st-shift.is-done .st-shift-st { color: var(--positive); }
+.st-shift.is-ret .st-shift-st { color: var(--negative); }
+.st-shift.is-draft .st-shift-st { color: var(--warning); }
+/* 전화 버튼 줄(119 · 사업장 담당자 · 본사) */
+.st-calls { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn.st-call { flex: 1 1 0; min-width: 0; min-height: 44px; }
+.btn.st-call span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btn.st-call-119 { color: var(--negative); border-color: var(--negative); font-weight: 600; }
+.btn.st-call-119:hover { background: var(--pill-neg-bg); }
+/* 사업장 정보의 전화번호: 누르기 쉬운 44px 영역 */
+.st-tel { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin: -12px 0; padding: 0 12px 0 0; font-weight: 500; }
+.st-tel svg { flex: none; }
 
 /* 목록 행: 한 행 한 동작, 끝 열(알약 · 동작 글)은 모든 행이 같은 자리 */
 .st-li .li-side { display: grid; grid-auto-flow: column; align-items: center; justify-items: end; gap: 12px; }
@@ -563,6 +602,10 @@ dialog.st-sheet:focus { outline: none; }
   .st-formsel { display: block; margin-top: 12px; }
   .st-formsel .select { width: 100%; height: 44px; font-size: 16px; }
   .st-hist li { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  /* 사업장 휴대폰의 기록 상세: 'n단계 이어서 쓰기·고쳐서 다시 제출' 버튼을 더보기 메뉴에 숨기지 않고 제목 아래 넓게 */
+  .shell[data-kind="site"] .title-row .actions:has(> .btn[data-href^="#/edit/"]) { display: flex; width: 100%; flex-wrap: nowrap; }
+  .shell[data-kind="site"] .title-row .actions > .btn.hide-phone[data-href^="#/edit/"] { display: inline-flex !important; flex: 1 1 auto; min-width: 0; height: 44px; justify-content: center; }
+  .shell[data-kind="site"] .title-row .actions > .btn.hide-phone[data-href^="#/edit/"] ~ .icon-btn { flex: none; width: 44px; height: 44px; }
   .st-upload-row .btn.st-upload { flex: 1 1 auto; }
   .st-photos { gap: 8px; }
 }

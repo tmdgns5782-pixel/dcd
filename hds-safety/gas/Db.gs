@@ -931,10 +931,23 @@ var Db = (function () {
     var head = s.slice(5, comma);
     var body = s.slice(comma + 1);
     var mime = (head.split(';')[0] || 'application/octet-stream').toLowerCase();
-    var bytes = /;base64/i.test(head) ? Utilities.base64Decode(body) : Utilities.newBlob(decodeURIComponent(body)).getBytes();
+    var bytes;
+    try {
+      bytes = /;\s*base64/i.test(head) ? Utilities.base64Decode(body) : Utilities.newBlob(decodeURIComponent(body)).getBytes();
+    } catch (e) {
+      fail('INVALID', '파일 내용이 깨졌습니다. 다시 골라 올려 주세요');
+    }
     if (bytes.length > APP.maxFileBytes) fail('INVALID', '파일이 너무 큽니다. 8MB 이하만 올릴 수 있습니다');
     if (!bytes.length) fail('INVALID', '빈 파일은 올릴 수 없습니다');
     var file = folder(siteId).createFile(Utilities.newBlob(bytes, mime, safeName(name)));
+    return { driveId: file.getId(), mime: mime, size: bytes.length };
+  }
+
+  /** 이미 해독·검사한 바이트 → 드라이브 파일. 반환 {driveId, mime, size}. */
+  function saveBytes(bytes, mime, name, siteId) {
+    if (!bytes || !bytes.length) fail('INVALID', '빈 파일은 올릴 수 없습니다');
+    if (bytes.length > APP.maxFileBytes) fail('INVALID', '파일이 너무 큽니다. 8MB 이하만 올릴 수 있습니다');
+    var file = folder(siteId).createFile(Utilities.newBlob(bytes, mime || 'application/octet-stream', safeName(name)));
     return { driveId: file.getId(), mime: mime, size: bytes.length };
   }
 
@@ -972,7 +985,7 @@ var Db = (function () {
     withLock: withLock, kvGet: kvGet, kvSet: kvSet, settings: settings, saveSettings: saveSettings, log: log,
     hash: hash, uuid8: uuid8, token: token, randomCode: randomCode,
     now: now, today: today, addDays: addDays, yymmdd: yymmdd, yymm: yymm,
-    forms: forms, form: form, folder: folder, saveDataUrl: saveDataUrl, readDataUrl: readDataUrl, putJson: putJson, getJson: getJson,
+    forms: forms, form: form, folder: folder, saveDataUrl: saveDataUrl, saveBytes: saveBytes, readDataUrl: readDataUrl, putJson: putJson, getJson: getJson,
     fit: fit, reset: reset, deepMerge: deepMerge
   };
 })();

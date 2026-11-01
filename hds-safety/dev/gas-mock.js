@@ -11,7 +11,7 @@
  *   nowFn,            // () => Date (캐시 만료·기록 시각)
  *   onMail,           // (msg) => void  MailApp.sendEmail 포착
  *   log,              // {log,info,warn,error} — 기본 console
- *   activeUserEmail, effectiveUserEmail, serviceUrl,
+ *   activeUserEmail, effectiveUserEmail, serviceUrl,   // 신원 둘 다 안 주면 둘 다 'owner@preview.local'(소유자 편집기 실행)
  *   autoSave,         // 기본 true: 상태가 바뀌면 300ms 뒤 storage 에 저장
  *   debounceMs        // 기본 300
  * }) → { globals, state, save(), reload(), reset(), isDirty(), sent:[], logs:[], warnings:[], table(name), lastTemplate }
@@ -585,6 +585,12 @@
 
   function createGasMock(opts) {
     opts = opts || {};
+    // 신원을 따로 주지 않으면 '소유자가 편집기에서 실행'(실행 계정 = 방문자 = 소유자)으로 본다.
+    // 서버 ownerRun_() 은 실행 계정 주소를 못 읽으면 거부(실패 시 닫힘)하므로, 모의도 실제 GAS 처럼 주소를 준다.
+    if (opts.activeUserEmail === undefined && opts.effectiveUserEmail === undefined) {
+      opts.activeUserEmail = 'owner@preview.local';
+      opts.effectiveUserEmail = 'owner@preview.local';
+    }
     var storage = opts.storage || null;
     var storageKey = opts.storageKey || 'hds-preview-db';
     var nowFn = typeof opts.nowFn === 'function' ? opts.nowFn : function () { return new Date(); };

@@ -281,7 +281,39 @@
     return new Blob([decodeURIComponent(s.slice(i + 1))], { type: mime });
   }
 
+  /** 지금 근무 중인 조와 그 근무일 → { shift, date, idx }. 사업장 홈 큰 버튼·새 일일점검 기본값이 같이 쓴다.
+   *  이름으로 알 수 있는 조(주간·오전·오후·야간…): 낮 07~19시를 낮 조끼리 순서대로 나누고(주간·오전 먼저, 오후 나중),
+   *  19~07시는 야간조. 주간·오후·야간 3교대 → 07~13 주간 · 13~19 오후 · 19~07 야간.
+   *  이름으로 알 수 없는 조(A조·B조…)는 07시부터 하루를 똑같이 나눈다. 야간 근무는 근무 시작일(전날) 기준. */
+  function shiftNow(shifts, at) {
+    var sh = (Array.isArray(shifts) && shifts.length ? shifts : ['주간']).map(function (x) { return String(x); });
+    var d = at instanceof Date ? at : now(), h = d.getHours(), t = dkey(d), y = addDays(t, -1);
+    if (sh.length === 1) return { shift: sh[0], date: t, idx: 0 };
+    var NIGHT = /야간|심야|밤/, DAY = /주간|낮|일근|오전|오후/;
+    var nights = [], days = [];
+    sh.forEach(function (x, i) { if (NIGHT.test(x)) nights.push(i); else if (DAY.test(x)) days.push(i); });
+    if (days.length && nights.length + days.length === sh.length) {
+      /* 오후·늦은 조를 뒤로(같은 순위는 입력 순서) */
+      days.sort(function (a, b) { return ((/오후/.test(sh[a]) ? 1 : 0) - (/오후/.test(sh[b]) ? 1 : 0)) || a - b; });
+      if (h >= 7 && h < 19) {
+        var di = days[Math.min(days.length - 1, Math.floor((h - 7) / (12 / days.length)))];
+        return { shift: sh[di], date: t, idx: di };
+      }
+      if (nights.length) {
+        var nh = (h + 24 - 19) % 24, ni = nights[Math.min(nights.length - 1, Math.floor(nh / (12 / nights.length)))];
+        return { shift: sh[ni], date: h < 7 ? y : t, idx: ni };
+      }
+      /* 야간조가 없는 사업장: 19시 뒤는 그날 마지막 낮 조, 07시 전은 그날 첫 조 */
+      var li = h >= 19 ? days[days.length - 1] : days[0];
+      return { shift: sh[li], date: t, idx: li };
+    }
+    var slot = Math.floor(((h + 24 - 7) % 24) / (24 / sh.length));
+    slot = Math.min(sh.length - 1, Math.max(0, slot));
+    return { shift: sh[slot], date: h < 7 ? y : t, idx: slot };
+  }
+
   App.u = {
+    shiftNow: shiftNow,
     esc: esc, pad: pad, today: today, now: now, isoLocal: isoLocal, dkey: dkey, parseD: parseD, parseDT: parseDT,
     addDays: addDays, daysDiff: daysDiff, fmtD: fmtD, fmtDT: fmtDT, fmtK: fmtK, weekday: weekday, rel: rel,
     num: num, pct: pct, uid: uid, clone: clone, isEmpty: isEmpty, debounce: debounce, groupBy: groupBy, sum: sum,
@@ -439,7 +471,25 @@
     try { return (window.google && google.script && google.script.run) ? google.script.run : null; } catch (e) { return null; }
   }
 
+  /* 진행 중인 쓰기(records.save·submit) — 화면이 '이미 있는 초안'을 판단하기 전에 기다릴 수 있게 */
+  var writesInFlight = [];
+  var WRITE_TRACK = /^records\.(save|submit)$/;
+  /** 진행 중인 기록 저장·제출이 모두 끝나면(성공·실패 무관) 풀리는 Promise. 최대 ms(기본 8초)까지만 기다린다 */
+  App.writesSettled = function (ms) {
+    if (!writesInFlight.length) return Promise.resolve();
+    var all = Promise.all(writesInFlight.map(function (p) { return p.catch(function () { return null; }); }));
+    return Promise.race([all, new Promise(function (r) { setTimeout(r, ms || 8000); })]).then(function () { return undefined; });
+  };
   App.api = function (method, payload, opts) {
+    var call = apiCall(method, payload, opts);
+    if (WRITE_TRACK.test(method)) {
+      writesInFlight.push(call);
+      var drop = function () { var i = writesInFlight.indexOf(call); if (i >= 0) writesInFlight.splice(i, 1); };
+      call.then(drop, drop);
+    }
+    return call;
+  };
+  function apiCall(method, payload, opts) {
     opts = opts || {};
     return new Promise(function (resolve, reject) {
       var tries = 0;
@@ -483,7 +533,7 @@
       }
       attempt();
     });
-  };
+  }
 
   /* =====================================================================
    * 5. 상태 App.S 와 편의 함수
@@ -731,6 +781,17 @@
       img.src = url;
     });
   }
+  /** 브라우저가 그림으로 열 수 있는가 → Promise<boolean> */
+  function canDecode(src) {
+    return new Promise(function (resolve) {
+      var url = src instanceof Blob ? URL.createObjectURL(src) : String(src);
+      var img = new Image();
+      var done = function (ok) { if (src instanceof Blob) URL.revokeObjectURL(url); resolve(ok); };
+      img.onload = function () { done(!!(img.naturalWidth || img.width)); };
+      img.onerror = function () { done(false); };
+      img.src = url;
+    });
+  }
   function toJpgName(name) { return String(name || 'photo').replace(/\.[A-Za-z0-9]{2,5}$/, '') + '.jpg'; }
 
   /** 파일·dataUrl 올리기 → Promise<fileId>. 사진은 줄여서, 서명(kind 'sign')·그 밖은 원본. 8MB 초과 거부 */
@@ -739,11 +800,19 @@
     var isBlob = typeof Blob !== 'undefined' && src instanceof Blob;
     var mime = isBlob ? String(src.type || '').toLowerCase() : dataUrlMime(src);
     var name = o.name || (isBlob && src.name) || ((o.kind || 'file') + '-' + stamp());
-    var wantShrink = COMPRESS_RE.test(mime) && o.kind !== 'sign' && o.compress !== false;
     var kind = o.kind || (/^image\//.test(mime) ? 'photo' : 'attach');
+    /* 사진은 브라우저가 실제로 그림으로 열 수 있어야 받는다(이름만 .png 인 글·PDF, 이 기기가 못 여는 HEIC 거부) */
+    var mustDecode = kind === 'photo';
+    var wantShrink = (COMPRESS_RE.test(mime) || (kind === 'photo' && !mime)) && kind !== 'sign' && o.compress !== false;
     var fail = function (msg) { var e = apiError(msg, 'INVALID'); App.toast(msg, 'neg'); e.toasted = true; return Promise.reject(e); };
+    var badImage = function () {
+      return fail(/heic|heif/i.test(mime + ' ' + name)
+        ? 'HEIC 사진은 이 기기에서 열 수 없습니다. 카메라 설정을 ‘호환성 우선(JPG)’으로 바꾸거나 화면을 캡처해 올려 주세요'
+        : '사진 파일을 열 수 없습니다(' + (name || '파일') + '). 손상됐거나 사진이 아닌 파일입니다');
+    };
     if (!src) return fail('올릴 파일이 없습니다');
     if (!isBlob && !/^data:/.test(String(src))) return fail('파일 형식을 알 수 없습니다');
+    if (kind === 'photo' && mime && !/^image\//.test(mime)) return fail('사진 파일(JPG·PNG)만 올릴 수 있습니다' + (name ? ' (' + name + ')' : ''));
     if (isBlob && !wantShrink && src.size > MAX_FILE) return fail('8MB 를 넘는 파일은 올릴 수 없습니다 (' + size(src.size) + ')');
 
     var ready = wantShrink
@@ -755,9 +824,11 @@
             name = toJpgName(name);
             return r.dataUrl;
           }
-          return isBlob ? readAsDataUrl(src) : String(src);
+          return mustDecode ? badImage() : (isBlob ? readAsDataUrl(src) : String(src));
         })
-      : (isBlob ? readAsDataUrl(src) : Promise.resolve(String(src)));
+      : mustDecode
+        ? canDecode(src).then(function (ok) { return ok ? (isBlob ? readAsDataUrl(src) : String(src)) : badImage(); })
+        : (isBlob ? readAsDataUrl(src) : Promise.resolve(String(src)));
 
     return ready.then(function (dataUrl) {
       var bytes = dataUrlBytes(dataUrl);
@@ -958,9 +1029,13 @@
     });
   };
   var countTimer = null;
+  /* 색인·조치·요청·열람이 바뀌면 숫자를 고치고 'app:data' 를 알린다(뒤늦게 끝난 저장을 지금 화면이 다시 그리도록) */
   function scheduleCounts() {
     if (countTimer) return;
-    countTimer = setTimeout(function () { countTimer = null; App.updateCounts(); }, 0);
+    countTimer = setTimeout(function () {
+      countTimer = null; App.updateCounts();
+      try { document.dispatchEvent(new CustomEvent('app:data')); } catch (e) { /* 무시 */ }
+    }, 0);
   }
   function updateStamp() {
     var el = document.getElementById('stamp');
