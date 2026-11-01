@@ -1581,7 +1581,8 @@ body.rv-printing #print-root { display: block; min-height: 100vh; }
 .hq-qrdoc-sub { font-size: 13px; color: #555a75; margin: 0; }
 .hq-qrdoc-qr { width: 78mm; margin: 10mm auto 8mm; }
 .hq-qrdoc-qr svg { width: 100%; height: auto; display: block; }
-.hq-qrdoc-steps { text-align: left; max-width: 140mm; margin: 0 auto; padding-left: 6mm; font-size: 15px; line-height: 1.7; }
+.hq-qrdoc .hq-qrdoc-steps { text-align: left; list-style: decimal outside; width: fit-content; max-width: 150mm; margin: 0 auto; padding-left: 7mm; font-size: 15px; line-height: 1.8; }
+.hq-qrdoc .hq-qrdoc-steps li { display: list-item; }
 .hq-qrdoc-link { font-size: 10px; color: #555a75; margin-top: 8mm; word-break: break-all; }
 .hq-qrdoc-note { font-size: 11px; color: #676b84; margin-top: 4mm; }
 @media print {
@@ -1592,11 +1593,13 @@ body.rv-printing #print-root { display: block; min-height: 100vh; }
 
 /* 태블릿·휴대폰 */
 @media (max-width: 1100px) {
+  .hq-site-grid > .span-4 { order: -1; }
   .hq-set { grid-template-columns: 1fr; gap: 12px; padding: 24px 0; }
   .hq-act-title { max-width: none; }
 }
 @media (max-width: 640px) {
   .hq-q, .hq-searchbar .hq-q, .hq-rec-tools .select { width: 100%; max-width: none; }
+  .toolbar .hq-q { flex: 1 1 100%; }
   .hq-range { width: 100%; }
   .hq-range .input { flex: 1; width: auto; min-width: 0; }
   .hq-rec-tabs { overflow-x: auto; padding: 0 12px; }
@@ -2570,8 +2573,9 @@ dialog.st-sheet:focus { outline: none; }
       dirty = true;
       if (!storage || !autoSave) return;
       if (!timers) { save(); return; }
-      if (timer) timers.clear(timer);
-      timer = timers.set(function () { timer = null; save(); }, debounceMs);
+      // 첫 변경 뒤 debounceMs 에 한 번 저장(그 사이 변경은 묶음). 계속 바뀌어도 저장이 밀리지 않게 타이머를 다시 걸지 않는다.
+      if (timer) return;
+      timer = timers.set(function () { timer = null; if (dirty) save(); }, debounceMs);
     }
 
     function newId(prefix) {
@@ -19780,8 +19784,9 @@ return {
     return pill(r.status || '—', REC_TONE[r.status] || 'neu');
   }
   var ACT_TONE = { '등록': 'neu', '조치중': 'warn', '완료': 'acc', '확인': 'pos', '보류': 'neu', '고객사 이관': 'neu' };
+  /* 조치 상태 알약: 기한경과는 기한 칸이 빨강으로 말하므로 여기서는 진행 상태만(한 줄에 빨강 하나) */
   function actPill(a) {
-    if (App.ui && App.ui.actStatus) { try { return App.ui.actStatus(a); } catch (e) { /* 아래 */ } }
+    if (App.ui && App.ui.actStatus) { try { return App.ui.actStatus(Object.assign({}, a, { due: '' })); } catch (e) { /* 아래 */ } }
     return pill(a.status === '완료' ? '확인 대기' : (a.status || '—'), ACT_TONE[a.status] || 'neu');
   }
   function levelPill(l) {
@@ -20224,7 +20229,7 @@ return {
   function recBulkHtml(total) {
     var n = selIds().length;
     return (n ? '<span class="hq-selcount num">' + num(n) + '건 선택</span><button class="btn ghost sm" type="button" data-act="hq.rec.clear">선택 해제</button>' : '') +
-      '<button class="btn sm" type="button" data-act="hq.rec.print"' + (n ? '' : ' disabled title="인쇄할 기록을 먼저 고르세요"') + '>' + icon('print') + '<span>인쇄</span></button>' +
+      '<button class="btn sm hide-phone" type="button" data-act="hq.rec.print"' + (n ? '' : ' disabled title="인쇄할 기록을 먼저 고르세요"') + '>' + icon('print') + '<span>인쇄</span></button>' +
       '<button class="btn sm" type="button" data-act="hq.rec.xlsx"' + (n || total ? '' : ' disabled') + '>' + icon('download') + '<span>' + (n ? '엑셀' : '엑셀(전체 ' + num(total) + '건)') + '</span></button>' +
       '<button class="btn sm" type="button" data-act="hq.rec.sheet"' + (total ? '' : ' disabled') + '>' + icon('external') + '<span>구글 시트로</span></button>';
   }
@@ -20752,10 +20757,12 @@ return {
           var to = b.getAttribute('data-to');
           if ((to === '조치중' && cur.status === '등록') || to === '확인') { runMove(dd, cur, to, b, ''); return; }
           slot(dd.el, 'move').innerHTML = moveFormHtml(cur, to);
+          dd.setFoot('');
           var f = dd.el.querySelector('#mv-note');
           if (f) f.focus();
         } else if (k === 'move-cancel') {
           slot(dd.el, 'move').innerHTML = '';
+          dd.setFoot(actFootHtml(cur));
         } else if (k === 'move-go') {
           runMove(dd, cur, b.getAttribute('data-to'), b, null);
         } else if (k === 'save-meta') {
@@ -20801,7 +20808,7 @@ return {
       putActLocal(act);
       toast(a.id + ' → ' + (to === '완료' ? '완료(확인 대기)' : to), 'pos');
       refreshActDlg(dd, a.id);
-    }).catch(function (er) { toast(errMsg(er), 'neg'); busy(btn, false); });
+    }).catch(function (er) { toast(errMsg(er), 'neg'); busy(btn, false); if (!slot(el, 'move').innerHTML) dd.setFoot(actFootHtml(a)); });
   }
 
   /* ---- 본사 수동 등록 ---- */
@@ -21070,7 +21077,7 @@ return {
         (s.managerEmail ? '' : ' · <span class="t-warn">담당자 이메일 없음</span>');
       var acts2 = '<a class="btn" href="#/records?site=' + encodeURIComponent(s.id) + '">' + icon('list') + '<span>기록</span></a>';
       html = titleRow(s.name, sub, acts2) +
-        '<div class="grid align-start">' +
+        '<div class="grid align-start hq-site-grid">' +
         '<div class="span-8 stack-16">' + formPanel + peoplePanel(s) + '</div>' +
         '<div class="span-4 stack-16">' + linkPanel(s) + siteActsPanel(s) + siteRecentPanel(s) + '</div></div>';
     }
@@ -21524,8 +21531,11 @@ return {
     info = info || {};
     var tr = info.triggers, trHtml;
     if (Array.isArray(tr)) {
+      var TRN = { cronDaily: '매일 독촉·기한경과 요약', cronWeekly: '월요일 주간 요약' };
       trHtml = tr.length ? tr.map(function (t) {
-        return esc(typeof t === 'string' ? t : (t.fn || t.handler || t.name || '') + (t.desc || t.when ? ' (' + (t.desc || t.when) + ')' : ''));
+        var fn = typeof t === 'string' ? t : (t.fn || t.handler || t.name || '');
+        var when = typeof t === 'string' ? '' : (t.desc || t.when || '');
+        return esc(TRN[fn] || fn) + ' <span class="faint mono hq-small">' + esc(fn + (when ? ' · ' + when : '')) + '</span>';
       }).join('<br>') : '<span class="t-warn">설치 안 됨 — 독촉·주간 요약 메일이 자동으로 나가지 않습니다</span>';
     } else if (tr && typeof tr === 'object') trHtml = esc(Object.keys(tr).map(function (k) { return k + ' ' + tr[k]; }).join(' · '));
     else trHtml = tr ? esc(tr) : DASH;

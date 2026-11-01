@@ -168,8 +168,15 @@ async function go(page, hash) {
 
 async function shot(page, name) {
   const file = path.join(SHOTS, name + '.png');
+  // 알림(토스트)이 내용을 가리지 않게 찍는 동안만 숨긴다
+  await page.evaluate(() => { const t = document.getElementById('toasts'); if (t) t.style.visibility = 'hidden'; }).catch(() => {});
+  try { return await shotRaw(page, file); } finally {
+    await page.evaluate(() => { const t = document.getElementById('toasts'); if (t) t.style.visibility = ''; }).catch(() => {});
+  }
+}
+async function shotRaw(page, file) {
   try { await page.screenshot({ path: file, fullPage: true, timeout: 20000 }); } catch (e) {
-    try { await page.screenshot({ path: file, timeout: 20000 }); } catch (e2) { warn('스크린샷', `${name}: ${e2.message}`); }
+    try { await page.screenshot({ path: file, timeout: 20000 }); } catch (e2) { warn('스크린샷', `${path.basename(file)}: ${e2.message}`); }
   }
   return path.relative(ROOT, file);
 }

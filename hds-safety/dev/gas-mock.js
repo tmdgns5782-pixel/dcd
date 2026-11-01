@@ -644,8 +644,9 @@
       dirty = true;
       if (!storage || !autoSave) return;
       if (!timers) { save(); return; }
-      if (timer) timers.clear(timer);
-      timer = timers.set(function () { timer = null; save(); }, debounceMs);
+      // 첫 변경 뒤 debounceMs 에 한 번 저장(그 사이 변경은 묶음). 계속 바뀌어도 저장이 밀리지 않게 타이머를 다시 걸지 않는다.
+      if (timer) return;
+      timer = timers.set(function () { timer = null; if (dirty) save(); }, debounceMs);
     }
 
     function newId(prefix) {
