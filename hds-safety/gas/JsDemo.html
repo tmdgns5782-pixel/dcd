@@ -1128,7 +1128,7 @@
   function genF06(req) {
     var f = 'F06', def = FORM[f];
     if (!def) return;
-    var months = (def.frequency && def.frequency.seasonMonths) || [6, 7, 8, 9];
+    var months = (def.frequency && def.frequency.seasonMonths) || [4, 5, 6, 7, 8, 9];
     SITES.forEach(function (site) {
       for (var m = monthStart(START); m <= TODAY; m = add(monthEnd(m), 1)) {
         if (months.indexOf(mon(m)) < 0 || mon(m) < 6) continue;

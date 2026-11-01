@@ -3611,8 +3611,119 @@ dialog.st-sheet:focus { outline: none; }
 
     /* ---------- UrlFetch / Html / Content / Logger ---------- */
 
+    /* 구글 시트 → xlsx 내보내기 URL 흉내: 모의 스프레드시트 내용으로 최소 xlsx(무압축 zip)를 만든다. */
+    var CRC_TABLE = null;
+    function crc32(u8) {
+      if (!CRC_TABLE) {
+        CRC_TABLE = [];
+        for (var n = 0; n < 256; n++) {
+          var c = n;
+          for (var k = 0; k < 8; k++) c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
+          CRC_TABLE[n] = c >>> 0;
+        }
+      }
+      var crc = 0xffffffff;
+      for (var i = 0; i < u8.length; i++) crc = CRC_TABLE[(crc ^ u8[i]) & 0xff] ^ (crc >>> 8);
+      return (crc ^ 0xffffffff) >>> 0;
+    }
+    function zipStore(entries) {
+      var parts = [], central = [], offset = 0;
+      function u16(a, v) { a.push(v & 0xff, (v >>> 8) & 0xff); }
+      function u32(a, v) { a.push(v & 0xff, (v >>> 8) & 0xff, (v >>> 16) & 0xff, (v >>> 24) & 0xff); }
+      entries.forEach(function (e) {
+        var name = utf8Encode(e.name), data = utf8Encode(e.text), crc = crc32(data);
+        var h = [];
+        u32(h, 0x04034b50); u16(h, 20); u16(h, 0x0800); u16(h, 0); u16(h, 0); u16(h, 0x21);
+        u32(h, crc); u32(h, data.length); u32(h, data.length); u16(h, name.length); u16(h, 0);
+        var c = [];
+        u32(c, 0x02014b50); u16(c, 20); u16(c, 20); u16(c, 0x0800); u16(c, 0); u16(c, 0); u16(c, 0x21);
+        u32(c, crc); u32(c, data.length); u32(c, data.length); u16(c, name.length); u16(c, 0); u16(c, 0);
+        u16(c, 0); u16(c, 0); u32(c, 0); u32(c, offset);
+        parts.push(h, name, data);
+        central.push(c, name);
+        offset += h.length + name.length + data.length;
+      });
+      var cdSize = central.reduce(function (t, x) { return t + x.length; }, 0);
+      var end = [];
+      u32(end, 0x06054b50); u16(end, 0); u16(end, 0); u16(end, entries.length); u16(end, entries.length);
+      u32(end, cdSize); u32(end, offset); u16(end, 0);
+      var all = parts.concat(central, [end]);
+      var total = all.reduce(function (t, x) { return t + x.length; }, 0);
+      var out = new Uint8Array(total), p = 0;
+      all.forEach(function (x) { for (var i = 0; i < x.length; i++) out[p++] = x[i]; });
+      return out;
+    }
+    function xmlEsc(s) {
+      return String(s).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function colName(i) { var s = ''; i++; while (i > 0) { var m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
+    function bookXlsx(book) {
+      var sheets = book.sheets.filter(function (s) { return !s.deleted; });
+      var files = [
+        { name: '[Content_Types].xml', text: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+          '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+          '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+          '<Default Extension="xml" ContentType="application/xml"/>' +
+          '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+          sheets.map(function (s, i) { return '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'; }).join('') +
+          '</Types>' },
+        { name: '_rels/.rels', text: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+          '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+          '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>' },
+        { name: 'xl/workbook.xml', text: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+          '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>' +
+          sheets.map(function (s, i) { return '<sheet name="' + xmlEsc(String(s.name).slice(0, 31)) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>'; }).join('') +
+          '</sheets></workbook>' },
+        { name: 'xl/_rels/workbook.xml.rels', text: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+          '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+          sheets.map(function (s, i) { return '<Relationship Id="rId' + (i + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>'; }).join('') +
+          '</Relationships>' }
+      ];
+      sheets.forEach(function (s, si) {
+        var rows = (s.rows || []).map(function (row, ri) {
+          var cells = (row || []).map(function (v, ci) {
+            if (v === null || v === undefined || v === '') return '';
+            var ref = colName(ci) + (ri + 1);
+            if (typeof v === 'number' && isFinite(v)) return '<c r="' + ref + '"><v>' + v + '</v></c>';
+            if (typeof v === 'boolean') return '<c r="' + ref + '" t="b"><v>' + (v ? 1 : 0) + '</v></c>';
+            var str = isDate(v) ? formatDate(v, 'Asia/Seoul', 'yyyy-MM-dd HH:mm:ss') : String(v);
+            return '<c r="' + ref + '" t="inlineStr"><is><t xml:space="preserve">' + xmlEsc(str) + '</t></is></c>';
+          }).join('');
+          return '<row r="' + (ri + 1) + '">' + cells + '</row>';
+        }).join('');
+        files.push({ name: 'xl/worksheets/sheet' + (si + 1) + '.xml', text: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+          '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>' + rows + '</sheetData></worksheet>' });
+      });
+      return zipStore(files);
+    }
+    function httpResponse(code, bytes, type, name) {
+      var blob = makeBlob(bytes, type, name);
+      return {
+        getResponseCode: function () { return code; },
+        getContent: function () { return blob.getBytes(); },
+        getContentText: function () { return blob.getDataAsString(); },
+        getBlob: function () { return blob; },
+        getAs: function () { return blob; },
+        getHeaders: function () { return { 'Content-Type': type }; },
+        getAllHeaders: function () { return { 'Content-Type': type }; }
+      };
+    }
+    function mockFetch(url, opts) {
+      var m = /^https:\/\/docs\.google\.com\/spreadsheets\/d\/([^/?#]+)\/export\?(?:.*&)?format=xlsx\b/.exec(String(url || ''));
+      if (m) {
+        var book = state.books[m[1]];
+        if (!book) {
+          if (opts && opts.muteHttpExceptions) return httpResponse(404, utf8Encode('Not Found'), 'text/html', null);
+          throw gasError('Request failed for https://docs.google.com returned code 404.');
+        }
+        return httpResponse(200, bookXlsx(book), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', (book.name || 'export') + '.xlsx');
+      }
+      throw gasError('미리보기에서는 외부 호출을 할 수 없습니다');
+    }
+
     var UrlFetchApp = {
-      fetch: function () { throw gasError('미리보기에서는 외부 호출을 할 수 없습니다'); },
+      fetch: mockFetch,
       fetchAll: function () { throw gasError('미리보기에서는 외부 호출을 할 수 없습니다'); },
       getRequest: function (url, o) { return { url: url, method: (o && o.method) || 'get', headers: (o && o.headers) || {}, payload: o && o.payload }; }
     };
@@ -3925,7 +4036,7 @@ var DEFAULT_SETTINGS = {
   reminder: { beforeDays: [3, 1], overdue: true, hour: 8 },
   dailyDue: '10:00',
   monthlyDueDay: 5,
-  requiredForms: { 'default': ['F07', 'F09', 'F01', 'N1', 'N2', 'N4', 'F08B', 'F10B'], seasonal: { F06: [6, 7, 8, 9] } }
+  requiredForms: { 'default': ['F07', 'F09', 'F01', 'N1', 'N2', 'N4', 'F08B', 'F10B'], seasonal: { F06: [4, 5, 6, 7, 8, 9] } }
 };
 
 /* ===== Ai.gs ===== */
@@ -3937,7 +4048,7 @@ var DEFAULT_SETTINGS = {
  *
  * 설정(스크립트 속성 — 편집기 > 프로젝트 설정 > 스크립트 속성)
  *   ANTHROPIC_API_KEY  (필수) Anthropic API 키. 없으면 이 기능은 꺼진 것으로 본다.
- *   ANTHROPIC_MODEL    (선택) 모델 ID. 기본 claude-sonnet-5-5. 설정 화면의 settings.ai.model 이 있으면 그것이 먼저.
+ *   ANTHROPIC_MODEL    (선택) 모델 ID. 기본 claude-opus-5-5. 설정 화면의 settings.ai.model 이 있으면 그것이 먼저.
  *   settings.ai.enabled === false 이면 키가 있어도 쓰지 않는다.
  *   ANTHROPIC_EFFORT   (선택) low | medium | high. 기본 medium.
  *
@@ -3952,7 +4063,7 @@ var Ai = (function () {
 
   var ENDPOINT = 'https://api.anthropic.com/v1/messages';
   var API_VERSION = '2026-10-21';
-  var DEFAULT_MODEL = 'claude-sonnet-5-5';
+  var DEFAULT_MODEL = 'claude-opus-5-5';
   var FALLBACK_BETA = 'server-side-fallback-2026-07-01';
   var FALLBACK_MODELS = { 'claude-sonnet-5-5': true, 'claude-opus-5-5': true, 'claude-opus-5': true, 'claude-fable-5-1': true };
   var EFFORT_RE = /^claude-(?:(?:fable|mythos|opus|sonnet|haiku)-5(?:-\d+)?|opus-4-[5-8]|sonnet-4-6)$/;
@@ -4173,6 +4284,8 @@ var Ai = (function () {
  * 다른 파일 객체(Db, Auth, Views, Dispatch, Export, Ai)는 함수 안에서만 참조한다(파일 순서와 무관하게 동작).
  */
 function api(method, payloadJson, token) {
+  // GAS 는 호출마다 새 실행이지만, 실행이 이어지는 환경(미리보기 등)에서 지난 호출의 메모가 남지 않게 비운다.
+  try { Db.reset(); } catch (e) { /* DB 전이면 무시 */ }
   return Api.call(method, payloadJson, token);
 }
 
@@ -4667,6 +4780,8 @@ var Api = (function () {
     var x = prepRecord(p, me);
     var rec = x.rec;
     var isNew = !x.cur;
+    // 리드 결정: 제출된 기록은 임시저장으로 몰래 바뀌지 않는다 — [수정 제출](records.submit, rev+1)로만 고친다.
+    if (!isNew && x.cur.status === '제출') fail('CONFLICT', '제출된 기록은 임시저장할 수 없습니다. 고친 내용은 [수정 제출]로 반영하세요');
     if (isNew) rec.id = newRecordId(x.def, rec.site, rec.date, me);
     writeRecord(rec, isNew);
     if (rec.status !== '작성중' || rec.stageDone.length) views('onRecord', rec);
@@ -4975,6 +5090,9 @@ var Api = (function () {
     var to = str(p.to, 10, '바꿀 상태', true);
     var note = str(p.note, LIM.memo, '메모');
     var photo = photoRef(p.photo);
+    // 사업장 화면이 완료 사진 대신 사유를 보낼 수 있다(noPhotoReason) — 별도 열 없이 메모에 덧붙여 이력에 남긴다.
+    var noPhoto = photo ? '' : str(p.noPhotoReason, 200, '사진 없음 사유');
+    if (noPhoto) note = (note ? note + ' · ' : '') + '사진 없음 사유: ' + noPhoto;
     if (p.owner !== undefined && p.owner !== null) a.owner = str(p.owner, LIM.name, '담당자');
     if (p.due) a.due = ymd(p.due, '기한');
     var from = a.status;
@@ -7359,15 +7477,22 @@ var Dispatch = (function () {
   function appUrl() {
     try { return String(ScriptApp.getService().getUrl() || ''); } catch (e) { return ''; }
   }
-  function siteLink(site) {
+  /** 웹앱 링크에 쿼리 하나 붙이기 */
+  function withParam(url, k, v) { return url + (url.indexOf('?') >= 0 ? '&' : '?') + k + '=' + encodeURIComponent(v); }
+  /**
+   * 사업장 링크(…/exec?s=토큰). view 를 주면 &v=<화면>(예: 'rec/ID') — doGet 이 BOOT.view 로 넘겨 첫 화면이 된다.
+   * 메일 링크에 '#/…' 해시를 쓰지 않는 까닭: GAS 웹앱은 iframe 안에서 돌아 최상위 해시가 앱에 바로 보이지 않는다.
+   */
+  function siteLink(site, view) {
     var url = appUrl();
     if (!url) return '';
     var tok = site && str(site.token);
-    return tok ? url + (url.indexOf('?') >= 0 ? '&' : '?') + 's=' + encodeURIComponent(tok) : url;
+    var out = tok ? withParam(url, 's', tok) : url;
+    return view ? withParam(out, 'v', view) : out;
   }
   function recordLink(id) {
     var url = appUrl();
-    return url ? url + '#/rec/' + encodeURIComponent(id) : '';
+    return url ? withParam(url, 'v', 'rec/' + id) : '';
   }
 
   function whoOf(me) {
@@ -8325,7 +8450,7 @@ var Dispatch = (function () {
       if (!site) return { sent: false };
       var def = formDef(rec.form) || { title: rec.form };
       var subject = tag(st) + '반려 — ' + (def.title || rec.form) + ' ' + rec.id + ' 고쳐서 다시 제출해 주세요';
-      var link = siteLink(site);
+      var link = siteLink(site, 'rec/' + rec.id);
       var html = template('return', {
         settings: st,
         preheader: '반려 사유: ' + str(rec.returnNote).slice(0, 60),
@@ -8623,7 +8748,15 @@ var Dispatch = (function () {
       res.note = '본사 수신 메일 미설정';
       log('system', 'mail', 'cron:weekly', '보내지 않음(본사 수신 메일 미설정) · 제목 ' + subject);
     } else {
-      res.sent = mail(to, subject, html, { who: 'system', ref: 'cron:weekly', settings: st });
+      // 같은 날 두 번 보내지 않는다(웹앱의 google.script.run 으로도 전역 함수 cronWeekly 를 부를 수 있으므로 반복 발송 방지).
+      var wk = null;
+      try { wk = Db.kvGet('cron.weekly', null); } catch (e5) { wk = null; }
+      if (isObj(wk) && wk.date === t && wk.sent) {
+        res.note = '오늘 이미 보냄';
+      } else {
+        res.sent = mail(to, subject, html, { who: 'system', ref: 'cron:weekly', settings: st });
+        if (res.sent) { try { Db.kvSet('cron.weekly', { date: t, sent: true, at: now() }); } catch (e6) { log('system', 'cron', 'weekly', '보낸 날 기록 실패: ' + msgOf(e6)); } }
+      }
     }
     res.summary = { from: from, to: end, sites: sites.length, dailyRate: rate, accidents: acc + minor, nearMiss: near, stopWork: stop, actNew: actNew, actDone: actDone, overdue: overdue, overdueHigh: overdueHigh, missing: missTotal };
     log('system', 'cron', 'weekly', '주간 요약 ' + from + '~' + end + ' · 일일점검 ' + (rate == null ? '—' : rate + '%') + ' · 사고 ' + (acc + minor) + ' · 아차 ' + near +
@@ -11689,7 +11822,19 @@ return {
   App.actOverdue = function (a) { return !!(a && !a.deleted && App.actOpen(a) && a.due && String(a.due).slice(0, 10) < today()); };
   /** 본사가 아직 확인하지 않은 제출·단계 보고 */
   App.reviewPending = function (r) {
-    return !!r && !r.deleted && (r.status === '제출' || (r.status === '작성중' && arr(r.stageDone).length > 0));
+    if (!r || r.deleted) return false;
+    if (r.status === '제출') return App.needsReview(r);
+    return r.status === '작성중' && arr(r.stageDone).length > 0;
+  };
+  /** 제출 기록이 본사 '확인' 대상인지 — 일일점검(F07)은 불량 판정이나 사고·아차 건수가 있을 때만(리드 결정) */
+  App.needsReview = function (r) {
+    if (!r || r.form !== 'F07') return true;
+    var f = r.facts || {}, k = f.k || {}, v = f.v || {};
+    if ((Number(v.accidentCount) || 0) + (Number(v.nearMissCount) || 0) > 0) return true;
+    return Object.keys(k).some(function (sec) {
+      var m = k[sec] || {};
+      return Object.keys(m).some(function (code) { return m[code] === '불량'; });
+    });
   };
   function reqTargets(req, siteId) {
     var s = arr(req.sites);
@@ -11862,13 +12007,14 @@ return {
   /* =====================================================================
    * 6. 내비 정의 App.NAV
    * ===================================================================== */
-  function cReview() { return App.recs(App.reviewPending).length; }
+  function cReview() { return (App.hq && typeof App.hq.reviewCount === 'function') ? App.hq.reviewCount() : App.recs(App.reviewPending).length; }
   function cOverdue() { return App.acts(App.actOverdue).length; }
   function cSiteOverdue() {
     var s = App.S.me && App.S.me.site;
     return App.acts(function (a) { return a.site === s && App.actOverdue(a); }).length;
   }
-  function cUnread() { return App.unread().length; }
+  function cUnread() { return (App.siteViews && typeof App.siteViews.unreadCount === 'function') ? App.siteViews.unreadCount() : App.unread().length; }
+  function cTodo() { return (App.siteViews && typeof App.siteViews.todoCount === 'function') ? App.siteViews.todoCount() : 0; }
   App.NAV = {
     hq: [
       { key: 'home', label: '종합 현황', icon: 'home', href: '#/home', group: '현황' },
@@ -11884,7 +12030,7 @@ return {
       { key: 'settings', label: '설정', icon: 'settings', href: '#/settings', group: '관리', admin: true }
     ],
     site: [
-      { key: 'home', label: '홈', icon: 'home', href: '#/home', tab: true },
+      { key: 'home', label: '홈', icon: 'home', href: '#/home', tab: true, count: cTodo, countLabel: '할 일' },
       { key: 'inbox', label: '받은 요청', icon: 'inbox', href: '#/inbox', tab: true, count: cUnread, countLabel: '안 읽은 요청·공지' },
       { key: 'forms', label: '양식', icon: 'clipboard', href: '#/forms', tab: true },
       { key: 'records', label: '우리 기록', icon: 'list', href: '#/records', tab: true },
@@ -12941,6 +13087,23 @@ return {
     }
     if (BOOT.ready === false) { renderSetup(); return; }
     if (!runner()) { renderFatal('서버에 연결할 수 없습니다. 웹앱 주소(script.google.com/macros/s/…/exec)로 열어 주세요.'); return; }
+    // GAS /exec 는 iframe 안에서 돌아 메일 링크의 '#/rec/<id>' 가 location.hash 에 없다 → 바깥 주소의 해시를 첫 경로로
+    var gurl = window.google && google.script && google.script.url;
+    if (!location.hash && gurl && typeof gurl.getLocation === 'function') {
+      var started = false;
+      var go = function () { if (started) return; started = true; begin(); };
+      try {
+        gurl.getLocation(function (loc) {
+          var h = loc && loc.hash ? String(loc.hash).replace(/^#/, '') : '';
+          if (h && !started && !location.hash) {
+            try { history.replaceState(null, '', '#' + (h.charAt(0) === '/' ? h : '/' + h)); } catch (e) { /* 무시 */ }
+          }
+          go();
+        });
+      } catch (e) { go(); return; }
+      setTimeout(go, 1500);
+      return;
+    }
     begin();
   };
 
@@ -13143,7 +13306,7 @@ return {
   function cachedRecord(id) { var m = S().records; if (!m || !id) return null; return typeof m.get === 'function' ? m.get(id) : m[id]; }
   var DEF_SETTINGS = {
     dailyDue: '10:00', monthlyDueDay: 5,
-    requiredForms: { default: ['F07', 'F09', 'F01', 'N1', 'N2', 'N4', 'F08B', 'F10B'], seasonal: { F06: [6, 7, 8, 9] } }
+    requiredForms: { default: ['F07', 'F09', 'F01', 'N1', 'N2', 'N4', 'F08B', 'F10B'], seasonal: { F06: [4, 5, 6, 7, 8, 9] } }
   };
   function setting(k) { var s = S().settings || {}; return s[k] !== undefined && s[k] !== null ? s[k] : DEF_SETTINGS[k]; }
   function isHQ() {
@@ -13374,11 +13537,13 @@ return {
     (f.validate || []).forEach(function (rule) {
       var o = rule.field ? other(rule.field) : undefined;
       var msg = rule.message;
-      if (rule.rule === 'lte' && !isEmpty(v) && !isEmpty(o) && cmpVal(f, v) > cmpVal(f, o)) errs.push(msg || label + ' 값을 확인하세요');
-      else if (rule.rule === 'gte' && !isEmpty(v) && !isEmpty(o) && cmpVal(f, v) < cmpVal(f, o)) errs.push(msg || label + ' 값을 확인하세요');
+      /* 비교 대상: 다른 칸(rule.field) 또는 상수(rule.value). 계산 칸에도 적용 */
+      var cmpTo = (rule.rule === 'lte' || rule.rule === 'gte' || rule.rule === 'eq') && !rule.field && rule.value !== undefined ? rule.value : o;
+      if (rule.rule === 'lte' && !isEmpty(v) && !isEmpty(cmpTo) && cmpVal(f, v) > cmpVal(f, cmpTo)) errs.push(msg || label + ' 값을 확인하세요');
+      else if (rule.rule === 'gte' && !isEmpty(v) && !isEmpty(cmpTo) && cmpVal(f, v) < cmpVal(f, cmpTo)) errs.push(msg || label + ' 값을 확인하세요');
       else if (rule.rule === 'eq') {
-        var target = rule.value !== undefined ? rule.value : o;
-        if (!isEmpty(v) && target !== undefined && String(v) !== String(target)) errs.push(msg || label + ' 값을 확인하세요');
+        var target = rule.value !== undefined && !rule.field ? rule.value : o;
+        if (!isEmpty(v) && !isEmpty(target) && String(cmpVal(f, v)) !== String(cmpVal(f, target))) errs.push(msg || label + ' 값을 확인하세요');
       } else if (rule.rule === 'requiredIf') {
         var cond = Array.isArray(o) ? o.indexOf(rule.value) >= 0 : (rule.value === undefined ? !isEmpty(o) : (o === rule.value || String(o) === String(rule.value)));
         if (cond && isEmpty(v) && f.type !== 'computed') errs.push(msg || label + ': 입력이 필요합니다');
@@ -13601,18 +13766,25 @@ return {
 
     if (f.type === 'daily') {
       var dueTime = String(setting('dailyDue') || (f.dueRule || {}).time || '10:00');
-      var day = addDays(t, -1); var dueDate = t;
-      var past = t !== today() || hhmm(new Date()) >= dueTime;
       var shifts = f.shifts ? (asArr(site.shifts).length ? asArr(site.shifts) : ['주간']) : ['_'];
-      var dayRows = done.filter(function (r) { return rowPeriod(r) === day; });
-      var got = shifts.filter(function (sh) { return dayRows.some(function (r) { return sh === '_' || shifts.length === 1 || r.shift === sh; }); });
-      var lateAll = dayRows.length > 0 && dayRows.every(function (r) {
-        var sa = String(r.submittedAt || r.updatedAt || ''); return sa.slice(0, 10) > dueDate || (sa.slice(0, 10) === dueDate && sa.slice(11, 16) > dueTime);
-      });
-      var n = got.length, N = shifts.length;
-      var st = n === N ? (lateAll ? 'warn' : 'ok') : (past ? (n ? 'warn' : 'miss') : 'pending');
-      var lb = N > 1 ? '어제 ' + n + '/' + N + '조' : (n ? (lateAll ? '지연 제출' : '제출') : (past ? '미제출' : '마감 ' + dueTime));
-      return { status: st, label: lb, due: dueDate + ' ' + dueTime, period: periodOf('daily', day).label, periodKey: day, from: day, to: day, recId: dayRows.length ? dayRows[0].id : '', late: lateAll };
+      var evalDay = function (day, dueDate, past, word) {
+        var dayRows = done.filter(function (r) { return rowPeriod(r) === day; });
+        var got = shifts.filter(function (sh) { return dayRows.some(function (r) { return sh === '_' || shifts.length === 1 || r.shift === sh; }); });
+        var lateAll = dayRows.length > 0 && dayRows.every(function (r) {
+          var sa = String(r.submittedAt || r.updatedAt || ''); return sa.slice(0, 10) > dueDate || (sa.slice(0, 10) === dueDate && sa.slice(11, 16) > dueTime);
+        });
+        var n = got.length, N = shifts.length;
+        var st = n === N ? (lateAll ? 'warn' : 'ok') : (past ? (n ? 'warn' : 'miss') : 'pending');
+        var lb = N > 1 ? word + ' ' + n + '/' + N + '조' : (n ? (lateAll ? '지연 제출' : '제출') : (past ? '미제출' : '마감 ' + dueTime));
+        return { status: st, label: lb, due: dueDate + ' ' + dueTime, period: periodOf('daily', day).label, periodKey: day, from: day, to: day, recId: dayRows.length ? dayRows[0].id : '', late: lateAll, n: n, N: N };
+      };
+      var cur = evalDay(addDays(t, -1), t, t !== today() || hhmm(new Date()) >= dueTime, '어제');
+      /* 서버 Dispatch.dueStatus 와 같은 규칙: 어제분이 마감 전이면 그제분이 빠졌는지 먼저(기한경과 우선) */
+      if (cur.status === 'pending' && !(site.openDate && site.openDate > addDays(t, -2))) {
+        var pv = evalDay(addDays(t, -2), addDays(t, -1), true, '그제');
+        if (pv.n < pv.N) { pv.status = 'miss'; return pv; }
+      }
+      return cur;
     }
 
     var type = f.type;
@@ -13620,12 +13792,16 @@ return {
     var inSeason = function (p) { return !months || !months.length || months.indexOf(parseD(p.from).getMonth() + 1) >= 0; };
     var p = periodOf(type, t), pdue = dueOf(def, p);
     var prev = periodOf(type, addDays(p.from, -1)), prevDue = dueOf(def, prev);
-    if (t <= prevDue && inSeason(prev)) { p = prev; pdue = prevDue; }
+    var inPer = function (r, per) { return r.period ? r.period === per.key : (r.date >= per.from && r.date <= per.to); };
+    /* 서버 Dispatch.dueStatus 와 같은 규칙: 직전 기간 마감 전이면 직전 기간, 마감이 지났는데 안 냈으면 직전 기간을 기한경과로 */
+    var prevApplies = inSeason(prev) && !(site.openDate && site.openDate > prev.to);
+    if (prevApplies && (t <= prevDue || !done.some(function (r) { return inPer(r, prev); }))) { p = prev; pdue = prevDue; }
+    else if (site.openDate && site.openDate > p.to) { return { status: 'na', label: '개설 전', due: '', period: '', periodKey: '', from: '', to: '', recId: '', late: false }; }
     else if (!inSeason(p)) {
       var lastS = done.map(function (r) { return r.date; }).sort().pop();
       return { status: 'na', label: '시즌 아님', due: '', period: lastS ? '최근 ' + lastS : '', periodKey: '', from: '', to: '', recId: '', late: false };
     }
-    var inP = rows.filter(function (r) { return r.period ? r.period === p.key : (r.date >= p.from && r.date <= p.to); });
+    var inP = rows.filter(function (r) { return inPer(r, p); });
     var dn = inP.filter(isDone);
     if (dn.length) {
       var late = dn.every(function (r) { return String(r.submittedAt || r.updatedAt || '').slice(0, 10) > pdue; });
@@ -14913,7 +15089,7 @@ return {
         if (ED === ed) { try { history.replaceState(null, '', h); } catch (e) { /* 무시 */ } ed.route = h; }
         ed.isNew = false; ed.dup = null; paintHeader(ed);
       }
-      if (manual && ED === ed) toast('임시저장했습니다');
+      if (manual === true && ED === ed) toast('임시저장했습니다');
       finish(); return r;
     }, function (err) {
       ed.saveState = 'error'; finish(); throw err;
@@ -14942,7 +15118,8 @@ return {
       if (!ok || ED !== ed) return;
       ed.busy = true; paintBusy(ed, true); clearTimeout(ed.timer);
       var wait = ed.saving ? ed.saving.catch(function () { return null; }) : Promise.resolve();
-      return wait.then(function () { return rec.id ? null : doSave(ed, false); }).then(function () {
+      /* 아직 기록 번호가 없으면 먼저 저장(제출 중 busy 라 자동저장 규칙을 건너뛰는 수동 저장) */
+      return wait.then(function () { return rec.id ? null : doSave(ed, 'submit'); }).then(function () {
         if (!rec.id) throw new Error('기록 번호를 받지 못했습니다. 잠시 뒤 다시 눌러 주세요.');
         computeAll(def, rec);
         var record = clone(rec); record.period = periodKeyOf(def, rec); record.facts = factsOf(def, rec);
@@ -17788,7 +17965,7 @@ return {
   function genF06(req) {
     var f = 'F06', def = FORM[f];
     if (!def) return;
-    var months = (def.frequency && def.frequency.seasonMonths) || [6, 7, 8, 9];
+    var months = (def.frequency && def.frequency.seasonMonths) || [4, 5, 6, 7, 8, 9];
     SITES.forEach(function (site) {
       for (var m = monthStart(START); m <= TODAY; m = add(monthEnd(m), 1)) {
         if (months.indexOf(mon(m)) < 0 || mon(m) < 6) continue;
@@ -18766,7 +18943,12 @@ return {
       return App.api('requests.remind', { id: req.id, sites: siteIds }).then(function (res) {
         res = res || {};
         req.lastRemindAt = nowIso(); putRequest(req);
-        toast('독촉 메일을 ' + (res.sent != null ? res.sent : n) + '곳에 보냈습니다' + (res.skipped ? ' · 메일 주소 없는 ' + res.skipped + '곳 제외' : '') + '.', 'pos');
+        var why = {};
+        (res.sites || []).forEach(function (x) { if (x && x.result && x.result !== '보냄') why[x.result] = (why[x.result] || 0) + 1; });
+        var skipTxt = Object.keys(why).map(function (k) { return k + ' ' + why[k] + '곳'; }).join(', ');
+        if (!skipTxt && res.skipped) skipTxt = '건너뜀 ' + res.skipped + '곳';
+        var sentN = res.sent != null ? res.sent : n;
+        toast((sentN ? '독촉 메일을 ' + sentN + '곳에 보냈습니다' : '보낸 독촉 메일이 없습니다') + (skipTxt ? ' · ' + skipTxt : '') + (res.done ? ' · 이미 제출 ' + res.done + '곳' : '') + (res.note ? ' · ' + res.note : '') + '.', sentN ? 'pos' : '');
         rerender();
       });
     }).catch(function (e) { toast('독촉 메일을 보내지 못했습니다. ' + errText(e), 'neg'); });
@@ -18786,7 +18968,8 @@ return {
       var what = fshort(r.form) + (v.kind ? ' · ' + v.kind : v.swType ? ' · ' + v.swType : '') + (v.area ? ' · ' + v.area : '');
       var st = r.status === '제출' ? '제출, 확인 대기' : stageLabel(r);
       var at = r.submittedAt || r.updatedAt;
-      out.push({ tone: 'neg', score: 1000 + hoursAgo(at), site: s, text: what, why: r.id + ' · ' + st + ' · ' + relTime(at),
+      var ha = hoursAgo(at);
+      out.push({ tone: 'neg', score: ha < 48 ? 2000 - ha : 1000 + ha, site: s, text: what, why: r.id + ' · ' + st + ' · ' + relTime(at),
         find: s.id + ' ' + s.name + ' ' + fshort(r.form) + ' ' + (r.status === '제출' ? '보고' : stageLabel(r).replace(/\(.*$/, '')) + '가 확인을 기다립니다',
         href: '#/rec/' + r.id, btn: canWrite() ? { label: '확인', href: '#/review?id=' + encodeURIComponent(r.id) } : { label: '열기', href: '#/rec/' + r.id } });
     });
@@ -19339,7 +19522,7 @@ return {
   function reviewQueue() {
     var acked = {}; reads().forEach(function (x) { acked[x.refId] = 1; });
     return recs().filter(function (r) {
-      if (r.status === '제출') return true;
+      if (r.status === '제출') return App.needsReview ? App.needsReview(r) : true;
       return r.status === '작성중' && (r.stageDone || []).length && !acked[ackKey(r)];
     }).map(function (r) {
       var stage = r.status === '작성중', incident = r.form === 'F04' || r.form === 'F10';
@@ -21434,7 +21617,7 @@ return {
     var s = JSON.parse(JSON.stringify(S().settings || {}));
     s.mail = Object.assign({ enabled: true, onRequest: true, onReturn: true, onIncident: true, dailyReminder: true, weeklyDigest: true, hqEmails: [] }, s.mail || {});
     s.reminder = Object.assign({ beforeDays: [3, 1], overdue: true, hour: 8 }, s.reminder || {});
-    s.requiredForms = Object.assign({ 'default': defaultForms(), seasonal: { F06: [6, 7, 8, 9] } }, s.requiredForms || {});
+    s.requiredForms = Object.assign({ 'default': defaultForms(), seasonal: { F06: [4, 5, 6, 7, 8, 9] } }, s.requiredForms || {});
     if (!s.dailyDue) s.dailyDue = '10:00';
     if (!s.monthlyDueDay) s.monthlyDueDay = 5;
     return s;
@@ -22152,6 +22335,24 @@ return {
     return { reports: rows.length, months: ms.length, a01: a01, a02: a02, h02: h02, avgHead: avgHead,
       freq: h02 > 0 ? a01 / h02 * 1e6 : null, rate: avgHead > 0 ? a02 / avgHead * 100 : null };
   };
+  // 활동 집계(F09 KPI I03·I04·P01 을 기록에서): TBM 실시 = TBM 참석 인원이나 실시 시각이 있는 F07,
+  // 위험성평가 = F01(정기·수시) 기록 수, 보호구 지급 = F08A 표에서 구분이 지급·교체인 줄 수(수량은 지급·교체만 있는 기록에서 합산)
+  A.activity = function (sc) {
+    sc = sc || A.scope();
+    var f07 = A.rows('F07', sc), f01 = A.rows('F01', sc), f08a = A.rows('F08A', sc);
+    var tbm = f07.filter(function (r) { var n = +A.fv(r, 'tbmAttend') || 0, t = A.fv(r, 'tbmTime'); return n > 0 || (t != null && t !== ''); });
+    var tbmPeople = sum(tbm, function (r) { return +A.fv(r, 'tbmAttend') || 0; });
+    var hazards = A.tn(f01, 'sec_hazards');
+    var issued = 0, qty = 0;
+    f08a.forEach(function (r) {
+      var t = (facts(r).t || {}).sec_items || {}, c = t.c && t.c.kind || {};
+      var iss = (+c['지급'] || 0) + (+c['교체'] || 0), back = (+c['반납'] || 0) + (+c['분실'] || 0);
+      if (!t.c) { var smv = +A.sm(r, 'issued'); iss = isFinite(smv) ? smv : 0; }
+      issued += iss;
+      if (iss && !back && t.s && t.s.qty != null) qty += +t.s.qty || 0;
+    });
+    return { tbm: tbm.length, tbmPeople: tbmPeople, f07: f07.length, ra: f01.length, hazards: hazards, ppeLines: issued, ppeQty: qty, ppeRecs: f08a.length };
+  };
   // 일일점검 제출률: 기대 = 운영 사업장(F07 필수)의 운영일(개설일 이후, 어제까지) × 근무조 수, 제출 = 같은 날짜·근무조의 F07(제출·확인)
   A.dailyRate = function (sc) {
     sc = sc || A.scope();
@@ -22372,7 +22573,7 @@ return {
   /* ========== 화면: 분석 개요 ========== */
   function overviewBuild(sc) {
     var D = A.incidents(sc), P = A.incidents(A.prevScope(sc)), prevLabel = A.prevScope(sc).periodLabel;
-    var R = A.rates(sc), dr = A.dailyRate(sc), ar = A.actRate(sc), hs = A.hecSummary(sc);
+    var R = A.rates(sc), dr = A.dailyRate(sc), ar = A.actRate(sc), hs = A.hecSummary(sc), act = A.activity(sc);
     var months = A.months(sc), part = A.partialIndex(sc);
     var accM = A.byMonth(D.acc, null, sc), nearM = A.byMonth(D.near, null, sc);
 
@@ -22457,7 +22658,13 @@ return {
       { label: '조치 이행률', value: ar.rate == null ? na() : num(ar.rate * 100, 1), unit: ar.rate == null ? '' : '%', href: '#/analytics/acts',
         sub: ar.due ? '기한 도래 ' + num(ar.due) + '건 중 완료 ' + num(ar.done) + '건 · ' + (ar.overdue ? '<span class="t-neg">기한경과 미결 ' + num(ar.overdue) + '건</span>' : '기한경과 미결 0건') : '이 기간에 기한이 든 조치 없음' },
       { label: 'HEC 준비도', value: hs.avg == null ? (hs.sites ? '<span class="an-na">—</span>' : na()) : num(hs.avg * 100, 1), unit: hs.avg == null ? '' : '%', href: '#/analytics/hec',
-        sub: !hs.sites ? 'HEC 대상 사업장 없음' : hs.avg == null ? 'HEC 사업장 ' + num(hs.sites) + '곳 · 준비도를 계산하지 못했습니다' : 'HEC 사업장 ' + num(hs.measured) + '곳 평균' + (hs.low ? ' · <span class="t-warn">80% 미만 ' + num(hs.low) + '곳</span>' : '') }
+        sub: !hs.sites ? 'HEC 대상 사업장 없음' : hs.avg == null ? 'HEC 사업장 ' + num(hs.sites) + '곳 · 준비도를 계산하지 못했습니다' : 'HEC 사업장 ' + num(hs.measured) + '곳 평균' + (hs.low ? ' · <span class="t-warn">80% 미만 ' + num(hs.low) + '곳</span>' : '') },
+      { label: 'TBM 실시', value: num(act.tbm), unit: '회', href: '#/analytics/daily',
+        sub: act.f07 ? '일일점검 ' + num(act.f07) + '건 중 · 참석 연인원 ' + num(act.tbmPeople) + '명' : '이 범위에 일일점검이 없습니다' },
+      { label: '위험성평가', value: num(act.ra), unit: '건', href: '#/analytics/risk',
+        sub: act.ra ? '위험요인 ' + num(act.hazards) + '개 평가(F01)' : '이 범위에 위험성평가서가 없습니다' },
+      { label: '보호구 지급·교체', value: num(act.ppeLines), unit: '건', href: '#/analytics/form/F08A',
+        sub: act.ppeRecs ? '지급·반납 기록 ' + num(act.ppeRecs) + '건' + (act.ppeQty ? ' · 지급 수량 ' + num(act.ppeQty) : '') : '이 범위에 지급·반납 기록이 없습니다' }
     ]);
 
     var html = kpis(k)
@@ -22470,7 +22677,8 @@ return {
       + panel({ span: 6, title: '사업장별 사고·아차', sub: '많은 순 6곳 · 오른쪽 숫자는 합계, 회색 글은 ' + esc(prevLabel),
         actions: legendBox('an-lg-sites'), body: siteRows.length ? chartBox('an-sites') : empty('이 범위에 사고·아차 보고가 없습니다.'),
         foot: '보고 0건 사업장 ' + num(quiet) + '곳' + (siteRows.length > 6 ? ' · 보고한 사업장 ' + num(siteRows.length) + '곳 중 6곳 표시' : '') })
-      + panel({ span: 12, title: '운영 지표', sub: esc(sc.label) + ' · 칸을 누르면 주제 분석으로 이동합니다', body: ops, flush: true, cls: 'an-ops' })
+      + panel({ span: 12, title: '운영 지표', sub: esc(sc.label) + ' · 칸을 누르면 주제 분석으로 이동합니다', body: ops, flush: true, cls: 'an-ops',
+        foot: '재해율 = Σ재해자 수(A02) ÷ 평균 월말 재적인원(H01) × 100 · 도수율 = Σ재해 건수(A01) ÷ Σ근로시간(H02) × 1,000,000 — F09 월간보고(제출·확인) 기준' })
       + '</div>';
 
     return {

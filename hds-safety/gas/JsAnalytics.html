@@ -325,6 +325,24 @@
     return { reports: rows.length, months: ms.length, a01: a01, a02: a02, h02: h02, avgHead: avgHead,
       freq: h02 > 0 ? a01 / h02 * 1e6 : null, rate: avgHead > 0 ? a02 / avgHead * 100 : null };
   };
+  // 활동 집계(F09 KPI I03·I04·P01 을 기록에서): TBM 실시 = TBM 참석 인원이나 실시 시각이 있는 F07,
+  // 위험성평가 = F01(정기·수시) 기록 수, 보호구 지급 = F08A 표에서 구분이 지급·교체인 줄 수(수량은 지급·교체만 있는 기록에서 합산)
+  A.activity = function (sc) {
+    sc = sc || A.scope();
+    var f07 = A.rows('F07', sc), f01 = A.rows('F01', sc), f08a = A.rows('F08A', sc);
+    var tbm = f07.filter(function (r) { var n = +A.fv(r, 'tbmAttend') || 0, t = A.fv(r, 'tbmTime'); return n > 0 || (t != null && t !== ''); });
+    var tbmPeople = sum(tbm, function (r) { return +A.fv(r, 'tbmAttend') || 0; });
+    var hazards = A.tn(f01, 'sec_hazards');
+    var issued = 0, qty = 0;
+    f08a.forEach(function (r) {
+      var t = (facts(r).t || {}).sec_items || {}, c = t.c && t.c.kind || {};
+      var iss = (+c['지급'] || 0) + (+c['교체'] || 0), back = (+c['반납'] || 0) + (+c['분실'] || 0);
+      if (!t.c) { var smv = +A.sm(r, 'issued'); iss = isFinite(smv) ? smv : 0; }
+      issued += iss;
+      if (iss && !back && t.s && t.s.qty != null) qty += +t.s.qty || 0;
+    });
+    return { tbm: tbm.length, tbmPeople: tbmPeople, f07: f07.length, ra: f01.length, hazards: hazards, ppeLines: issued, ppeQty: qty, ppeRecs: f08a.length };
+  };
   // 일일점검 제출률: 기대 = 운영 사업장(F07 필수)의 운영일(개설일 이후, 어제까지) × 근무조 수, 제출 = 같은 날짜·근무조의 F07(제출·확인)
   A.dailyRate = function (sc) {
     sc = sc || A.scope();
@@ -545,7 +563,7 @@
   /* ========== 화면: 분석 개요 ========== */
   function overviewBuild(sc) {
     var D = A.incidents(sc), P = A.incidents(A.prevScope(sc)), prevLabel = A.prevScope(sc).periodLabel;
-    var R = A.rates(sc), dr = A.dailyRate(sc), ar = A.actRate(sc), hs = A.hecSummary(sc);
+    var R = A.rates(sc), dr = A.dailyRate(sc), ar = A.actRate(sc), hs = A.hecSummary(sc), act = A.activity(sc);
     var months = A.months(sc), part = A.partialIndex(sc);
     var accM = A.byMonth(D.acc, null, sc), nearM = A.byMonth(D.near, null, sc);
 
@@ -630,7 +648,13 @@
       { label: '조치 이행률', value: ar.rate == null ? na() : num(ar.rate * 100, 1), unit: ar.rate == null ? '' : '%', href: '#/analytics/acts',
         sub: ar.due ? '기한 도래 ' + num(ar.due) + '건 중 완료 ' + num(ar.done) + '건 · ' + (ar.overdue ? '<span class="t-neg">기한경과 미결 ' + num(ar.overdue) + '건</span>' : '기한경과 미결 0건') : '이 기간에 기한이 든 조치 없음' },
       { label: 'HEC 준비도', value: hs.avg == null ? (hs.sites ? '<span class="an-na">—</span>' : na()) : num(hs.avg * 100, 1), unit: hs.avg == null ? '' : '%', href: '#/analytics/hec',
-        sub: !hs.sites ? 'HEC 대상 사업장 없음' : hs.avg == null ? 'HEC 사업장 ' + num(hs.sites) + '곳 · 준비도를 계산하지 못했습니다' : 'HEC 사업장 ' + num(hs.measured) + '곳 평균' + (hs.low ? ' · <span class="t-warn">80% 미만 ' + num(hs.low) + '곳</span>' : '') }
+        sub: !hs.sites ? 'HEC 대상 사업장 없음' : hs.avg == null ? 'HEC 사업장 ' + num(hs.sites) + '곳 · 준비도를 계산하지 못했습니다' : 'HEC 사업장 ' + num(hs.measured) + '곳 평균' + (hs.low ? ' · <span class="t-warn">80% 미만 ' + num(hs.low) + '곳</span>' : '') },
+      { label: 'TBM 실시', value: num(act.tbm), unit: '회', href: '#/analytics/daily',
+        sub: act.f07 ? '일일점검 ' + num(act.f07) + '건 중 · 참석 연인원 ' + num(act.tbmPeople) + '명' : '이 범위에 일일점검이 없습니다' },
+      { label: '위험성평가', value: num(act.ra), unit: '건', href: '#/analytics/risk',
+        sub: act.ra ? '위험요인 ' + num(act.hazards) + '개 평가(F01)' : '이 범위에 위험성평가서가 없습니다' },
+      { label: '보호구 지급·교체', value: num(act.ppeLines), unit: '건', href: '#/analytics/form/F08A',
+        sub: act.ppeRecs ? '지급·반납 기록 ' + num(act.ppeRecs) + '건' + (act.ppeQty ? ' · 지급 수량 ' + num(act.ppeQty) : '') : '이 범위에 지급·반납 기록이 없습니다' }
     ]);
 
     var html = kpis(k)
@@ -643,7 +667,8 @@
       + panel({ span: 6, title: '사업장별 사고·아차', sub: '많은 순 6곳 · 오른쪽 숫자는 합계, 회색 글은 ' + esc(prevLabel),
         actions: legendBox('an-lg-sites'), body: siteRows.length ? chartBox('an-sites') : empty('이 범위에 사고·아차 보고가 없습니다.'),
         foot: '보고 0건 사업장 ' + num(quiet) + '곳' + (siteRows.length > 6 ? ' · 보고한 사업장 ' + num(siteRows.length) + '곳 중 6곳 표시' : '') })
-      + panel({ span: 12, title: '운영 지표', sub: esc(sc.label) + ' · 칸을 누르면 주제 분석으로 이동합니다', body: ops, flush: true, cls: 'an-ops' })
+      + panel({ span: 12, title: '운영 지표', sub: esc(sc.label) + ' · 칸을 누르면 주제 분석으로 이동합니다', body: ops, flush: true, cls: 'an-ops',
+        foot: '재해율 = Σ재해자 수(A02) ÷ 평균 월말 재적인원(H01) × 100 · 도수율 = Σ재해 건수(A01) ÷ Σ근로시간(H02) × 1,000,000 — F09 월간보고(제출·확인) 기준' })
       + '</div>';
 
     return {

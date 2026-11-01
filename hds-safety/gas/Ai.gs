@@ -6,7 +6,7 @@
  *
  * 설정(스크립트 속성 — 편집기 > 프로젝트 설정 > 스크립트 속성)
  *   ANTHROPIC_API_KEY  (필수) Anthropic API 키. 없으면 이 기능은 꺼진 것으로 본다.
- *   ANTHROPIC_MODEL    (선택) 모델 ID. 기본 claude-sonnet-5-5. 설정 화면의 settings.ai.model 이 있으면 그것이 먼저.
+ *   ANTHROPIC_MODEL    (선택) 모델 ID. 기본 claude-opus-5-5. 설정 화면의 settings.ai.model 이 있으면 그것이 먼저.
  *   settings.ai.enabled === false 이면 키가 있어도 쓰지 않는다.
  *   ANTHROPIC_EFFORT   (선택) low | medium | high. 기본 medium.
  *
@@ -21,7 +21,7 @@ var Ai = (function () {
 
   var ENDPOINT = 'https://api.anthropic.com/v1/messages';
   var API_VERSION = '2026-10-21';
-  var DEFAULT_MODEL = 'claude-sonnet-5-5';
+  var DEFAULT_MODEL = 'claude-opus-5-5';
   var FALLBACK_BETA = 'server-side-fallback-2026-07-01';
   var FALLBACK_MODELS = { 'claude-sonnet-5-5': true, 'claude-opus-5-5': true, 'claude-opus-5': true, 'claude-fable-5-1': true };
   var EFFORT_RE = /^claude-(?:(?:fable|mythos|opus|sonnet|haiku)-5(?:-\d+)?|opus-4-[5-8]|sonnet-4-6)$/;

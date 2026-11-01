@@ -1682,8 +1682,119 @@
 
     /* ---------- UrlFetch / Html / Content / Logger ---------- */
 
+    /* 구글 시트 → xlsx 내보내기 URL 흉내: 모의 스프레드시트 내용으로 최소 xlsx(무압축 zip)를 만든다. */
+    var CRC_TABLE = null;
+    function crc32(u8) {
+      if (!CRC_TABLE) {
+        CRC_TABLE = [];
+        for (var n = 0; n < 256; n++) {
+          var c = n;
+          for (var k = 0; k < 8; k++) c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
+          CRC_TABLE[n] = c >>> 0;
+        }
+      }
+      var crc = 0xffffffff;
+      for (var i = 0; i < u8.length; i++) crc = CRC_TABLE[(crc ^ u8[i]) & 0xff] ^ (crc >>> 8);
+      return (crc ^ 0xffffffff) >>> 0;
+    }
+    function zipStore(entries) {
+      var parts = [], central = [], offset = 0;
+      function u16(a, v) { a.push(v & 0xff, (v >>> 8) & 0xff); }
+      function u32(a, v) { a.push(v & 0xff, (v >>> 8) & 0xff, (v >>> 16) & 0xff, (v >>> 24) & 0xff); }
+      entries.forEach(function (e) {
+        var name = utf8Encode(e.name), data = utf8Encode(e.text), crc = crc32(data);
+        var h = [];
+        u32(h, 0x04034b50); u16(h, 20); u16(h, 0x0800); u16(h, 0); u16(h, 0); u16(h, 0x21);
+        u32(h, crc); u32(h, data.length); u32(h, data.length); u16(h, name.length); u16(h, 0);
+        var c = [];
+        u32(c, 0x02014b50); u16(c, 20); u16(c, 20); u16(c, 0x0800); u16(c, 0); u16(c, 0); u16(c, 0x21);
+        u32(c, crc); u32(c, data.length); u32(c, data.length); u16(c, name.length); u16(c, 0); u16(c, 0);
+        u16(c, 0); u16(c, 0); u32(c, 0); u32(c, offset);
+        parts.push(h, name, data);
+        central.push(c, name);
+        offset += h.length + name.length + data.length;
+      });
+      var cdSize = central.reduce(function (t, x) { return t + x.length; }, 0);
+      var end = [];
+      u32(end, 0x06054b50); u16(end, 0); u16(end, 0); u16(end, entries.length); u16(end, entries.length);
+      u32(end, cdSize); u32(end, offset); u16(end, 0);
+      var all = parts.concat(central, [end]);
+      var total = all.reduce(function (t, x) { return t + x.length; }, 0);
+      var out = new Uint8Array(total), p = 0;
+      all.forEach(function (x) { for (var i = 0; i < x.length; i++) out[p++] = x[i]; });
+      return out;
+    }
+    function xmlEsc(s) {
+      return String(s).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function colName(i) { var s = ''; i++; while (i > 0) { var m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
+    function bookXlsx(book) {
+      var sheets = book.sheets.filter(function (s) { return !s.deleted; });
+      var files = [
+        { name: '[Content_Types].xml', text: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+          '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+          '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+          '<Default Extension="xml" ContentType="application/xml"/>' +
+          '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+          sheets.map(function (s, i) { return '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'; }).join('') +
+          '</Types>' },
+        { name: '_rels/.rels', text: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+          '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+          '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>' },
+        { name: 'xl/workbook.xml', text: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+          '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>' +
+          sheets.map(function (s, i) { return '<sheet name="' + xmlEsc(String(s.name).slice(0, 31)) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>'; }).join('') +
+          '</sheets></workbook>' },
+        { name: 'xl/_rels/workbook.xml.rels', text: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+          '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+          sheets.map(function (s, i) { return '<Relationship Id="rId' + (i + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>'; }).join('') +
+          '</Relationships>' }
+      ];
+      sheets.forEach(function (s, si) {
+        var rows = (s.rows || []).map(function (row, ri) {
+          var cells = (row || []).map(function (v, ci) {
+            if (v === null || v === undefined || v === '') return '';
+            var ref = colName(ci) + (ri + 1);
+            if (typeof v === 'number' && isFinite(v)) return '<c r="' + ref + '"><v>' + v + '</v></c>';
+            if (typeof v === 'boolean') return '<c r="' + ref + '" t="b"><v>' + (v ? 1 : 0) + '</v></c>';
+            var str = isDate(v) ? formatDate(v, 'Asia/Seoul', 'yyyy-MM-dd HH:mm:ss') : String(v);
+            return '<c r="' + ref + '" t="inlineStr"><is><t xml:space="preserve">' + xmlEsc(str) + '</t></is></c>';
+          }).join('');
+          return '<row r="' + (ri + 1) + '">' + cells + '</row>';
+        }).join('');
+        files.push({ name: 'xl/worksheets/sheet' + (si + 1) + '.xml', text: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+          '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>' + rows + '</sheetData></worksheet>' });
+      });
+      return zipStore(files);
+    }
+    function httpResponse(code, bytes, type, name) {
+      var blob = makeBlob(bytes, type, name);
+      return {
+        getResponseCode: function () { return code; },
+        getContent: function () { return blob.getBytes(); },
+        getContentText: function () { return blob.getDataAsString(); },
+        getBlob: function () { return blob; },
+        getAs: function () { return blob; },
+        getHeaders: function () { return { 'Content-Type': type }; },
+        getAllHeaders: function () { return { 'Content-Type': type }; }
+      };
+    }
+    function mockFetch(url, opts) {
+      var m = /^https:\/\/docs\.google\.com\/spreadsheets\/d\/([^/?#]+)\/export\?(?:.*&)?format=xlsx\b/.exec(String(url || ''));
+      if (m) {
+        var book = state.books[m[1]];
+        if (!book) {
+          if (opts && opts.muteHttpExceptions) return httpResponse(404, utf8Encode('Not Found'), 'text/html', null);
+          throw gasError('Request failed for https://docs.google.com returned code 404.');
+        }
+        return httpResponse(200, bookXlsx(book), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', (book.name || 'export') + '.xlsx');
+      }
+      throw gasError('미리보기에서는 외부 호출을 할 수 없습니다');
+    }
+
     var UrlFetchApp = {
-      fetch: function () { throw gasError('미리보기에서는 외부 호출을 할 수 없습니다'); },
+      fetch: mockFetch,
       fetchAll: function () { throw gasError('미리보기에서는 외부 호출을 할 수 없습니다'); },
       getRequest: function (url, o) { return { url: url, method: (o && o.method) || 'get', headers: (o && o.headers) || {}, payload: o && o.payload }; }
     };

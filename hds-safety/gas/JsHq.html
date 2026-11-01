@@ -578,7 +578,12 @@
       return App.api('requests.remind', { id: req.id, sites: siteIds }).then(function (res) {
         res = res || {};
         req.lastRemindAt = nowIso(); putRequest(req);
-        toast('독촉 메일을 ' + (res.sent != null ? res.sent : n) + '곳에 보냈습니다' + (res.skipped ? ' · 메일 주소 없는 ' + res.skipped + '곳 제외' : '') + '.', 'pos');
+        var why = {};
+        (res.sites || []).forEach(function (x) { if (x && x.result && x.result !== '보냄') why[x.result] = (why[x.result] || 0) + 1; });
+        var skipTxt = Object.keys(why).map(function (k) { return k + ' ' + why[k] + '곳'; }).join(', ');
+        if (!skipTxt && res.skipped) skipTxt = '건너뜀 ' + res.skipped + '곳';
+        var sentN = res.sent != null ? res.sent : n;
+        toast((sentN ? '독촉 메일을 ' + sentN + '곳에 보냈습니다' : '보낸 독촉 메일이 없습니다') + (skipTxt ? ' · ' + skipTxt : '') + (res.done ? ' · 이미 제출 ' + res.done + '곳' : '') + (res.note ? ' · ' + res.note : '') + '.', sentN ? 'pos' : '');
         rerender();
       });
     }).catch(function (e) { toast('독촉 메일을 보내지 못했습니다. ' + errText(e), 'neg'); });
@@ -598,7 +603,8 @@
       var what = fshort(r.form) + (v.kind ? ' · ' + v.kind : v.swType ? ' · ' + v.swType : '') + (v.area ? ' · ' + v.area : '');
       var st = r.status === '제출' ? '제출, 확인 대기' : stageLabel(r);
       var at = r.submittedAt || r.updatedAt;
-      out.push({ tone: 'neg', score: 1000 + hoursAgo(at), site: s, text: what, why: r.id + ' · ' + st + ' · ' + relTime(at),
+      var ha = hoursAgo(at);
+      out.push({ tone: 'neg', score: ha < 48 ? 2000 - ha : 1000 + ha, site: s, text: what, why: r.id + ' · ' + st + ' · ' + relTime(at),
         find: s.id + ' ' + s.name + ' ' + fshort(r.form) + ' ' + (r.status === '제출' ? '보고' : stageLabel(r).replace(/\(.*$/, '')) + '가 확인을 기다립니다',
         href: '#/rec/' + r.id, btn: canWrite() ? { label: '확인', href: '#/review?id=' + encodeURIComponent(r.id) } : { label: '열기', href: '#/rec/' + r.id } });
     });
@@ -1151,7 +1157,7 @@
   function reviewQueue() {
     var acked = {}; reads().forEach(function (x) { acked[x.refId] = 1; });
     return recs().filter(function (r) {
-      if (r.status === '제출') return true;
+      if (r.status === '제출') return App.needsReview ? App.needsReview(r) : true;
       return r.status === '작성중' && (r.stageDone || []).length && !acked[ackKey(r)];
     }).map(function (r) {
       var stage = r.status === '작성중', incident = r.form === 'F04' || r.form === 'F10';
@@ -3246,7 +3252,7 @@
     var s = JSON.parse(JSON.stringify(S().settings || {}));
     s.mail = Object.assign({ enabled: true, onRequest: true, onReturn: true, onIncident: true, dailyReminder: true, weeklyDigest: true, hqEmails: [] }, s.mail || {});
     s.reminder = Object.assign({ beforeDays: [3, 1], overdue: true, hour: 8 }, s.reminder || {});
-    s.requiredForms = Object.assign({ 'default': defaultForms(), seasonal: { F06: [6, 7, 8, 9] } }, s.requiredForms || {});
+    s.requiredForms = Object.assign({ 'default': defaultForms(), seasonal: { F06: [4, 5, 6, 7, 8, 9] } }, s.requiredForms || {});
     if (!s.dailyDue) s.dailyDue = '10:00';
     if (!s.monthlyDueDay) s.monthlyDueDay = 5;
     return s;

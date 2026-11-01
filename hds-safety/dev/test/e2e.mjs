@@ -5,7 +5,8 @@
  *   node dev/test/e2e.mjs                 빌드 → 시험 (폭 1440·768·390)
  *   E2E_WIDTHS=1440,390 node dev/test/e2e.mjs
  *   E2E_NO_BUILD=1 node dev/test/e2e.mjs  이미 있는 dist/preview.html 로
- *   E2E_SCREENS=home,collect ...          일부 화면만
+ *   E2E_SCREENS=home,collect ...          일부 화면만 (flows = 흐름만)
+ *   E2E_DIST=<폴더> E2E_NO_BUILD=1 ...     그 폴더의 preview.html 로(예: paste/ 묶음으로 만든 미리보기)
  *
  * 하는 일
  *  1) dist/ 를 작은 http 서버(임의 포트)로 띄우고 ?demo=1 로 열어 예시 데이터 적재를 기다린다(최대 120초).
@@ -23,7 +24,7 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..');
-const DIST = path.join(ROOT, 'dist');
+const DIST = process.env.E2E_DIST ? path.resolve(process.env.E2E_DIST) : path.join(ROOT, 'dist');   // E2E_DIST=<폴더>: 다른 미리보기(예: paste 묶음으로 만든 것) 시험
 const SHOTS = path.join(ROOT, 'dev', 'shots');
 const FONT = path.resolve(ROOT, '..', 'fonts', 'PretendardVariable.woff2');
 const KEY = 'hds-preview-db';
@@ -296,19 +297,21 @@ try {
       site: pick(t('sites'), (s) => s.status !== '종료'),
       rec: pick(recs, (r) => r.status === '제출'),
       act: pick(t('acts'), (a) => a.status === '조치중'),
-      req: pick(t('requests'), (r) => r.status === '진행')
+      req: pick(t('requests'), (r) => r.status === '진행'),
+      edit: (recs.find((r) => r.status === '반려') || recs.find((r) => r.status === '작성중' && !String(r.stageDone || '').replace(/[\[\]"]/g, '')) || {}).id || ''
     };
   });
   const screens = [
     ['home', '#/home'], ['collect', '#/collect'], ['review', '#/review'],
     ['requests', '#/requests'], ['requests-new', '#/requests/new'], ids.req && ['requests-detail', '#/requests/' + ids.req],
     ['forms', '#/forms'], ['records', '#/records'], ids.rec && ['rec-detail', '#/rec/' + ids.rec],
+    ids.edit && ['rec-edit', '#/edit/' + ids.edit], ids.site && ['new-F07', '#/new/F07/' + ids.site],
     ['acts', '#/acts'], ids.act && ['acts-detail', '#/acts/' + ids.act],
     ['analytics', '#/analytics'], ['analytics-incidents', '#/analytics/incidents'], ['analytics-risk', '#/analytics/risk'],
     ['analytics-daily', '#/analytics/daily'], ['analytics-edu', '#/analytics/edu'], ['analytics-acts', '#/analytics/acts'],
     ['analytics-hec', '#/analytics/hec'], ['analytics-sites', '#/analytics/sites'], ['analytics-form-F07', '#/analytics/form/F07'],
     ['sites', '#/sites'], ids.site && ['sites-detail', '#/sites/' + ids.site], ['users', '#/users'], ['settings', '#/settings'],
-    ['search', '#/search?q=' + encodeURIComponent('소화기')]
+    ['search', '#/search?q=' + encodeURIComponent('넘어짐')]
   ].filter(Boolean).filter(([n]) => !ONLY || ONLY.includes(n));
 
   if (await hqPage.evaluate(() => !!document.querySelector('.shell'))) {
@@ -375,7 +378,8 @@ async function siteFlow() {
   if (loginErrs.length) fail('사업장', `로그인 중 콘솔 오류 ${loginErrs.length}건`, loginErrs.slice(0, 2).map((x) => x.text.split('\n')[0]).join(' | '));
 
   // 사업장 화면들
-  const siteScreens = [['site-home', '#/home'], ['site-inbox', '#/inbox'], ['site-records', '#/records'], ['site-acts', '#/acts'], ['site-site', '#/site']]
+  const siteScreens = [['site-home', '#/home'], ['site-inbox', '#/inbox'], ['site-forms', '#/forms'], ['site-records', '#/records'], ['site-acts', '#/acts'], ['site-site', '#/site'],
+    ['site-new-F07', '#/new/F07/' + site.id], ['site-new-F04', '#/new/F04/' + site.id]]
     .filter(([n]) => !ONLY || ONLY.includes(n) || ONLY.includes('site'));
   for (const sw of [390, 1440].filter((x) => WIDTHS.includes(x) || x === 390)) {
     await page.setViewportSize({ width: sw, height: HEIGHT[sw] || 900 });
@@ -418,8 +422,20 @@ async function siteFlow() {
       warn('사업장', `'전부 양호' 버튼이 없어 양호 ${n}개를 하나씩 눌렀습니다`);
     }
     await page.waitForTimeout(300);
+    // 본사 검토 대상이 되도록(리드 결정: F07 은 불량 또는 사고·아차가 있을 때만 검토함) 첫 항목을 '불량' 으로
+    const firstItem = page.locator('#page [data-fe-item^="sec_items:"]').first();
+    let badCode = '';
+    if (await firstItem.count()) {
+      badCode = (await firstItem.getAttribute('data-fe-item')) || '';
+      await firstItem.locator('[data-fe-j="불량"]').click();
+      await page.waitForTimeout(200);
+      const note = firstItem.locator('textarea');
+      await note.waitFor({ state: 'visible', timeout: 3000 });
+      await note.fill('2층 비상구 앞 적재물 — 즉시 이동 요청');
+      await page.waitForTimeout(200);
+    } else fail('사업장', '일일점검 체크리스트 항목([data-fe-item])을 찾지 못했습니다');
     await shot(page, `${w}-site-f07-filled`);
-    pass('사업장', `일일점검 작성(입력 ${filled}칸, 전부 양호 ${nAll}회)`);
+    pass('사업장', `일일점검 작성(입력 ${filled}칸, 전부 양호 ${nAll}회, 불량 ${badCode || '없음'})`);
 
     // 제출
     st.screen = '일일점검 제출';
@@ -505,6 +521,16 @@ async function siteFlow() {
       await settle(hqPage);
       await shot(hqPage, '1440-review-confirmed');
       pass('본사', `검토함에서 ${recId} 확인`);
+      // 리드 결정: 불량·사고·아차가 없는 일일점검은 검토함·배지에 올리지 않는다
+      const rule = await hqPage.evaluate(() => {
+        const quiet = App.recs((r) => r.status === '제출' && r.form === 'F07' && !App.needsReview(r)).map((r) => r.id);
+        const shown = Array.from(document.querySelectorAll('#page .hq-rv-item[data-id]')).map((e) => e.getAttribute('data-id'));
+        const badge = (document.querySelector('[data-nav="review"] .nav-count') || {}).textContent || '';
+        return { quiet: quiet.length, leaked: shown.filter((id) => quiet.includes(id)).length, badge: Number(badge) || 0, count: App.hq && App.hq.reviewCount ? App.hq.reviewCount() : -1 };
+      });
+      if (rule.leaked) fail('본사', `검토함에 확인 대상이 아닌 일일점검 ${rule.leaked}건이 보입니다`);
+      else if (rule.badge !== rule.count) fail('본사', `검토함 배지(${rule.badge})와 목록 수(${rule.count})가 다릅니다`);
+      else pass('본사', `검토함 규칙(양호 일일점검 ${rule.quiet}건 제외, 배지 ${rule.badge}건 = 목록)`);
     } catch (e) {
       fail('본사', '검토함 확인', e.message);
       await shot(hqPage, '1440-fail-review');
@@ -512,12 +538,129 @@ async function siteFlow() {
     const rvErrs = hqSt.errors.filter((x) => x.screen === '검토 확인');
     if (rvErrs.length) fail('본사', `검토 중 콘솔 오류 ${rvErrs.length}건`, rvErrs.slice(0, 3).map((x) => x.text.split('\n')[0]).join(' | '));
   }
+
+  // 사고 속보(F04 1단계) → 본사 홈 '오늘의 예외'
+  if (!ONLY || ONLY.includes('flows')) {
+    await f04Flow(page, st, site);
+    await requestFlow(page, st, site);
+  }
   await ctx.close();
 }
 
+/** 한 컨텍스트의 모의 DB 를 다른 컨텍스트로 옮기고 그쪽을 다시 연다 */
+async function moveDb(from, to) {
+  const db = await from.evaluate((k) => { __mock.save(); return localStorage.getItem(k); }, KEY);
+  await to.evaluate(({ k, v }) => { localStorage.setItem(k, v); }, { k: KEY, v: db });
+  await to.reload({ waitUntil: 'load' });
+  await to.waitForSelector('.shell', { timeout: 30000 });
+  await settle(to);
+}
+
+/** 대화상자(App.confirm 등)가 뜨면 주 버튼을 누른다 */
+async function acceptDialog(page) {
+  const btn = page.locator('dialog[open] .btn.primary, dialog[open] .btn.danger');
+  await btn.first().waitFor({ timeout: 2500 }).then(() => btn.last().click()).catch(() => {});
+}
+
+async function f04Flow(page, st, site) {
+  const w = 390;
+  st.screen = '사고 속보';
+  const since = new Date(Date.now() + 9 * 3600e3 - 5000).toISOString().slice(0, 19);
+  let recId = null;
+  try {
+    await go(page, `#/new/F04/${site.id}`);
+    // 조건부 필수 칸(선택에 따라 나타남)까지 사람처럼 보이는 칸을 모두 채운다
+    let n = 0;
+    for (let i = 0; i < 3; i++) { n += await fillVisible(page, true); n += await pickChoices(page, true); await page.waitForTimeout(150); }
+    await shot(page, `${w}-site-f04-filled`);
+    const submit = page.locator('button.btn.primary:visible').filter({ hasText: /보고|제출/ });
+    if (!(await submit.count())) throw new Error('보이는 보고 버튼을 찾지 못했습니다');
+    await submit.last().click();
+    await acceptDialog(page);
+    recId = await page.waitForFunction(({ siteId, since }) => {
+      const r = __mock.table('records').filter((x) => x.site === siteId && x.form === 'F04' && String(x.updatedAt) >= since && /s1/.test(String(x.stageDone)));
+      return r.length ? r[r.length - 1].id : null;
+    }, { siteId: site.id, since }, { timeout: 15000, polling: 250 }).then((h) => h.jsonValue()).catch(() => null);
+    if (!recId) {
+      const why = await page.evaluate(() => Array.from(document.querySelectorAll('.field-err, [data-fe-errs] li, #toasts .toast')).map((e) => e.innerText.trim()).filter(Boolean).slice(0, 6).join(' / '));
+      throw new Error('1단계 보고된 F04 가 모의 DB 에 없습니다 — ' + why);
+    }
+    await settle(page);
+    await shot(page, `${w}-site-f04-reported`);
+    pass('사업장', `사고 속보(F04 1단계) 보고 ${recId} (입력 ${n}칸)`);
+  } catch (e) {
+    fail('사업장', '사고 속보(F04 1단계) 보고', e.message);
+    await shot(page, `${w}-site-fail-f04`);
+  }
+  const errs = st.errors.filter((x) => x.screen === '사고 속보');
+  if (errs.length) fail('사업장', `사고 속보 중 콘솔 오류 ${errs.length}건`, errs.slice(0, 3).map((x) => x.text.split('\n')[0]).join(' | '));
+  if (!recId) return;
+  try {
+    hqSt.screen = '홈 예외';
+    await moveDb(page, hqPage);
+    await go(hqPage, '#/home');
+    const sel = `#page .hq-exc-list [data-href="#/rec/${recId}"], #page .hq-exc-list a[href="#/rec/${recId}"]`;
+    let seen = await hqPage.locator(sel).count();
+    if (!seen) seen = await hqPage.evaluate((id) => ((document.querySelector('#page .hq-exc-list') || {}).innerText || '').includes(id), recId) ? 1 : 0;
+    await shot(hqPage, '1440-home-f04');
+    if (!seen) throw new Error(`종합 현황 '오늘의 예외' 에 ${recId} 가 없습니다`);
+    pass('본사', `종합 현황 예외에 사고 속보 ${recId}`);
+  } catch (e) {
+    fail('본사', '종합 현황 예외', e.message);
+  }
+}
+
+async function requestFlow(page, st, site) {
+  const title = 'E2E 시험 요청 ' + Date.now().toString(36);
+  let reqId = null;
+  try {
+    hqSt.screen = '새 요청';
+    await go(hqPage, '#/requests/new');
+    const form = hqPage.locator('#page form').filter({ has: hqPage.locator('[name="title"]') }).first();
+    await form.locator('[name="title"]').fill(title);
+    const f01 = form.locator('input[name="form"][value="F01"]');
+    if (await f01.count()) await f01.check();
+    await hqPage.locator('#page [data-seg] button[data-value="pick"]').first().click();
+    await hqPage.waitForTimeout(300);
+    const box = hqPage.locator(`#page input[name="site"][value="${site.id}"]`);
+    await box.waitFor({ timeout: 5000 });
+    await box.check();
+    await shot(hqPage, '1440-requests-new-filled');
+    await hqPage.locator('#page form button[type="submit"].btn.primary').first().click();
+    await acceptDialog(hqPage);
+    reqId = await hqPage.waitForFunction((t) => { const r = __mock.table('requests').find((x) => x.title === t); return r ? r.id : null; }, title, { timeout: 15000, polling: 250 })
+      .then((h) => h.jsonValue()).catch(() => null);
+    if (!reqId) {
+      const why = await hqPage.evaluate(() => Array.from(document.querySelectorAll('#page .field-err, #toasts .toast')).map((e) => e.innerText.trim()).filter(Boolean).slice(0, 5).join(' / '));
+      throw new Error('요청이 모의 DB 에 없습니다 — ' + why);
+    }
+    const sites = await hqPage.evaluate((id) => __mock.table('requests').find((x) => x.id === id).sites, reqId);
+    pass('본사', `새 요청 ${reqId} (대상 ${JSON.stringify(sites)})`);
+  } catch (e) {
+    fail('본사', '새 요청 만들기', e.message);
+    await shot(hqPage, '1440-fail-request');
+  }
+  const errs = hqSt.errors.filter((x) => x.screen === '새 요청' || x.screen === '홈 예외');
+  if (errs.length) fail('본사', `요청·홈 중 콘솔 오류 ${errs.length}건`, errs.slice(0, 3).map((x) => x.text.split('\n')[0]).join(' | '));
+  if (!reqId) return;
+  try {
+    st.screen = '받은 요청';
+    await moveDb(hqPage, page);
+    await go(page, '#/inbox');
+    const txt = await page.evaluate(() => (document.getElementById('page') || {}).innerText || '');
+    await shot(page, '390-site-inbox-new');
+    if (!txt.includes(title)) throw new Error(`받은 요청에 "${title}" 이 없습니다`);
+    pass('사업장', `받은 요청에 ${reqId}`);
+  } catch (e) {
+    fail('사업장', '받은 요청 확인', e.message);
+  }
+  const errs2 = st.errors.filter((x) => x.screen === '받은 요청');
+  if (errs2.length) fail('사업장', `받은 요청 중 콘솔 오류 ${errs2.length}건`, errs2.slice(0, 3).map((x) => x.text.split('\n')[0]).join(' | '));
+}
+
 /** 필수 표시가 있는 선택 단추 묶음(role=radiogroup)에서 아직 고르지 않은 것은 첫 단추를 누른다. → 누른 수 */
-async function pickChoices(page) {
-  const idx = await page.evaluate(() => {
+async function pickChoices(page, all = false) {
+  const idx = await page.evaluate((all) => {
     const out = [];
     document.querySelectorAll('#page [role="radiogroup"]').forEach((g, i) => {
       g.setAttribute('data-e2e-rg', String(i));
@@ -525,10 +668,10 @@ async function pickChoices(page) {
       const req = !!(field && field.querySelector('.req'));
       const chosen = g.querySelector('[aria-checked="true"], .on, [aria-pressed="true"]');
       const visible = !!(g.offsetWidth || g.offsetHeight);
-      if (req && !chosen && visible) out.push(String(i));
+      if ((req || (all && !g.closest('.fe-chk'))) && !chosen && visible) out.push(String(i));
     });
     return out;
-  });
+  }, all);
   let n = 0;
   for (const i of idx) {
     const b = page.locator(`[data-e2e-rg="${i}"] [role="radio"], [data-e2e-rg="${i}"] button`).first();
@@ -538,7 +681,7 @@ async function pickChoices(page) {
 }
 
 /** 편집기의 보이는 빈 입력을 무난한 값으로 채운다(숫자 0, 시각 08:30, 날짜 오늘, 필수 글·선택). → 채운 칸 수 */
-async function fillVisible(page) {
+async function fillVisible(page, all = false) {
   const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
   const handles = await page.$$('#page input:visible, #page select:visible, #page textarea:visible');
   let n = 0;
@@ -550,15 +693,15 @@ async function fillVisible(page) {
         opts: el.tagName === 'SELECT' ? Array.from(el.options).map((o) => o.value).filter((v) => v !== '') : []
       }));
       if (d.disabled || d.value) continue;
-      if (d.tag === 'select') { if (d.req && d.opts.length) { await h.selectOption(d.opts[0]); n++; } continue; }
+      if (d.tag === 'select') { if ((d.req || all) && d.opts.length) { await h.selectOption(d.opts[0]); n++; } continue; }
       if (['checkbox', 'radio', 'file', 'hidden', 'button', 'submit', 'search', 'password', 'color', 'range'].includes(d.type)) continue;
       let v = null;
-      if (d.type === 'number') v = '0';
+      if (d.type === 'number') v = all ? '1' : '0';
       else if (d.type === 'time') v = '08:30';
       else if (d.type === 'date') v = today;
       else if (d.type === 'datetime-local') v = today + 'T08:30';
       else if (d.type === 'month') v = today.slice(0, 7);
-      else if (d.req) v = d.tag === 'textarea' ? '특이사항 없음' : '이상 없음';
+      else if (d.req || all) v = d.tag === 'textarea' ? '특이사항 없음' : '이상 없음';
       if (v === null) continue;
       await h.fill(v);
       n++;

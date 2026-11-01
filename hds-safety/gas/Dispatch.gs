@@ -150,15 +150,22 @@ var Dispatch = (function () {
   function appUrl() {
     try { return String(ScriptApp.getService().getUrl() || ''); } catch (e) { return ''; }
   }
-  function siteLink(site) {
+  /** 웹앱 링크에 쿼리 하나 붙이기 */
+  function withParam(url, k, v) { return url + (url.indexOf('?') >= 0 ? '&' : '?') + k + '=' + encodeURIComponent(v); }
+  /**
+   * 사업장 링크(…/exec?s=토큰). view 를 주면 &v=<화면>(예: 'rec/ID') — doGet 이 BOOT.view 로 넘겨 첫 화면이 된다.
+   * 메일 링크에 '#/…' 해시를 쓰지 않는 까닭: GAS 웹앱은 iframe 안에서 돌아 최상위 해시가 앱에 바로 보이지 않는다.
+   */
+  function siteLink(site, view) {
     var url = appUrl();
     if (!url) return '';
     var tok = site && str(site.token);
-    return tok ? url + (url.indexOf('?') >= 0 ? '&' : '?') + 's=' + encodeURIComponent(tok) : url;
+    var out = tok ? withParam(url, 's', tok) : url;
+    return view ? withParam(out, 'v', view) : out;
   }
   function recordLink(id) {
     var url = appUrl();
-    return url ? url + '#/rec/' + encodeURIComponent(id) : '';
+    return url ? withParam(url, 'v', 'rec/' + id) : '';
   }
 
   function whoOf(me) {
@@ -1116,7 +1123,7 @@ var Dispatch = (function () {
       if (!site) return { sent: false };
       var def = formDef(rec.form) || { title: rec.form };
       var subject = tag(st) + '반려 — ' + (def.title || rec.form) + ' ' + rec.id + ' 고쳐서 다시 제출해 주세요';
-      var link = siteLink(site);
+      var link = siteLink(site, 'rec/' + rec.id);
       var html = template('return', {
         settings: st,
         preheader: '반려 사유: ' + str(rec.returnNote).slice(0, 60),
@@ -1414,7 +1421,15 @@ var Dispatch = (function () {
       res.note = '본사 수신 메일 미설정';
       log('system', 'mail', 'cron:weekly', '보내지 않음(본사 수신 메일 미설정) · 제목 ' + subject);
     } else {
-      res.sent = mail(to, subject, html, { who: 'system', ref: 'cron:weekly', settings: st });
+      // 같은 날 두 번 보내지 않는다(웹앱의 google.script.run 으로도 전역 함수 cronWeekly 를 부를 수 있으므로 반복 발송 방지).
+      var wk = null;
+      try { wk = Db.kvGet('cron.weekly', null); } catch (e5) { wk = null; }
+      if (isObj(wk) && wk.date === t && wk.sent) {
+        res.note = '오늘 이미 보냄';
+      } else {
+        res.sent = mail(to, subject, html, { who: 'system', ref: 'cron:weekly', settings: st });
+        if (res.sent) { try { Db.kvSet('cron.weekly', { date: t, sent: true, at: now() }); } catch (e6) { log('system', 'cron', 'weekly', '보낸 날 기록 실패: ' + msgOf(e6)); } }
+      }
     }
     res.summary = { from: from, to: end, sites: sites.length, dailyRate: rate, accidents: acc + minor, nearMiss: near, stopWork: stop, actNew: actNew, actDone: actDone, overdue: overdue, overdueHigh: overdueHigh, missing: missTotal };
     log('system', 'cron', 'weekly', '주간 요약 ' + from + '~' + end + ' · 일일점검 ' + (rate == null ? '—' : rate + '%') + ' · 사고 ' + (acc + minor) + ' · 아차 ' + near +

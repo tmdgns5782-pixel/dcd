@@ -113,7 +113,7 @@
   function cachedRecord(id) { var m = S().records; if (!m || !id) return null; return typeof m.get === 'function' ? m.get(id) : m[id]; }
   var DEF_SETTINGS = {
     dailyDue: '10:00', monthlyDueDay: 5,
-    requiredForms: { default: ['F07', 'F09', 'F01', 'N1', 'N2', 'N4', 'F08B', 'F10B'], seasonal: { F06: [6, 7, 8, 9] } }
+    requiredForms: { default: ['F07', 'F09', 'F01', 'N1', 'N2', 'N4', 'F08B', 'F10B'], seasonal: { F06: [4, 5, 6, 7, 8, 9] } }
   };
   function setting(k) { var s = S().settings || {}; return s[k] !== undefined && s[k] !== null ? s[k] : DEF_SETTINGS[k]; }
   function isHQ() {
@@ -344,11 +344,13 @@
     (f.validate || []).forEach(function (rule) {
       var o = rule.field ? other(rule.field) : undefined;
       var msg = rule.message;
-      if (rule.rule === 'lte' && !isEmpty(v) && !isEmpty(o) && cmpVal(f, v) > cmpVal(f, o)) errs.push(msg || label + ' 값을 확인하세요');
-      else if (rule.rule === 'gte' && !isEmpty(v) && !isEmpty(o) && cmpVal(f, v) < cmpVal(f, o)) errs.push(msg || label + ' 값을 확인하세요');
+      /* 비교 대상: 다른 칸(rule.field) 또는 상수(rule.value). 계산 칸에도 적용 */
+      var cmpTo = (rule.rule === 'lte' || rule.rule === 'gte' || rule.rule === 'eq') && !rule.field && rule.value !== undefined ? rule.value : o;
+      if (rule.rule === 'lte' && !isEmpty(v) && !isEmpty(cmpTo) && cmpVal(f, v) > cmpVal(f, cmpTo)) errs.push(msg || label + ' 값을 확인하세요');
+      else if (rule.rule === 'gte' && !isEmpty(v) && !isEmpty(cmpTo) && cmpVal(f, v) < cmpVal(f, cmpTo)) errs.push(msg || label + ' 값을 확인하세요');
       else if (rule.rule === 'eq') {
-        var target = rule.value !== undefined ? rule.value : o;
-        if (!isEmpty(v) && target !== undefined && String(v) !== String(target)) errs.push(msg || label + ' 값을 확인하세요');
+        var target = rule.value !== undefined && !rule.field ? rule.value : o;
+        if (!isEmpty(v) && !isEmpty(target) && String(cmpVal(f, v)) !== String(cmpVal(f, target))) errs.push(msg || label + ' 값을 확인하세요');
       } else if (rule.rule === 'requiredIf') {
         var cond = Array.isArray(o) ? o.indexOf(rule.value) >= 0 : (rule.value === undefined ? !isEmpty(o) : (o === rule.value || String(o) === String(rule.value)));
         if (cond && isEmpty(v) && f.type !== 'computed') errs.push(msg || label + ': 입력이 필요합니다');
@@ -571,18 +573,25 @@
 
     if (f.type === 'daily') {
       var dueTime = String(setting('dailyDue') || (f.dueRule || {}).time || '10:00');
-      var day = addDays(t, -1); var dueDate = t;
-      var past = t !== today() || hhmm(new Date()) >= dueTime;
       var shifts = f.shifts ? (asArr(site.shifts).length ? asArr(site.shifts) : ['주간']) : ['_'];
-      var dayRows = done.filter(function (r) { return rowPeriod(r) === day; });
-      var got = shifts.filter(function (sh) { return dayRows.some(function (r) { return sh === '_' || shifts.length === 1 || r.shift === sh; }); });
-      var lateAll = dayRows.length > 0 && dayRows.every(function (r) {
-        var sa = String(r.submittedAt || r.updatedAt || ''); return sa.slice(0, 10) > dueDate || (sa.slice(0, 10) === dueDate && sa.slice(11, 16) > dueTime);
-      });
-      var n = got.length, N = shifts.length;
-      var st = n === N ? (lateAll ? 'warn' : 'ok') : (past ? (n ? 'warn' : 'miss') : 'pending');
-      var lb = N > 1 ? '어제 ' + n + '/' + N + '조' : (n ? (lateAll ? '지연 제출' : '제출') : (past ? '미제출' : '마감 ' + dueTime));
-      return { status: st, label: lb, due: dueDate + ' ' + dueTime, period: periodOf('daily', day).label, periodKey: day, from: day, to: day, recId: dayRows.length ? dayRows[0].id : '', late: lateAll };
+      var evalDay = function (day, dueDate, past, word) {
+        var dayRows = done.filter(function (r) { return rowPeriod(r) === day; });
+        var got = shifts.filter(function (sh) { return dayRows.some(function (r) { return sh === '_' || shifts.length === 1 || r.shift === sh; }); });
+        var lateAll = dayRows.length > 0 && dayRows.every(function (r) {
+          var sa = String(r.submittedAt || r.updatedAt || ''); return sa.slice(0, 10) > dueDate || (sa.slice(0, 10) === dueDate && sa.slice(11, 16) > dueTime);
+        });
+        var n = got.length, N = shifts.length;
+        var st = n === N ? (lateAll ? 'warn' : 'ok') : (past ? (n ? 'warn' : 'miss') : 'pending');
+        var lb = N > 1 ? word + ' ' + n + '/' + N + '조' : (n ? (lateAll ? '지연 제출' : '제출') : (past ? '미제출' : '마감 ' + dueTime));
+        return { status: st, label: lb, due: dueDate + ' ' + dueTime, period: periodOf('daily', day).label, periodKey: day, from: day, to: day, recId: dayRows.length ? dayRows[0].id : '', late: lateAll, n: n, N: N };
+      };
+      var cur = evalDay(addDays(t, -1), t, t !== today() || hhmm(new Date()) >= dueTime, '어제');
+      /* 서버 Dispatch.dueStatus 와 같은 규칙: 어제분이 마감 전이면 그제분이 빠졌는지 먼저(기한경과 우선) */
+      if (cur.status === 'pending' && !(site.openDate && site.openDate > addDays(t, -2))) {
+        var pv = evalDay(addDays(t, -2), addDays(t, -1), true, '그제');
+        if (pv.n < pv.N) { pv.status = 'miss'; return pv; }
+      }
+      return cur;
     }
 
     var type = f.type;
@@ -590,12 +599,16 @@
     var inSeason = function (p) { return !months || !months.length || months.indexOf(parseD(p.from).getMonth() + 1) >= 0; };
     var p = periodOf(type, t), pdue = dueOf(def, p);
     var prev = periodOf(type, addDays(p.from, -1)), prevDue = dueOf(def, prev);
-    if (t <= prevDue && inSeason(prev)) { p = prev; pdue = prevDue; }
+    var inPer = function (r, per) { return r.period ? r.period === per.key : (r.date >= per.from && r.date <= per.to); };
+    /* 서버 Dispatch.dueStatus 와 같은 규칙: 직전 기간 마감 전이면 직전 기간, 마감이 지났는데 안 냈으면 직전 기간을 기한경과로 */
+    var prevApplies = inSeason(prev) && !(site.openDate && site.openDate > prev.to);
+    if (prevApplies && (t <= prevDue || !done.some(function (r) { return inPer(r, prev); }))) { p = prev; pdue = prevDue; }
+    else if (site.openDate && site.openDate > p.to) { return { status: 'na', label: '개설 전', due: '', period: '', periodKey: '', from: '', to: '', recId: '', late: false }; }
     else if (!inSeason(p)) {
       var lastS = done.map(function (r) { return r.date; }).sort().pop();
       return { status: 'na', label: '시즌 아님', due: '', period: lastS ? '최근 ' + lastS : '', periodKey: '', from: '', to: '', recId: '', late: false };
     }
-    var inP = rows.filter(function (r) { return r.period ? r.period === p.key : (r.date >= p.from && r.date <= p.to); });
+    var inP = rows.filter(function (r) { return inPer(r, p); });
     var dn = inP.filter(isDone);
     if (dn.length) {
       var late = dn.every(function (r) { return String(r.submittedAt || r.updatedAt || '').slice(0, 10) > pdue; });
@@ -1883,7 +1896,7 @@
         if (ED === ed) { try { history.replaceState(null, '', h); } catch (e) { /* 무시 */ } ed.route = h; }
         ed.isNew = false; ed.dup = null; paintHeader(ed);
       }
-      if (manual && ED === ed) toast('임시저장했습니다');
+      if (manual === true && ED === ed) toast('임시저장했습니다');
       finish(); return r;
     }, function (err) {
       ed.saveState = 'error'; finish(); throw err;
@@ -1912,7 +1925,8 @@
       if (!ok || ED !== ed) return;
       ed.busy = true; paintBusy(ed, true); clearTimeout(ed.timer);
       var wait = ed.saving ? ed.saving.catch(function () { return null; }) : Promise.resolve();
-      return wait.then(function () { return rec.id ? null : doSave(ed, false); }).then(function () {
+      /* 아직 기록 번호가 없으면 먼저 저장(제출 중 busy 라 자동저장 규칙을 건너뛰는 수동 저장) */
+      return wait.then(function () { return rec.id ? null : doSave(ed, 'submit'); }).then(function () {
         if (!rec.id) throw new Error('기록 번호를 받지 못했습니다. 잠시 뒤 다시 눌러 주세요.');
         computeAll(def, rec);
         var record = clone(rec); record.period = periodKeyOf(def, rec); record.facts = factsOf(def, rec);

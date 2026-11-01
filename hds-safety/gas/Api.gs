@@ -11,6 +11,8 @@
  * 다른 파일 객체(Db, Auth, Views, Dispatch, Export, Ai)는 함수 안에서만 참조한다(파일 순서와 무관하게 동작).
  */
 function api(method, payloadJson, token) {
+  // GAS 는 호출마다 새 실행이지만, 실행이 이어지는 환경(미리보기 등)에서 지난 호출의 메모가 남지 않게 비운다.
+  try { Db.reset(); } catch (e) { /* DB 전이면 무시 */ }
   return Api.call(method, payloadJson, token);
 }
 
@@ -505,6 +507,8 @@ var Api = (function () {
     var x = prepRecord(p, me);
     var rec = x.rec;
     var isNew = !x.cur;
+    // 리드 결정: 제출된 기록은 임시저장으로 몰래 바뀌지 않는다 — [수정 제출](records.submit, rev+1)로만 고친다.
+    if (!isNew && x.cur.status === '제출') fail('CONFLICT', '제출된 기록은 임시저장할 수 없습니다. 고친 내용은 [수정 제출]로 반영하세요');
     if (isNew) rec.id = newRecordId(x.def, rec.site, rec.date, me);
     writeRecord(rec, isNew);
     if (rec.status !== '작성중' || rec.stageDone.length) views('onRecord', rec);
@@ -813,6 +817,9 @@ var Api = (function () {
     var to = str(p.to, 10, '바꿀 상태', true);
     var note = str(p.note, LIM.memo, '메모');
     var photo = photoRef(p.photo);
+    // 사업장 화면이 완료 사진 대신 사유를 보낼 수 있다(noPhotoReason) — 별도 열 없이 메모에 덧붙여 이력에 남긴다.
+    var noPhoto = photo ? '' : str(p.noPhotoReason, 200, '사진 없음 사유');
+    if (noPhoto) note = (note ? note + ' · ' : '') + '사진 없음 사유: ' + noPhoto;
     if (p.owner !== undefined && p.owner !== null) a.owner = str(p.owner, LIM.name, '담당자');
     if (p.due) a.due = ymd(p.due, '기한');
     var from = a.status;

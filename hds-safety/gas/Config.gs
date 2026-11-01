@@ -67,5 +67,5 @@ var DEFAULT_SETTINGS = {
   reminder: { beforeDays: [3, 1], overdue: true, hour: 8 },
   dailyDue: '10:00',
   monthlyDueDay: 5,
-  requiredForms: { 'default': ['F07', 'F09', 'F01', 'N1', 'N2', 'N4', 'F08B', 'F10B'], seasonal: { F06: [6, 7, 8, 9] } }
+  requiredForms: { 'default': ['F07', 'F09', 'F01', 'N1', 'N2', 'N4', 'F08B', 'F10B'], seasonal: { F06: [4, 5, 6, 7, 8, 9] } }
 };

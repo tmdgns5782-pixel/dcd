@@ -571,7 +571,19 @@
   App.actOverdue = function (a) { return !!(a && !a.deleted && App.actOpen(a) && a.due && String(a.due).slice(0, 10) < today()); };
   /** 본사가 아직 확인하지 않은 제출·단계 보고 */
   App.reviewPending = function (r) {
-    return !!r && !r.deleted && (r.status === '제출' || (r.status === '작성중' && arr(r.stageDone).length > 0));
+    if (!r || r.deleted) return false;
+    if (r.status === '제출') return App.needsReview(r);
+    return r.status === '작성중' && arr(r.stageDone).length > 0;
+  };
+  /** 제출 기록이 본사 '확인' 대상인지 — 일일점검(F07)은 불량 판정이나 사고·아차 건수가 있을 때만(리드 결정) */
+  App.needsReview = function (r) {
+    if (!r || r.form !== 'F07') return true;
+    var f = r.facts || {}, k = f.k || {}, v = f.v || {};
+    if ((Number(v.accidentCount) || 0) + (Number(v.nearMissCount) || 0) > 0) return true;
+    return Object.keys(k).some(function (sec) {
+      var m = k[sec] || {};
+      return Object.keys(m).some(function (code) { return m[code] === '불량'; });
+    });
   };
   function reqTargets(req, siteId) {
     var s = arr(req.sites);
@@ -744,13 +756,14 @@
   /* =====================================================================
    * 6. 내비 정의 App.NAV
    * ===================================================================== */
-  function cReview() { return App.recs(App.reviewPending).length; }
+  function cReview() { return (App.hq && typeof App.hq.reviewCount === 'function') ? App.hq.reviewCount() : App.recs(App.reviewPending).length; }
   function cOverdue() { return App.acts(App.actOverdue).length; }
   function cSiteOverdue() {
     var s = App.S.me && App.S.me.site;
     return App.acts(function (a) { return a.site === s && App.actOverdue(a); }).length;
   }
-  function cUnread() { return App.unread().length; }
+  function cUnread() { return (App.siteViews && typeof App.siteViews.unreadCount === 'function') ? App.siteViews.unreadCount() : App.unread().length; }
+  function cTodo() { return (App.siteViews && typeof App.siteViews.todoCount === 'function') ? App.siteViews.todoCount() : 0; }
   App.NAV = {
     hq: [
       { key: 'home', label: '종합 현황', icon: 'home', href: '#/home', group: '현황' },
@@ -766,7 +779,7 @@
       { key: 'settings', label: '설정', icon: 'settings', href: '#/settings', group: '관리', admin: true }
     ],
     site: [
-      { key: 'home', label: '홈', icon: 'home', href: '#/home', tab: true },
+      { key: 'home', label: '홈', icon: 'home', href: '#/home', tab: true, count: cTodo, countLabel: '할 일' },
       { key: 'inbox', label: '받은 요청', icon: 'inbox', href: '#/inbox', tab: true, count: cUnread, countLabel: '안 읽은 요청·공지' },
       { key: 'forms', label: '양식', icon: 'clipboard', href: '#/forms', tab: true },
       { key: 'records', label: '우리 기록', icon: 'list', href: '#/records', tab: true },
@@ -1823,6 +1836,23 @@
     }
     if (BOOT.ready === false) { renderSetup(); return; }
     if (!runner()) { renderFatal('서버에 연결할 수 없습니다. 웹앱 주소(script.google.com/macros/s/…/exec)로 열어 주세요.'); return; }
+    // GAS /exec 는 iframe 안에서 돌아 메일 링크의 '#/rec/<id>' 가 location.hash 에 없다 → 바깥 주소의 해시를 첫 경로로
+    var gurl = window.google && google.script && google.script.url;
+    if (!location.hash && gurl && typeof gurl.getLocation === 'function') {
+      var started = false;
+      var go = function () { if (started) return; started = true; begin(); };
+      try {
+        gurl.getLocation(function (loc) {
+          var h = loc && loc.hash ? String(loc.hash).replace(/^#/, '') : '';
+          if (h && !started && !location.hash) {
+            try { history.replaceState(null, '', '#' + (h.charAt(0) === '/' ? h : '/' + h)); } catch (e) { /* 무시 */ }
+          }
+          go();
+        });
+      } catch (e) { go(); return; }
+      setTimeout(go, 1500);
+      return;
+    }
     begin();
   };
 

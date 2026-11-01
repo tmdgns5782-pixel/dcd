@@ -6,7 +6,10 @@
   "description": "HDS 안전장부 — Google Apps Script 웹앱(미리보기·시험 도구 포함)",
   "scripts": {
     "build": "node dev/build-preview.mjs",
+    "paste": "node dev/build-paste.mjs",
+    "check": "node dev/check-paste.mjs",
     "test": "node dev/test/server.test.mjs",
+    "test:paste": "node dev/build-paste.mjs --quiet && node dev/test/server.test.mjs --paste",
     "e2e": "node dev/test/e2e.mjs",
     "push": "clasp push",
     "deploy": "clasp deploy"

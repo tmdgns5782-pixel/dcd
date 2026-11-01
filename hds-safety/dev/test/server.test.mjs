@@ -5,6 +5,7 @@
  *
  *   node dev/test/server.test.mjs           요약 출력
  *   VERBOSE=1 node dev/test/server.test.mjs 서버 로그까지 출력
+ *   node dev/test/server.test.mjs --paste   gas/ 대신 붙여넣기 묶음 paste/(Code.gs·FormsData.html …)을 올려 같은 시나리오 (SPEC §12)
  *
  * GAS 처럼 서버 호출마다 새 실행(전역 다시 평가)으로 돌린다 — 전역 변수 캐시에 기대는 버그를 잡기 위해.
  */
@@ -14,7 +15,18 @@ import path from 'node:path';
 import { GAS, MOCK_PATH, gsFiles, htmlFileNames, topLevelNames, mockGlobalNames, serverFactorySource, mapBundleLine, syntaxCheck } from '../build-preview.mjs';
 
 const VERBOSE = !!process.env.VERBOSE;
+const PASTE_MODE = process.argv.includes('--paste');
+const SRC_DIR = PASTE_MODE ? path.join(GAS, '..', 'paste') : GAS;
 const T0 = Date.now();
+if (PASTE_MODE) {
+  if (!fs.existsSync(path.join(SRC_DIR, 'Code.gs'))) {
+    console.error('paste/Code.gs 가 없습니다. 먼저 `node dev/build-paste.mjs` 를 실행하세요.');
+    process.exit(1);
+  }
+  const code = fs.readFileSync(path.join(SRC_DIR, 'Code.gs'), 'utf8');
+  const stale = gsFiles().filter((f) => !code.includes(f.src.replace(/\r\n/g, '\n').replace(/\s+$/, ''))).map((f) => f.name);
+  if (stale.length) console.log(`주의: paste/Code.gs 가 gas/ 와 다릅니다(${stale.join(', ')}) — \`node dev/build-paste.mjs\` 로 다시 만드세요.\n`);
+}
 
 /* ---------------- 모의 + 서버 올리기 ---------------- */
 
@@ -33,8 +45,8 @@ const sink = {
 };
 
 const mockSrc = fs.readFileSync(MOCK_PATH, 'utf8');
-const files = gsFiles();
-const formsHtml = fs.readFileSync(path.join(GAS, 'FormsData.html'), 'utf8');
+const files = gsFiles(SRC_DIR);
+const formsHtml = fs.readFileSync(path.join(SRC_DIR, 'FormsData.html'), 'utf8');
 const names = topLevelNames(files);
 const { src: factorySrc, map: lineMap } = serverFactorySource(files, mockGlobalNames(mockSrc), names);
 const BUNDLE_OFFSET = 1; // 'var __factory = (' 앞줄 없음 → 팩토리 첫 줄이 1행
@@ -58,7 +70,7 @@ try {
 const mails = [];
 function newMock(storage) {
   return ctx.createGasMock({
-    storage, autoSave: false, formsHtml, htmlFiles: htmlFileNames(), log: sink,
+    storage, autoSave: false, formsHtml, htmlFiles: htmlFileNames(SRC_DIR), log: sink,
     onMail: (m) => mails.push(m)
   });
 }
@@ -170,7 +182,7 @@ const SITE1 = 'S001', SITE2 = 'S002', SITE3 = 'S003';
 const MAIL1 = 's001.manager@site.test', MAIL2 = 's002.manager@site.test', HQMAIL = 'hq.safety@hds.test';
 const PNG_1PX = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
-console.log(`HDS 안전장부 서버 시험 — 서버 파일 ${files.length}개, 함수 ${names.functions.join(', ')}`);
+console.log(`HDS 안전장부 서버 시험${PASTE_MODE ? ' (붙여넣기 묶음 paste/)' : ''} — 서버 파일 ${files.length}개(${files.map((f) => f.name).join(', ')}), 함수 ${names.functions.join(', ')}`);
 console.log(`오늘(KST) ${TODAY}\n`);
 
 await step('서버 번들 올리기(문법·전역 이름)', () => {
@@ -178,6 +190,24 @@ await step('서버 번들 올리기(문법·전역 이름)', () => {
   const inst = instance();
   for (const n of ['api', 'setup', 'cronDaily', 'cronWeekly', 'doGet', 'include']) assert(typeof inst[n] === 'function', `전역 함수 ${n}() 이 없습니다`);
   return `${files.length}개 파일`;
+});
+
+await step('GAS 처럼 파일마다 따로 올리기(역순·한 전역 범위) — 파일 순서 무관', () => {
+  // 실제 GAS 는 .gs 파일을 하나씩 같은 전역에 실행한다. 최상위에서 다른 파일 객체를 바로 부르면 순서에 따라 깨진다(SPEC §12).
+  const c2 = vm.createContext({ console: sink });
+  vm.runInContext(mockSrc, c2, { filename: 'gas-mock.js' });
+  const m2 = c2.createGasMock({ autoSave: false, formsHtml, htmlFiles: htmlFileNames(SRC_DIR), log: sink });
+  Object.assign(c2, m2.globals);
+  for (const f of [...files].reverse()) {
+    try { vm.runInContext(f.src, c2, { filename: f.name }); } catch (e) { throw new Error(`${f.name} 를 단독(역순)으로 올리다 오류: ${e.message}`); }
+  }
+  for (const n of ['api', 'setup', 'cronDaily', 'cronWeekly', 'doGet', 'include']) assert(typeof c2[n] === 'function', `전역 함수 ${n}() 이 없습니다`);
+  c2.setup({ adminPassword: 'iso-pw-1', triggers: false });
+  const r = JSON.parse(c2.api('auth.login', JSON.stringify({ id: 'admin', password: 'iso-pw-1' }), ''));
+  assert(r.ok && r.data && r.data.token, '역순으로 올린 서버에서 로그인 실패: ' + (r.error || ''));
+  const b = JSON.parse(c2.api('boot', '{}', r.data.token));
+  assert(b.ok, '역순으로 올린 서버에서 boot 실패: ' + (b.error || ''));
+  return `${files.length}개 파일 역순`;
 });
 
 await step('setup 전 auth.status → ready:false', () => {
@@ -335,6 +365,8 @@ await step('(본사) records.review 반려 — 사유·사업장 메일', () => 
   assert(String(d.record.returnNote || '').includes('사진'), 'returnNote 없음');
   const m = mails.slice(before).find((x) => x.to.includes(MAIL1));
   assert(m, `반려 메일이 사업장 담당자(${MAIL1})에게 가지 않았습니다`);
+  const body = String(m.htmlBody || m.body || '');
+  assert(body.includes('s=') && body.includes('v=rec%2F' + encodeURIComponent(S.rec.id)), '반려 메일 링크가 사업장 링크 + 기록 화면(?s=…&v=rec/ID)이 아닙니다');
   S.rec = d.record;
   return `메일 "${m.subject}"`;
 });
@@ -349,6 +381,12 @@ await step('(사업장) 고쳐 다시 제출 — rev 2, 조치 중복 없음', (
   const acts = mock.table('acts').filter((a) => a.key === S.cand.key && String(a.deleted) !== 'true');
   eq(acts.length, 1, '같은 key 조치 수');
   S.rec = d.record;
+});
+
+await step('(사업장) 제출된 기록 임시저장 → 거부(수정 제출만)', () => {
+  const r = need(S.rec, '기록');
+  const res = denied(api('records.save', { record: { id: r.id, data: Object.assign({}, r.data || {}, { workerVoice: '몰래 고침' }) } }, S.site1), ['CONFLICT'], '제출 기록 임시저장');
+  assert(/수정 제출/.test(res.error), '안내 문장에 [수정 제출]이 없습니다: ' + res.error);
 });
 
 await step('(본사) records.review 확인', () => {
@@ -373,8 +411,9 @@ await step('acts.transition 조치중 → 완료 → (본사) 확인', () => {
   const a = need(S.act, '조치');
   const d1 = ok(api('acts.transition', { id: a.id, to: '조치중', note: '부품 주문' }, S.site1), '조치중');
   eq(d1.act.status, '조치중', 'status');
-  const d2 = ok(api('acts.transition', { id: a.id, to: '완료', note: '소화기 교체 완료' }, S.site1), '완료');
+  const d2 = ok(api('acts.transition', { id: a.id, to: '완료', note: '소화기 교체 완료', noPhotoReason: '카메라 고장' }, S.site1), '완료');
   eq(d2.act.status, '완료', 'status');
+  assert(JSON.stringify(d2.act.history).includes('사진 없음 사유: 카메라 고장'), 'noPhotoReason 이 이력 메모에 남지 않았습니다');
   assert(d2.act.doneAt, 'doneAt 없음');
   const d3 = ok(api('acts.transition', { id: a.id, to: '확인', note: '' }, S.hq), '확인');
   eq(d3.act.status, '확인', 'status');
@@ -530,12 +569,20 @@ await step('export.xlsx ({name, base64})', () => {
   const d = ok(api('export.xlsx', { kind: 'acts' }, need(S.hq, '본사 토큰')), 'export.xlsx');
   assert(d.name && /\.xlsx$/.test(d.name), 'name 이 .xlsx 가 아닙니다');
   assert(d.base64 && d.base64.length > 100, 'base64 없음');
-}, { optional: true });
+  const bytes = Buffer.from(d.base64, 'base64');
+  assert(bytes[0] === 0x50 && bytes[1] === 0x4b, 'xlsx(zip) 서명 PK 가 아닙니다');
+  assert(bytes.includes(Buffer.from('xl/workbook.xml')), 'xlsx 안에 xl/workbook.xml 이 없습니다');
+  return `${d.name} · ${bytes.length}바이트`;
+});
 
 await step('cronDaily · cronWeekly 실행 오류 없음', () => {
   const before = mails.length;
   exec('cronDaily');
-  exec('cronWeekly');
+  const w1 = exec('cronWeekly');
+  const mid = mails.length;
+  const w2 = exec('cronWeekly'); // 같은 날 다시 불러도(google.script.run 으로도 부를 수 있음) 다시 보내지 않음
+  eq(mails.length, mid, '같은 날 두 번째 주간 요약 메일 수');
+  assert(!w1 || !w1.sent || (w2 && w2.sent === false), '두 번째 주간 요약이 보냄으로 표시됐습니다');
   return `메일 ${mails.length - before}건`;
 });
 
