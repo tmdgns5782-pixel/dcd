@@ -173,6 +173,7 @@ facts (분석용 요약, 클라이언트 `App.engine.factsOf(def, rec)` 가 만�
   k: { <checklistSectionId>: { <itemCode>: '양호'|'주의'|'불량'|'해당없음' } },
   sm: [ def.summary 순서대로 값 ] }
 ```
+추가 규칙: person/people/multi 필드는 개수를 `v['<id>#n']` 로 넣는다(사람 이름 자체는 넣지 않음). 반 select 계열 값은 문자열 그대로.
 
 ## 6. API (`api(method, payloadJson, token)`)
 
@@ -219,6 +220,7 @@ facts (분석용 요약, 클라이언트 `App.engine.factsOf(def, rec)` 가 만�
 | admin.wipe | admin | {confirm:'삭제'} | {} (users·sessions 빼고 모두 비움) |
 | admin.info | admin | {} | {triggers, quota, sheetUrl, folderUrl, version, counts} |
 | admin.installTriggers | admin | {} | {triggers} |
+| admin.log | hq | {kind?, limit?:200} | [logRow] 최신순 (kind 'mail' = 보낸 메일 기록) |
 | ai.insight | hq | {scope:{from,to,sites?}, digest:{…요약 숫자…}} | {text} 또는 error(키 없음) |
 
 indexRow = `{id, form, site, date, period, shift, status, stageDone, author, createdBy, requestId, rev, updatedAt, submittedAt, confirmedAt, returnNote, facts}` (data 제외).
@@ -286,7 +288,7 @@ settings 기본값(kv 'settings'):
 - 읽기·인쇄(engine-b): 화면 `rec/<id>`(기록 상세: 요약, 섹션별 값, 사진, 서명, 연결 조치, 이력, 본사면 [확인][반려] 버튼 → records.review),
   `forms`(표준 양식 목록: 양식별 카드 대신 목록 행 — 번호·이름·주기·문서번호·버전·용도, 새로 쓰기, 빈 양식 인쇄, 미리보기),
   `App.engine.printRecords(ids)` / `App.engine.printBlank(code)` (A4 공문 양식: 상단 HDS 워드마크·문서번호·결재란(def.approvals), 표 레이아웃,
-  @media print), `App.engine.xlsx(sheets)` → Blob (프로토타입 XLSX 모듈 이식: `[{name, rows:[[…]], cols?}]`), `App.engine.valueText(f, v)`.
+  @media print), `App.engine.renderRecordBody(rec)` → Promise<HTML 문자열>(검토함 미리보기·상세 공용 본문), `App.engine.xlsx(sheets)` → Blob (프로토타입 XLSX 모듈 이식: `[{name, rows:[[…]], cols?}]`), `App.engine.valueText(f, v)`.
 
 ### 7.3 JsHq (hq-a / hq-b) — 본사 화면
 - hq-a: `home`(종합 현황), `collect`(취합 현황판 — 시그니처), `requests`, `requests/new`, `requests/<id>`, `review`(검토함).
