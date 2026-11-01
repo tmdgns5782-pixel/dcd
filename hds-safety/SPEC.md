@@ -391,3 +391,20 @@ Paperlogy 7Bold(`https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-
 
 - 서버 시험·E2E 통과, 콘솔 오류 0, 모든 화면이 데모 데이터로 의미 있게 채워짐, 휴대폰 390px 에서 가로 스크롤 없음.
 - README 만으로 처음 쓰는 사람이 배포 가능(스크립트 만들기 → 파일 붙여넣기 또는 clasp push → setup 실행 → 웹앱 배포(실행: 나, 액세스: 모든 사용자) → 관리자 로그인 → 사업장 등록 → 링크 전달).
+
+## 12. 구글 앱스 스크립트 "복붙" 배포 (최우선 요구)
+
+고객은 빌드 도구 없이 script.google.com 편집기에 **복사·붙여넣기**로 설치한다. 그래서:
+- `gas/` 의 모든 파일은 그대로 붙여넣어 동작해야 한다: ES 모듈(import/export)·번들러·npm 의존성·TypeScript 금지. 외부 리소스는 CDN 링크만.
+- 같은 프로젝트 안 여러 파일이 하나의 전역 범위를 공유하므로, 파일 순서와 상관없이 동작해야 한다(top-level 에서 다른 파일의 객체를 즉시 호출하지 않기 — 함수 안에서만 참조).
+- HTML 파일 안 JS/CSS 에 `<?` 나 `?>` 문자열이 나오면 안 된다(HtmlService 템플릿이 스크립틀릿으로 오해). include 되는 파일은 템플릿 처리되지 않지만 Index.html 은 처리된다.
+- `node dev/build-paste.mjs` → `paste/` 폴더(커밋함): 붙여넣기 파일 최소화 묶음
+  - `paste/Code.gs` = gas/*.gs 전부(Config.gs 먼저, 나머지 이름순)를 파일별 머리 주석과 함께 이어붙인 한 파일
+  - `paste/Index.html` = gas/Index.html 그대로(include 이름을 아래 4개로 맞춤)
+  - `paste/Styles.html` = Css + CssEngine + CssViews 를 하나로
+  - `paste/App.html` = JsCharts + JsCore + JsEngine + JsDemo + JsHq + JsAnalytics + JsSite 를 하나로
+  - `paste/FormsData.html` = gas/FormsData.html 그대로(서버 Db.forms() 가 이 이름으로 읽음)
+  - `paste/appsscript.json`
+  - `paste/붙여넣기-안내.txt` = 편집기에서 만들 파일 이름 6개와 순서, setup 실행, 배포 설정 (짧게)
+  즉 붙여넣기 묶음에서는 Index.html 의 include 가 `include('FormsData')`, `include('Styles')`, `include('App')` 세 개가 되도록 빌드가 바꿔 쓴다.
+- README 의 첫 배포 절차는 이 `paste/` 6개 파일 붙여넣기 기준으로 쓴다(clasp 는 선택 사항).
