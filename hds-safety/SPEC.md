@@ -41,7 +41,6 @@ hds-safety/
     Auth.gs               로그인·세션·사업장 토큰·권한                     [server-api]
     Api.gs                api() 디스패처 + 핸들러(기록·조치·사업장·인원·사용자·파일·설정·admin) [server-api]
     Dispatch.gs           배포(요청·공지)·열람·독촉·메일 템플릿·cronDaily/cronWeekly [server-dispatch]
-    Ai.gs                 (선택) AI 분석 요약 — Claude API               [server-dispatch]
     FormsData.html        FD JSON (forms 에이전트만 내용 보완 가능, 스키마 변경 금지)
     Index.html            셸 마크업 + include 순서 (리드 작성)
     Css.html              디자인 시스템 전체(토큰·셸·컴포넌트·폰)          [ui-css]
@@ -221,7 +220,6 @@ facts (분석용 요약, 클라이언트 `App.engine.factsOf(def, rec)` 가 만�
 | admin.info | admin | {} | {triggers, quota, sheetUrl, folderUrl, version, counts} |
 | admin.installTriggers | admin | {} | {triggers} |
 | admin.log | hq | {kind?, limit?:200} | [logRow] 최신순 (kind 'mail' = 보낸 메일 기록) |
-| ai.insight | hq | {scope:{from,to,sites?}, digest:{…요약 숫자…}} | {text} 또는 error(키 없음) |
 
 indexRow = `{id, form, site, date, period, shift, status, stageDone, author, createdBy, requestId, rev, updatedAt, submittedAt, confirmedAt, returnNote, facts}` (data 제외).
 actCandidate = `{key, srcItem, title, detail, level, due, owner, photo}` — 서버가 key 로 기존 조치 찾고, 열린 조치면 갱신, 없으면 새로 발급.
@@ -298,7 +296,7 @@ settings 기본값(kv 'settings'):
 - analytics-a: JsCharts.html(Charts) 전부 + `analytics`(개요), `analytics/incidents`(재해·아차·작업중지·위반), `analytics/risk`(위험성평가).
 - analytics-b: `analytics/daily`(일일점검), `analytics/edu`(교육·비상훈련), `analytics/acts`(조치 이행), `analytics/hec`(HEC 준비도·모의점수),
   `analytics/sites`(사업장 비교·스코어카드), `analytics/form/<code>`(양식별 자동 분석: facts 기반 모든 select/number 분포·추이),
-  `App.analytics.insights(scope)` → [문장](규칙 기반 발견), 분석 보고서 인쇄, ai.insight 버튼(키 있을 때).
+  `App.analytics.insights(scope)` → [문장](규칙 기반 발견), 분석 보고서 인쇄.
   공통 필터 바(기간·사업장)는 analytics-a 가 `App.analytics.filterBar(state)` / `App.analytics.scope()` 로 제공, analytics-b 가 사용.
 ### 7.5 JsSite (site) — 사업장(휴대폰 우선)
 `home`(오늘 할 일: 받은 요청·정기 마감·반려된 기록·내 미결 조치, 큰 "오늘 일일점검" 버튼과 "사고·아차 보고" 버튼),

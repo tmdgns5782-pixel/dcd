@@ -1154,9 +1154,9 @@ button.mk-na:hover { background: transparent; }
   .fe-grid > .w2, .fe-grid > .w3, .fe-grid > .w4 { grid-column: 1 / -1; }
 }
 @media (max-width: 640px) {
-  .fe { padding-bottom: calc(72px + var(--safe-b)); }
+  .fe { padding-bottom: calc(var(--fe-bar-h, calc(60px + var(--safe-b))) + 12px); }
   body.fe-editing .tabbar { display: none; }
-  body.fe-editing #toasts { bottom: calc(84px + var(--safe-b)); }
+  body.fe-editing #toasts { bottom: calc(var(--fe-bar-h, calc(60px + var(--safe-b))) + 24px); }
   .fe-grid { grid-template-columns: minmax(0, 1fr); }
   .fe-grid > .w2, .fe-grid > .w3, .fe-grid > .w4 { grid-column: auto; }
   .fe-sec-hd { flex-wrap: wrap; padding: 14px 16px 0; }
@@ -1203,7 +1203,8 @@ button.mk-na:hover { background: transparent; }
   .fe-bar .spacer { display: none; }
   .fe-bar .btn.lg { flex: none; }
   /* 상단바(48px)·아래 고정 줄 뒤로 포커스 칸·오류 요약·섹션이 숨지 않게 — 브라우저 자동 스크롤과 scrollIntoView 모두에 적용 */
-  html:has(body.fe-editing) { scroll-padding-top: 64px; scroll-padding-bottom: calc(88px + var(--safe-b)); }
+  /* --fe-bar-h: JsEngine 이 ResizeObserver 로 잰 하단 줄 실제 높이(안전 영역 포함, 접히면 0). 없으면 한 줄 기준 */
+  html:has(body.fe-editing) { scroll-padding-top: 64px; scroll-padding-bottom: calc(var(--fe-bar-h, calc(72px + var(--safe-b))) + 16px); }
   /* 소프트 키보드가 열려 보이는 높이가 줄면 고정 줄을 접어 입력칸을 가리지 않는다 */
   body.fe-kb .fe-bar { display: none; }
   body.fe-kb .fe { padding-bottom: 16px; }
@@ -1211,7 +1212,7 @@ button.mk-na:hover { background: transparent; }
 @supports not selector(:has(a)) {
   @media (max-width: 640px) {
     .fe-errs, .fe-sec, .fe-notice, .fe-stages { scroll-margin-top: 64px; }
-    .fe [data-fe-eid] { scroll-margin-top: 64px; scroll-margin-bottom: calc(88px + var(--safe-b)); }
+    .fe [data-fe-eid] { scroll-margin-top: 64px; scroll-margin-bottom: calc(var(--fe-bar-h, calc(72px + var(--safe-b))) + 16px); }
   }
 }
 @media print {
@@ -16156,9 +16157,23 @@ return {
     var ed = ED; if (!ed) return;
     ed.main.innerHTML = editorHtml();
     ed.root = ed.main.querySelector('[data-fe-root]');
-    wire(ed.root); hydrate(ed.root); autosizeAll(ed.root); spy();
+    wire(ed.root); hydrate(ed.root); autosizeAll(ed.root); spy(); watchBar(ed);
     if (ed.showErr) runValidate(); else applyErrors();
     if (!keepScroll && ed.root.scrollIntoView) ed.root.scrollIntoView({ block: 'start' });
+  }
+  /* 휴대폰 하단 고정 줄의 실제 높이(저장 실패·오프라인 안내로 두 줄이 되거나 키보드로 접힘)를 --fe-bar-h 로 알려
+     CssEngine 의 scroll-padding-bottom·본문 아래 여백이 줄 뒤로 입력칸을 숨기지 않게 한다 */
+  function setBarH(px) {
+    if (typeof document === 'undefined') return;
+    var st = document.documentElement && document.documentElement.style; if (!st) return;
+    if (px === null) st.removeProperty('--fe-bar-h'); else st.setProperty('--fe-bar-h', Math.ceil(px) + 'px');
+  }
+  function watchBar(ed) {
+    if (ed.ro) { try { ed.ro.disconnect(); } catch (e) { /* 무시 */ } ed.ro = null; }
+    var bar = ed.root && ed.root.querySelector('.fe-bar'); if (!bar) { setBarH(null); return; }
+    var measure = function () { if (ED === ed) setBarH(bar.offsetHeight); };
+    measure();
+    if (typeof ResizeObserver !== 'undefined') { ed.ro = new ResizeObserver(measure); ed.ro.observe(bar); }
   }
   function rerenderSec(sid) {
     var ed = ED; if (!ed || !ed.root) return;
@@ -16757,6 +16772,8 @@ return {
     ED = null; clearTimeout(ed.timer); clearTimeout(vT); clearTimeout(ed.dtimer);
     if (save && ed.dirty) keepDraft(ed);
     if (ed.io) { try { ed.io.disconnect(); } catch (e) { /* 무시 */ } }
+    if (ed.ro) { try { ed.ro.disconnect(); } catch (e) { /* 무시 */ } ed.ro = null; }
+    setBarH(null);
     if (save && ed.dirty && autosaveOk(ed)) doSave(ed, false).catch(function () { toast('작성 중이던 기록을 저장하지 못했습니다', 'neg'); });
     if (typeof document !== 'undefined' && document.body) { document.body.classList.remove('fe-editing'); document.body.classList.remove('fe-kb'); }
   }
