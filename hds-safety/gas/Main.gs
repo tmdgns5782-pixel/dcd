@@ -13,7 +13,7 @@
 function doGet(e) {
   var q = (e && e.parameter) || {};
   var s = String(q.s || '').trim();
-  if (!/^[A-Za-z0-9]{1,64}$/.test(s)) s = '';
+  if (!/^[A-Za-z0-9_\-]{6,64}$/.test(s)) s = '';
   var view = String(q.v || '').trim();
   if (!/^[A-Za-z0-9_\-\/.:]{1,80}$/.test(view)) view = '';
 
@@ -42,8 +42,8 @@ function doGet(e) {
   // <script> 안에 그대로 들어가므로 '<'·줄 구분 문자를 이스케이프해 </script> 끊김을 막는다.
   t.BOOT = JSON.stringify(boot)
     .replace(/</g, '\\u003c')
-    .replace(/ /g, '\\u2028')
-    .replace(/ /g, '\\u2029');
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
 
   return t.evaluate()
     .setTitle(boot.appName || APP.name)

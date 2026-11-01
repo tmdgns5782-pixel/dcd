@@ -1,0 +1,5 @@
+# 미리보기·시험 산출물
+dev/shots/
+node_modules/
+.clasp.json
+*.log

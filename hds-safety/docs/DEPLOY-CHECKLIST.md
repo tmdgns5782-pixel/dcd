@@ -11,14 +11,19 @@
 
 ## 2. 코드 올리기
 
-- [ ] (A·B 중 하나) 손으로: `gas/` 의 23개 파일(`appsscript.json` + `.gs` 10개 + `.html` 12개)을 같은 이름으로 만들었고, 기본 `Code.gs` 는 지웠다.
-- [ ] (A·B 중 하나) clasp: Apps Script API 를 켰고, `.clasp.json` 에 스크립트 ID 를 넣었고, `npm run push` 가 오류 없이 끝났다.
+방법 하나만 고릅니다. 한 프로젝트에 섞지 않습니다.
+
+- [ ] 개발 담당자가 `paste/` 를 최신 `gas/` 로 다시 만들어 함께 전달했다(`node dev/build-paste.mjs`).
+- [ ] (A) 붙여넣기: 편집기 파일 목록이 `appsscript.json`, `Code.gs`, `Index.html`, `Styles.html`, `App.html`, `FormsData.html` 6개이고, 각각 `paste/` 의 같은 이름 파일 내용으로 통째로 바꿨다.
+- [ ] (A) 를 `gas/` 파일로 했다면: `gas/` 의 파일(현재 `appsscript.json` + `.gs` 10개 + `.html` 12개)을 같은 이름으로 만들었고, 기본 `Code.gs` 는 지웠다.
+- [ ] (B) clasp: Apps Script API 를 켰고, `.clasp.json` 에 스크립트 ID 를 넣었고, `npm run push` 가 오류 없이 끝났다.
+- [ ] `Code.gs`(붙여넣기)와 `Config.gs` 등(`gas/`)이 한 프로젝트에 함께 있지 않다.
 - [ ] `appsscript.json` 의 시간대가 `Asia/Seoul` 이다.
-- [ ] 편집기에서 모든 파일을 저장했다.
+- [ ] 편집기에서 모든 파일을 저장했고, 저장할 때 문법 오류가 나지 않았다.
 
 ## 3. setup
 
-- [ ] 편집기에서 `setup` 을 실행하고 권한을 승인했다.
+- [ ] 편집기에서 `Code.gs`(붙여넣기) 또는 `Setup.gs`(`gas/`·clasp)를 연 상태로 `setup` 을 실행하고 권한을 승인했다.
 - [ ] 실행 로그의 관리자 `admin` 임시 비밀번호를 안전한 곳에 적었다.
 - [ ] 드라이브에 `HDS 안전장부 DB` 시트와 `HDS 안전장부 파일` 폴더가 생겼다.
 - [ ] 프로젝트 설정 → 스크립트 속성에 `DB_ID`, `FOLDER_ID` 가 있다.

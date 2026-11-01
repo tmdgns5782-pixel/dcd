@@ -1,0 +1,17 @@
+{
+  "name": "hds-safety-ledger",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "HDS 안전장부 — Google Apps Script 웹앱(미리보기·시험 도구 포함)",
+  "scripts": {
+    "build": "node dev/build-preview.mjs",
+    "test": "node dev/test/server.test.mjs",
+    "e2e": "node dev/test/e2e.mjs",
+    "push": "clasp push",
+    "deploy": "clasp deploy"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -116,7 +116,7 @@ var Auth = (function () {
 
   function findSiteByToken(tok) {
     tok = String(tok || '').trim();
-    if (!tok || !/^[A-Za-z0-9]{8,64}$/.test(tok)) return null;
+    if (!tok || !/^[A-Za-z0-9_\-]{6,64}$/.test(tok)) return null;
     var list = Db.find('sites', function (s) { return s.token && safeEq(String(s.token), tok); });
     return list[0] || null;
   }
