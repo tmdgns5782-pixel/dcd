@@ -2462,7 +2462,7 @@
       var x = c[it.code] || {};
       rows.push('<tr class="' + (isGoodJudge(s, x.r) ? 'rv-ok' : 'rv-bad') + '">' +
         '<td class="mono nowrap" data-label="코드">' + esc(it.code) + '</td>' +
-        '<td data-label="항목">' + esc(it.text) + (it.hec ? ' <span class="faint">HEC ' + esc(it.hec) + '</span>' : '') + '</td>' +
+        '<td class="rv-item" data-label="">' + esc(it.text) + (it.hec ? ' <span class="faint">HEC ' + esc(it.hec) + '</span>' : '') + '</td>' +
         '<td class="nowrap" data-label="판정">' + (x.r ? pill(x.r, judgeTone(s, x.r)) : pill('미판정', 'neu')) + '</td>' +
         '<td data-label="비고">' + (x.note ? '<span class="rv-pre">' + esc(x.note) + '</span>' : '<span class="faint">—</span>') + '</td>' +
         (withPhoto ? '<td data-label="사진">' + (x.photo ? thumbHtml(fileIdOf(x.photo), it.code + ' ' + (x.r || '')) : '<span class="faint">—</span>') + '</td>' : '') +
@@ -2483,7 +2483,7 @@
     var head = '<thead><tr><th class="num">#</th>' + cols.map(function (c) { return '<th' + (isNumField(c) ? ' class="num"' : '') + '>' + esc(c.label) + '</th>'; }).join('') + '</tr></thead>';
     var body = rows.map(function (row, i) {
       row = row || {};
-      return '<tr><td class="num faint" data-label="#">' + (i + 1) + '</td>' + cols.map(function (c) {
+      return '<tr><td class="num faint rv-rn">' + (i + 1) + '</td>' + cols.map(function (c) {
         var cls = isNumField(c) ? 'num' : (c.type === 'textarea' ? 'rv-long' : '');
         return '<td' + (cls ? ' class="' + cls + '"' : '') + ' data-label="' + esc(c.label) + '">' + cellHtml(c, row[c.id]) + '</td>';
       }).join('') + '</tr>';
@@ -2807,12 +2807,53 @@
     var list = (s && s.forms && s.forms.length) ? s.forms.slice() : (rf.default || []).slice();
     return list;
   }
-  function schedOf(def, siteId) {
-    if (!siteId || typeof E.schedStatus !== 'function') return null;
-    try { return E.schedStatus(def, siteId) || null; } catch (e) { return null; }
+  /* engine-a 의 schedStatus 가 없을 때만 쓰는 마감 계산(프로토타입 규칙, 색인 기반) */
+  function periodLocal(type, ds) {
+    var d = parseD(ds); var y = d.getFullYear(), m = d.getMonth();
+    var mk = function (a, b, key, label) { return { key: key, from: dkey(a), to: dkey(b), label: label }; };
+    if (type === 'monthly' || type === 'season') return mk(new Date(y, m, 1), new Date(y, m + 1, 0), y + '-' + pad(m + 1), y + '년 ' + (m + 1) + '월');
+    if (type === 'quarterly') { var q = Math.floor(m / 3); return mk(new Date(y, q * 3, 1), new Date(y, q * 3 + 3, 0), y + '-Q' + (q + 1), y + '년 ' + (q + 1) + '분기'); }
+    if (type === 'half') { var h = m < 6 ? 0 : 1; return mk(new Date(y, h * 6, 1), new Date(y, h * 6 + 6, 0), y + '-H' + (h + 1), y + '년 ' + (h ? '하' : '상') + '반기'); }
+    if (type === 'annual') return mk(new Date(y, 0, 1), new Date(y, 11, 31), String(y), y + '년');
+    return { key: ds, from: ds, to: ds, label: ds };
   }
-  function schedHtml(st) {
-    if (!st) return '<span class="faint">수시</span>';
+  function dueLocal(def, p) {
+    var r = (def.frequency || {}).dueRule || {};
+    if (r.kind === 'nextDayTime') return addDays(p.to, 1);
+    if (r.kind === 'monthDay') return addDays(p.to, Number(r.day) || 5);
+    if (r.kind === 'periodEndPlusDays') return addDays(p.to, Number(r.days) || 0);
+    return p.to;
+  }
+  function schedLocal(def, siteId) {
+    var f = def.frequency || {}; var t = today(); var s = siteObj(siteId);
+    if (!f.type || f.type === 'event') return null;
+    var R = indexRows(function (r) { return r.site === siteId && r.form === def.code && (r.status === '제출' || r.status === '확인'); });
+    if (f.type === 'annual') {
+      var last = R.map(function (r) { return r.date; }).sort().pop();
+      if (!last) return { status: 'miss', label: '실시 기록 없음', due: '-', period: '연 1회' };
+      var due1 = addDays(last, 365); var left = daysDiff(t, due1);
+      return { status: left < 0 ? 'miss' : left <= 30 ? 'warn' : 'ok', label: left < 0 ? '기한 ' + (-left) + '일 경과' : 'D-' + left, due: due1, period: '직전 ' + last };
+    }
+    if (f.type === 'daily') {
+      var day = addDays(t, -1); var shifts = (s && s.shifts && s.shifts.length) ? s.shifts : ['주간'];
+      var done = shifts.filter(function (sh) { return R.some(function (r) { return r.date === day && (!f.shifts || r.shift === sh); }); });
+      return { status: done.length === shifts.length ? 'ok' : (done.length ? 'warn' : 'miss'), label: '어제 ' + done.length + '/' + shifts.length, due: t + ' ' + ((S().settings || {}).dailyDue || '10:00'), period: day };
+    }
+    var inSeason = function (ds) { return f.type !== 'season' || (f.seasonMonths || []).indexOf(parseD(ds).getMonth() + 1) >= 0; };
+    if (!inSeason(t)) return { status: 'na', label: '시즌 아님', due: '-', period: '' };
+    var p = periodLocal(f.type, t); var due = dueLocal(def, p);
+    var prev = periodLocal(f.type, addDays(p.from, -1)); var prevDue = dueLocal(def, prev);
+    if (t <= prevDue && inSeason(prev.from)) { p = prev; due = prevDue; }
+    var inP = R.filter(function (r) { return r.period === p.key || (r.date >= p.from && r.date <= p.to); });
+    if (inP.length) { var late = inP.every(function (r) { return fmtD(r.submittedAt || r.updatedAt) > due; }); return { status: late ? 'warn' : 'ok', label: late ? '지연 제출' : '제출', due: due, period: p.label }; }
+    return { status: t > due ? 'miss' : 'pending', label: t > due ? '미제출' : '마감 ' + due.slice(5), due: due, period: p.label };
+  }
+  function schedOf(def, siteId) {
+    if (!siteId) return null;
+    try { return (typeof E.schedStatus === 'function' ? E.schedStatus(def, siteId) : schedLocal(def, siteId)) || null; } catch (e) { return null; }
+  }
+  function schedHtml(st, def) {
+    if (!st) return (def && (def.frequency || {}).type === 'event') ? '<span class="faint">수시</span>' : '<span class="faint">—</span>';
     if (st.status === 'na') return '<span class="faint">' + esc(st.label || '시즌 아님') + '</span>';
     var tone = { ok: 'pos', warn: 'warn', miss: 'neg', pending: '' }[st.status];
     var due = st.due && st.due !== '-' ? '<div class="faint num">마감 ' + esc(String(st.due).slice(0, 16)) + '</div>' : '';
@@ -2846,20 +2887,19 @@
     }).join('') + '</div>';
     var list = forms.filter(function (f) { return FS.cat === 'all' || catOf(f) === FS.cat; });
     var wr = canWrite();
-    var head = '<thead><tr><th class="num">번호</th><th>양식 이름</th><th>주기</th>' + (site ? '<th>다음 마감</th>' : '') + '<th>문서번호</th><th>버전</th><th>작성자</th><th class="num">최근 작성일</th><th class="rv-act-col"><span class="sr-only">동작</span></th></tr></thead>';
+    var head = '<thead><tr><th><span class="rv-fno">번호</span>양식 이름</th><th>주기</th>' + (site ? '<th>다음 마감</th>' : '') + '<th>문서번호</th><th>버전</th><th>작성자</th><th class="num">최근 작성일</th><th class="rv-act-col"><span class="sr-only">동작</span></th></tr></thead>';
     var rows = list.map(function (f) {
       var code = esc(f.code);
       var isReq = site && req.indexOf(f.code) >= 0;
       return '<tr>' +
-        '<td class="num faint" data-label="번호">' + esc(f.no || '') + '</td>' +
-        '<td class="rv-fcell" data-label="양식 이름"><button type="button" class="rv-link rv-fname" data-act="fe.forms-info" data-code="' + code + '">' + esc(f.title) + '</button><div class="faint rv-fsub">' + esc(f.code) + ' · ' + esc(CAT_NAME[f.category] || f.category || '') + (isReq ? ' · 필수' : '') + '</div></td>' +
+        '<td class="rv-fcell"><span class="rv-fno num faint">' + esc(f.no || '') + '</span><div class="rv-fmain"><button type="button" class="rv-link rv-fname" data-act="fe.forms-info" data-code="' + code + '">' + esc(f.title) + '</button><div class="faint rv-fsub">' + esc(f.code) + ' · ' + esc(CAT_NAME[f.category] || f.category || '') + (isReq ? ' · 필수' : '') + '</div></div></td>' +
         '<td class="nowrap" data-label="주기">' + esc(freqLabel(f)) + '</td>' +
-        (site ? '<td data-label="다음 마감">' + schedHtml(sched[f.code]) + '</td>' : '') +
+        (site ? '<td data-label="다음 마감">' + schedHtml(sched[f.code], f) + '</td>' : '') +
         '<td class="mono nowrap" data-label="문서번호">' + esc(f.docNo || '') + '</td>' +
         '<td class="nowrap" data-label="버전">' + esc(f.version || '') + '</td>' +
         '<td data-label="작성자"><span title="' + esc(f.fillBy || '') + '">' + esc(fillSummary(f.fillBy)) + '</span></td>' +
         '<td class="num nowrap" data-label="최근 작성일">' + (last[f.code] ? esc(last[f.code]) : '<span class="faint">—</span>') + '</td>' +
-        '<td class="rv-act-col" data-label="동작"><div class="rv-row-acts">' +
+        '<td class="act rv-act-col"><div class="rv-row-acts">' +
           (wr ? '<button type="button" class="btn sm" data-act="fe.forms-new" data-code="' + code + '">새로 쓰기</button>' : '') +
           '<button type="button" class="icon-btn" data-act="fe.forms-blank" data-code="' + code + '" aria-label="빈 양식 인쇄" title="빈 양식 인쇄">' + icon('print') + '</button>' +
           '<button type="button" class="icon-btn" data-act="fe.forms-info" data-code="' + code + '" aria-label="양식 설명" title="양식 설명">' + icon('book') + '</button>' +
@@ -2868,7 +2908,7 @@
     var table = list.length ? '<div class="tbl-wrap"><table class="tbl rv-forms">' + head + '<tbody>' + rows + '</tbody></table></div>' : '<div class="empty">이 분류에 양식이 없습니다.</div>';
     main.innerHTML = titleRowHtml('표준 양식', sub, '') +
       '<div class="toolbar">' + tabs + '</div>' +
-      '<section class="panel"><header class="panel-hd"><div><h2>무엇을 써야 하나</h2><p class="panel-sub">' + (site ? esc(siteLabel(site)) + ' 기준 마감과 최근 작성일' : '전 사업장 기준 최근 작성일') + ' · 양식 이름을 누르면 목적·근거·단계를 봅니다.</p></div></header>' +
+      '<section class="panel"><header class="panel-hd"><div><h2>무엇을 써야 하나</h2><p class="panel-sub">' + (site ? esc(siteLabel(site)) + ' 기준 마감과 최근 작성일' : '전 사업장 기준 최근 작성일') + '</p></div></header>' +
       '<div class="panel-bd flush">' + table + '</div></section>';
     var tb = main.querySelector('[data-tab="rvFormsCat"]');
     if (tb) tb.addEventListener('click', function (ev) {

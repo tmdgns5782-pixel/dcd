@@ -50,6 +50,9 @@
   .rv-tbl tr.rv-grp { display: block; }
   .rv-tbl tr.rv-grp th { display: block; padding: 14px 0 4px; border: 0; }
   .rv-chk td:first-child, .rv-chk td:nth-child(3) { width: auto; }
+  .rv-chk td.mono:first-child { flex: 0 0 auto; display: inline-flex; }
+  .rv-chk td.rv-item { flex: 1 1 0; min-width: 0; display: block; color: var(--text); font-size: 14px; line-height: 20px; }
+  .rv-tbl td.rv-rn::after { content: "행"; }
 }
 
 /* 사진·서명 */
@@ -88,12 +91,17 @@
 /* 표준 양식 목록 */
 .rv-fname { color: var(--text); font-weight: 600; }
 .rv-fsub { margin-top: 2px; font-size: 12px; }
-.rv-fcell { min-width: 220px; }
+.rv-fcell { min-width: 260px; }
+.rv-forms td.rv-fcell { display: flex; align-items: baseline; gap: 12px; }
+.rv-fno { flex: none; display: inline-block; width: 36px; text-align: right; }
+.rv-fmain { min-width: 0; }
 .rv-act-col { width: 1%; text-align: right; }
 .rv-row-acts { display: flex; align-items: center; justify-content: flex-end; gap: 4px; white-space: nowrap; }
 @media (max-width: 640px) {
   .rv-fcell { min-width: 0; }
-  .rv-forms .rv-act-col { width: auto; text-align: left; }
+  .rv-forms td.rv-fcell { display: flex !important; }
+  .rv-fno { width: auto; text-align: left; }
+  .rv-forms .rv-act-col { flex: 1 1 100%; width: auto; margin-top: 6px; text-align: left; }
   .rv-row-acts { justify-content: flex-start; }
 }
 .rv-info-purpose { margin: 0; font-size: 14px; line-height: 1.6; }
@@ -156,7 +164,8 @@ body.rv-printing #print-root { display: block; min-height: 100vh; }
 .pdoc .pt-chk col.c-code { width: 14mm; }
 .pdoc .pt-chk col.c-judge { width: 18mm; }
 .pdoc .pt-chk col.c-note { width: 30%; }
-.pdoc .pt-chk.is-blank col.c-judge { width: 50mm; }
+.pdoc .pt-chk.is-blank col.c-judge { width: 57mm; }
+.pdoc .pt-chk.is-blank .pb-boxes { gap: 0.5mm 2.2mm; font-size: 8pt; }
 .pdoc .pt-chk.is-blank col.c-note { width: 22%; }
 .pdoc .pt-chk td, .pdoc .pt-grid td { font-size: 8.5pt; }
 .pdoc .pt-chk.is-blank td { padding-top: 1.8mm; padding-bottom: 1.8mm; }
