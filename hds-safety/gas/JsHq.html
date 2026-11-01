@@ -1240,6 +1240,9 @@
   }
   function renderReview(main, args, query) {
     var gone = '';
+    /* 휴대폰: 다른 화면에서 #/review 로 새로 들어오면 목록부터 보인다(지난 미리보기를 다시 열지 않음).
+       이미 검토함이 그려져 있는 상태의 다시 그리기(고르기·처리 뒤·새로 고침)는 고른 건을 그대로 둔다. ?id= 가 있으면 아래에서 그 건을 연다 */
+    if (isPhone() && !(main && main.querySelector && main.querySelector('.hq-rv'))) RV.sel = '';
     if (query.form != null) RV.form = query.form;
     if (query.site != null) RV.site = query.site;
     var all = reviewQueue();

@@ -2985,7 +2985,7 @@
     var parts = chunks.map(function (ch, k) {
       return '<div class="rv-tpart"><p class="rv-tpart-cap">열 묶음 <span class="num">' + (k + 1) + '/' + chunks.length + '</span> · ' + esc(ch[0].label) + (ch.length > 1 ? ' ~ ' + esc(ch[ch.length - 1].label) : '') + '</p>' + tableOf(ch) + '</div>';
     }).join('');
-    return panel(s.title || '표', sub + ' · 열 <span class="num">' + cols.length + '</span>개', '<div class="rv-tparts hide-phone">' + parts + '</div><div class="only-phone">' + tableOf(cols) + '</div>', { id: s.id, flush: true });
+    return panel(s.title || '표', sub + ' · 열 <span class="num">' + cols.length + '</span>개', '<div class="rv-tparts hide-phone">' + parts + '</div><div class="rv-tflat only-phone">' + tableOf(cols) + '</div>', { id: s.id, flush: true });
   }
   function photoList(d, s) {
     var raw = d[s.id];
@@ -3429,23 +3429,26 @@
       var code = esc(f.code);
       var isReq = site && req.indexOf(f.code) >= 0;
       return '<tr>' +
-        '<td class="rv-fcell"><div class="rv-fcell-in"><span class="rv-fno num faint">' + esc(f.no || '') + '</span><div class="rv-fmain"><button type="button" class="rv-link rv-fname" data-act="fe.forms-info" data-code="' + code + '">' + esc(f.title) + '</button><div class="faint rv-fsub">' + esc(f.code) + ' · ' + esc(CAT_NAME[f.category] || f.category || '') + (isReq ? ' · 필수' : '') + '</div>' +
+        '<td class="rv-fcell r-main"><div class="rv-fcell-in"><span class="rv-fno num faint">' + esc(f.no || '') + '</span><div class="rv-fmain"><button type="button" class="rv-link rv-fname" data-act="fe.forms-info" data-code="' + code + '">' + esc(f.title) + '</button><div class="faint rv-fsub">' + esc(f.code) + ' · ' + esc(CAT_NAME[f.category] || f.category || '') + (isReq ? ' · 필수' : '') + '</div>' +
           // 태블릿(641~1399px)에서는 넓은 열을 숨기고 이 둘째 줄로 보여 준다(CssEngine .rv-fmeta)
           '<div class="faint rv-fsub rv-fmeta">' + [f.docNo ? '<span class="mono">' + esc(f.docNo) + '</span>' : '', f.version ? esc(f.version) : '', f.fillBy ? esc(fillSummary(f.fillBy)) : '', '최근 ' + (last[f.code] ? '<span class="num">' + esc(last[f.code]) + '</span>' : '—')].filter(Boolean).join(' · ') + '</div>' +
+          // 휴대폰(≤640px) 두 줄 행의 보조줄(.tbl.rows2 .r-l2) — 주기 · 문서번호 · 최근 작성일. 데스크톱·태블릿은 Css 공용 규칙으로 숨김
+          '<div class="r-l2">' + [isReq ? '필수' : '', esc(freqLabel(f)), f.docNo ? '<span class="mono">' + esc(f.docNo) + '</span>' : '', '최근 ' + (last[f.code] ? '<span class="num">' + esc(last[f.code]) + '</span>' : '—')].filter(Boolean).join(' · ') + '</div>' +
           '</div></div></td>' +
         '<td class="nowrap" data-label="주기">' + esc(freqLabel(f)) + '</td>' +
-        (site ? '<td class="rv-sched" data-label="다음 마감">' + schedHtml(sched[f.code], f) + '</td>' : '') +
+        // 휴대폰 오른쪽 한 값: 사업장은 다음 마감(.r-key), 본사는 '새로 쓰기'(동작 칸이 .r-key)
+        (site ? '<td class="rv-sched r-key" data-label="다음 마감">' + schedHtml(sched[f.code], f) + '</td>' : '') +
         '<td class="mono nowrap rv-wide" data-label="문서번호">' + esc(f.docNo || '') + '</td>' +
         '<td class="nowrap rv-wide" data-label="버전">' + esc(f.version || '') + '</td>' +
         '<td class="rv-wide" data-label="작성자"><span title="' + esc(f.fillBy || '') + '">' + esc(fillSummary(f.fillBy)) + '</span></td>' +
         '<td class="num nowrap rv-wide" data-label="최근 작성일">' + (last[f.code] ? esc(last[f.code]) : '<span class="faint">—</span>') + '</td>' +
-        '<td class="act rv-act-col"><div class="rv-row-acts">' +
+        '<td class="act rv-act-col' + (site ? '' : ' r-key') + '"><div class="rv-row-acts">' +
           (wr ? '<button type="button" class="btn sm" data-act="fe.forms-new" data-code="' + code + '">새로 쓰기</button>' : '') +
           '<button type="button" class="icon-btn" data-act="fe.forms-blank" data-code="' + code + '" aria-label="빈 양식 인쇄" title="빈 양식 인쇄">' + icon('print') + '</button>' +
           '<button type="button" class="icon-btn" data-act="fe.forms-info" data-code="' + code + '" aria-label="양식 설명" title="양식 설명">' + icon('book') + '</button>' +
         '</div></td></tr>';
     }).join('');
-    var table = list.length ? '<div class="tbl-wrap"><table class="tbl rv-forms">' + head + '<tbody>' + rows + '</tbody></table></div>' : '<div class="empty">이 분류에 양식이 없습니다.</div>';
+    var table = list.length ? '<div class="tbl-wrap"><table class="tbl rows2 rv-forms">' + head + '<tbody>' + rows + '</tbody></table></div>' : '<div class="empty">이 분류에 양식이 없습니다.</div>';
     main.innerHTML = titleRowHtml('표준 양식', sub, '') +
       '<div class="toolbar">' + tabs + '</div>' +
       '<section class="panel"><header class="panel-hd"><div><h2>무엇을 써야 하나</h2><p class="panel-sub">' + (site ? esc(siteLabel(site)) + ' 기준 마감과 최근 작성일' : '전 사업장 기준 최근 작성일') + '</p></div></header>' +

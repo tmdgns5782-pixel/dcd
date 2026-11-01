@@ -927,6 +927,43 @@ await step('(조치) 사업장은 기한·위험 수준을 못 바꾸고, 본사
   assert(JSON.stringify(s.history).includes('위험 수준 높음 → 보통'), '수정 이력에 수준 전후 값이 없습니다');
 });
 
+await step('(중복) 정기 양식은 같은 사업장·기간·근무조에 보고 1건 — 새 기록 제출은 CONFLICT, 임시저장·수정 제출·다른 근무조는 그대로', () => {
+  const site = need(S.site1, '사업장 세션'), hq = need(S.hq, '본사 토큰');
+  const date = addDays(TODAY, -20);
+  const base = { form: 'F07', site: SITE1, date, period: date, shift: '주간', author: '김현장' };
+  const a = ok(api('records.save', { record: Object.assign({}, base, { data: F07_DATA() }) }, site), '첫 기록 임시저장').record;
+  const as = ok(api('records.submit', { record: Object.assign({}, a, { data: F07_DATA() }), acts: [] }, site), '첫 기록 제출').record;
+  eq(as.status, '제출', '첫 기록 status');
+  // 다른 기기에서 같은 날짜·근무조 새 기록: 임시저장은 되지만 제출은 거부
+  const b = ok(api('records.save', { record: Object.assign({}, base, { data: F07_DATA() }) }, site), '둘째 기록 임시저장').record;
+  assert(b.id !== a.id, '둘째 기록 번호가 첫 기록과 같습니다');
+  const r1 = denied(api('records.submit', { record: Object.assign({}, b, { data: F07_DATA() }), acts: [] }, site), ['CONFLICT'], '같은 기간 둘째 기록 제출');
+  assert(String(r1.error).includes(a.id) && String(r1.error).includes('그 기록을 이어서 쓰거나 수정 제출하세요'), `오류 문장에 기존 기록번호·안내가 없습니다: ${r1.error}`);
+  eq(ok(api('records.get', { id: b.id }, site), '둘째 기록 조회').status, '작성중', '거부된 기록 status');
+  // id 없이 바로 제출(API 직접 호출)도 거부, 새 번호가 발급되지 않음
+  denied(api('records.submit', { record: Object.assign({}, base, { data: F07_DATA() }), acts: [] }, site), ['CONFLICT'], '같은 기간 새 기록 바로 제출');
+  // 본사 대리 작성(H 번호)도 같은 규칙
+  const r3 = denied(api('records.submit', { record: Object.assign({}, base, { author: '본사대리', data: F07_DATA() }), acts: [] }, hq), ['CONFLICT'], '본사 대리 중복 제출');
+  assert(String(r3.error).includes(a.id), '본사 대리 거부 문장에 기존 기록번호가 없습니다');
+  // 같은 기록 수정 제출은 그대로
+  const re = ok(api('records.submit', { record: Object.assign({}, as, { data: Object.assign(F07_DATA(), { handoverNote: '수정 제출' }) }), acts: [] }, site), '같은 기록 수정 제출').record;
+  eq(Number(re.rev), 2, '수정 제출 rev');
+  // 다른 근무조는 다른 기간
+  const n = ok(api('records.submit', { record: Object.assign({}, base, { shift: '야간', data: F07_DATA() }), acts: [] }, site), '야간조 제출').record;
+  eq(n.status, '제출', '야간조 status');
+  // 기존 기록이 삭제되면 다시 낼 수 있음
+  ok(api('records.delete', { id: a.id, reason: '시험 정리' }, hq), '첫 기록 삭제');
+  const bs = ok(api('records.submit', { record: Object.assign({}, b, { data: F07_DATA() }), acts: [] }, site), '삭제 뒤 둘째 기록 제출').record;
+  eq(bs.status, '제출', '삭제 뒤 제출 status');
+  // 한 기간 여러 건·수시 추가가 있는 양식은 막지 않음: F06(폭염 수시 점검)
+  const f6 = { form: 'F06', site: SITE1, date: '2026-08-10', author: '김현장', data: validData('F06') };
+  ok(api('records.submit', { record: Object.assign({}, f6), acts: [] }, site), 'F06 첫 점검');
+  ok(api('records.submit', { record: Object.assign({}, f6), acts: [] }, site), 'F06 수시 점검 추가');
+  ok(api('records.delete', { id: n.id, reason: '시험 정리' }, hq), '정리');
+  ok(api('records.delete', { id: bs.id, reason: '시험 정리' }, hq), '정리');
+  return `${a.id} 있을 때 ${b.id} 제출 거부`;
+});
+
 await step('(설치) 실행 계정을 못 읽으면 setup·cron 거부(실패 시 닫힘)', () => {
   const ident = { autoSave: false, formsHtml, htmlFiles: htmlFileNames(SRC_DIR), log: sink, activeUserEmail: '', effectiveUserEmail: '' };
   const c4 = vm.createContext({ console: sink });

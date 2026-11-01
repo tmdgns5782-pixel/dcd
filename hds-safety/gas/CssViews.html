@@ -71,6 +71,16 @@
 .hq-keys { font-size: 12px; line-height: 16px; }
 @media (max-width: 1100px) {
   .hq-mail-panel, .hq-rv-right { position: static; max-height: none; }
+  /* 검토함 미리보기(태블릿·휴대폰): 긴 보고서도 끝까지 내리지 않고 바로 누르도록 동작 줄을 화면 아래에 붙인다.
+     줄은 흐름 안에 자리를 차지하므로 끝까지 내리면 본문 마지막 줄이 그 위에 온다(가리지 않음) */
+  .hq-rv-ft {
+    position: sticky; bottom: 0; z-index: 5; flex-wrap: wrap;
+    border-top: 1px solid var(--border); border-radius: 0 0 var(--radius-card) var(--radius-card);
+    padding-bottom: calc(12px + var(--safe-b));
+  }
+  .hq-rv-ft .btn { min-height: 44px; }
+  .hq-rv-ft .muted { flex: 1 1 100%; }
+  .hq-rv-body { padding-bottom: 24px; }
 }
 @media (max-width: 640px) {
   .hq-pick, .hq-pick-tags { grid-template-columns: minmax(0, 1fr); }

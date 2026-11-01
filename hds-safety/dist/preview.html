@@ -1279,7 +1279,16 @@ button.mk-na:hover { background: transparent; }
 /* 열이 많은 표: 데스크톱은 인쇄처럼 열 묶음(행 번호 반복)으로 나눠 가로 스크롤 없이 모든 열을 보인다 */
 .rv-tparts { display: flex; flex-direction: column; }
 .rv-tpart + .rv-tpart { border-top: 1px solid var(--border); }
-.rv-tpart-cap { margin: 0; padding: 10px 16px 0; font-size: var(--fs-small, 12px); line-height: 16px; color: var(--muted); }
+.rv-tpart-cap { margin: 0; padding: 10px var(--card-pad) 0; font-size: var(--fs-small, 12px); line-height: 16px; color: var(--muted); }
+/* 열 묶음·휴대폰 한 표는 .flush 바로 아래가 아니어서 Css 의 flush 표 여백 규칙이 닿지 않음 — 같은 안쪽 여백을 여기서 준다 */
+.flush > .rv-tparts > .rv-tpart > .tbl-wrap .tbl th:first-child, .flush > .rv-tparts > .rv-tpart > .tbl-wrap .tbl td:first-child,
+.flush > .rv-tflat > .tbl-wrap .tbl th:first-child, .flush > .rv-tflat > .tbl-wrap .tbl td:first-child { padding-left: var(--card-pad); }
+.flush > .rv-tparts > .rv-tpart > .tbl-wrap .tbl th:last-child, .flush > .rv-tparts > .rv-tpart > .tbl-wrap .tbl td:last-child,
+.flush > .rv-tflat > .tbl-wrap .tbl th:last-child, .flush > .rv-tflat > .tbl-wrap .tbl td:last-child { padding-right: var(--card-pad); }
+@media (max-width: 640px) {
+  .flush > .rv-tflat > .tbl-wrap .tbl:not(.keep) tr { padding-left: var(--card-pad); padding-right: var(--card-pad); }
+  .flush > .rv-tflat > .tbl-wrap .tbl:not(.keep) td { padding-left: 0 !important; padding-right: 0 !important; }
+}
 .rv-tpart .tbl { table-layout: auto; }
 .rv-tpart .tbl td.rv-long { min-width: 160px; }
 .rv-wait-note { font-size: var(--fs-small, 12px); line-height: 16px; white-space: nowrap; }
@@ -1352,13 +1361,23 @@ button.mk-na:hover { background: transparent; }
   .rv-forms td.rv-sched { min-width: 0; white-space: normal; }
   .rv-forms .rv-row-acts { flex-wrap: wrap; justify-content: flex-end; white-space: normal; max-width: 112px; }
 }
+/* 휴대폰: 공용 두 줄 행(.tbl.rows2) — 1줄 번호+양식 이름 / 오른쪽 다음 마감(사업장) 또는 '새로 쓰기'(본사), 2줄 .r-l2 */
 @media (max-width: 640px) {
   .rv-fcell { min-width: 0; }
-  .rv-forms td.rv-fcell { display: block !important; }
-  .rv-forms td.rv-sched { min-width: 0; }
-  .rv-fno { width: auto; text-align: left; }
-  .rv-forms .rv-act-col { flex: 1 1 100%; width: auto; margin-top: 6px; text-align: left; }
-  .rv-row-acts { justify-content: flex-start; }
+  .rv-forms td.r-main { position: relative; }
+  .rv-forms .rv-fcell-in { gap: 8px; }
+  .rv-fno { width: auto; min-width: 28px; text-align: left; font-weight: 400; }
+  .rv-fmain { flex: 1 1 auto; overflow: hidden; }
+  .rv-forms .rv-fsub { display: none; }
+  .rv-forms .rv-fname { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* 이름 버튼의 누름 영역을 칸 전체로(44px 이상) — 양식 설명(새로 쓰기·빈 양식 인쇄 포함)이 열림 */
+  .rv-forms .rv-fname::after { content: ""; position: absolute; inset: 0; }
+  .rv-forms td.rv-sched.r-key { min-width: 0; white-space: nowrap; }
+  .rv-forms td.rv-sched.r-key div { display: none; }
+  .rv-forms td.rv-act-col.r-key { width: auto; }
+  .rv-forms td.r-key .rv-row-acts { gap: 0; }
+  /* 오른쪽은 한 동작만: 쓸 수 있으면 '새로 쓰기', 열람 권한이면 빈 양식 인쇄 */
+  .rv-forms td.r-key [data-act="fe.forms-info"], .rv-forms td.r-key .btn ~ .icon-btn { display: none; }
 }
 .rv-info-purpose { margin: 0; font-size: 14px; line-height: 1.6; }
 .rv-info-h { margin: 0 0 8px; font-size: 13px; font-weight: 600; }
@@ -1539,6 +1558,16 @@ body.rv-printing #print-root { display: block; min-height: 100vh; }
 .hq-keys { font-size: 12px; line-height: 16px; }
 @media (max-width: 1100px) {
   .hq-mail-panel, .hq-rv-right { position: static; max-height: none; }
+  /* 검토함 미리보기(태블릿·휴대폰): 긴 보고서도 끝까지 내리지 않고 바로 누르도록 동작 줄을 화면 아래에 붙인다.
+     줄은 흐름 안에 자리를 차지하므로 끝까지 내리면 본문 마지막 줄이 그 위에 온다(가리지 않음) */
+  .hq-rv-ft {
+    position: sticky; bottom: 0; z-index: 5; flex-wrap: wrap;
+    border-top: 1px solid var(--border); border-radius: 0 0 var(--radius-card) var(--radius-card);
+    padding-bottom: calc(12px + var(--safe-b));
+  }
+  .hq-rv-ft .btn { min-height: 44px; }
+  .hq-rv-ft .muted { flex: 1 1 100%; }
+  .hq-rv-body { padding-bottom: 24px; }
 }
 @media (max-width: 640px) {
   .hq-pick, .hq-pick-tags { grid-template-columns: minmax(0, 1fr); }
@@ -5000,6 +5029,38 @@ var Api = (function () {
     }
   }
 
+  /*
+   * 한 사업장·한 기간(일일점검은 날짜+근무조)에 보고된 기록은 1건 — 화면 엔진(JsEngine findDup·singlePerPeriod·isReported)과 같은 규칙.
+   * 화면 확인창은 그 기기의 색인만 보므로 다른 기기·API 직접 호출로 건너뛸 수 있어 서버가 잠금 안에서 다시 본다.
+   *  - 대상: 정기 양식(frequency.type 이 event 아님) 가운데 한 기간 여러 건 양식(multiPerPeriod: '회마다 기록 1건|1회 이상|차수마다')과
+   *    수시 추가 작성이 있는 양식(due 에 '수시': 위험성평가 수시평가·폭염 수시 점검)은 뺀다.
+   *  - 같은 site·form·period(근무조 양식이면 근무조도. 근무조가 빈 기존 기록은 어느 근무조와도 겹침)의 삭제되지 않은 다른 기록 가운데
+   *    이미 보고된 것(제출·확인·반려 또는 단계 보고)이 있으면 그 번호. 없으면 ''.
+   */
+  function multiPerPeriodSrv(def) {
+    var fq = def.frequency || {};
+    if (fq.multiPerPeriod !== undefined) return !!fq.multiPerPeriod;
+    return /회마다 기록 1건|1회 이상|차수마다/.test(String(fq.due || ''));
+  }
+  function singlePerPeriodSrv(def) {
+    var fq = def.frequency || {};
+    if (!fq.type || fq.type === 'event' || multiPerPeriodSrv(def)) return false;
+    return !/수시/.test(String(fq.due || ''));
+  }
+  function reportedRec(r) {
+    return !!r && (r.status === '제출' || r.status === '확인' || r.status === '반려' || (Array.isArray(r.stageDone) && r.stageDone.length > 0));
+  }
+  function reportedDupId(def, rec) {
+    if (!singlePerPeriodSrv(def)) return '';
+    var shifts = !!(def.frequency && def.frequency.shifts);
+    var pk = String(rec.period || '');
+    var hit = Db.all('records').filter(function (r) {
+      return r && !r.deleted && r.id !== rec.id && r.site === rec.site && r.form === def.code && String(r.period || '') === pk &&
+        (!shifts || !r.shift || r.shift === rec.shift) && reportedRec(r);
+    })[0];
+    return hit ? String(hit.id) : '';
+  }
+
   function emptyRecord(def, site, me) {
     var t = now();
     return {
@@ -5445,6 +5506,15 @@ var Api = (function () {
     var rec = x.rec, def = x.def, cur = x.cur;
     var prev = cur ? clone(cur) : null;
     var isNew = !cur;
+    // 처음 보고하는 기록(새 기록·아직 보고 안 한 작성중)만 본다. 같은 기록의 재제출·수정 제출·다음 단계 제출은 그대로.
+    if (!reportedRec(cur)) {
+      var dupId = reportedDupId(def, rec);
+      if (dupId) {
+        var pl = rec.period ? String(rec.period) + (def.frequency && def.frequency.shifts && rec.shift ? ' ' + rec.shift : '') : '';
+        fail('CONFLICT', '같은 기간' + (pl ? '(' + pl + ')' : '') + '에 이미 보고한 ' + formName(def) + ' 기록이 있습니다: ' + dupId +
+          '. 같은 기간 기록은 1건만 냅니다. 그 기록을 이어서 쓰거나 수정 제출하세요');
+      }
+    }
     if (isNew) rec.id = newRecordId(def, rec.site, rec.date, me);
     var stage = null;
     var wasReturned = cur && cur.status === '반려';
@@ -17287,7 +17357,7 @@ return {
     var parts = chunks.map(function (ch, k) {
       return '<div class="rv-tpart"><p class="rv-tpart-cap">열 묶음 <span class="num">' + (k + 1) + '/' + chunks.length + '</span> · ' + esc(ch[0].label) + (ch.length > 1 ? ' ~ ' + esc(ch[ch.length - 1].label) : '') + '</p>' + tableOf(ch) + '</div>';
     }).join('');
-    return panel(s.title || '표', sub + ' · 열 <span class="num">' + cols.length + '</span>개', '<div class="rv-tparts hide-phone">' + parts + '</div><div class="only-phone">' + tableOf(cols) + '</div>', { id: s.id, flush: true });
+    return panel(s.title || '표', sub + ' · 열 <span class="num">' + cols.length + '</span>개', '<div class="rv-tparts hide-phone">' + parts + '</div><div class="rv-tflat only-phone">' + tableOf(cols) + '</div>', { id: s.id, flush: true });
   }
   function photoList(d, s) {
     var raw = d[s.id];
@@ -17731,23 +17801,26 @@ return {
       var code = esc(f.code);
       var isReq = site && req.indexOf(f.code) >= 0;
       return '<tr>' +
-        '<td class="rv-fcell"><div class="rv-fcell-in"><span class="rv-fno num faint">' + esc(f.no || '') + '</span><div class="rv-fmain"><button type="button" class="rv-link rv-fname" data-act="fe.forms-info" data-code="' + code + '">' + esc(f.title) + '</button><div class="faint rv-fsub">' + esc(f.code) + ' · ' + esc(CAT_NAME[f.category] || f.category || '') + (isReq ? ' · 필수' : '') + '</div>' +
+        '<td class="rv-fcell r-main"><div class="rv-fcell-in"><span class="rv-fno num faint">' + esc(f.no || '') + '</span><div class="rv-fmain"><button type="button" class="rv-link rv-fname" data-act="fe.forms-info" data-code="' + code + '">' + esc(f.title) + '</button><div class="faint rv-fsub">' + esc(f.code) + ' · ' + esc(CAT_NAME[f.category] || f.category || '') + (isReq ? ' · 필수' : '') + '</div>' +
           // 태블릿(641~1399px)에서는 넓은 열을 숨기고 이 둘째 줄로 보여 준다(CssEngine .rv-fmeta)
           '<div class="faint rv-fsub rv-fmeta">' + [f.docNo ? '<span class="mono">' + esc(f.docNo) + '</span>' : '', f.version ? esc(f.version) : '', f.fillBy ? esc(fillSummary(f.fillBy)) : '', '최근 ' + (last[f.code] ? '<span class="num">' + esc(last[f.code]) + '</span>' : '—')].filter(Boolean).join(' · ') + '</div>' +
+          // 휴대폰(≤640px) 두 줄 행의 보조줄(.tbl.rows2 .r-l2) — 주기 · 문서번호 · 최근 작성일. 데스크톱·태블릿은 Css 공용 규칙으로 숨김
+          '<div class="r-l2">' + [isReq ? '필수' : '', esc(freqLabel(f)), f.docNo ? '<span class="mono">' + esc(f.docNo) + '</span>' : '', '최근 ' + (last[f.code] ? '<span class="num">' + esc(last[f.code]) + '</span>' : '—')].filter(Boolean).join(' · ') + '</div>' +
           '</div></div></td>' +
         '<td class="nowrap" data-label="주기">' + esc(freqLabel(f)) + '</td>' +
-        (site ? '<td class="rv-sched" data-label="다음 마감">' + schedHtml(sched[f.code], f) + '</td>' : '') +
+        // 휴대폰 오른쪽 한 값: 사업장은 다음 마감(.r-key), 본사는 '새로 쓰기'(동작 칸이 .r-key)
+        (site ? '<td class="rv-sched r-key" data-label="다음 마감">' + schedHtml(sched[f.code], f) + '</td>' : '') +
         '<td class="mono nowrap rv-wide" data-label="문서번호">' + esc(f.docNo || '') + '</td>' +
         '<td class="nowrap rv-wide" data-label="버전">' + esc(f.version || '') + '</td>' +
         '<td class="rv-wide" data-label="작성자"><span title="' + esc(f.fillBy || '') + '">' + esc(fillSummary(f.fillBy)) + '</span></td>' +
         '<td class="num nowrap rv-wide" data-label="최근 작성일">' + (last[f.code] ? esc(last[f.code]) : '<span class="faint">—</span>') + '</td>' +
-        '<td class="act rv-act-col"><div class="rv-row-acts">' +
+        '<td class="act rv-act-col' + (site ? '' : ' r-key') + '"><div class="rv-row-acts">' +
           (wr ? '<button type="button" class="btn sm" data-act="fe.forms-new" data-code="' + code + '">새로 쓰기</button>' : '') +
           '<button type="button" class="icon-btn" data-act="fe.forms-blank" data-code="' + code + '" aria-label="빈 양식 인쇄" title="빈 양식 인쇄">' + icon('print') + '</button>' +
           '<button type="button" class="icon-btn" data-act="fe.forms-info" data-code="' + code + '" aria-label="양식 설명" title="양식 설명">' + icon('book') + '</button>' +
         '</div></td></tr>';
     }).join('');
-    var table = list.length ? '<div class="tbl-wrap"><table class="tbl rv-forms">' + head + '<tbody>' + rows + '</tbody></table></div>' : '<div class="empty">이 분류에 양식이 없습니다.</div>';
+    var table = list.length ? '<div class="tbl-wrap"><table class="tbl rows2 rv-forms">' + head + '<tbody>' + rows + '</tbody></table></div>' : '<div class="empty">이 분류에 양식이 없습니다.</div>';
     main.innerHTML = titleRowHtml('표준 양식', sub, '') +
       '<div class="toolbar">' + tabs + '</div>' +
       '<section class="panel"><header class="panel-hd"><div><h2>무엇을 써야 하나</h2><p class="panel-sub">' + (site ? esc(siteLabel(site)) + ' 기준 마감과 최근 작성일' : '전 사업장 기준 최근 작성일') + '</p></div></header>' +
@@ -19356,7 +19429,9 @@ return {
       var status = stages === 4 ? (age > 6 ? '확인' : '제출') : '작성중';
       if (status === '제출' && reviewLeft <= 0) status = '확인';
       if (status === '제출') reviewLeft--;
-      var mgrAt = add(p.day, R.i(0, 2)), decAt = add(mgrAt, R.i(1, 4));
+      /* 이미 한 일의 날짜(확인·결정·회신·종결)는 오늘을 넘지 않게 — 최근 접수 건의 진행 단계 기록 */
+      var cap = function (x) { return x > TODAY ? TODAY : x; };
+      var mgrAt = cap(add(p.day, R.i(0, 2))), decAt = cap(add(mgrAt, R.i(1, 4)));
       mk(f, site, p.day, {
         author: anon ? site._officer : R.pick(site._workers),
         pre: { kind: p.kind, channel: opt(f, 'channel', anon ? '제보함' : R.pick(['본인 직접', '담당자 대리'])), anon: anon ? '익명' : '실명',
@@ -19367,8 +19442,8 @@ return {
           mgr: site._chief, mgrAt: mgrAt, verify: opt(f, 'verify', '사실 확인'), freq: fq, sev: sv, mgrOpinion: '현장 확인 결과 개선 필요',
           decision: dec, decider: site._chief, decidedAt: decAt, rejectReason: /불채택|보류/.test(dec) ? '고객사 시설 공사 일정과 연계 필요' : undefined,
           holdUntil: dec === '보류(재검토)' ? add(decAt, 30) : undefined, raLink: opt(f, 'raLink', '해당없음'), reward: '해당없음',
-          replyAt: add(decAt, 1), replyHow: opt(f, 'replyHow', 'TBM'), replyText: /채택/.test(dec) ? '제안 내용 반영해 조치 예정' : '검토 결과를 공유함',
-          closeType: opt(f, 'closeType', /불채택/.test(dec) ? '불채택 종결' : '개선 완료'), closeDate: add(decAt, R.i(3, 10)), closer: site._chief },
+          replyAt: cap(add(decAt, 1)), replyHow: opt(f, 'replyHow', 'TBM'), replyText: /채택/.test(dec) ? '제안 내용 반영해 조치 예정' : '검토 결과를 공유함',
+          closeType: opt(f, 'closeType', /불채택/.test(dec) ? '불채택 종결' : '개선 완료'), closeDate: cap(add(decAt, R.i(3, 10))), closer: site._chief },
         rows: { sec_measures: /채택/.test(dec) && dec !== '불채택' ? [{ measure: c[0].replace(/ 제안$/, '').slice(0, 40) + ' 개선', ctype: opt(f, 'sec_measures.ctype', R.pick(['자체', '고객사 협조'])),
           level: R.w([['보통', 6], ['낮음', 3], ['높음', 1]]), owner: site._sups[0], due: add(decAt, 14), adopt: '채택' }] : [] },
         stages: stages, status: status, stageAt: ts(add(p.day, Math.min(age, stages * 2)), 17, 0), createdAt: tsAdd(found, R.i(20, 240)),
@@ -19506,6 +19581,13 @@ return {
             content: '사업장 위험요인·사고 사례·작업중지권 절차', understanding: opt(f, 'understanding', '질의응답'), countAs: opt(f, 'countAs', /관리감독자/.test(course) ? '관리감독자' : '근로자 정기'),
             attendees: att, absentees: abs, closeNote: abs.length ? '미참석자 보충교육 진행' : '전원 참석' },
           rows: { sec_makeup: mk1 },
+          /* 자동 채우기는 빈 사람 목록(미참석 0명)을 명부 앞사람으로 채우므로 참석·미참석을 다시 맞춘다
+             — 같은 사람이 양쪽에 들어가거나 보충교육 행 없는 미참석자가 생기지 않게 */
+          post: function (dd) {
+            dd.attendees = att.slice();
+            if (abs.length) dd.absentees = abs.slice(); else delete dd.absentees;
+            dd.sec_makeup = (dd.sec_makeup || []).filter(function (row) { return row && abs.indexOf(String(row.mperson || '').trim()) >= 0; });
+          },
           status: status, returnNote: rn, createdAt: ts(date, 16, R.i(10, 50)), submitAt: ts(add(date, R.i(0, 3)), 17, R.i(0, 59))
         });
       });
@@ -19734,12 +19816,24 @@ return {
             dd.msdsHave = Math.max(0, (Number(dd.msdsTarget) || 0) - (weak && R.chance(0.5) ? 1 : 0));
             dd.healthDone = Number(dd.healthTarget) || 0;
           },
-          after: function (dd) { fixMonthly(dd, counts); },
+          after: function (dd) { fixMonthly(dd, counts); overdueNote(dd, site, mEnd); },
           status: isNow ? '제출' : '확인', keepSubmitted: isNow, createdAt: tsAdd(submitTs, -R.i(30, 120)), submitAt: submitTs,
           confirmAt: ts(add(subDay, R.i(1, 3)), R.i(9, 17), R.i(0, 59))
         });
       });
     });
+  }
+  /** 기한경과 미결 조치가 있으면 사유·완료 계획을 적는다(교차 검증: 1건 이상이면 필수). 조치번호는 build 끝에 매기므로 조치명으로 적는다 */
+  function overdueNote(dd, site, mEnd) {
+    var n = Number(dd.actsOverdue) || 0;
+    if (n < 1) { delete dd.overdueNote; return; }
+    if (String(dd.overdueNote || '').trim()) return;
+    var od = ACTS.filter(function (a) { return a.site === site.id && ['등록', '조치중'].indexOf(a.status) >= 0 && a.due && a.due <= mEnd && a.due < TODAY; });
+    var why = ['고객사 승인 대기', '자재 수급 지연', '외부 업체 일정 조정', '예산 승인 대기'];
+    var plan = add(mEnd, R.i(10, 20));
+    var lines = od.slice(0, 3).map(function (a, i) { return shortStr(a.title, 30) + ' — ' + why[(i + n) % why.length]; });
+    dd.overdueNote = (lines.length ? lines.join(' / ') + (od.length > 3 ? ' 외 ' + (od.length - 3) + '건' : '') : '기한경과 ' + n + '건 — ' + why[n % why.length])
+      + '. ' + mon(plan) + '/' + (+plan.slice(8, 10)) + ' 완료 예정';
   }
   /** 자체 월간 집계(엔진 집계가 비었을 때 대신 넣고, 재해자 수 맞춤에 씀) */
   function ownMonthly(site, from, to) {
@@ -21224,6 +21318,9 @@ return {
   }
   function renderReview(main, args, query) {
     var gone = '';
+    /* 휴대폰: 다른 화면에서 #/review 로 새로 들어오면 목록부터 보인다(지난 미리보기를 다시 열지 않음).
+       이미 검토함이 그려져 있는 상태의 다시 그리기(고르기·처리 뒤·새로 고침)는 고른 건을 그대로 둔다. ?id= 가 있으면 아래에서 그 건을 연다 */
+    if (isPhone() && !(main && main.querySelector && main.querySelector('.hq-rv'))) RV.sel = '';
     if (query.form != null) RV.form = query.form;
     if (query.site != null) RV.site = query.site;
     var all = reviewQueue();

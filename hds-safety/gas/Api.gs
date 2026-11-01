@@ -560,6 +560,38 @@ var Api = (function () {
     }
   }
 
+  /*
+   * 한 사업장·한 기간(일일점검은 날짜+근무조)에 보고된 기록은 1건 — 화면 엔진(JsEngine findDup·singlePerPeriod·isReported)과 같은 규칙.
+   * 화면 확인창은 그 기기의 색인만 보므로 다른 기기·API 직접 호출로 건너뛸 수 있어 서버가 잠금 안에서 다시 본다.
+   *  - 대상: 정기 양식(frequency.type 이 event 아님) 가운데 한 기간 여러 건 양식(multiPerPeriod: '회마다 기록 1건|1회 이상|차수마다')과
+   *    수시 추가 작성이 있는 양식(due 에 '수시': 위험성평가 수시평가·폭염 수시 점검)은 뺀다.
+   *  - 같은 site·form·period(근무조 양식이면 근무조도. 근무조가 빈 기존 기록은 어느 근무조와도 겹침)의 삭제되지 않은 다른 기록 가운데
+   *    이미 보고된 것(제출·확인·반려 또는 단계 보고)이 있으면 그 번호. 없으면 ''.
+   */
+  function multiPerPeriodSrv(def) {
+    var fq = def.frequency || {};
+    if (fq.multiPerPeriod !== undefined) return !!fq.multiPerPeriod;
+    return /회마다 기록 1건|1회 이상|차수마다/.test(String(fq.due || ''));
+  }
+  function singlePerPeriodSrv(def) {
+    var fq = def.frequency || {};
+    if (!fq.type || fq.type === 'event' || multiPerPeriodSrv(def)) return false;
+    return !/수시/.test(String(fq.due || ''));
+  }
+  function reportedRec(r) {
+    return !!r && (r.status === '제출' || r.status === '확인' || r.status === '반려' || (Array.isArray(r.stageDone) && r.stageDone.length > 0));
+  }
+  function reportedDupId(def, rec) {
+    if (!singlePerPeriodSrv(def)) return '';
+    var shifts = !!(def.frequency && def.frequency.shifts);
+    var pk = String(rec.period || '');
+    var hit = Db.all('records').filter(function (r) {
+      return r && !r.deleted && r.id !== rec.id && r.site === rec.site && r.form === def.code && String(r.period || '') === pk &&
+        (!shifts || !r.shift || r.shift === rec.shift) && reportedRec(r);
+    })[0];
+    return hit ? String(hit.id) : '';
+  }
+
   function emptyRecord(def, site, me) {
     var t = now();
     return {
@@ -1005,6 +1037,15 @@ var Api = (function () {
     var rec = x.rec, def = x.def, cur = x.cur;
     var prev = cur ? clone(cur) : null;
     var isNew = !cur;
+    // 처음 보고하는 기록(새 기록·아직 보고 안 한 작성중)만 본다. 같은 기록의 재제출·수정 제출·다음 단계 제출은 그대로.
+    if (!reportedRec(cur)) {
+      var dupId = reportedDupId(def, rec);
+      if (dupId) {
+        var pl = rec.period ? String(rec.period) + (def.frequency && def.frequency.shifts && rec.shift ? ' ' + rec.shift : '') : '';
+        fail('CONFLICT', '같은 기간' + (pl ? '(' + pl + ')' : '') + '에 이미 보고한 ' + formName(def) + ' 기록이 있습니다: ' + dupId +
+          '. 같은 기간 기록은 1건만 냅니다. 그 기록을 이어서 쓰거나 수정 제출하세요');
+      }
+    }
     if (isNew) rec.id = newRecordId(def, rec.site, rec.date, me);
     var stage = null;
     var wasReturned = cur && cur.status === '반려';

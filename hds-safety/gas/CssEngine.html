@@ -359,7 +359,16 @@
 /* 열이 많은 표: 데스크톱은 인쇄처럼 열 묶음(행 번호 반복)으로 나눠 가로 스크롤 없이 모든 열을 보인다 */
 .rv-tparts { display: flex; flex-direction: column; }
 .rv-tpart + .rv-tpart { border-top: 1px solid var(--border); }
-.rv-tpart-cap { margin: 0; padding: 10px 16px 0; font-size: var(--fs-small, 12px); line-height: 16px; color: var(--muted); }
+.rv-tpart-cap { margin: 0; padding: 10px var(--card-pad) 0; font-size: var(--fs-small, 12px); line-height: 16px; color: var(--muted); }
+/* 열 묶음·휴대폰 한 표는 .flush 바로 아래가 아니어서 Css 의 flush 표 여백 규칙이 닿지 않음 — 같은 안쪽 여백을 여기서 준다 */
+.flush > .rv-tparts > .rv-tpart > .tbl-wrap .tbl th:first-child, .flush > .rv-tparts > .rv-tpart > .tbl-wrap .tbl td:first-child,
+.flush > .rv-tflat > .tbl-wrap .tbl th:first-child, .flush > .rv-tflat > .tbl-wrap .tbl td:first-child { padding-left: var(--card-pad); }
+.flush > .rv-tparts > .rv-tpart > .tbl-wrap .tbl th:last-child, .flush > .rv-tparts > .rv-tpart > .tbl-wrap .tbl td:last-child,
+.flush > .rv-tflat > .tbl-wrap .tbl th:last-child, .flush > .rv-tflat > .tbl-wrap .tbl td:last-child { padding-right: var(--card-pad); }
+@media (max-width: 640px) {
+  .flush > .rv-tflat > .tbl-wrap .tbl:not(.keep) tr { padding-left: var(--card-pad); padding-right: var(--card-pad); }
+  .flush > .rv-tflat > .tbl-wrap .tbl:not(.keep) td { padding-left: 0 !important; padding-right: 0 !important; }
+}
 .rv-tpart .tbl { table-layout: auto; }
 .rv-tpart .tbl td.rv-long { min-width: 160px; }
 .rv-wait-note { font-size: var(--fs-small, 12px); line-height: 16px; white-space: nowrap; }
@@ -432,13 +441,23 @@
   .rv-forms td.rv-sched { min-width: 0; white-space: normal; }
   .rv-forms .rv-row-acts { flex-wrap: wrap; justify-content: flex-end; white-space: normal; max-width: 112px; }
 }
+/* 휴대폰: 공용 두 줄 행(.tbl.rows2) — 1줄 번호+양식 이름 / 오른쪽 다음 마감(사업장) 또는 '새로 쓰기'(본사), 2줄 .r-l2 */
 @media (max-width: 640px) {
   .rv-fcell { min-width: 0; }
-  .rv-forms td.rv-fcell { display: block !important; }
-  .rv-forms td.rv-sched { min-width: 0; }
-  .rv-fno { width: auto; text-align: left; }
-  .rv-forms .rv-act-col { flex: 1 1 100%; width: auto; margin-top: 6px; text-align: left; }
-  .rv-row-acts { justify-content: flex-start; }
+  .rv-forms td.r-main { position: relative; }
+  .rv-forms .rv-fcell-in { gap: 8px; }
+  .rv-fno { width: auto; min-width: 28px; text-align: left; font-weight: 400; }
+  .rv-fmain { flex: 1 1 auto; overflow: hidden; }
+  .rv-forms .rv-fsub { display: none; }
+  .rv-forms .rv-fname { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* 이름 버튼의 누름 영역을 칸 전체로(44px 이상) — 양식 설명(새로 쓰기·빈 양식 인쇄 포함)이 열림 */
+  .rv-forms .rv-fname::after { content: ""; position: absolute; inset: 0; }
+  .rv-forms td.rv-sched.r-key { min-width: 0; white-space: nowrap; }
+  .rv-forms td.rv-sched.r-key div { display: none; }
+  .rv-forms td.rv-act-col.r-key { width: auto; }
+  .rv-forms td.r-key .rv-row-acts { gap: 0; }
+  /* 오른쪽은 한 동작만: 쓸 수 있으면 '새로 쓰기', 열람 권한이면 빈 양식 인쇄 */
+  .rv-forms td.r-key [data-act="fe.forms-info"], .rv-forms td.r-key .btn ~ .icon-btn { display: none; }
 }
 .rv-info-purpose { margin: 0; font-size: 14px; line-height: 1.6; }
 .rv-info-h { margin: 0 0 8px; font-size: 13px; font-weight: 600; }
