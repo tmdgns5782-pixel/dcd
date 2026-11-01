@@ -6,7 +6,8 @@
  *
  * 설정(스크립트 속성 — 편집기 > 프로젝트 설정 > 스크립트 속성)
  *   ANTHROPIC_API_KEY  (필수) Anthropic API 키. 없으면 이 기능은 꺼진 것으로 본다.
- *   ANTHROPIC_MODEL    (선택) 모델 ID. 기본 claude-sonnet-5-5.
+ *   ANTHROPIC_MODEL    (선택) 모델 ID. 기본 claude-sonnet-5-5. 설정 화면의 settings.ai.model 이 있으면 그것이 먼저.
+ *   settings.ai.enabled === false 이면 키가 있어도 쓰지 않는다.
  *   ANTHROPIC_EFFORT   (선택) low | medium | high. 기본 medium.
  *
  * 호출: UrlFetchApp → POST https://api.anthropic.com/v1/messages
@@ -155,19 +156,22 @@ var Ai = (function () {
   function insight(p, me) {
     p = p || {};
     if (!me || me.kind !== 'hq') fail('FORBIDDEN', '본사 사용자만 AI 분석을 쓸 수 있습니다');
+    var st = {};
+    try { st = Db.settings() || {}; } catch (e0) { st = {}; }
+    var aiSet = (st.ai && typeof st.ai === 'object') ? st.ai : {};
+    if (aiSet.enabled === false) fail('INVALID', 'AI 분석이 꺼져 있습니다. 설정에서 AI 분석을 켜세요');
     var key = prop('ANTHROPIC_API_KEY');
     if (!key) fail('INVALID', 'AI 분석 키가 설정되지 않았습니다. 스크립트 속성 ANTHROPIC_API_KEY 를 넣으세요');
     if (p.digest == null || typeof p.digest !== 'object') fail('INVALID', '분석할 요약 숫자가 없습니다. 분석 화면에서 기간을 고른 뒤 다시 누르세요');
     var digestText = JSON.stringify(p.digest);
     if (digestText.length > MAX_DIGEST_CHARS) fail('INVALID', '분석할 요약 데이터가 너무 큽니다(' + Math.round(digestText.length / 1000) + '천 자). 기간이나 사업장을 줄여 다시 시도하세요');
 
-    var model = prop('ANTHROPIC_MODEL') || DEFAULT_MODEL;
-    if (!/^[A-Za-z0-9._:\-@\/]{3,100}$/.test(model)) fail('INVALID', '스크립트 속성 ANTHROPIC_MODEL 의 모델 이름 형식이 맞지 않습니다');
+    var model = str(aiSet.model) || prop('ANTHROPIC_MODEL') || DEFAULT_MODEL;
+    if (!/^[A-Za-z0-9._:\-@\/]{3,100}$/.test(model)) fail('INVALID', 'AI 모델 이름 형식이 맞지 않습니다(설정 또는 스크립트 속성 ANTHROPIC_MODEL)');
     var effort = prop('ANTHROPIC_EFFORT').toLowerCase();
     if (['low', 'medium', 'high'].indexOf(effort) < 0) effort = 'medium';
 
-    var company = '';
-    try { company = str((Db.settings() || {}).company); } catch (e) { company = ''; }
+    var company = str(st.company);
     var body = {
       model: model,
       max_tokens: MAX_TOKENS,
