@@ -524,7 +524,21 @@ var Api = (function () {
   }
 
   /** 단계형 양식: 단계 하나를 끝낸 것으로 표시하고 상태를 정한다. → 끝낸 단계 정의 */
-  function applyStage(def, rec, stageId) {
+  /** 본사만 쓰는 단계인가(FD stage.role==='hq' 또는 담당(who)이 '본사'로 시작). */
+  function hqOnlyStage(st) {
+    return !!st && (st.role === 'hq' || /^본사/.test(String(st.who || '')));
+  }
+
+  /** 단계형 양식이 이 단계에서 끝나는가(N3 허가서를 보류·불허로 낸 경우). */
+  function endsEarly(def, rec, sid) {
+    if (def.code === 'N3' && sid === 's1') {
+      var d = String((rec.data && rec.data.decision) || '');
+      return /^(보류|불허)/.test(d);
+    }
+    return false;
+  }
+
+  function applyStage(def, rec, stageId, me) {
     var stages = def.stages || [];
     var ids = stages.map(function (s) { return s.id; });
     var done = (rec.stageDone || []).filter(function (s) { return ids.indexOf(s) >= 0; });
@@ -535,6 +549,7 @@ var Api = (function () {
     }
     var idx = ids.indexOf(sid);
     if (idx < 0) fail('INVALID', '이 양식에 없는 단계입니다: ' + sid);
+    if (me && me.kind === 'site' && hqOnlyStage(stages[idx]) && done.indexOf(sid) < 0) fail('FORBIDDEN', '본사가 쓰는 단계입니다(' + (stages[idx].label || sid) + '). 사업장에서는 제출할 수 없습니다');
     if (done.indexOf(sid) < 0) {
       for (var j = 0; j < idx; j++) {
         if (done.indexOf(ids[j]) < 0) fail('INVALID', '앞 단계(' + (stages[j].label || ids[j]) + ')를 먼저 제출하세요');
@@ -543,7 +558,7 @@ var Api = (function () {
     }
     done.sort(function (a, b) { return ids.indexOf(a) - ids.indexOf(b); });
     rec.stageDone = done;
-    if (done.length >= ids.length) {
+    if (done.length >= ids.length || endsEarly(def, rec, sid)) {
       rec.status = '제출';
       rec.submittedAt = rec.submittedAt || now();
     } else {
@@ -664,7 +679,7 @@ var Api = (function () {
     var stage = null;
     var wasReturned = cur && cur.status === '반려';
     if (def.stages && def.stages.length) {
-      stage = applyStage(def, rec, p.stageId);
+      stage = applyStage(def, rec, p.stageId, me);
     } else {
       rec.status = '제출';
       rec.submittedAt = rec.submittedAt || now();

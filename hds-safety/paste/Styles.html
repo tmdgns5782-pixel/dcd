@@ -1681,6 +1681,12 @@ body.rv-printing #print-root { display: block; min-height: 100vh; }
 @media (max-width: 1100px) {
   .an-scope-note { display: none; }
 }
+/* 태블릿 폭: 6칸 KPI 는 3×2 로(라벨이 잘리고 설명이 6줄로 접히지 않게) */
+@media (min-width: 641px) and (max-width: 1100px) {
+  .an-kpis[style*="--n:6"], .an-kpis[style*="--n:5"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .an-kpis[style*="--n:6"] > .kpi:nth-child(3n+1), .an-kpis[style*="--n:5"] > .kpi:nth-child(3n+1) { border-left: 0; }
+  .an-kpis[style*="--n:6"] > .kpi:nth-child(n+4), .an-kpis[style*="--n:5"] > .kpi:nth-child(n+4) { border-top: 1px solid var(--border, #e4e6ee); }
+}
 @media (max-width: 640px) {
   .an-filter { flex-wrap: wrap; }
   .an-filter > .select { flex: 1 1 0; min-width: 0; max-width: none; }

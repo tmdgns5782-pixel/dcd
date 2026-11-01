@@ -406,13 +406,16 @@
       var from = A.expectFrom(s, sc.from);
       if (from > to) return;
       var shifts = Array.isArray(s.shifts) && s.shifts.length ? s.shifts.length : 1, n = (diffDays(from, to) + 1) * shifts;
-      expected += n; perSite[s.id] = { expected: n, submitted: 0 };
+      expected += n; perSite[s.id] = { expected: n, submitted: 0, from: from, shifts: shifts };
     });
-    var seen = {};
+    // 일일점검 화면(dailyStats)과 같은 규칙: 기대 시작일 이후, 하루에 근무조 수까지, 근무조가 여럿이면 근무조(없으면 기록)마다 1
+    var seen = {}, perDay = {};
     A.rows('F07', { from: sc.from, to: to, sites: sc.sites, all: false }).forEach(function (r) {
-      if (!perSite[r.site]) return;
-      var k = r.site + '|' + A.dateOf(r) + '|' + (r.shift || ''); if (seen[k]) return; seen[k] = 1;
-      perSite[r.site].submitted++;
+      var ps = perSite[r.site], d = A.dateOf(r); if (!ps || d < ps.from) return;
+      var k = r.site + '|' + d + '|' + (ps.shifts > 1 ? (r.shift || r.id) : 'x'); if (seen[k]) return;
+      var dk = r.site + '|' + d; if ((perDay[dk] || 0) >= ps.shifts) return;
+      seen[k] = 1; perDay[dk] = (perDay[dk] || 0) + 1;
+      ps.submitted++;
     });
     var submitted = 0; Object.keys(perSite).forEach(function (id) { perSite[id].submitted = Math.min(perSite[id].submitted, perSite[id].expected); submitted += perSite[id].submitted; });
     return { expected: expected, submitted: submitted, rate: expected ? submitted / expected : null, perSite: perSite, to: to };
@@ -545,6 +548,30 @@
      <div class="grid an-pack" data-cols="3"> 안의 카드를 그려진 높이대로 N개 세로 칸에 나눠 담는다(가장 짧은 칸에 차례로).
      같은 줄에 높이가 크게 다른 카드를 짝지어 카드 안에 빈 띠가 생기거나 아래 끝이 들쭉날쭉한 것을 막는다.
      차트를 다 그린 뒤(after) 부른다. 한 칸 폭이 12칸이 되는 좁은 화면에서는 칸이 위아래로 이어진다. */
+  // 높이 목록 → 칸 번호 목록. 카드가 적으면(칸^카드 ≤ 60000) 가장 긴 칸과 짧은 칸의 차가 가장 작은 나눔을 다 찾아보고,
+  // 많으면 높은 카드부터 가장 짧은 칸에 넣는다. 첫 카드는 언제나 첫 칸.
+  function assign(hs, n) {
+    var m = hs.length, best = null, bestSpread = Infinity, cur = [], tall = [], i;
+    for (i = 0; i < n; i++) tall.push(0);
+    if (Math.pow(n, m) <= 60000) {
+      var walk = function (k) {
+        if (k === m) {
+          var mx = Math.max.apply(null, tall), mn = Math.min.apply(null, tall), sp = mx - mn + mx / 1e4;
+          if (sp < bestSpread) { bestSpread = sp; best = cur.slice(); }
+          return;
+        }
+        for (var j = 0; j < n; j++) {
+          if (k === 0 && j > 0) break;
+          cur[k] = j; tall[j] += hs[k]; walk(k + 1); tall[j] -= hs[k];
+        }
+      };
+      walk(0);
+      return best;
+    }
+    var order = hs.map(function (h, k) { return k; }).sort(function (a, b) { return hs[b] - hs[a]; }), out = [];
+    order.forEach(function (k) { var j = 0; for (var x = 1; x < n; x++) if (tall[x] < tall[j]) j = x; out[k] = j; tall[j] += hs[k]; });
+    return out;
+  }
   A.pack = function (root) {
     Array.prototype.forEach.call((root || document).querySelectorAll('.an-pack[data-cols]'), function (g) {
       var n = Math.max(1, Math.min(4, +g.getAttribute('data-cols') || 2));
@@ -553,12 +580,11 @@
       var keep = g.style.alignItems; g.style.alignItems = 'start';
       var hs = items.map(function (el) { return el.offsetHeight || 0; });
       g.style.alignItems = keep;
-      var cols = [], tall = [], span = 12 / n;
-      for (var i = 0; i < n; i++) { var c = document.createElement('div'); c.className = 'span-' + span + ' an-stack'; cols.push(c); tall.push(0); }
-      items.forEach(function (el, k) {
-        var j = 0; for (var x = 1; x < n; x++) if (tall[x] < tall[j] - 1) j = x;
+      var cols = [], span = 12 / n, gap = 24, pick = assign(hs.map(function (h) { return h + gap; }), n);
+      for (var i = 0; i < n; i++) { var c = document.createElement('div'); c.className = 'span-' + span + ' an-stack'; cols.push(c); }
+      items.forEach(function (el, k) {   // 칸 안에서는 원래 순서를 지킨다
         el.className = el.className.replace(/\bspan-\d+\b/g, '').replace(/\s+/g, ' ').trim();
-        cols[j].appendChild(el); tall[j] += hs[k] + 24;
+        cols[pick[k]].appendChild(el);
       });
       cols.forEach(function (c) { if (c.children.length) g.appendChild(c); });
       g.classList.remove('an-pack');
@@ -1536,6 +1562,23 @@
 
   /* ---------- HEC ---------- */
   function hecItems() { return (App.FD || {}).hecItems || []; }
+  /* HEC 항목을 증빙하는 양식: 항목 정의의 forms 에 더해, 양식 점검 항목(items[].hec)에 그 코드가 달린 양식까지(예: N4 Part I) */
+  var hecFormMap = null;
+  function hecFormsOf(item) {
+    if (!hecFormMap) {
+      hecFormMap = {};
+      forms().forEach(function (f) {
+        (f.sections || []).forEach(function (sec) {
+          (sec.items || []).forEach(function (it) {
+            [].concat(it && it.hec || []).forEach(function (c) { var o = hecFormMap[c] || (hecFormMap[c] = []); if (o.indexOf(f.code) < 0) o.push(f.code); });
+          });
+        });
+      });
+    }
+    var out = (item.forms || []).slice();
+    (hecFormMap[item.code] || []).forEach(function (c) { if (out.indexOf(c) < 0) out.push(c); });
+    return out;
+  }
   function hecWin(w) { return w === '1y' ? 365 : w === 'contract' ? 3650 : 183; }
   function hecCellLocal(item, siteId) {
     var site = siteById(siteId) || {}, t = today();
@@ -1667,7 +1710,7 @@
     Object.keys(cur).map(function (id) { return { id: id, c: cur[id], p: prev[id] || 0 }; })
       .filter(function (x) { return x.c >= 3 && x.c >= x.p * 2 && x.c - x.p >= 2; })
       .sort(function (a, b) { return (b.c - b.p) - (a.c - a.p); }).slice(0, 2)
-      .forEach(function (x) { add(70 + x.c - x.p, 'neg', siteName(x.id) + ' 사고·아차 직전 ' + lbl + ' ' + x.p + '건 → ' + curLbl + ' ' + x.c + '건', '#/analytics/incidents'); });
+      .forEach(function (x) { add(70 + x.c - x.p, 'neg', siteName(x.id) + ' 사고·아차 ' + lbl + ' ' + x.p + '건 → ' + curLbl + ' ' + x.c + '건', '#/analytics/incidents'); });
     // 3) 일일점검 제출률 최저
     var ds = dailyStats(s), low = ds.sites.filter(function (x) { return x.exp >= 7; }).sort(function (a, b) { return a.rate - b.rate; })[0];
     if (low && low.rate < 0.9) add(low.rate < 0.7 ? 80 : 55, low.rate < 0.7 ? 'neg' : 'warn', '일일점검 제출률이 가장 낮은 곳은 ' + low.name + ' ' + pct(low.rate) + '(기대 ' + num(low.exp) + '건 중 ' + num(low.done) + '건)입니다', '#/analytics/daily');
@@ -1954,11 +1997,9 @@
     var trendBody = judged ? chart('bars', { labels: b.list.map(function (x) { return x.label; }), values: trendVals }, { format: tFmt, tickFormat: tFmt, dim: bj.map(function (x, i) { return x.n ? -1 : i; }).filter(function (i) { return i >= 0; }), height: 180 }) : empty('이 범위에 판정 기록이 없습니다.');
     var st0 = appStart('F07'), startNote = st0 && st0 > s.from ? ' · 앱 사용 시작(' + esc(st0) + ') 이후만' : '';
     body += '<div class="grid">' +
-      panel({ span: 8, title: '사업장별 제출률', sub: '기대 = 근무일 × 근무조' + startNote + ', 낮은 순', body: siteTbl, flush: true }) +
-      '<div class="span-4 anb-stack">' +
-        panel({ title: '요일별 미제출', sub: '범위 안 미제출 ' + num(ds.miss) + '건', body: wdBody }) +
-        panel({ title: '주의·불량 판정 비율 추이', sub: b.unit + '별, 판정 항목 중 주의·불량', body: trendBody }) +
-      '</div>' +
+      panel({ span: 12, title: '사업장별 제출률', sub: '기대 = 근무일 × 근무조' + startNote + ', 낮은 순', body: siteTbl, flush: true }) +
+      panel({ span: 6, title: '요일별 미제출', sub: '범위 안 미제출 ' + num(ds.miss) + '건', body: wdBody }) +
+      panel({ span: 6, title: '주의·불량 판정 비율 추이', sub: b.unit + '별, 판정 항목 중 주의·불량', body: trendBody }) +
       panel({ span: 12, title: '제출 달력', sub: one ? esc(one.name) + ' · ' + esc(s.from) + ' ~ ' + esc(s.to) : '사업장 × 날짜', actions: pick, body: cal, foot: calFoot }) +
       panel({ span: 12, title: '주의·불량 비율이 높은 점검 항목', sub: '판정 3회 이상 항목, 해당없음 제외', body: itemsBody }) +
       '</div>';
@@ -2105,7 +2146,7 @@
     // 사업장별 미결·기한경과
     var bs = s.siteObjs.map(function (x) { var o = open.filter(function (a) { return a.site === x.id; }); return { label: x.name, value: o.length, over: o.filter(function (a) { return isOverdue(a, t); }).length }; })
       .filter(function (x) { return x.value; }).sort(function (a, b) { return b.over - a.over || b.value - a.value; });
-    var siteBars = bs.length ? chart('hbars', bs.slice(0, 10).map(function (x) { return { label: x.label, value: x.value, over: x.over, sub: x.over ? '기한경과 ' + x.over + '건' : '기한경과 없음' }; }), { format: fInt, highlight: function (r) { return r.over > 0; } }) : empty('미결 조치가 없습니다.');
+    var siteBars = bs.length ? chart('hbars', bs.slice(0, 7).map(function (x) { return { label: x.label, value: x.value, over: x.over, sub: x.over ? '기한경과 ' + x.over + '건' : '기한경과 없음' }; }), { format: fInt, highlight: function (r) { return r.over > 0; } }) : empty('미결 조치가 없습니다.');
     // 출처 양식별
     var src = {};
     created.concat(open).forEach(function (a) { var k = a.srcForm || '본사 등록'; src[k] = src[k] || { k: k, c: {}, o: {}, ov: {} }; });
@@ -2117,7 +2158,7 @@
       { label: '신규', num: true, render: function (r) { return num(r.c); } },
       { label: '미결', num: true, render: function (r) { return num(r.o); } },
       { label: '기한경과', num: true, render: function (r) { return r.ov ? '<span class="t-neg">' + num(r.ov) + '</span>' : '0'; } }
-    ], srcRows, { empty: '이 범위에 조치가 없습니다.' });
+    ], srcRows.slice(0, 8), { empty: '이 범위에 조치가 없습니다.' });
     // 수준별 기한 준수율
     var lvRows = ['높음', '보통', '낮음'].map(function (lv) {
       var c = withDue.filter(function (a) { return a.level === lv; }), ok = c.filter(function (a) { return dateOf(a.doneAt) <= a.due; }).length;
@@ -2142,9 +2183,10 @@
       panel({ span: 4, title: '처리 소요일', sub: '범위 안 완료 ' + days.length + '건 · 중앙값 ' + (days.length ? num(median(days), 1) + '일' : '—'), body: hist }) +
       '</div><div class="grid an-pack" data-cols="2">' +
       panel({ span: 6, title: '오래된 미결', sub: '등록이 오래된 순 ' + olds.length + '건 / 미결 ' + open.length + '건', body: oldList, flush: true, foot: open.length > olds.length ? '<a href="#/acts">조치대장에서 모두 보기</a>' : '' }) +
-      panel({ span: 6, title: '사업장별 미결', sub: '기한경과 많은 순 · 막대 = 미결', body: siteBars }) +
+      panel({ span: 6, title: '사업장별 미결', sub: '기한경과 많은 순 · 막대 = 미결' + (bs.length > 7 ? ' · 위 7곳(미결 있는 ' + bs.length + '곳 중)' : ''), body: siteBars }) +
       panel({ span: 6, title: '수준별 기한 준수율', sub: '범위 안 완료한 조치(기한 있는 것)', body: lvTbl, flush: true }) +
-      panel({ span: 6, title: '출처 양식별', sub: '신규 = 범위 안 등록, 미결·기한경과 = 지금', body: srcTbl, flush: true }) +
+      panel({ span: 6, title: '출처 양식별', sub: '신규 = 범위 안 등록, 미결·기한경과 = 지금' + (srcRows.length > 8 ? ' · 많은 순 8개' : ''), body: srcTbl, flush: true,
+        foot: srcRows.length > 8 ? '그 밖 출처 ' + (srcRows.length - 8) + '개 · <a href="#/acts">조치대장에서 모두 보기</a>' : '' }) +
       '</div>';
     page(main, 'acts', '조치 이행', sub, s, body);
   }
@@ -2187,7 +2229,7 @@
     var weakBody = weak.length ? chart('hbars', weak.slice(0, 6).map(function (r) { return { label: r.it.code + ' ' + trunc(r.it.name, 26), value: r.n, sub: [r.b ? '불량 ' + r.b : '', r.x ? '증빙 없음 ' + r.x : '', r.w ? '주의 ' + r.w : ''].filter(Boolean).join(' · ') }; }), { format: function (v) { return num(v) + '곳'; }, highlight: 0 }) : empty('모든 항목이 양호이거나 해당없음입니다.');
     // 증빙 부족 → 양식
     var need = {};
-    weak.filter(function (r) { return r.x > 0; }).forEach(function (r) { (r.it.forms || []).forEach(function (f) { var o = need[f] || (need[f] = { f: f, items: [], sites: {} }); o.items.push(r.it.code); r.sites.forEach(function (id) { if (grid[r.it.code + '|' + id].k === 'x') o.sites[id] = 1; }); }); });
+    weak.filter(function (r) { return r.x > 0; }).forEach(function (r) { hecFormsOf(r.it).forEach(function (f) { var o = need[f] || (need[f] = { f: f, items: [], sites: {} }); o.items.push(r.it.code); r.sites.forEach(function (id) { if (grid[r.it.code + '|' + id].k === 'x') o.sites[id] = 1; }); }); });
     var needRows = Object.keys(need).map(function (k) { var o = need[k]; return { f: k, items: o.items, sites: Object.keys(o.sites) }; }).sort(function (a, b) { return b.sites.length - a.sites.length || b.items.length - a.items.length; });
     var needTbl = table([
       { label: '증빙 양식', render: function (r) { var f = form(r.f); return '<b class="mono">' + esc(r.f) + '</b> ' + esc(f ? f.short || f.title : ''); } },
@@ -2217,7 +2259,7 @@
       return '<th class="mx-col"><span>' + esc(trunc(x.name, 8)) + '</span><small class="num">' + (n ? pctN(g / n * 100) : '—') + '</small></th>';
     }).join('') + '</tr></thead><tbody>' + items.map(function (it) {
       var gl = it.group !== group ? (group = it.group, '<tr class="anb-hg"><th class="mx-row" colspan="' + (sites.length + 1) + '">' + esc(it.group + ' ' + (it.area || '')) + '</th></tr>') : '';
-      return gl + '<tr><th class="mx-row"><span class="mono">' + esc(it.code) + '</span> ' + esc(trunc(it.name, 26)) + '<small>' + esc((it.forms || []).join(' · ') || '—') + '</small></th>' + sites.map(function (x) {
+      return gl + '<tr><th class="mx-row"><span class="mono">' + esc(it.code) + '</span> ' + esc(trunc(it.name, 26)) + '<small>' + esc(hecFormsOf(it).join(' · ') || '—') + '</small></th>' + sites.map(function (x) {
         var c = grid[it.code + '|' + x.id];
         return '<td>' + hk(c.k, it.code + ' · ' + x.name + ': ' + c.t, c.rec ? '#/rec/' + c.rec : '') + '</td>';
       }).join('') + '</tr>';
@@ -2322,10 +2364,13 @@
     });
     /* 제목 문장: 값이 둘 이상 갈린 항목 중 1위 값의 비중이 큰 것(전체 기록 대비). '예 100%'·'해당없음 100%' 같은 한 값뿐인 항목과
        응답이 적은 항목(5건 미만 또는 기록의 절반 미만)은 고르지 않는다. */
-    var top = dists.filter(function (d) { return d.rk.length >= 2 && d.rk[0].n >= 2 && d.answered >= 5 && d.answered >= list.length * 0.5; })
+    var top = dists.filter(function (d) {
+      return d.rk.length >= 2 && d.rk[0].n >= 2 && d.answered >= 5 && d.answered >= list.length * 0.5
+        && d.rk[0].n / d.answered < 0.95 && !/^(없음|해당\s?없음|이상 없음|특이사항 없음)$/.test(String(d.rk[0].k));
+    })
       .sort(function (a, b) { return b.rk[0].n / list.length - a.rk[0].n / list.length; })[0];
     var sub = !list.length ? esc(code) + ' ' + esc(def.short || def.title) + ' — 이 범위에 제출된 기록이 없습니다.'
-      : esc(code) + ' ' + list.length + '건(' + nSites + '곳)' + (top ? ' — ' + esc(top.f.label) + ' \'' + esc(trunc(top.rk[0].k, 24)) + '\' ' + top.rk[0].n + '건(기록의 ' + pct(top.rk[0].n / list.length) + ')이 가장 많습니다.' : '.');
+      : esc(code) + ' ' + num(list.length) + '건(' + nSites + '곳)' + (top ? ' — ' + esc(top.f.label) + ' \'' + esc(trunc(top.rk[0].k, 24)) + '\' ' + top.rk[0].n + '건(기록의 ' + pct(top.rk[0].n / list.length) + ')이 가장 많습니다.' : '.');
     var body = '<div class="toolbar anb-formbar">' + sel + '<span class="muted">' + esc(def.title) + ' · ' + esc((def.frequency && def.frequency.type) || '') + '</span><span class="spacer"></span><a class="btn ghost sm" href="#/records?form=' + esc(code) + '">기록 조회</a></div>';
     body += kpis([
       { label: '기록', value: num(list.length), unit: '건', lead: true, sub: s.label },
