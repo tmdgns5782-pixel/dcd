@@ -75,6 +75,13 @@
   function halfOf(s) { return String(s).slice(0, 4) + '-H' + (mon(s) <= 6 ? 1 : 2); }
   function weekday(s) { return pd(s).getDay(); }
   function minTs(a, b) { return a < b ? a : b; }
+  function maxD(a, b) { return a > b ? a : b; }
+  function qStartOf(s) { return String(s).slice(0, 5) + pad(Math.floor((mon(s) - 1) / 3) * 3 + 1) + '-01'; }
+  function hStartOf(s) { return String(s).slice(0, 5) + (mon(s) <= 6 ? '01' : '07') + '-01'; }
+  function qLabel(s) { return (Math.floor((mon(s) - 1) / 3) + 1) + '분기'; }
+  function hLabel(s) { return mon(s) <= 6 ? '상반기' : '하반기'; }
+  /** 오늘 이전에 끝난 가장 최근의 m월 안 날짜(dLo~dHi일) */
+  function lastMonthDay(m, dLo, dHi) { var y = +String(TODAY).slice(0, 4); if (mon(TODAY) <= m) y--; return y + '-' + pad(m) + '-' + pad(R.i(dLo, dHi)); }
 
   /* ───────── 사업장 정의(가상 고객사·주소) ───────── */
   var SITE_DEFS = [
@@ -744,6 +751,10 @@
       if (!site) return;
       var date = back(p.ago);
       if (!inRange(date)) return;
+      if (p.acc === '온열질환' && (mon(date) < 6 || mon(date) > 9)) {
+        p = Object.assign({}, p, { acc: '넘어짐', agent: '바닥·통로·계단', ov: '결빙된 옥외 배관 구역 순찰 중 미끄러져 넘어짐', vp: '발·발목', vi: '염좌', cc: ['기상', '바닥 미끄럼'],
+          ms: [['기술적', '결빙 구간 염화칼슘 살포·미끄럼 방지 매트 설치', '자체', '높음'], ['관리적', '한파 시 순찰 경로 단축·2인 1조', '자체', '보통']] });
+      }
       var sh = site.shifts.indexOf(p.sh) >= 0 ? p.sh : site.shifts[0];
       var hh = sh === '주간' ? R.i(10, 16) : sh === '오후' ? R.i(17, 21) : 23;
       var occ = ts(date, hh, R.i(0, 59));
@@ -812,6 +823,7 @@
       if (!site) return;
       var date = back(p.ago), f = 'F10';
       if (!inRange(date)) return;
+      if (/태풍/.test(p.sit) && (mon(date) < 7 || mon(date) > 10)) p = Object.assign({}, p, { sit: '한파 경보 중 부두 외곽 순찰 지시 — 순찰 중지·실내 대기' });
       var sh = site.shifts.indexOf(p.sh) >= 0 ? p.sh : site.shifts[0];
       var hz = ts(date, sh === '야간' ? 23 : R.i(10, 16), R.i(0, 50));
       var stop = tsAdd(hz, R.i(1, 4)), rep = tsAdd(hz, R.i(3, 9)), act = tsAdd(rep, R.i(10, 40)), res = tsAdd(act, R.i(30, 120));
@@ -943,7 +955,10 @@
           if (feels >= 35 && R.chance(0.7)) alert = '폭염경보';
           else if (feels >= 33 && R.chance(0.6)) alert = '폭염주의보';
           else if (wx.storm) alert = '강풍·태풍';
+          else if ((m === 12 || m <= 2) && feels <= -10 && R.chance(0.7)) alert = '한파경보';
+          else if ((m === 12 || m <= 2) && feels <= -6 && R.chance(0.5)) alert = '한파주의보';
           else if (m === 7 && wx.w === '비' && R.chance(0.25)) alert = '호우';
+          var cold = /한파/.test(alert);
           var perShift = Math.max(2, Math.round(site.headcount / nSh / 2.4));
           var attend = Math.max(1, perShift - R.w([[0, 6], [1, 3], [2, 1]]));
           var hc = site._d.prof === 'weak' && R.chance(0.15) ? attend - 1 : attend;
@@ -968,6 +983,7 @@
             heatRestNote: hot && site._d.prof === 'weak' ? '교대 인원 부족 — 다음 근무부터 휴식 시간 조정' : undefined,
             heatMeasures: hot ? opts(f, 'heatMeasures', R.sample(['시원한 물', '그늘·냉방', '보냉장구', '14~17시', '2인 1조'], R.i(2, 4))) : undefined,
             heatSymptom: hot ? 0 : undefined,
+            coldMeasures: cold ? opts(f, 'coldMeasures', ['방한복', '따뜻한 휴게공간', '결빙 구간']) : undefined, coldSymptom: cold ? 0 : undefined,
             tbmTime: pad(startH) + ':' + pad(R.i(0, 2) * 10), tbmTarget: tgt, tbmAttend: tbmA, tbmMakeup: tgt - tbmA, tbmTopic: wx.w === '비' ? TBM_TOPICS[0] : hot ? TBM_TOPICS[2] : R.pick(TBM_TOPICS),
             nightSolo: night ? R.i(1, Math.min(3, attend)) : 0, welfareChecks: night ? R.i(4, 8) : R.i(0, 2), noReply: 0,
             accidentCount: ev ? ev.acc : 0, nearMissCount: ev ? ev.near : 0, incidentRef: ev && ev.accId ? ev.accId : undefined,
@@ -979,7 +995,7 @@
           var status = '확인', keep = false, rn;
           if (isToday) status = '작성중';
           else if (age <= 1 && REVIEW_F07[site.id] && si === 0) { keep = true; status = '확인'; }
-          else if (!returned && site.id === RETURN_F07 && age >= 4 && age <= 9 && checks) {
+          else if (!returned && site.id === RETURN_F07 && age >= 3 && age <= 14 && checks) {
             returned = true; status = '반려'; rn = '불량 항목의 사진과 즉시 조치 내용이 빠져 있습니다. 보완해 다시 제출해 주세요.';
           }
           var hqConf = ts(add(sub.slice(0, 10), R.w([[0, 3], [1, 6], [2, 2]])), R.i(9, 17), R.i(0, 59));
@@ -1021,7 +1037,7 @@
             mmethod: opt(f, 'sec_makeup.mmethod', '개별 대면'), mby: site._officer, level: doneM ? undefined : '낮음' };
         });
         var status, rn;
-        if (!ret && site.id === 'S007' && age < 40) { ret = true; status = '반려'; rn = '교육 사진 2장과 참석자 서명이 빠져 있습니다. 첨부해 다시 제출해 주세요.'; }
+        if (!ret && site.id === 'S007' && age < 75) { ret = true; status = '반려'; rn = '교육 사진 2장과 참석자 서명이 빠져 있습니다. 첨부해 다시 제출해 주세요.'; }
         mk(f, site, date, {
           author: site._officer,
           pre: { planType: opt(f, 'planType', '사전 계획'), course: opt(f, 'course', course), eduTitle: title, planDate: date, planHours: 2, planMethod: opt(f, 'planMethod', '집체'),
@@ -1046,9 +1062,11 @@
     SITES.forEach(function (site, si) {
       var mode = site.id === 'S004' || site.id === 'S009' || site.id === 'S010' ? 'none' : (site.id === 'S005' || site.id === 'S011') ? 'plan' : 'done';
       if (mode === 'none') return;
-      var h2 = TODAY.slice(0, 4) + '-07-01';
-      var planAt = add(h2 < START ? START : h2, R.i(3, 20));
-      var drill = add(back(R.i(6, 50)), 0);
+      var lo = maxD(hStartOf(TODAY), START), hi = back(6);
+      var planAt = minTs(add(lo, R.i(3, 20)), back(1));
+      if (planAt < lo) return;
+      var drill = hi >= lo ? add(hi, -R.i(0, Math.min(44, diff(lo, hi)))) : '';
+      if (!drill && mode === 'done') mode = 'plan';
       var scen = R.pick(['화재', '정전·승강기', '응급환자', '폭언·난동', '지진']);
       var part = R.sample(site._names, Math.max(3, site._names.length - R.i(1, 3)));
       var non = site._names.filter(function (n) { return part.indexOf(n) < 0; });
@@ -1058,21 +1076,21 @@
       var t0 = '14:00';
       mk(f, site, mode === 'plan' ? planAt : drill, {
         author: site._officer, requestId: req ? req.id : '',
-        pre: { drillTitle: TODAY.slice(0, 4) + ' 하반기 ' + scen.replace(/·.*/, '') + ' 대응 훈련', scenario: opt(f, 'scenario', scen),
+        pre: { drillTitle: TODAY.slice(0, 4) + ' ' + hLabel(TODAY) + ' ' + scen.replace(/·.*/, '') + ' 대응 훈련', scenario: opt(f, 'scenario', scen),
           drillType: opt(f, 'drillType', si % 3 === 0 ? '고객사 합동' : '자체 훈련'), drillMode: opt(f, 'drillMode', '실제 행동'), partner: si % 3 === 0 ? '고객사 시설·방재팀' : undefined,
-          planDate: drill, planTime: t0, planPlace: site.places[0] + ' 일대', leader: site._chief, targetScope: opts(f, 'targetScope', ['전 근무자']),
+          planDate: mode === 'plan' ? add(TODAY, R.i(3, 12)) : drill, planTime: t0, planPlace: site.places[0] + ' 일대', leader: site._chief, targetScope: opts(f, 'targetScope', ['전 근무자']),
           goal: '최초 전파 1분·대피 완료 10분 안', targetCount: site._names.length, repeatCheck: opt(f, 'repeatCheck', '직전 2회와 다른'),
-          drillDate: drill, place: site.places[0] + ' 일대', evaluator: site._officer, planRevDate: add(drill, -60),
+          drillDate: drill || undefined, place: site.places[0] + ' 일대', evaluator: site._officer, planRevDate: add(drill || planAt, -60),
           tStart: t0, tAlert: '14:01', tReport: '14:02', tCall: '14:03', tEvac: '14:03', tDone: '14:' + pad(R.i(7, 12)), tEnd: '14:40',
           participants: part, nonParticipants: non,
           goalMet: opt(f, 'goalMet', ck ? '일부 달성' : '목표 달성'), debrief: opt(f, 'debrief', '훈련 직후'), planRevise: opt(f, 'planRevise', '개정 불필요'),
           goodPoints: '무전 전파와 집결지 인원 확인이 빨랐음', weakPoints: ck ? '비상연락망 일부 번호 갱신 누락' : '야간조 참여 인원 적음',
-          nextScenario: opt(f, 'nextScenario', R.pick(['화재', '지진', '응급환자'])), nextDate: add(drill, 180) },
+          nextScenario: opt(f, 'nextScenario', R.pick(['화재', '지진', '응급환자'])), nextDate: add(drill || planAt, 180) },
         checks: ck ? { sec_perf: ck } : null,
         rows: { sec_relay: non.map(function (n) { return { rperson: n, rreason: opt(f, 'sec_relay.rreason', '비번'), rstatus: opt(f, 'sec_relay.rstatus', '전달교육 완료'),
-          rplan: '훈련 사진으로 절차 설명 후 확인', rdate: add(drill, R.i(1, 5)), rmethod: opt(f, 'sec_relay.rmethod', '훈련 사진'), rby: site._officer }; }) },
+          rplan: '훈련 사진으로 절차 설명 후 확인', rdate: add(drill || planAt, R.i(1, 5)), rmethod: opt(f, 'sec_relay.rmethod', '훈련 사진'), rby: site._officer }; }) },
         stages: mode === 'plan' ? 1 : 3, status: mode === 'plan' ? '작성중' : status, stageAt: ts(planAt, 15, 0),
-        createdAt: ts(mode === 'plan' ? planAt : drill, 15, R.i(0, 50)), submitAt: ts(add(drill, R.i(1, 5)), 16, R.i(0, 59))
+        createdAt: ts(mode === 'plan' ? planAt : drill, 15, R.i(0, 50)), submitAt: ts(add(drill || planAt, R.i(1, 5)), 16, R.i(0, 59))
       });
     });
   }
@@ -1082,9 +1100,9 @@
     var f = 'N4';
     SITES.filter(function (s) { return s.hec; }).forEach(function (site, i) {
       var qs = [];
-      var q3 = TODAY.slice(0, 4) + '-09-' + pad(R.i(8, 26));
-      if (inRange(q3)) qs.push({ date: q3, q: '3분기', st: 2, status: '확인' });
-      if (i < 3) qs.push({ date: back(R.i(4, 18)), q: '4분기', st: i === 2 ? 1 : 2, status: i === 2 ? '작성중' : (i === 0 ? '제출' : '확인'), req: true });
+      var pq = add(qStartOf(TODAY), -1), q3 = pq.slice(0, 8) + pad(R.i(8, 26));
+      if (inRange(q3) && q3 <= back(1)) qs.push({ date: q3, q: qLabel(q3), st: 2, status: '확인' });
+      if (i < 3 && back(4) >= qStartOf(TODAY)) qs.push({ date: maxD(back(R.i(4, 18)), qStartOf(TODAY)), q: qLabel(TODAY), st: i === 2 ? 1 : 2, status: i === 2 ? '작성중' : (i === 0 ? '제출' : '확인'), req: true });
       qs.forEach(function (x) {
         var mock = site.hecNextEval && diff(x.date, site.hecNextEval) <= 45 && diff(x.date, site.hecNextEval) >= 0;
         var nb = site._d.prof === 'weak' ? R.i(3, 5) : R.i(1, 2);
@@ -1146,7 +1164,7 @@
   function genF08(reqQ3) {
     SITES.forEach(function (site, si) {
       // F08A 계절 지급(7월 방서) + 10월 방한
-      [[TODAY.slice(0, 4) + '-07-' + pad(R.i(6, 20)), '방서 용품', '계절 지급'], [TODAY.slice(0, 4) + '-10-' + pad(R.i(18, 28)), '방한 용품', '계절 지급']].forEach(function (x, k) {
+      [[lastMonthDay(7, 6, 20), '방서 용품', '계절 지급'], [lastMonthDay(10, 18, 28), '방한 용품', '계절 지급']].forEach(function (x, k) {
         if (!inRange(x[0]) || x[0] > back(1)) return;
         if (k === 1 && site._d.prof === 'weak') return;
         var who = R.sample(site._workers, Math.min(4, site._workers.length));
@@ -1158,11 +1176,10 @@
           status: '확인', createdAt: ts(x[0], 16, R.i(0, 50))
         });
       });
-      // F08B 3분기 실사
-      var y = TODAY.slice(0, 4);
-      var pd8 = y + '-09-' + pad(R.i(22, 30));
+      // F08B 직전 분기 실사(분기 마지막 주 실사, 다음 분기 10일까지 제출)
+      var qs8 = qStartOf(TODAY), pd8 = add(qs8, -R.i(1, 9));
       if (inRange(pd8) && !(site.id === 'S009')) {
-        var sub = site._d.prof === 'weak' ? ts(y + '-10-' + pad(R.i(12, 16)), 15, R.i(0, 59)) : ts(add(pd8, R.i(1, 6)), 15, R.i(0, 59));
+        var sub = site._d.prof === 'weak' ? ts(add(qs8, R.i(11, 15)), 15, R.i(0, 59)) : ts(add(pd8, R.i(1, 6)), 15, R.i(0, 59));
         var bad = site._d.prof !== 'good' && R.chance(0.6);
         var stock = [
           { name: opt('F08B', 'sec_stock.name', '경광봉'), qty: R.i(6, 20), state: '양호', cert: opt('F08B', 'sec_stock.cert', '인증 비대상') },
@@ -1195,12 +1212,12 @@
 
   /* 작업중지권 반기 점검(F10B) — 상반기(6월 하순 점검, 7월 10일까지 제출) + 하반기 일부 조기 */
   function genF10B() {
-    var f = 'F10B', y = TODAY.slice(0, 4);
+    var f = 'F10B', hs = hStartOf(TODAY), ph = add(hs, -1), phs = hStartOf(ph);
     SITES.forEach(function (site, si) {
       var list = [];
-      var h1 = y + '-06-' + pad(R.i(20, 29));
-      if (diff(h1, TODAY) <= 140) list.push({ date: h1, half: '상반기', from: y + '-01-01', to: y + '-06-30', sub: site._d.prof === 'weak' ? ts(y + '-07-' + pad(R.i(12, 16)), 14, 0) : ts(y + '-07-0' + R.i(1, 8), 14, R.i(0, 59)) });
-      if (si % 2 === 0 && site._d.prof !== 'weak') { var dh = back(R.i(5, 25)); list.push({ date: dh, half: '하반기', from: y + '-07-01', to: y + '-12-31' }); }
+      var h1 = add(ph, -R.i(1, 10));
+      if (h1 >= add(START, -20)) list.push({ date: h1, half: hLabel(ph), from: phs, to: ph, sub: site._d.prof === 'weak' ? ts(add(hs, R.i(11, 15)), 14, 0) : ts(add(hs, R.i(0, 7)), 14, R.i(0, 59)) });
+      if (si % 2 === 0 && site._d.prof !== 'weak' && back(5) >= hs) { var dh = maxD(back(R.i(5, 25)), hs); list.push({ date: dh, half: hLabel(TODAY), from: hs, to: add(hStartOf(add(hs, 200)), -1) }); }
       list.forEach(function (x) {
         var ck = site._d.prof !== 'good' ? badChecks(FORM[f], 'sec_items', site, {}, 1, 0.1, null, null) : null;
         var cnt = 0;
@@ -1317,19 +1334,27 @@
       return r;
     }
     var out = {};
-    var aug = y + '-08-01';
-    if (aug >= START) out.f06 = rq({ kind: 'form', title: '8월 폭염 대응 점검 제출', forms: ['F06'], sites: ['*'], periodKey: y + '-08', openAt: aug, due: y + '-08-31', status: '마감',
+    var aug = (mon(TODAY) > 8 ? +y : +y - 1) + '-08-01';
+    if (aug >= START) out.f06 = rq({ kind: 'form', title: '8월 폭염 대응 점검 제출', forms: ['F06'], sites: ['*'], periodKey: aug.slice(0, 7), openAt: aug, due: monthEnd(aug), status: '마감',
       message: '폭염 대응 체계 점검(F06)을 8월 말까지 제출해 주세요. 휴식 부여·식수·그늘 확보 사진을 함께 올려 주세요.' });
-    out.f08b = rq({ kind: 'form', title: '3분기 보호구 보유 실사 제출', forms: ['F08B'], sites: ['*'], periodKey: y + '-Q3', openAt: y + '-09-22', due: y + '-10-10', status: '마감',
-      lastRemindAt: ts(y + '-10-11', 8, 0), message: '분기 말 보호구 보유 수량과 상태를 실사해 10월 10일까지 제출해 주세요.' });
-    out.n2 = rq({ kind: 'form', title: y + ' 하반기 비상대응훈련 결과 제출', forms: ['N2'], sites: ['*'], periodKey: y + '-H2', openAt: y + '-09-01', due: add(TODAY, 6),
-      lastRemindAt: ts(add(TODAY, -1), 8, 0), message: '하반기 비상대응훈련을 실시하고 결과(사진 2장 이상·참여자 서명)를 제출해 주세요. 아직 계획 단계면 실시일을 먼저 등록해 주세요.' });
-    out.n4 = rq({ kind: 'form', title: '동절기 대비 분기 점검', forms: ['N4'], sites: hecSites.length ? hecSites : ['*'], periodKey: y + '-Q4', openAt: add(TODAY, -21), due: add(TODAY, -1),
+    var qs = qStartOf(TODAY), pq = add(qs, -1), qDue = add(qs, 9);
+    out.f08b = rq({ kind: 'form', title: qLabel(pq) + ' 보호구 보유 실사 제출', forms: ['F08B'], sites: ['*'], periodKey: quarterOf(pq), openAt: add(pq, -8), due: qDue,
+      status: qDue < TODAY ? '마감' : '진행', lastRemindAt: add(qDue, 1) <= TODAY ? ts(add(qDue, 1), 8, 0) : '',
+      message: '분기 말 보호구 보유 수량과 상태를 실사해 ' + mon(qDue) + '월 ' + (+qDue.slice(8, 10)) + '일까지 제출해 주세요.' });
+    var hs = hStartOf(TODAY), n2open = add(hs, 62) <= back(14) ? add(hs, 62) : minTs(hs, back(7));
+    out.n2 = rq({ kind: 'form', title: y + ' ' + hLabel(TODAY) + ' 비상대응훈련 결과 제출', forms: ['N2'], sites: ['*'], periodKey: halfOf(TODAY), openAt: n2open, due: add(TODAY, 6),
+      lastRemindAt: ts(add(TODAY, -1), 8, 0), message: hLabel(TODAY) + ' 비상대응훈련을 실시하고 결과(사진 2장 이상·참여자 서명)를 제출해 주세요. 아직 계획 단계면 실시일을 먼저 등록해 주세요.' });
+    var winter = mon(TODAY) >= 10 || mon(TODAY) <= 3, summer = mon(TODAY) >= 5 && mon(TODAY) <= 9;
+    out.n4 = rq({ kind: 'form', title: winter ? '동절기 대비 분기 점검' : summer ? '하절기 대비 분기 점검' : qLabel(TODAY) + ' 사업장 분기 점검', forms: ['N4'],
+      sites: hecSites.length ? hecSites : ['*'], periodKey: quarterOf(TODAY), openAt: maxD(add(TODAY, -21), qs), due: add(TODAY, -1),
       lastRemindAt: ts(TODAY, 8, 0), message: 'HEC 대상 사업장은 동절기 대비 분기 점검표(N4)를 작성해 제출해 주세요. 결빙·화재·전열기구 항목을 꼭 확인해 주세요.' });
-    out.notice1 = rq({ kind: 'notice', title: '동절기 한파·대설 대비 안전수칙 안내', sites: ['*'], openAt: add(TODAY, -5), ack: true,
-      message: '한파특보 시 옥외 근무 시간 단축, 방한 보호구 착용, 결빙 구간 제설을 지켜 주세요. TBM 때 전 근무자에게 전파하고 확인을 눌러 주세요.' });
+    out.notice1 = summer
+      ? rq({ kind: 'notice', title: '폭염 대비 온열질환 예방수칙 안내', sites: ['*'], openAt: add(TODAY, -5), ack: true,
+        message: '체감온도 33℃ 이상이면 매시간 10~15분 휴식, 14~17시 옥외 근무 단축, 시원한 물 제공을 지켜 주세요. TBM 때 전 근무자에게 전파하고 확인을 눌러 주세요.' })
+      : rq({ kind: 'notice', title: '동절기 한파·대설 대비 안전수칙 안내', sites: ['*'], openAt: add(TODAY, -5), ack: true,
+        message: '한파특보 시 옥외 근무 시간 단축, 방한 보호구 착용, 결빙 구간 제설을 지켜 주세요. TBM 때 전 근무자에게 전파하고 확인을 눌러 주세요.' });
     out.notice2 = rq({ kind: 'notice', title: '작업중지권 안내문 재게시 요청', sites: ['*'], openAt: add(TODAY, -17), ack: true,
-      message: '초소·휴게실에 작업중지권 안내문(최신본)을 다시 게시하고 확인을 눌러 주세요. 하반기 이행점검(F10B) 때 게시 사진을 확인합니다.' });
+      message: '초소·휴게실에 작업중지권 안내문(최신본)을 다시 게시하고 확인을 눌러 주세요. ' + hLabel(TODAY) + ' 이행점검(F10B) 때 게시 사진을 확인합니다.' });
     return out;
   }
   function makeReads() {

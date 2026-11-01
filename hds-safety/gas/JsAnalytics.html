@@ -477,7 +477,7 @@
       + '<div class="an-print-meta">' + esc(sc.from + ' ~ ' + sc.to) + '<br>' + esc(sc.siteLabel) + '<br>출력 ' + esc(stamp) + '</div></header>'
       + '<h1 class="an-print-title">' + esc(title || '분석 보고서') + '</h1>'
       + '<div class="an-print-body">' + html + '</div></article>';
-    Array.prototype.forEach.call(root.querySelectorAll('button, select, input, .chart-tip, .an-noprint, .seg'), function (n) { n.remove(); });
+    Array.prototype.forEach.call(root.querySelectorAll('button, select, input, a.btn, .chart-tip, .an-noprint, .seg'), function (n) { n.remove(); });
     Array.prototype.forEach.call(root.querySelectorAll('[data-href],[data-act]'), function (n) { n.removeAttribute('data-href'); n.removeAttribute('data-act'); });
     document.body.classList.add('an-printing');
     var done = function () { document.body.classList.remove('an-printing'); root.innerHTML = ''; window.removeEventListener('afterprint', done); };
