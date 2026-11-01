@@ -14,7 +14,7 @@
 방법 하나만 고릅니다. 한 프로젝트에 섞지 않습니다.
 
 - [ ] 개발 담당자가 `paste/` 를 최신 `gas/` 로 다시 만들어(`npm run paste`) 검사(`npm run check`, `npm run test:paste`)를 통과시킨 뒤 함께 전달했다.
-- [ ] (A) 붙여넣기: 편집기 파일 목록이 `appsscript.json`, `Code.gs`, `Index.html`, `Styles.html`, `App.html`, `FormsData.html` 6개이고, 각각 `paste/` 의 같은 이름 파일 내용으로 통째로 바꿨다.
+- [ ] (A) 붙여넣기: 편집기 파일 목록이 `appsscript.json`, `Code.gs`, `Index.html`, `Styles.html`, `App.html`, `App2.html`, `App3.html`, `FormsData.html` 8개이고, 각각 `paste/` 의 같은 이름 파일 내용으로 통째로 바꿨다.
 - [ ] (A) 를 `gas/` 파일로 했다면: `gas/` 의 파일(현재 `appsscript.json` + `.gs` 10개 + `.html` 12개)을 같은 이름으로 만들었고, 기본 `Code.gs` 는 지웠다.
 - [ ] (B) clasp: Apps Script API 를 켰고, `.clasp.json` 에 스크립트 ID 를 넣었고, `npm run push` 가 오류 없이 끝났다.
 - [ ] `Code.gs`(붙여넣기)와 `Config.gs` 등(`gas/`)이 한 프로젝트에 함께 있지 않다.

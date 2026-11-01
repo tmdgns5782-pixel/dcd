@@ -7,7 +7,7 @@
  *
  * 만드는 파일(편집기에서 만들 파일 이름 = 확장자 뺀 이름)
  *   paste/Code.gs          gas/*.gs 전부(Config.gs 먼저, 나머지 이름순)를 파일별 머리 주석과 함께 이어 붙인 한 파일
- *   paste/Index.html       gas/Index.html 에서 include 를 FormsData·Styles·App 세 개로 바꿔 쓴 것
+ *   paste/Index.html       gas/Index.html 에서 include 를 FormsData·Styles·App·App2·App3 다섯 개로 바꿔 쓴 것
  *   paste/Styles.html      Css + CssEngine + CssViews
  *   paste/App.html         JsCharts + JsCore + JsEngine + JsDemo + JsHq + JsAnalytics + JsSite (Index.html 의 include 순서대로)
  *   paste/FormsData.html   gas/FormsData.html 그대로 (서버 Db.forms() 가 이 이름으로 읽는다)
@@ -28,7 +28,9 @@ export const PASTE = path.join(ROOT, 'paste');
 /** 붙여넣기 묶음 정의: 묶음 이름 → 원본 HTML 이름들(순서는 Index.html include 순서를 따른다) */
 export const BUNDLES = {
   Styles: ['Css', 'CssEngine', 'CssViews'],
-  App: ['JsCharts', 'JsCore', 'JsEngine', 'JsDemo', 'JsHq', 'JsAnalytics', 'JsSite']
+  App: ['JsCharts', 'JsCore', 'JsEngine'],
+  App2: ['JsDemo', 'JsHq'],
+  App3: ['JsAnalytics', 'JsSite']
 };
 /** 그대로 옮기는 HTML (이름 유지) */
 export const KEEP = ['FormsData'];
@@ -109,8 +111,8 @@ export function buildPaste({ quiet = false, outDir = PASTE } = {}) {
   pIndex = pIndex.replace(/^[ \t]*\u0000DROP\u0000[ \t]*\n/gm, '').replace(/\u0000DROP\u0000/g, '');
   out['Index.html'] = pIndex;
   const pOrder = [...pIndex.matchAll(INCLUDE_RE)].map((m) => m[1]);
-  const want = ['FormsData', 'Styles', 'App'];
-  if (pOrder.length !== 3 || want.some((w) => !pOrder.includes(w))) problems.push(`paste/Index.html include 가 FormsData·Styles·App 세 개가 아닙니다: ${pOrder.join(', ')}`);
+  const want = [...KEEP, ...Object.keys(BUNDLES)];
+  if (pOrder.length !== want.length || want.some((w) => !pOrder.includes(w))) problems.push(`paste/Index.html include 가 ${want.join('·')} 가 아닙니다: ${pOrder.join(', ')}`);
   const rest = pIndex.replace(INCLUDE_RE, '').replace(BOOT_RE, '');
   for (const h of scriptletHits(rest)) problems.push(`paste/Index.html:${h.line} 허용되지 않은 스크립틀릿 문자열: ${h.text}`);
   if (!BOOT_RE.test(pIndex)) problems.push('paste/Index.html 에 <?!= BOOT ?> 가 없습니다');
@@ -156,11 +158,11 @@ export function buildPaste({ quiet = false, outDir = PASTE } = {}) {
     '2) 서버 코드',
     `   처음부터 있는 Code.gs 를 열고 내용을 모두 지운 뒤 paste/Code.gs (${kb(out['Code.gs'])}) 내용을 붙여넣습니다.`,
     '',
-    '3) HTML 파일 4개 — 파일 옆 [+] > HTML 로 아래 이름 그대로 만듭니다(.html 은 편집기가 붙입니다. 대소문자 그대로).',
+    `3) HTML 파일 ${2 + Object.keys(BUNDLES).length}개 — 파일 옆 [+] > HTML 로 아래 이름 그대로 만듭니다(.html 은 편집기가 붙입니다. 대소문자 그대로).`,
     '   새 파일에 들어 있는 기본 내용은 모두 지우고 붙여넣습니다.',
     `   - Index      ← paste/Index.html (${kb(out['Index.html'])})`,
     `   - Styles     ← paste/Styles.html (${kb(out['Styles.html'])})`,
-    `   - App        ← paste/App.html (${kb(out['App.html'])})`,
+    ...Object.keys(BUNDLES).filter((b) => b !== 'Styles').map((b) => `   - ${b.padEnd(10)} ← paste/${b}.html (${kb(out[b + '.html'])})`),
     `   - FormsData  ← paste/FormsData.html (${kb(out['FormsData.html'])})`,
     '   큰 파일은 텍스트 편집기에서 전체 선택(Ctrl+A)·복사 후 붙여넣고, 끝부분이 잘리지 않았는지 마지막 줄을 확인합니다.',
     '   [저장](Ctrl+S) 을 누릅니다. 파일 목록 순서는 상관없습니다.',

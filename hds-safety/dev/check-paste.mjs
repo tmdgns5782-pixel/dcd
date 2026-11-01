@@ -245,7 +245,8 @@ if (!ONLY_GAS) {
     checkHtmlSet(PASTE, 'paste');
     const idx = fs.readFileSync(path.join(PASTE, 'Index.html'), 'utf8');
     const inc = [...idx.matchAll(INCLUDE_RE)].map((m) => m[1]);
-    if (inc.join(',') !== 'FormsData,Styles,App') bad('paste/Index.html', `include 가 FormsData, Styles, App 순서가 아닙니다: ${inc.join(', ')}`);
+    const wantInc = 'FormsData,Styles,App,App2,App3';
+    if (inc.join(',') !== wantInc) bad('paste/Index.html', `include 가 ${wantInc} 순서가 아닙니다: ${inc.join(', ')}`);
     const big = fs.readdirSync(PASTE).map((f) => ({ f, size: fs.statSync(path.join(PASTE, f)).size })).filter((x) => x.size > 1024 * 1024);
     for (const x of big) warn(`paste/${x.f}`, `${(x.size / 1024 / 1024).toFixed(2)}MB — 편집기 붙여넣기가 느릴 수 있습니다(끝까지 붙었는지 마지막 줄 확인)`);
   }

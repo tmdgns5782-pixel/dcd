@@ -7,7 +7,7 @@ HDS(주) 안전경영지원실(본사)이 표준 안전보건 양식을 사업�
 - 사용 설명서(본사·사업장 담당자용): [docs/USER-GUIDE.md](docs/USER-GUIDE.md)
 - 운영 시작 전 확인 목록: [docs/DEPLOY-CHECKLIST.md](docs/DEPLOY-CHECKLIST.md)
 - 양식 6~10번·N1~N4 검토·보완 내역: [docs/FORMS-REVIEW.md](docs/FORMS-REVIEW.md)
-- 붙여넣기 설치 파일 6개: [paste/](paste/) — 설치 순서는 [5. 배포 방법 (A)](#5-배포-방법-a-붙여넣기)
+- 붙여넣기 설치 파일 8개: [paste/](paste/) — 설치 순서는 [5. 배포 방법 (A)](#5-배포-방법-a-붙여넣기)
 - 설계 계약서(개발자용): [SPEC.md](SPEC.md)
 
 ---
@@ -141,8 +141,8 @@ hds-safety/
     test/server.test.mjs    서버 시험
     test/e2e.mjs            화면 시험(Playwright)
     shots/                  화면 시험 스크린샷
-  paste/                    붙여넣기 설치용 6개 파일(gas/ 에서 만든 것. 직접 고치지 않음)
-    appsscript.json  Code.gs  Index.html  Styles.html  App.html  FormsData.html  붙여넣기-안내.txt
+  paste/                    붙여넣기 설치용 8개 파일(gas/ 에서 만든 것. 직접 고치지 않음)
+    appsscript.json  Code.gs  Index.html  Styles.html  App.html  App2.html  App3.html  FormsData.html  붙여넣기-안내.txt
   dist/preview.html         미리보기(브라우저로 바로 열림)
   vendor/                   taste-skill 원본 파일·라이선스
   ref/                      원본 양식·이전 프로토타입(읽기 전용)
@@ -153,7 +153,7 @@ hds-safety/
 ## 5. 배포 방법 (A) 붙여넣기
 
 컴퓨터에 아무것도 설치하지 않고 브라우저만으로 올리는 방법입니다. **처음 설치는 이 방법을 권합니다.**
-붙여넣을 파일은 `paste/` 폴더의 6개입니다. `gas/` 의 파일을 종류별로 합쳐 둔 것이라 내용은 같습니다.
+붙여넣을 파일은 `paste/` 폴더의 8개입니다(한 파일이 너무 크지 않게 화면 코드를 App·App2·App3 셋으로 나눴습니다). `gas/` 의 파일을 종류별로 합쳐 둔 것이라 내용은 같습니다.
 
 | `paste/` 파일 | 편집기에서 만들 파일 | 만드는 방법 | 들어 있는 것 |
 |---|---|---|---|
@@ -161,7 +161,9 @@ hds-safety/
 | `Code.gs` | `Code.gs` | 이미 있음(새 프로젝트의 기본 파일) | 서버 코드 전부 |
 | `Index.html` | `Index` | 파일 옆 `+` → HTML | 화면 뼈대 |
 | `Styles.html` | `Styles` | 파일 옆 `+` → HTML | 디자인 |
-| `App.html` | `App` | 파일 옆 `+` → HTML | 화면 코드 |
+| `App.html` | `App` | 파일 옆 `+` → HTML | 화면 코드 1(차트·코어·양식 엔진) |
+| `App2.html` | `App2` | 파일 옆 `+` → HTML | 화면 코드 2(본사 화면·예시 데이터) |
+| `App3.html` | `App3` | 파일 옆 `+` → HTML | 화면 코드 3(분석·사업장 화면) |
 | `FormsData.html` | `FormsData` | 파일 옆 `+` → HTML | 표준 양식 정의 |
 
 `paste/붙여넣기-안내.txt` 는 이 절차를 줄인 메모입니다. 편집기에 붙여넣지 않습니다.
@@ -181,10 +183,10 @@ hds-safety/
 4. `appsscript.json` 을 열어 내용을 모두 지우고 `paste/appsscript.json` 내용을 붙여넣습니다.
 5. `Code.gs` 를 열어 기본 내용(`function myFunction() {…}`)을 모두 지우고 `paste/Code.gs` 내용을 붙여넣습니다.
 6. **파일** 옆 `+` → **HTML** → 이름에 `Index` 를 넣습니다(`.html` 은 자동으로 붙음). 기본 내용을 모두 지우고 `paste/Index.html` 내용을 붙여넣습니다.
-7. 같은 방법으로 HTML 파일 `Styles`, `App`, `FormsData` 를 만들고 각각 `paste/Styles.html`, `paste/App.html`, `paste/FormsData.html` 내용을 붙여넣습니다.
+7. 같은 방법으로 HTML 파일 `Styles`, `App`, `App2`, `App3`, `FormsData` 를 만들고 각각 `paste/` 의 같은 이름 파일 내용을 붙여넣습니다.
    - 이름은 대소문자까지 똑같이 맞춥니다. `Index.html` 이 이 이름으로 나머지 파일을 불러옵니다.
-   - `App.html` 과 `FormsData.html` 은 큰 파일입니다. 붙여넣는 동안 편집기가 멈춘 듯 보여도 기다립니다.
-8. 저장합니다(Ctrl+S, 또는 위쪽 디스크 아이콘). 왼쪽 파일 목록이 `appsscript.json`, `Code.gs`, `Index.html`, `Styles.html`, `App.html`, `FormsData.html` 6개인지 확인합니다.
+   - `App`·`App2`·`FormsData` 는 큰 파일(400KB 안팎)입니다. 붙여넣는 동안 편집기가 멈춘 듯 보여도 기다립니다.
+8. 저장합니다(Ctrl+S, 또는 위쪽 디스크 아이콘). 왼쪽 파일 목록이 `appsscript.json`, `Code.gs`, `Index.html`, `Styles.html`, `App.html`, `App2.html`, `App3.html`, `FormsData.html` 8개인지 확인합니다.
    저장할 때 문법 오류가 나면 그 파일이 덜 붙여넣어진 것입니다. 내용을 모두 지우고 다시 통째로 붙여넣습니다.
 9. 왼쪽에서 `Code.gs` 를 연 상태로, 위쪽 함수 목록에서 **`setup`** 을 고르고 **실행**을 누릅니다.
    함수 목록에는 지금 열려 있는 파일의 함수만 나옵니다.
@@ -348,7 +350,7 @@ Node.js 20 이상이 필요합니다.
 | 명령 | 하는 일 |
 |---|---|
 | `npm run build` | `gas/` 를 묶어 `dist/preview.html` 하나로 만듦(가짜 서버 내장) |
-| `npm run paste` | `gas/` 를 묶어 `paste/` 붙여넣기 파일 6개(+안내 메모)를 다시 만듦. `gas/` 를 고친 뒤에는 꼭 다시 실행 |
+| `npm run paste` | `gas/` 를 묶어 `paste/` 붙여넣기 파일 8개(+안내 메모)를 다시 만듦. `gas/` 를 고친 뒤에는 꼭 다시 실행 |
 | `npm run check` | 붙여넣기 배포 규칙 검사: `'<?'`·`'?>'` 문자열, import/export·require, 다른 파일 객체를 최상위에서 바로 부르는 코드(파일 순서 의존), 전역 이름 충돌, `paste/` 가 `gas/` 최신인지 |
 | `npm test` | Node 에서 서버 시나리오 시험(setup → 로그인 → 사업장 → 기록 저장·제출·반려·재제출·확인 → 조치 → 요청·독촉 메일 → 내보내기 → 권한 위반 거부). `.gs` 를 GAS 처럼 파일마다 따로(역순으로) 올리는 단계 포함 |
 | `npm run test:paste` | `paste/` 를 다시 만든 뒤 `paste/Code.gs` 를 올려 같은 시나리오 시험(붙여넣기 묶음이 그대로 동작하는지) |
@@ -459,7 +461,7 @@ Google Apps Script·Gmail 의 계정 한도가 그대로 적용됩니다.
 **(A) 붙여넣기**
 
 1. 새로 받은 `paste/` 파일 중 바뀐 파일을 편집기의 같은 이름 파일에 **통째로** 다시 붙여넣고 저장합니다.
-   어느 파일이 바뀌었는지 모르면 6개 모두 다시 붙여넣습니다.
+   어느 파일이 바뀌었는지 모르면 8개 모두 다시 붙여넣습니다.
 2. **배포** → **배포 관리** → 지금 쓰는 배포 선택 → 연필(수정) 아이콘 → 버전: **새 버전** → 설명 입력 → **배포**.
 
 **(B) clasp**

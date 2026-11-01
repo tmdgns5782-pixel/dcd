@@ -402,9 +402,9 @@ Paperlogy 7Bold(`https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-
   - `paste/Code.gs` = gas/*.gs 전부(Config.gs 먼저, 나머지 이름순)를 파일별 머리 주석과 함께 이어붙인 한 파일
   - `paste/Index.html` = gas/Index.html 그대로(include 이름을 아래 4개로 맞춤)
   - `paste/Styles.html` = Css + CssEngine + CssViews 를 하나로
-  - `paste/App.html` = JsCharts + JsCore + JsEngine + JsDemo + JsHq + JsAnalytics + JsSite 를 하나로
+  - `paste/App.html` = JsCharts + JsCore + JsEngine, `paste/App2.html` = JsDemo + JsHq, `paste/App3.html` = JsAnalytics + JsSite (파일당 500KB 이하)
   - `paste/FormsData.html` = gas/FormsData.html 그대로(서버 Db.forms() 가 이 이름으로 읽음)
   - `paste/appsscript.json`
   - `paste/붙여넣기-안내.txt` = 편집기에서 만들 파일 이름 6개와 순서, setup 실행, 배포 설정 (짧게)
-  즉 붙여넣기 묶음에서는 Index.html 의 include 가 `include('FormsData')`, `include('Styles')`, `include('App')` 세 개가 되도록 빌드가 바꿔 쓴다.
-- README 의 첫 배포 절차는 이 `paste/` 6개 파일 붙여넣기 기준으로 쓴다(clasp 는 선택 사항).
+  즉 붙여넣기 묶음에서는 Index.html 의 include 가 FormsData, Styles, App, App2, App3 다섯 개가 되도록 빌드가 바꿔 쓴다.
+- README 의 첫 배포 절차는 이 `paste/` 8개 파일 붙여넣기 기준으로 쓴다(clasp 는 선택 사항).
