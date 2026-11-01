@@ -1,0 +1,936 @@
+[
+ {
+  "severity": "major",
+  "title": "N3 사전작업 허가서: 안전조치 34칸을 전부 '해당없음'으로 두고도 허가 가능, 가스 측정값이 기준을 벗어나도 '적정 공기'로 통과",
+  "area": "N3 사전작업 허가서 내용·검증",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/FormsData.html (N3 sec_measures_common, sec_measures_type, sec_permit, sec_tbm 의 gas* 칸)",
+   "/home/user/dcd/hds-safety/gas/JsEngine.html (validate ~365행)"
+  ],
+  "repro": "사업장 S003 에서 N3 새 기록 → 작업유형 고소·전기·화기·밀폐공간 선택, m_* 34칸 전부 '해당없음', 허가 결정 '허가' → App.engine.validate(def, rec, 0) 호출(scratchpad/audit/forms-quality/t2.js). 또 gasO2=12, gasH2S=50, gasCO=200, gasCO2=5 를 넣고 gasResult='적정 공기 — 출입함' 으로 validate(def, rec, 1).",
+  "expected": "허가하려면 조치를 '확인'해야 하고 '해당없음'은 사유가 있어야 한다(안내문 '그 작업에 맞지 않는 칸만 해당없음'). 측정값이 적정 범위(산소 18~23.5%, CO2 1.5% 미만, CO 30ppm 미만, H2S 10ppm 미만)를 벗어나면 '적정 공기' 판정이 막혀야 한다.",
+  "actual": "전 항목 '해당없음' + 허가 → 오류 0건(allNA_errors: []). 측정값 12%/50ppm/200ppm 을 적고 '적정 공기 — 출입함' 선택해도 오류는 gasAt(필수 누락) 하나뿐. 작업 중 1시간마다 측정(m_s02)은 '작업 중 점검' 표에 적으라 했지만 그 표에는 수치 열이 없음.",
+  "suggestedFix": "m_* 칸의 '해당없음'에 사유 필수(별도 사유 칸 또는 선택지를 '확인/해당없음(사유)'로 바꾸고 requiredIf) 또는 허가 시 '확인'만 허용하고 유형과 무관한 칸은 showIf 로 숨김. 가스 4칸에 min/max 외에 적정범위 판정 규칙(예: gasResult='적정 공기'일 때 4값 범위 검사)을 엔진 validate 에 추가하고, sec_checks 표에 산소·CO2·CO·H2S 열을 추가.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "N3 밀폐공간: HEC B4-3 '반드시 확인' 항목인 농도측정자 교육·서약서가 양식에 없음",
+  "area": "N3 / HEC 매핑",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/FormsData.html (N3 m_s01~m_s06, hecItems B4-3 evidence, N4 sec_partA B4-3)"
+  ],
+  "repro": "참고 xlsx(HEC) B4-3 의 '반드시 확인' 4가지: ①측정 기록대장(시작 전·매 1시간) ②농도측정자 교육 및 서약서 작성 ③출입자 관리대장(입·퇴장마다) ④특별교육. FD 전체에서 '서약'·'농도측정자' 검색(0건). hecItems B4-3.evidence 는 '측정자 교육'을 N3 증빙으로 적어 둠.",
+  "expected": "N3 밀폐공간 안전조치 또는 허가 단계에 측정자 교육·서약서 확인 칸(과 사진/서명)이 있고, N4 B4-3 항목 문구에도 포함.",
+  "actual": "②가 N3·N4 어디에도 없음. HEC 평가는 필수 확인 2건 누락이면 X(0점)인데 앱이 증빙 칸을 제공하지 않음. 출입자 기록·측정 기록도 체크 한 칸일 뿐 구조화된 기록은 출입 전 1회 측정값뿐.",
+  "suggestedFix": "N3 sec_measures_type 에 m_s07 '농도측정자가 측정 방법 교육을 받고 서약서를 작성함'(확인/해당없음+사유) 추가, 서약서 사진 칸 추가, N4 B4-3 문구에 반영. 2025-12 개정(측정결과 기록 3년 보존·사고 시 119 신고) 반영 여부도 법무 확인.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "N3 '보류·불허' 허가서가 영구히 '작성중'으로 남고 월간보고 T01(허가서 발행)에 발행 1건으로 세어짐",
+  "area": "N3 흐름 / F09 자동집계",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/FormsData.html (N3 stages s1~s4, sec_permit.decision 힌트)",
+   "/home/user/dcd/hds-safety/gas/Api.gs (applyStage 521행)",
+   "/home/user/dcd/hds-safety/gas/JsEngine.html (autoMonthly 306행 case 'ptw')"
+  ],
+  "repro": "N3 1단계에서 decision='불허 — 이 방법으로는 작업하지 않음'(또는 보류) 후 records.submit stageId s1(t3.js, t13.js). 이어서 F09 reportMonth 같은 달 autoMonthly ptw 계산.",
+  "expected": "안내문대로 '보류·불허면 이 단계에서 기록이 끝납니다' → 기록이 종결(제출·확인 가능)되고, T01 '허가서 발행'에는 허가된 건만 센다.",
+  "actual": "결과 status='작성중', stageDone=['s1'] (isDone=false) — 2~4단계가 영원히 남아 확인할 수 없는 단계보고 상태. F09 ptw 값이 0 → 1 로 증가(불허 건이 '발행'으로 집계).",
+  "suggestedFix": "applyStage 에 '종결 조건'을 정의에 둠(예: stages[0].endIf {field:'decision', notIn:['허가']})해 해당 시 status='제출'로 끝내고, autoMonthly 'ptw' 는 facts.v.decision==='허가'만 센다. N3 사전작업 허가 분석(보류/불허 별도 집계)은 이미 있으므로 지표 정의만 통일.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "N1 법정 교육시간 분석이 '개인별'이 아니라 사업장 회차 시간 합이고, 사무직 6시간 기준은 죽은 코드 — N1 안내문·FORMS-REVIEW 의 설명과 불일치",
+  "area": "N1 교육시간 / 분석 화면",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsAnalytics.html (eduStd 1306~1313행, eduSite 1323~1333행, 특히 1331행 /사무/.test(site.type))",
+   "/home/user/dcd/hds-safety/gas/JsHq.html (SITE_TYPES 2695행)",
+   "/home/user/dcd/hds-safety/gas/FormsData.html (N1 sec_n1_hours 안내문 '개인별 이수시간을 합산합니다')",
+   "/home/user/dcd/hds-safety/docs/FORMS-REVIEW.md (§2.4 '개인별 법정시간은 N1 기준으로 분석 화면에서')"
+  ],
+  "repro": "관리자로 #/analytics/edu 열기(shots/an_edu.png, t10.js). 데모 S001: 2시간 정기교육 1회에 대상 13명 중 11명 참석 → 화면에 '4 / 12시간 33%'. 사업장 유형 선택지(오피스·금융·연구소·상가·물류·항만·공장·건설현장·공공·기타)에는 '사무'가 없음.",
+  "expected": "안내문대로 개인별 반기 이수시간을 합산해(참석자 명부 기준) 12시간 미달 인원을 찾아내고, 사무 직무 근로자는 6시간 기준을 적용.",
+  "actual": "eduSite() 는 사업장의 정기교육 회차 시간만 더함(참석자 무관). 한 명만 12시간 교육을 받아도 사업장은 '충족'. 사무직 기준 std.office 는 site.type 이 /사무/ 일 때만 쓰이는데 UI 선택지로는 만들 수 없어 모든 사업장이 12시간 기준. 또 기준 시간은 N1 안내문 문장을 정규식으로 읽어와(1310행) 안내문을 고치면 분석이 조용히 깨짐.",
+  "suggestedFix": "N1 기록의 attendees(people)를 이름·반기별로 합산해 개인별 시간/기준(직무 태그 '사무'면 6, 아니면 12, 관리감독자 연 16)을 계산하고 미달 인원 수를 표시. 기준값은 FD 에 구조화(예: FD.codes.eduStd)해 정규식 의존을 없앰. 개인별 계산을 구현하기 전까지 N1 안내문의 '개인별 이수시간을 합산합니다' 문장을 고칠 것.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "서명 칸이 제출 검증에 전혀 포함되지 않음(N1 참석자·강사 서명, N3 작업자 전원 서명 등)",
+  "area": "N1·N3·N4·F10 서명/증빙",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsEngine.html (validate 365행 — signatures 분기 없음)",
+   "/home/user/dcd/hds-safety/gas/FormsData.html (sec_sign_att, sec_sign_inst, sec_sign_workers, N4 sec_sign 등)"
+  ],
+  "repro": "N1(2단계)·N3(1·2단계) 기록에서 모든 sec_sign* 을 {} 로 두고 validate(def, rec, 1) (t16.js).",
+  "expected": "HEC B1-1(참석자 서명 관리), B3-2(작업자 전원 서명)가 증빙이므로 서명 또는 '종이 서명지 별첨' 체크가 없으면 제출이 막힘. 사진 최소 장수(minCount)는 이미 막고 있음.",
+  "actual": "N1_nosig_s2: [] , N3_nosig_s1: [] — 서명 0명으로 제출됨. 화면의 '0 / N명' 진행 표시만 있고 막지 않음.",
+  "suggestedFix": "validate() 에 signatures 분기 추가: 대상(from 이 있으면 선택된 사람 전원, roles 이면 역할 전부)마다 img 또는 paper 가 있어야 하고, 아니면 '○○ 서명이 필요합니다'. 단계별(uptoStage) 적용.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "F08B '기한 상태'가 사용자가 고르는 선택칸 — 문서가 말한 '기한관리(자동)'(검사 기한 30일 전·경과 자동 판정·조치 등록)이 없음",
+  "area": "F08B 위험기계기구 인증·검사 현황",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/FormsData.html (F08B sec_machineInsp.mcState, mcNextInsp)",
+   "/home/user/dcd/hds-safety/docs/FORMS-REVIEW.md (§2.3 '기한관리(자동)가 앱에 없었음 → 이번 보완')"
+  ],
+  "repro": "F08B 표에 안전검사 '대상', 다음 검사 기한 2025-01-01(이미 지남) 입력, 기한 상태 '기한 여유' 선택. 코드 검색: grep mcNextInsp|mcState gas/*.html gas/*.gs → FormsData 밖 0건.",
+  "expected": "원본 8번 시트의 '기한관리(자동)'처럼 다음 검사 기한과 실사일로 기한경과/30일 이내/여유가 자동 계산되고 조치가 자동 등록. 안전검사 대상 설비가 기한이 지났는데 사용자가 '기한 여유'를 고르면 오류.",
+  "actual": "mcState 는 단순 select 이므로 날짜와 무관하게 통과, 조치도 사용자가 고른 값에만 연동. 법정 기한 누락을 정직에 맡김. 원본에 있던 '검사결과(합격 여부)'·비대상 판단 근거/확인자 칸도 없음(힌트만 '검사 결과를 함께 확인').",
+  "suggestedFix": "mcState 를 computed(daysBetween 확장 또는 calc 'dueState')로 바꿔 mcNextInsp 와 점검일로 자동 산출하고 act.when 이 그 값을 쓰도록 함. mcResult(합격/불합격)·mcBasis(비대상 근거) 칸 추가. F09 M02·M03 도 같은 데이터에서 자동 집계 검토.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "'반드시 적습니다/연결합니다' 라고 안내한 조건부 필수가 숫자 조건이라 검증되지 않음(F07 안부 미응답 조치, 사고·아차 건수→F04 연결, F06 온열질환 의심→F04, F09 기한경과 사유)",
+  "area": "F07·F06·F09 검증 공백",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/FormsData.html (F07 noReplyAction, incidentRef, healthAction; F06 illnessRef; F09 overdueNote)",
+   "/home/user/dcd/hds-safety/gas/JsEngine.html (validateField requiredIf 는 일치/비어있지 않음만 지원, ~354행)"
+  ],
+  "repro": "F07 기록에서 accidentCount=2, nearMissCount=1, incidentRef 없음, welfareChecks=4, noReply=2, noReplyAction 빈칸, healthIssue=3, healthAction 빈칸 → validate (t8.js).",
+  "expected": "noReply≥1 이면 noReplyAction 필수('미응답이 1건 이상이면 반드시 적습니다'), accident/nearMiss≥1 이면 F04/F02 연결 필수('반드시 … 연결합니다'), 건강 이상≥1 이면 조치 선택.",
+  "actual": "위 세 가지 모두 오류 0(다른 오류는 무관한 상한 규칙 2개뿐). 월간보고 A01 은 F04 기록만 세므로 F07 사고 건수와 F04 가 어긋나도 막는 곳이 'noMissing' 체크박스 하나.",
+  "suggestedFix": "엔진 requiredIf 에 {gte:1}/{notEmpty:true} 같은 수치 조건을 추가하고(showIf 가 이미 gte 를 지원) FD 에 규칙 추가. 최소한 F07 accidentCount+nearMissCount>0 이면 incidentRef 필수.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "작업중지 F10 의 '본사 전용 단계'(사후관리·D+30 불리한 처우 확인)를 사업장 세션이 직접 제출할 수 있음",
+  "area": "F10·F10B·N4 단계 권한",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/Api.gs (applyStage 521행 — 역할 검사 없음)",
+   "/home/user/dcd/hds-safety/gas/FormsData.html (F10 stages s3·s4 who:'본사(안전경영지원실)', F10B s2, N4 s2)",
+   "/home/user/dcd/hds-safety/gas/JsEngine.html (단계 탭 UI는 who 를 글자로만 표시)"
+  ],
+  "repro": "사업장(S003) 세션으로 F10 기록을 만들고 records.submit stageId s1→s2→s3→s4 순서 호출(t19.js).",
+  "expected": "안내문('본사가 행사자에게 직접 확인합니다 — 관리감독자·고객사를 거치지 않음')대로 s3·s4(F10), 본사 검토 단계(F10B s2, N4 s2)는 본사 권한(hqWrite)만 제출 가능.",
+  "actual": "결과 steps: s1:작성중 → s2 → s3 → s4:제출(stageDone s1/s2/s3/s4). 사업장이 스스로 '불리한 처우 없음'을 입력해 기록을 완료할 수 있음(확인 단계 records.review 만 본사 전용).",
+  "suggestedFix": "FD stages[].who 를 role 필드(예: role:'hq')로 구조화하고, 서버 applyStage/records.submit 이 사업장 세션의 hq 단계 제출을 FORBIDDEN 으로 거부, 편집기에서도 해당 단계 탭을 읽기 전용으로.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "F10 고위험 재개의 '안전경영지원실 재개 확인'과 행사자 비동의가 강제되지 않음",
+  "area": "F10 2단계",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/FormsData.html (F10 hqChecked, consent)"
+  ],
+  "repro": "resumeType='재개 — 고위험(…)', hqChecked=false, consent='동의' → validate(def,rec,1); 또 resumeType 일반위험 재개 + consent='동의하지 않음' (t8.js).",
+  "expected": "고위험 재개는 hqChecked=true 필수, 행사자가 동의하지 않으면 재개 구분 불가(힌트 '재개하지 말고 안전경영지원실 검토').",
+  "actual": "두 경우 모두 오류 0건.",
+  "suggestedFix": "hqChecked 에 requiredIf(고위험)+eq true, consent='동의하지 않음'이면 resumeType 이 재개 계열이 아니도록 규칙 추가.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "F07: 폭염경보·기상청 체감 36℃인데 체감온도 단계를 '31℃ 미만'으로 고르면 폭염 휴식 기록 칸이 모두 숨음",
+  "area": "F07 날씨·폭염",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/FormsData.html (F07 alert, feelsLikeFcst, heatStage 및 heat* showIf)"
+  ],
+  "repro": "feelsLikeFcst=36, alert='폭염경보', heatStage='31℃ 미만' → validate (t12.js).",
+  "expected": "특보·기상청 값과 모순되면 경고/오류(법정 휴식 기록 누락 방지).",
+  "actual": "오류 0, heatMeasured·heatRest 등 폭염 칸 미표시.",
+  "suggestedFix": "alert 가 폭염주의보·경보이면 heatStage 가 '31℃ 미만'일 수 없다는 교차 규칙(예: notIn) 추가, 또는 폭염 칸 showIf 를 alert 로도 열리게.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "직무 태그로 숨긴 항목에 우회 수단이 없음: F10B IS09(원본 4번 중대위험 작업)는 시설 직무에서만, N4 B1-7·B4-2·B4-3·B4-4·B4-6 도 시설에서만 보임",
+  "area": "F10B·N4·F07 직무별 노출",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/FormsData.html (F10B IS09, N4 sec_partA B1-7/B4-2/B4-3/B4-4/B4-6, F07 D14/D17)",
+   "/home/user/dcd/hds-safety/docs/FORMS-REVIEW.md (§2.5 '13항목 그대로 대응')"
+  ],
+  "repro": "checklistItems 호출: F10B 를 S001(보안·안내·주차·미화)에서 열면 IS01~IS13 중 IS09 없음(12개), S003(시설 포함)만 13개(t15.js). N4 는 naFacility 안내문이 '항목이 안 보이면 본사에 알려 사업장 업무구성에 시설을 추가'.",
+  "expected": "원본 반기 이행점검 13항목은 모든 사업장에 적용. 직무 태그가 맞지 않아도 해당 작업이 있다면 항목을 열 수 있어야 함. 일일점검 D14(차량 유도)도 차량 출입을 통제하는 보안 사업장에는 필요.",
+  "actual": "문서와 달리 12/13, 해당 작업이 있어도 숨김(N4 는 본사 개입 요구).",
+  "suggestedFix": "IS09 의 siteTag 제거, N4 시설 항목은 naFacility='있음' 이면 보이도록(필드 기반 showIf) 변경, D14 를 보안·주차 공통으로.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "사람 수·건수·대수 칸(76개)이 소수를 허용",
+  "area": "숫자 칸 전반(F06·F07·F09·F10B·N4 등)",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/FormsData.html",
+   "/home/user/dcd/hds-safety/gas/JsEngine.html (number 입력 step='any', inputmode='decimal')"
+  ],
+  "repro": "F07 에서 출근 인원 10.5, 건강확인 10.5 입력 → validate 오류 0, healthRate=100 (t12.js, t14.js). 단위가 명·건·회·대·종·개소·항목인 number 칸이 76개.",
+  "expected": "인원·건수는 정수만, 휴대폰 키패드도 숫자 전용.",
+  "actual": "소수 입력·소수 키패드 허용.",
+  "suggestedFix": "FD number 에 integer:true(또는 step:1)를 두고 엔진이 step/inputmode='numeric' 및 검증 적용. 시간(h)·% 는 소수 허용 유지.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "N1: 한 반기에 교육을 여러 회 기록하는 양식인데 '같은 기간 기록이 이미 있습니다. 그 기록 이어서 쓰기' 배너가 뜸",
+  "area": "N1(·N2) 새 기록 화면",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsEngine.html (findDup 1983행)",
+   "/home/user/dcd/hds-safety/gas/FormsData.html (N1 frequency.type='half')"
+  ],
+  "repro": "사업장 세션으로 #/new/N1/S003 (shots/ph_N1_0.png 상단 노란 배너).",
+  "expected": "안내문 '교육 1회 = 기록 1건, 차수마다 1건씩'과 모순되지 않게 N1 에는 중복 배너가 없거나 '이번 반기 교육 N건' 정보만.",
+  "actual": "기존 기록을 이어서 쓰라고 유도.",
+  "suggestedFix": "FD frequency 에 multiPerPeriod:true 를 두고 findDup 이 건너뛰게.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "N2 진행 시각 선후 규칙이 불완전, N3 작업 시작 후 교육의 사유가 강제되지 않음",
+  "area": "N2·N3 검증",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/FormsData.html (N2 sec_time, N3 tbmLateReason)"
+  ],
+  "repro": "N2: tStart 09:00, tAlert 09:02, tEvac 09:50, tDone 09:10, tEnd 09:20 → 오류 없음. N3: tbmAt 11:30, actualStart 10:00(tbmLead=-90), tbmLateReason 빈칸 → 오류 없음 (t8.js, t18.js).",
+  "expected": "tEvac≤tDone≤tEnd, tReport·tCall≤tEnd; 교육→작업 시작 간격이 음수이면 사유 필수.",
+  "actual": "통과(교육 시점 표시만).",
+  "suggestedFix": "N2 에 tReport·tCall·tEvac lte tEnd/tDone 규칙 추가, N3 tbmLateReason 에 수치 조건 requiredIf(위 발견의 엔진 확장과 함께).",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "F08B 위험기계기구·보호구 관리대장 원본 항목 일부 누락(검사결과, 비대상 판단 근거·확인자, 제조사·인증번호·관리담당자·최근 점검일)",
+  "area": "F08A/B 원본 대조",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/FormsData.html (F08B sec_machineInsp, sec_stock)"
+  ],
+  "repro": "원본 8번 '기계기구 인증검사' 시트(검사결과 K열, 판단근거/확인자 H열)·'개인보호구 관리'(제조사, 인증번호, 관리담당자, 최근 점검일)를 F08B 열과 대조.",
+  "expected": "원본 작성안내의 '비대상 판단도 근거와 확인자를 남깁니다', '날짜 알림은 합격 판정이 아니므로 검사결과를 함께 확인'을 기록할 칸.",
+  "actual": "해당 칸이 없고 mcNote 자유 입력뿐.",
+  "suggestedFix": "mcResult(합격/불합격/미확인), mcBasis(비대상 근거), 보호구는 인증번호·최근 점검일 선택 칸 추가.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "F07 에서 원본 27번(전일 미결 조치 확인)을 화면에 보여주지 않음",
+  "area": "F07 현장 실무",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsEngine.html (편집기)",
+   "/home/user/dcd/hds-safety/docs/FORMS-REVIEW.md (§2.2 '미결 조치는 다음 근무조 화면에 계속 보임')"
+  ],
+  "repro": "S003 처럼 미결 조치가 있는 사업장에서 #/new/F07/S003 (shots/text_F07.txt): '미결' 문구는 안내문 두 곳뿐, 조치 목록 없음.",
+  "expected": "점검 중 해당 사업장 미결·기한경과 조치 목록(또는 확인 체크 칸)이 표시돼 원본 27번을 수행.",
+  "actual": "조치대장·홈에서만 확인 가능.",
+  "suggestedFix": "F07 편집기 상단에 이 사업장 미결 조치 접이식 목록 추가하거나 D22 '전일 미결 조치 확인' 체크 항목 추가.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "양식 단위 hec 목록이 실제 점검 항목보다 적음(N4 32/57, F07·F09 누락)",
+  "area": "HEC 매핑 메타데이터",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/FormsData.html (N4.hec, F07.hec, F09.hec, hecItems[].forms)",
+   "/home/user/dcd/hds-safety/gas/JsEngine.html (formInfo 3013행)",
+   "/home/user/dcd/hds-safety/gas/JsAnalytics.html (1978행 item.forms 로 보완 양식 안내)"
+  ],
+  "repro": "N4 점검 항목 hec 코드 46개(A1-1~C1-2)와 N4.hec 배열 비교: Part I 25개 누락. F07 항목 D20·D21 의 B5-5·A5-1, F09 CK06·CK16 의 A5-1·B5-3 도 form.hec 에 없음.",
+  "expected": "양식 정보 창의 'HEC 연결 항목'이 실제 점검하는 항목 전부(N4: 57개).",
+  "actual": "'HEC 연결 항목 32'로 표시, 분석 화면 '필요 양식' 안내에서 N4 가 빠짐.",
+  "suggestedFix": "항목 수준 hec 에서 form.hec 와 hecItems[].forms 를 빌드 시 자동 생성.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "문구·표현: 'ACT' 25곳, 'MU' 설명 없음, 요약 이름 '미흡/이상' 혼재, 항목 번호 순서, 안내문 덩어리, 인터뷰 최소 인원",
+  "area": "문구·표시",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/FormsData.html"
+  ],
+  "repro": "textscan.py: '조치(ACT)' 25회(예: F06 purpose, F07 안내문, F09 소제목 '조치(ACT) 현황'); '지사·MU 점검'(F10B·N4 선택지) 7회 정의 없음; 합계 라벨이 F06·F10B '미흡 항목' vs F07·F09·F08B '이상 항목'; F06 목록이 H01,H02,H03,H21,H04…H17,H22,H18(shots/ph_F06_1.png, ph_F06_2.png); N1 법정 시간 안내가 12줄 문단(shots/ph_N1_0.png); F10B·N4 interviewN min=1 인데 안내는 '무작위 2명 이상'.",
+  "expected": "현장 직원이 바로 이해하는 말('조치대장'), 약어 풀이, 같은 뜻 같은 이름, 번호 순서, 표/목록 형태, 안내와 같은 최소값.",
+  "actual": "위 불일치.",
+  "suggestedFix": "'조치(ACT)'→'조치대장 조치', 'MU'→'지사·권역(MU) 점검' 또는 삭제, 합계 라벨 통일, H21·H22 를 H05·H19 등으로 재번호(코드는 id 라 라벨만이라도 정렬 표기), N1 시간 기준을 표로, interviewN min=2(소규모 예외는 별도 선택).",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "법령 인용 중 조문 번호·최신 개정 반영 확인 필요(법무 확인 권고)",
+  "area": "F06·N3 근거 문구",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/FormsData.html (F06 H09 basis '제566조(휴식 등)', H04 '제571조', H05 '제560조'; N3 밀폐공간 항목)"
+  ],
+  "repro": "WebSearch: 2025.7.17 시행 폭염작업 33℃ 2시간 20분 휴식을 한 자료는 안전보건규칙 제560조 제3항으로, 다른 자료는 제566조(휴식) 계열로 서술(출처 상충, 원문 확인 불가: law.go.kr·언론 도메인이 이 세션에서 차단). 안전보건규칙 2025-12-01 개정에서 밀폐공간 측정장비 지급·측정결과 기록 3년 보존·사고 시 지체 없이 119 신고가 의무화됐다는 보도.",
+  "expected": "조문 번호가 현행 원문과 일치하고 N3 밀폐공간 조치에 최신 개정이 반영.",
+  "actual": "제566조로 표기(미확인), 3년 보존·119 신고는 N3 에 명시 없음(비상연락 칸에 119 포함은 있음).",
+  "suggestedFix": "국가법령정보센터 원문으로 제560·566·567·571조와 밀폐공간 개정 조문 번호 확정 후 basis 수정, N3 에 측정결과 3년 보존 안내 문구 추가.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "F01 위험요인 라이브러리의 직무 편중: 안내 3건·주차 6건 vs 보안 30건·미화 27건",
+  "area": "현장 실무 적합성(F01 라이브러리)",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/FormsData.html (libraries.hazards)"
+  ],
+  "repro": "Counter(h['job'] for h in libraries.hazards) = 보안 30, 미화 27, 공통 12, 사무 9, 시설 9, 주차 6, 안내 3.",
+  "expected": "HDS 5개 직무에 균형 잡힌 불러오기 목록(안내: 장시간 서서 근무·고객 폭언·혼잡·감염 등).",
+  "actual": "안내·주차 사업장은 불러올 위험요인이 거의 없음.",
+  "suggestedFix": "안내·주차(정산기·차단기·램프) 위험요인을 직무당 최소 10건 보강(F09 CK13~18·CK25~27 항목과 연계).",
+  "_auditor": ""
+ },
+ {
+  "severity": "critical",
+  "title": "<base target=\"_top\"> 때문에 GAS iframe 안에서 모든 '#/…' 해시 링크(사이드바·하단 탭바·버튼형 링크)가 최상위 창을 이동시켜 앱 내비게이션이 깨짐",
+  "area": "클라이언트 / GAS iframe 호환 (SPEC §3 Index.html)",
+  "files": [
+   "gas/Index.html",
+   "paste/Index.html",
+   "gas/JsCore.html",
+   "gas/JsHq.html",
+   "gas/JsSite.html",
+   "gas/JsAnalytics.html",
+   "gas/JsEngine.html"
+  ],
+  "repro": "1) 다른 출처의 바깥 페이지에 GAS 와 같은 sandbox 속성(allow-same-origin allow-scripts allow-top-navigation-by-user-activation 등)의 iframe 을 두고 실제 앱(dist/preview.html, <base target=\"_top\"> 포함)을 넣는다. 2) 본사로 로그인한 뒤 사이드바 '취합 현황'(<a class=\"nav-item\" href=\"#/collect\">)을 클릭한다. 스크립트: /tmp/claude-0/-home-user-dcd/692a5cfe-94c9-5d9f-8350-64252635e7e1/scratchpad/audit/gas-deploy/t8-gas-iframe-nav.js (+ 최소 재현 iframe-hash-test.js).",
+  "expected": "iframe 안에서 #/collect 로 화면 전환(top 창은 /exec 그대로).",
+  "actual": "Chromium 에서 top 창 URL 이 iframe 문서 주소(…/userCodeAppPanel?demo=1#/collect)로 바뀜. 실제 GAS 에서는 top 이 googleusercontent 의 iframe 전용 주소로 나가 앱이 사라지거나(또는 sandbox 가 막으면 클릭이 무반응) 내비게이션이 동작하지 않는다. 내비 항목 <a>에는 data-href 도 없고 click 위임(JsCore onClick)은 '현재 해시와 같을 때'만 preventDefault 하므로 막지 못함. 화면당 해시 앵커 22~45개(사이드바 포함). E2E 108/108·check-paste 는 iframe 밖에서만 돌아 못 잡음. 실제 GAS sandbox 속성은 확인 못 했고 Chromium 재현 기준.",
+  "suggestedFix": "Index.html(gas·paste 둘 다)의 <base target=\"_top\"> 를 삭제한다(외부 링크는 이미 target=\"_blank\" rel=\"noopener\" 를 씀. 빠진 곳은 JsAnalytics/JsHq 의 동적 <a> 점검). 방어로 JsCore onClick 에서 a[href^=\"#\"] 클릭은 항상 preventDefault 후 App.go(href) 하도록 바꾼다. build-paste 는 Index 를 그대로 복사하므로 gas/Index.html 수정 후 npm run paste. E2E 에 '샌드박스 iframe 안에서 내비 클릭' 시험을 추가.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "localStorage 가 막힌 환경에서는 로그인에 성공해도 곧바로 '로그인이 만료되었습니다'로 돌아가 앱을 쓸 수 없음(메모리 대체 저장소 없음)",
+  "area": "클라이언트 / 세션 토큰 보관 (SPEC §7.1)",
+  "files": [
+   "gas/JsCore.html",
+   "gas/JsSite.html"
+  ],
+  "repro": "localStorage 의 hds.* 읽기·쓰기가 SecurityError 를 던지는 환경(Chrome 시크릿 창의 3자 쿠키 차단, Firefox/Safari 추적 방지, GAS 처럼 script.google.com 안의 googleusercontent.com iframe)에서 본사 로그인 또는 사업장 링크 로그인. 재현: t7-blocked-storage.js(스크린샷 blocked-storage.png).",
+  "expected": "토큰을 메모리에라도 들고 있어 그 탭에서는 계속 사용 가능(다시 열면 재로그인).",
+  "actual": "JsCore store.set 이 예외를 삼킬 뿐 값을 보관하지 않아 이후 App.api 가 store.get(K.token)='' 로 호출 → AUTH → authLost → 로그인 화면+'로그인이 만료되었습니다'. README 가 배포 확인 방법으로 권하는 '시크릿 창에서 열기'와 휴대폰 사업장 사용자 일부가 정확히 이 경우에 해당.",
+  "suggestedFix": "JsCore store 에 모듈 변수(예: var mem = {})를 두고 set 은 mem 과 localStorage 양쪽에, get 은 localStorage 실패/빈값이면 mem 에서 읽게 한다. JsSite 1031·1219·1227 의 직접 localStorage 호출도 App.store 로 통일. 저장 불가일 때 로그인 화면에 '이 브라우저는 로그인 유지가 안 됩니다' 안내.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "admin.rebuildViews(뷰 재구축)가 기록이 늘면 'Maximum call stack size exceeded' 로 영구 실패",
+  "area": "서버 / Views.gs 성능·한도",
+  "files": [
+   "gas/Views.gs"
+  ],
+  "repro": "데모 기록을 3배(8,571건, F07 7,600여 건)로 admin.importBulk 한 뒤 admin.rebuildViews 호출. t16-rebuild-2x.js 3 → api 응답 SERVER '서버에서 처리하지 못했습니다 … (Maximum call stack size exceeded)', 스택은 Views.gs 819행(paste/Code.gs 6162행). 2배(5,714건)까지는 성공.",
+  "expected": "기록 수와 무관하게 재구축 성공.",
+  "actual": "Views.gs 819행 Array.prototype.push.apply(checkAll.rows, t.rows) 가 한 양식의 점검결과 행 전체(F07 은 기록당 약 20행)를 인자로 펼침. Node 22 에서 한계 인자 수가 약 125,254개이고 GAS V8 도 같은 자릿수일 것으로 보임(GAS 한계는 미측정) → F07 기록 약 6,200건(12곳 일일점검 기준 약 1~1.5년)부터 실패. 설정에서 '뷰 재구축'을 누르라는 README §14 절차도 함께 막힘.",
+  "suggestedFix": "push.apply 를 for 루프 push 또는 checkAll.rows = checkAll.rows.concat(t.rows) 로 교체. 같은 파일의 Views.tablesFor 안 per-record push.apply 는 행이 작아 안전하지만 같은 방식으로 정리.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "뷰 시트 만들기가 열마다 setColumnWidth 를 부르고 잠금을 쥔 채 오래 걸려 — 재구축 170~200초, 양식 첫 제출 약 16초(모델 추정)",
+  "area": "서버 / Views.gs 성능, LockService",
+  "files": [
+   "gas/Views.gs"
+  ],
+  "repro": "t4-scale.js: 기록 2,857건 상태에서 admin.rebuildViews → 2,195호출(setColumnWidth 1,148회, 693,400셀 쓰기), 모델 시간 약 170s. 5,714건이면 203s. 뷰 시트가 없는 상태의 records.submit(기존 임시저장→제출)은 226호출 중 setColumnWidth 100회, 약 16.3s.",
+  "expected": "한 번의 실행이 6분 한도에 여유가 있고, 다른 사용자 저장을 막는 시간이 짧아야 함.",
+  "actual": "styleHeader 가 열마다 sh.setColumnWidth 를 호출(호출 수의 52%). rebuildAll 전체와 양식별 첫 제출(V_ 시트 생성)이 Db.withLock 안에서 실행돼 그 시간 동안 모든 저장이 대기하고 20초(APP.lockMs)를 넘으면 '다른 저장 작업이 진행 중입니다' 로 실패. 6분을 넘으면 writeTable 이 sh.clear() 후 쓰는 방식이라 V_ 시트가 비거나 일부만 채워진 채 남고 재시도해도 같은 지점에서 또 실패할 수 있음. 지연값은 어림 모델이라 실제 GAS 에서는 다를 수 있음.",
+  "suggestedFix": "열 너비는 같은 너비 구간을 sh.setColumnWidths(start, n, width) 로 묶거나 헤더 서식 한 번만 하고 열마다 호출하지 않는다(미관용). rebuildAll 은 시트 단위로 나눠 진행 상태를 kv 에 저장하고 시간 예산(예: 4분)이 다하면 이어서 실행(트리거/재호출)하게 하고, 잠금은 시트 하나 쓰는 동안만 잡는다. 양식 첫 제출의 V_ 시트 생성은 잠금 밖(또는 setup/재구축 시 미리)으로.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "requests.save 가 요청 메일을 보내는 동안 ScriptLock 을 쥐고 있어 사업장이 많으면 다른 사용자의 저장이 실패",
+  "area": "서버 / Api.gs·Dispatch.gs 동시성",
+  "files": [
+   "gas/Api.gs",
+   "gas/Dispatch.gs"
+  ],
+  "repro": "사업장 3곳 등록 후 requests.save 로 전체 대상 요청 생성, MailApp.sendEmail 호출 시점의 스크립트 잠금 보유 여부를 기록. t5-lock-mail.js → 메일 시점 잠금 보유 [true,true,true]. 비교: requests.remind·records.review 반려 메일은 [false…].",
+  "expected": "Api.gs 머리 주석대로 메일 등 부수효과는 잠금을 푼 뒤(ctx.after) 실행.",
+  "actual": "METHODS 에 'requests.save': {lock:true} 라서 Dispatch.saveRequest 안의 sendRequestMails(사업장마다 MailApp.getRemainingDailyQuota+sendEmail+Db.log 2번)가 전부 잠금 안에서 돎. 사업장 12곳이면 모델 약 15.8초, 20곳 이상이면 20초 대기 한도를 넘어 같은 시간대 records.save/submit 이 '다른 사용자가 저장하는 중입니다' 로 실패. 하루 메일 한도(개인 100통)도 한 요청에 소진 가능.",
+  "suggestedFix": "hRequestsSave 를 lock:false 로 바꾸고 Dispatch.saveRequest 안에서 요청 행 저장만 Db.withLock 으로 감싼 뒤 메일은 잠금 밖에서 발송(이미 requests.remind 가 그렇게 동작). 또는 saveRequest 가 mailed 대상 목록만 돌려주고 Api 가 ctx.after 로 발송.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "익명 방문자가 google.script.run 으로 setup·installTriggers·ensureSchema·cronDaily·cronWeekly 를 호출할 수 있음(설치 후에도 로그 오염·잠금 점유·URL 노출)",
+  "area": "서버 / 전역 함수 노출 (SPEC §4·§12, README §13)",
+  "files": [
+   "gas/Setup.gs",
+   "gas/Dispatch.gs",
+   "gas/Main.gs"
+  ],
+  "repro": "t6-public-fns.js: 전역 함수 목록 = api, cronDaily, cronWeekly, doGet, include, setup, ensureSchema, installTriggers. 설치 후 setup({adminPassword:'Hacker123'}) 재호출 → 반환에 dbUrl·folderUrl 포함, 관리자 비밀번호는 안 바뀜(로그인 false). installTriggers/ensureSchema/cronWeekly/cronDaily 반복 호출 → 로그 3→13행. 설치 전 익명 setup({adminPassword:'Attacker1234'}) → 공격자 지정 비밀번호로 관리자 로그인 true(README 가 '배포 전에 setup' 으로만 막음).",
+  "expected": "설치 후에는 웹앱 방문자가 관리용 함수를 실행하거나 결과를 받을 수 없어야 함.",
+  "actual": "setup 한 번에 log 2행·ScriptLock 점유(수 초), installTriggers 는 트리거를 지웠다 다시 만듦 → 로그 5,000행(LOG_MAX) 순환으로 감사 기록(로그인 실패·권한 위반·메일 기록)을 밀어내거나 잠금 경쟁으로 저장을 지연시키는 DoS 가능. setup 반환값이 DB 시트·폴더 주소를 익명에게 돌려줌. cronDaily/cronWeekly 는 같은 날 중복 발송 방지가 있어(4회 호출→메일 1통) 메일 폭탄은 안 됨.",
+  "suggestedFix": "setup·installTriggers·ensureSchema 는 DB_ID 와 관리자가 이미 있으면 아무 부작용·URL 반환 없이 즉시 {already:true} 를 돌려주고, 재실행이 필요하면 스크립트 속성 ALLOW_SETUP=1 일 때만. 추가로 Session.getActiveUser().getEmail() 이 비어 있으면(익명 웹앱 방문) 거부. cronDaily/cronWeekly 반환값에서 집계 숫자 제거(트리거는 반환값을 안 씀). README §13 에 '설치 후에도 전역 함수는 공개' 사실과 대응을 적는다.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "쓰기마다 records 전체를 다시 읽고, 기록 1건 조회/수정에도 모든 기록의 data 열을 통째로 읽음(기록·자료량에 비례해 느려짐)",
+  "area": "서버 / Db.gs 성능 확장성",
+  "files": [
+   "gas/Db.gs",
+   "gas/Api.gs"
+  ],
+  "repro": "t4-scale.js(1배/8배). 기록 2,857건: records.save 새 기록 37호출·읽기 71,775셀·모델 3.9s(전 쓰기가 lock 안에서 light 열 전부 읽음). 기존 기록 자동저장·records.get(1건)은 heavy 블록(data..data_8, 모든 행)까지 읽어 이동량 5.7MB. 레코드당 data 를 8배(약 8KB)로 하면 records.get 한 번이 45.7MB, 자동저장·제출·확인도 45.7MB 이동. 3배 기록(8,571건)에서 새 제출 모델 14.6s.",
+  "expected": "기록 1건 읽기·수정은 그 행만 읽어 기록 수와 무관해야 함.",
+  "actual": "Db.heavyValue→heavyBlock 이 첫 data 접근 때 전 행의 큰 열을 한꺼번에 getValues(prepRecord 의 clone(cur), loadRecord 의 JSON 직렬화가 트리거). 자동 임시저장(입력 후 3초)이 매번 이 비용+잠금을 치르므로 동시 작성자가 늘면 잠금 20초 대기 초과가 늘고, 수천 건·수 MB 규모에서 records.get 이 수 초 이상. 모델 추정이며 실측 GAS 아님.",
+  "suggestedFix": "heavyValue 는 요청된 키가 1~2개면 sh.getRange(row, hs+1, 1, width-hs) 로 그 행만 읽고, 일괄 조회(목록·재구축·내보내기)에서만 블록 읽기. prepRecord 는 cur 를 clone 하지 말고 필요한 열만 복사. 새 기록 번호 발급을 위해 records 전체 대신 id 열만 읽거나 번호 카운터를 kv 에 둠.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "네트워크 오류 시 App.api 가 쓰기 요청(records.submit 등)도 자동 재시도해 응답만 유실되면 기록이 중복 생성됨",
+  "area": "클라이언트 / 서버 멱등성 (동시 제출·번호 중복)",
+  "files": [
+   "gas/JsCore.html",
+   "gas/Api.gs"
+  ],
+  "repro": "t18-retry-dup.js: 사업장 로그인 후 새 일일점검 records.submit 의 서버 실행은 끝났지만 failure handler 가 'NetworkError: Failed to fetch' 로 한 번 호출되도록 함 → App.api 가 700ms 뒤 같은 본문을 다시 보냄.",
+  "expected": "서버에 기록 1건만 저장.",
+  "actual": "ID-S001-261101-01 과 ID-S001-261101-02 두 건이 '제출'로 저장되고 화면에는 -02 성공만 보임. 본사 취합·분석에 같은 사업장·날짜 일일점검이 2건으로 잡힘. (JsCore App.api: tries<2 && (net || READ_RE.test(method)) 이면 쓰기도 재시도.) records.save 의 첫 저장(id 없음)도 같은 위험.",
+  "suggestedFix": "쓰기 메서드는 재시도하지 않고(READ_RE 일치 메서드만 재시도) 사용자에게 '결과를 확인한 뒤 다시 제출하세요'를 안내하거나, 클라이언트가 새 기록마다 requestKey(uuid)를 만들어 보내고 서버가 같은 키의 기록이 있으면 그 기록을 돌려주도록(records.submit/save 멱등화).",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "boot 응답이 기록 수에 비례(2,857건 3.62MB, 3,684건 4.5MB)하고 그 61% 가 facts",
+  "area": "서버 / 응답 크기",
+  "files": [
+   "gas/Api.gs"
+  ],
+  "repro": "t4-scale.js·t17-3x.js: admin boot 응답 길이. 데모 facts 합계 2.2MB / 3.62MB.",
+  "expected": "첫 화면 응답이 기간·사업장 수가 늘어도 수 MB 이내로 유지.",
+  "actual": "hBoot 이 400일치 index 행마다 facts 까지 담아 보냄(SPEC 이 indexRow 에 facts 포함을 요구). 모델상 서버 4.8s + 클라이언트 JSON 파싱. 12곳 기준 약 5MB 에서 멈추지만 사업장 40곳이면 15MB 대. GAS 의 응답 크기 상한은 확인 못 함.",
+  "suggestedFix": "boot 에는 facts 를 빼고(필요한 분석·현황판 화면이 records.index 로 기간별 가져오게) 또는 boot days 기본값을 90~120일로 줄이고 나머지는 지연 로딩.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "뷰(V_) 시트가 DB 스프레드시트의 1,000만 셀 한도를 같이 소모 — 점검결과 시트는 9열만 쓰는데 26열을 할당",
+  "area": "서버 / Views.gs·Db.gs 한도",
+  "files": [
+   "gas/Views.gs",
+   "gas/Db.gs"
+  ],
+  "repro": "t10-cells.js: 기록 2,857건 적재 후 rebuildViews → 시트 47개, 할당 셀 3,175,789. V_점검결과 50,580행×26열=1,315,080셀, V_F07 2,537×69.",
+  "expected": "DB(원본)가 뷰 때문에 한도에 닿지 않아야 함.",
+  "actual": "12곳 일일점검 1년이면 뷰만 약 2.5M셀씩 늘어 약 3~4년 안에 1,000만 셀에 닿으면 DB 쓰기까지 실패. README §12 가 한도는 적었지만 뷰가 같은 파일을 쓴다는 점과 대처(보관·분리)는 없음.",
+  "suggestedFix": "뷰 시트를 별도 스프레드시트로 분리하거나, 쓰지 않는 열을 deleteColumns 로 줄이고 오래된 기간은 보관 시트로 옮기는 절차를 README 에 추가.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "core.reload / st.logout 이 location.reload() 를 써서 GAS iframe 안에서 빈 화면이 될 가능성(실제 GAS 미확인)",
+  "area": "클라이언트 / GAS iframe 호환",
+  "files": [
+   "gas/JsCore.html",
+   "gas/JsSite.html"
+  ],
+  "repro": "JsCore 1936 'core.reload'(설치 안내 '다시 확인'·치명 오류 '다시 열기'), JsSite 1228 로그아웃 후 location.reload(). 실제 GAS iframe 에서는 시험 못 함.",
+  "expected": "버튼을 누르면 앱이 처음 화면으로 다시 뜸.",
+  "actual": "GAS 앱 문서는 바깥 페이지가 넘겨 준 내용으로 그려져 iframe 만 새로고침하면 빈 화면/오류가 되는 사례가 알려져 있음(미검증 — 실 GAS 확인 필요).",
+  "suggestedFix": "location.reload() 대신 App.start()/begin() 재호출, 또는 클릭 직후 window.top.location.href = BOOT.url(+ ?s=토큰)로 이동.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "문서가 현재 구성·동작과 어긋난 곳 (FAQ 4개 파일명, 세션 삭제 안내) 및 시크릿 창 확인 단계의 함정",
+  "area": "README / 붙여넣기-안내",
+  "files": [
+   "README.md",
+   "paste/붙여넣기-안내.txt",
+   "docs/DEPLOY-CHECKLIST.md"
+  ],
+  "repro": "README 512행 FAQ 가 HTML 이름을 Index·Styles·App·FormsData 네 개로만 안내(실제 6개: App2·App3 누락). README 447행은 링크 재발급 후 sessions 시트 행을 직접 지우라고 하지만 hSitesRotate 가 이미 Auth.killSessions 로 해당 사업장 세션과 캐시를 끊음. README §5 14단계·체크리스트 4번이 권하는 '시크릿 창에서 열기'는 발견 2 때문에 로그인이 안 될 수 있는데 설명이 없음.",
+  "expected": "문서가 8개 파일 구성·실제 동작과 일치.",
+  "actual": "위 어긋남.",
+  "suggestedFix": "FAQ 를 6개 HTML 이름으로 고치고, 447행은 '재발급하면 로그인해 둔 기기도 바로 끊깁니다'로 바꾸며, 시크릿 창 확인 단계에는 '시크릿 창에서 로그인이 안 되면 일반 창으로 확인' 주의를 넣는다(발견 2 수정 전까지).",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "붙여넣기 견고성: FormsData.html 이 457,072자 한 줄이고 JsHq.html 2219행에 보이지 않는 U+FEFF 문자가 리터럴로 들어 있음",
+  "area": "붙여넣기 설치(SPEC §12)",
+  "files": [
+   "gas/FormsData.html",
+   "paste/FormsData.html",
+   "gas/JsHq.html",
+   "paste/App2.html"
+  ],
+  "repro": "awk 로 최대 줄 길이: FormsData.html 457,072자(1줄). paste/*.html 스캔에서 App2.html 에 U+FEFF 1개 — JsHq.html:2219 var csv = '﻿' + … (CSV 엑셀용 BOM).",
+  "expected": "복붙 중 잘리거나 사라지는 문자가 없고 편집기에서 다루기 쉬움.",
+  "actual": "한 줄 45만 자는 Apps Script 편집기(붙여넣기·저장)에서 느리거나 멈출 수 있음(미검증, README 도 '멈춘 듯 보여도 기다리라'고만 함). 눈에 안 보이는 리터럴 BOM 은 일부 편집기·클립보드가 지워 CSV 한글이 엑셀에서 깨질 수 있음.",
+  "suggestedFix": "FormsData JSON 을 양식 단위로 줄바꿈해 저장(Db.forms 는 첫 '{'~마지막 '}' 를 JSON.parse 하므로 영향 없음). 2219행은 '﻿' 이스케이프로 바꾼다.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "재해율이 마지막(일부 사업장만 낸) 달 때문에 크게 부풀려짐",
+  "area": "분석 개요 · 재해율(A.rates)",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsAnalytics.html (A.rates, 약 310~327행)"
+  ],
+  "repro": "분석 > 개요, 기간 '3개월' + 전체 사업장. 재해율 KPI 확인. (6개월도 동일 구조)",
+  "expected": "3개월(9~10월) 재해자 2명, 월말 재적 약 399~400명 수준 → 약 0.50%. 6개월은 재해자 4명÷약 388명 ≈ 1.03%.",
+  "actual": "3개월 0.88%('재해자 2명 ÷ 평균 재적 228명'), 6개월 1.31%('평균 재적 305명'). 평균 재적을 '월별 사업장 합계의 평균'으로 계산하는데 2026-10 F09가 2곳(56명)만 제출돼 있어 (399+56)/2=228, (401+363+399+56)/4=305로 끌려 내려감. 매월 1~5일(전월 F09 마감 전)마다 같은 왜곡이 생김. 3개월 값은 정답보다 약 76%, 6개월은 약 27% 큼.",
+  "suggestedFix": "분자·분모를 같은 (사업장×월) 보고 집합에서 만든다. 예: 평균 재적 = ΣH01(보고된 사업장-월) ÷ 보고된 사업장-월 수 × 대상 사업장 수, 또는 사업장 대비 보고율이 90% 미만인 달은 제외하고 '보고 N/12곳' 주석 표시. 최소한 부분 보고 월은 비율 계산에서 빼고 KPI 하단에 '10월은 2/12곳만 제출' 표기.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "'직전 N개월' 비교 구간이 실제 직전 N개월이 아님 — 직전 대비 증감과 '새로 발생' 문장이 틀림",
+  "area": "분석 개요·재해·사고 · A.prevScope 와 델타",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsAnalytics.html (A.prevScope 225~239행, delta 526~534행, analytics-b prevScope 1175행)"
+  ],
+  "repro": "분석 > 재해·사고(또는 개요), 기간 '3개월', 전체 사업장. 재해·사고·아차·제안·작업중지·수칙 위반 KPI 하단의 '직전 3개월 ○건' 확인 후 6~8월 원자료와 비교.",
+  "expected": "직전 3개월(2026-06-01~08-31) 재해·사고 3, 아차·제안 22, 작업중지 1, 수칙 위반 2건.",
+  "actual": "직전 구간이 06-01~08-01(끝을 '오늘 날짜(11-01)'에 맞춰 같은 날짜까지만 이동)이라 8월 대부분이 빠짐: 재해·사고 1건, 아차·제안 7건, 작업중지 0건, 수칙 위반 0건으로 표시. 결과적으로 '재해·사고 +3건(직전 1건 대비)', '안전수칙 위반 +3건 (새로 발생) · 직전 3개월 0건', '작업중지 +2건 (새로 발생)'은 사실이 아님(실제 위반 +1, 작업중지 +1). 같은 화면의 발견 문장(analytics-b prevScope)은 일수 기준 다른 구간(06-30~08-31)을 써서 두 구간 정의도 서로 다름.",
+  "suggestedFix": "직전 기간 = 현재 구간 시작 하루 전에서 같은 달 수만큼 거슬러 간 달력 구간(예 06-01~08-31)으로 정하거나, 진행 중인 달을 뺀 완결 달끼리 비교. A.prevScope 와 analytics-b prevScope 를 하나로 통일하고 라벨에 실제 날짜 구간을 표기.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "개요 제목·'사업장별 사고·아차'의 '사고·아차' 건수에 제안·위험요인 발굴·의견까지 들어가 문장이 거짓이 되고, 같은 화면의 다른 문장과 숫자가 어긋남",
+  "area": "분석 개요 · 제목 문장 / 사업장별 사고·아차 / 발견",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsAnalytics.html (overviewBuild 564~628행: bySite=D.acc+D.near, 발견은 analytics-b insightsOf 1478~1482행의 incRows)"
+  ],
+  "repro": "(a) 3개월 + 사업장 'S001 강남 오피스타워' 개요 제목, (b) 6개월 + 전체 개요 제목과 발견 4·5번째 문장 비교, (c) 3개월 + 전체 발견 '재해·사고 보고 …건 중' 문장",
+  "expected": "'사고·아차'는 재해·사고(F04 재해·무상해)와 아차(F02 아차사고+F04 아차)만 의미. 같은 사업장·같은 기간에는 한 숫자.",
+  "actual": "(a) 제목 '강남 오피스타워에서 사고·아차가 4건으로 직전 3개월(0건)보다 4건 늘었습니다' 인데 같은 화면 KPI는 재해·사고 0 · 아차 0 · 제안·발굴·의견 4 — 4건 모두 제안류. (b) 제목은 평택 물류센터 8건(재해2+F02 전부6), 발견 문장은 같은 평택을 '사고·아차 … 4건'(F04+F02 아차만)으로 표시. (c) 3개월: 제목 '재해·사고의 50%가 넘어짐'(4건 중 2)인데 발견 '재해·사고 보고 5건 중 넘어짐 2건(40%)'(아차 포함 5건) — 같은 화면에 50%와 40%. '사업장별 사고·아차' 막대(수원 8건 등)도 제안류 포함.",
+  "suggestedFix": "제목·막대는 acc(재해·사고)+nearMiss(아차)만 합산하고 제안·발굴·의견은 별도 표기. 발견 문장도 A.incidents 의 같은 집합을 재사용하고 '재해·사고 N건' 정의를 KPI와 통일.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "발견 문장의 기간·범위 표기가 깨짐('직전 5개월 0건 → 최근 6개월 · 전체 사업장 4건')",
+  "area": "분석 개요 · 발견(사업장 사고·아차 급증 문장)",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsAnalytics.html (insightsOf 1465~1482행: spanLabel, curLbl=s.label)"
+  ],
+  "repro": "분석 > 개요, 6개월 + 전체 사업장 (또는 12개월·S004). 발견 4~5번째 문장 확인.",
+  "expected": "예) '평택 물류센터 사고·아차 직전 6개월 0건 → 최근 6개월 4건'",
+  "actual": "'평택 물류센터 사고·아차 직전 5개월 0건 → 최근 6개월 · 전체 사업장 4건' (12개월은 '직전 11개월 0건 → 최근 12개월 · 전체 사업장 4건', S004 선택 시 '최근 6개월 · 평택 물류센터 4건'). spanLabel 이 일수(154일)로 5개월로 반올림하고, 현재 기간 라벨에 범위 라벨 전체(기간 · 사업장)를 끼워 넣어 문장이 깨지고 기간 길이가 틀림.",
+  "suggestedFix": "라벨은 A.scope().periodLabel(또는 달 수 n)만 사용하고 사업장 라벨은 문장에서 제외. spanLabel 대신 scope.months 사용.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "일일점검 제출률·정기 양식 회수율의 '기대 건수'가 앱 도입 전 기간까지 소급되어 기본 화면 수치가 실제와 크게 다름",
+  "area": "분석 개요·일일점검·사업장 비교(일일점검, 정기 양식, 종합 점수)",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsAnalytics.html (A.dailyRate 347~366행, dailyStats 1258~1284행, periodicStats 1435~1455행)"
+  ],
+  "repro": "분석 > 일일점검(또는 개요 운영 지표). 기본 '6개월' → 제출률 확인, '올해'·'12개월'로 바꿔 보기. F07 기록은 2026-07-01~10-31뿐.",
+  "expected": "기록이 존재하는 기간(또는 앱 도입일/첫 제출일 이후)만 기대 건수로 셈. 7~10월은 84.3%(2,488/2,952), 본사 홈 96%·취합 현황 10월 84%와 같은 수준.",
+  "actual": "기본 6개월 67.8%(기대 3,672 중 2,488, 6월 한 달이 전부 미제출), 12개월 평택 23%, 올해 34.1%(7,296 중 2,488), 1월 구간 0%(기대 744·제출 0), 정기 양식도 6월 월간보고·상반기 반기 양식·2분기가 '미제출'로 잡혀 사업장 종합 점수(수원 39점 등)까지 하락. 실사용에서도 도입 후 6개월(올해는 연말)까지 기본 화면이 낮게 보임. 사업장 openDate(2019~)만 하한으로 씀.",
+  "suggestedFix": "기대 구간 시작을 max(범위 시작, 사업장 openDate, 설정의 운영 시작일 또는 해당 사업장 첫 제출일)로 제한하고 설정에 '앱 사용 시작일'을 둠. 같은 정의를 A.dailyRate·dailyStats·periodicStats·HQ 취합 현황이 공유.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "종료(status='종료') 사업장 처리가 화면마다 달라 같은 기간 제출률이 서로 다름",
+  "area": "분석 일일점검·교육·사업장 비교 vs 개요·위험성평가",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsAnalytics.html (A.dailyRate 351행은 종료 제외, dailyStats/eduSite/renderSites 는 siteObjs 에 종료 포함; norm 1197~1205행)"
+  ],
+  "repro": "S012 를 sites.save status='종료' 로 바꾸고 S011 openDate 를 2026-10-15 로 바꾼 뒤(edge1.mjs) 분석 > 개요와 분석 > 일일점검을 '3개월'로 비교",
+  "expected": "종료 사업장은 모든 분석 화면에서 일관되게 제외(운영 11곳)되거나 일관되게 포함.",
+  "actual": "개요 '일일점검 제출률 82.9% · 기대 1,254건 중 1,040건', 범위 표기 '운영 11곳' 이지만 일일점검 화면은 '제출률 84% · 기대 1,376건 중 1,154건 · 12곳'(종료한 세종 공공청사 122건 포함, 표에도 계속 표시), 사업장 비교 스코어카드에도 12행 모두 표시. 종료 후 미제출이 쌓이면 일일점검 화면은 계속 낮아짐.",
+  "suggestedFix": "analytics-b norm() 에서 status!=='종료' 사업장만 siteObjs 로 쓰거나(필터에서 종료 선택 시에만 포함), 종료일 필드를 두어 종료일 이후를 기대에서 제외.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "개요의 '기한경과 미결 73건'이 조치 이행·홈·사이드바의 기한경과 55건과 다름",
+  "area": "분석 개요 · 조치 이행률 하단 / 분석 조치 이행 / 본사 홈",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsAnalytics.html (A.actRate 368~378행: overdue 가 완료·확인 외 전부(보류·고객사 이관 포함), analytics-b isOverdue 1253행은 등록·조치중만)"
+  ],
+  "repro": "분석 > 개요 '조치 이행률' KPI 하단 '기한경과 미결 ○건' vs 분석 > 조치 이행 '기한경과', 본사 홈 '기한경과 조치', 사이드바 조치대장 배지",
+  "expected": "같은 이름의 숫자는 한 값(조치 이행 화면 정의: 등록·조치중 중 기한 지난 것).",
+  "actual": "개요 73건(보류 7·고객사 이관 11 중 기한 지난 18건 포함), 조치 이행·홈·사이드바는 55건(높음 14). 개요 '기한 지난 높음' 보조값은 analytics-b 14건과 A.actRate 19건이 공존. 또한 개요 '조치 이행률 84.7%(393/464)'를 눌러 도착한 조치 이행 화면에는 이 지표가 없고 '기한 준수율 59%'만 있어 연결이 맞지 않음.",
+  "suggestedFix": "overdue 정의를 App.actOverdue(등록·조치중, due<오늘)로 통일하고 보류·이관은 '별도 N건'으로 표기. 개요 KPI 이름·정의를 조치 이행 화면과 같게.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "반려 상태 N1 교육이 '사업장별 법정 교육 시간'에 포함됨(KPI와 표 불일치)",
+  "area": "분석 교육·훈련 · 사업장별 법정 교육 시간(eduSite), 같은 allRows 를 쓰는 drillOf·periodicStats",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsAnalytics.html (isSub 1206행, allRows 1218~1226행, eduSite 1323~1333행)"
+  ],
+  "repro": "분석 > 교육·훈련(기본 6개월). 의정부 생명보험 사옥 근로자 정기교육 시간과 교육 시간 KPI·표 합계 비교(ED-S007-260909-01 은 상태 '반려', stageDone s1~s3)",
+  "expected": "S007 = 2시간(ED-S007-261029 제출 1건), 사업장표 합 44 = KPI '교육 시간 44시간'.",
+  "actual": "S007 '4 / 12시간', 사업장표 합 46 ≠ KPI 44. allRows 가 isSub(제출·확인 또는 stageDone 있음)라 반려 기록도 완료로 셈. 같은 이유로 반려 단계형 기록이 비상훈련 '실시' 판정·정기 양식 회수율에도 들어갈 수 있음(반려는 A.counted 에서 제외되는 다른 집계와 불일치).",
+  "suggestedFix": "allRows 도 A.counted(제출·확인·단계 보고 작성중, 반려 제외)와 같은 기준으로 맞추거나 n1Done/stageDone 에서 status==='반려' 제외.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "백분율 이중 반올림: 77.45%가 78%, 66.46%가 67%, 0.47%가 1%, HEC 준비도 96.49%가 97%로 표시되고 같은 화면 안에서 숫자가 서로 다름",
+  "area": "분석 일일점검·조치 이행·HEC·사업장 비교 등 pct()/hecReady",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsAnalytics.html (pct 1119행: num(Math.round(r*1000)/10, 0), hecReady 1393~1400행: 엔진 round1 결과를 다시 Math.round)"
+  ],
+  "repro": "(1) 분석 > 일일점검 6개월 표 '판교 R&D센터 기대 306·제출 237' 제출률, (2) 분석 > 조치 이행 3개월 수준별 표 '보통 164건 중 109건', (3) 분석 > HEC 준비도에서 인천 항만 터미널의 표 준비도와 격자 헤더, (4) 일일점검 '주의·불량 비율 추이' 툴팁",
+  "expected": "237/306=77.45%→77%, 109/164=66.46%→66%, 55/57=96.49%→96%, 10월 0.47%→0%(또는 소수 1자리 0.5%).",
+  "actual": "78%, 67%, 인천 표 '97%' vs 같은 화면 격자 헤더 '96%', 추이 툴팁 7월 '1%'·10월 '1%'(실제 0.74·0.47%). Math.round(r*1000)/10 후 Intl 반올림(half-expand)을 한 번 더 해 0.05%p 구간에서 1%p 어긋남. 올해 범위 세종 39.5→40%도 같은 원인(검사기 7건 불일치 중 해당).",
+  "suggestedFix": "pct 를 num(r*100, d) 한 번만 반올림으로 고치고, hecReady 는 엔진 counts(g/적용 항목)로 직접 계산하거나 반올림 전 값을 받아 격자 헤더와 같은 식으로. 0~2% 구간 차트는 소수 1자리 포맷 사용.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "취합 현황판·홈 KPI 회수율이 '마감 전' 항목을 한쪽만 분모에서 빼서 편향됨(월간보고 열 100%, '마감 지난 19건')",
+  "area": "본사 취합 현황 열 머리 회수율 / 종합 현황 '이번 달 정기 양식 회수율'",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsHq.html (aggregate 342~351행, buildMatrix 487~496행, renderHome 690~697·712행)"
+  ],
+  "repro": "본사 > 취합 현황(월, 2026년 10월)에서 '월간보고' 열 머리와 칸 확인, 종합 현황 KPI '이번 달 정기 양식 회수율' 문구 확인(오늘 2026-11-01, 10월 F09 마감은 11-05)",
+  "expected": "월간보고는 12곳 중 2곳(S003·S007)만 제출 → 열 머리는 2/12 또는 '마감 전'으로 구분. 홈 문구 '마감 지난 17건 중 16건(94%)'.",
+  "actual": "월간보고 열 100%(분모=제출한 2곳만). 분기 보기 '월간보고' 열도 100%. 홈은 '마감 지난 19건 중 18건 · 마감 전 10건 별도'인데 19건에 마감(11-05) 전인 F09 2건이 들어가 있음(실제 마감 지난 건 F08B 12+N4 5=17). aggregate()가 마감 전이라도 제출된 것은 분모·분자에 모두 넣고 미제출은 뺌.",
+  "suggestedFix": "마감 전 칸은 분자·분모 모두에서 제외하고 '제출 2 · 마감 전 10' 별도 표기하거나, 대상 전체(12)를 분모로 하는 회수율과 마감 지난 건 기준 지연율을 분리해 보여 줌.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "취합 현황판 행 끝 '사업장 제출률'이 마감 전 요청 칸과 정기 양식·요청 중복 칸을 모두 미제출로 셈",
+  "area": "본사 취합 현황 사업장별 제출률(행 끝) / 홈 미니 현황판",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsHq.html (cellReq 403~405행: expected=1·frac=done, buildMatrix 475·485행)"
+  ],
+  "repro": "본사 > 취합 현황(월, 2026년 10월). S009 수원 공장 행 끝 제출률 확인 후 칸 구성(일일점검 66% · 보호구실사 미제출 · 분기점검 확인 · 요청 3분기 보호구(같은 양식) 미제출 · 동절기 요청 미제출 · 하반기 비상훈련 요청 마감 전)",
+  "expected": "마감 전 칸은 제외하고 같은 양식(F08B)의 정기 칸·요청 칸 중복을 한 번만 반영: 약 (0.66+0+1+0)/4 ≈ 42%.",
+  "actual": "S009 28%(=(0.66+0+1+0+0+0)/6), S004 61%, S008 79% 등. 정기 양식 칸은 마감 전이면 expected 0 으로 빠지는데 요청 칸은 마감 전(하반기 비상훈련 D-6)도 expected=1·frac=0 으로 평균에 들어가고, F08B 가 정기 열과 요청 열에서 이중 반영됨.",
+  "suggestedFix": "cellReq 의 expected/frac 를 마감 지난 요청에만 적용하고 요청 열이 정기 열과 같은 양식·기간이면 행 평균에서 한 번만 계산.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "일일점검 '주의·불량 판정 비율 추이' 차트 y축 눈금이 '0% 0% 0% 1% 1%'로 중복",
+  "area": "분석 일일점검 · 판정 추이 차트",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsAnalytics.html (trendBody 1757~1758행, fPct=pct)"
+  ],
+  "repro": "분석 > 일일점검(기본 6개월) 오른쪽 아래 차트의 y축·툴팁 확인(0.47~0.74% 값)",
+  "expected": "눈금 0 / 0.5 / 1.0 / 1.5% 등 소수 눈금, 막대 툴팁 소수 1자리.",
+  "actual": "눈금 라벨이 정수 %라 '0% 0% 0% 1% 1%'(SVG text 추출), 7월·8월·9월·10월 툴팁 모두 '1%'.",
+  "suggestedFix": "이 차트만 소수 1자리 포맷(num(v*100,1))을 쓰고 눈금도 같은 포맷.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "사업장 비교 '재해·아차' 열의 아차에 무상해(F04)가 섞이고 반려 재해는 0으로 표시되어 다른 화면과 합이 안 맞음",
+  "area": "분석 사업장 비교 · 재해·아차 열 / 도수율 해설",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsAnalytics.html (renderSites 2024행: nm = 전체 − 재해)"
+  ],
+  "repro": "분석 > 사업장 비교(6개월): 아차 열 합 21 vs 재해·사고 화면 아차 20(+무상해 1). 판교 R&D센터 재해 0(반려된 AC-S003-260929 재해는 제외)인데 같은 달 F09 A01=1 로 도수율 분자에는 포함",
+  "expected": "열 이름 그대로 재해/아차만 집계하거나 무상해 별도 열, 제외된 반려 보고는 주석으로 안내.",
+  "actual": "부산 상가 '0 · 1'은 무상해 1건을 '아차'로 표기. 개요 도수율 분자 '재해 4건'(F09) vs 재해 KPI 6건(F04)이 한 화면에 있는데 보고 월 범위 차이 설명이 없음.",
+  "suggestedFix": "열 정의를 재해·무상해·아차로 나누거나 툴팁에 포함 범위 표시, 개요 도수율 하단에 '○월 N/12곳 보고' 표기.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "양식별 분석 발견 문장이 자명한 100%(응답 건수 대비)를 골라 의미 없고, F09 월별 막대는 보고월이 아니라 제출일 기준",
+  "area": "분석 양식별(form/<code>)",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsAnalytics.html (renderForm 2106~2108행, 2116~2117행 bucketOf(r.date))"
+  ],
+  "repro": "분석 > 양식별 > F09/F07/F04. 제목 문장과 F09 '월별 건수' 확인",
+  "expected": "집중도가 의미 있는 항목(전체 기록 대비 비율)을 선택, 월별은 보고월(period) 기준.",
+  "actual": "'F09 37건(12곳) — … 빠짐없이 기록했음을 확인합니다 \\'예\\' 37건(100%)이 가장 많습니다', 'F07 … \\'휴식 후 복귀\\' 248건(100%)'(응답 248건 중), F04 '중대재해 해당 해당없음 100%'. F09 월별 건수는 7월분을 '8월: 12', 10월분을 '11월: 2'로 표시(r.date 기준, 필터는 period 기준이라 서로 다름).",
+  "suggestedFix": "응답 수 최소치·단일값 항목(예/해당없음 100%) 제외 후 선택, F09 는 A.dateOf(r) 기준으로 묶기.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "취합 현황판에서 일일점검 칸이 제출률 70~90%이면 '지연 제출' 기호로 표시됨",
+  "area": "본사 취합 현황 · 일일점검 칸 기호",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsHq.html (cellDaily 369행)"
+  ],
+  "repro": "본사 > 취합 현황 2026년 10월: S001(82%)·S005(89%)·S008(76%)·S011(85%) 일일점검 칸이 범례 '지연 제출'(테두리+점) 기호",
+  "expected": "커버리지가 낮은 칸은 '일부 제출/작성중' 계열 기호 또는 별도 범례.",
+  "actual": "제출 건수는 70~90%이고 지연이 아니어도 mk-late 로 표시되어 범례 의미와 다름(S008 '지연'인데 기한 내 비율은 89%).",
+  "suggestedFix": "cellDaily 의 rate 구간 분류를 지연 비율 기준으로 분리하거나 전용 범례(부분 제출) 추가.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "분석·홈의 카드가 이웃 높이로 늘어나 카드 안에 600px 가까운 빈 띠가 생김(panel-void)",
+  "area": "분석 전 탭·종합 현황 레이아웃(§4.2 '늘어난 카드는 채울 내용이 있을 때만')",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsAnalytics.html",
+   "/home/user/dcd/hds-safety/gas/JsHq.html",
+   "/home/user/dcd/hds-safety/gas/Css.html"
+  ],
+  "repro": "1440×900 로 #/analytics/daily → 스크롤. 같은 방식으로 #/analytics/acts, #/analytics/edu, #/analytics/risk, #/analytics/form/F07, #/analytics/sites, #/home(768 포함). 측정: 카드 안 글자·차트가 덮지 않는 세로 최대 공백.",
+  "expected": "같은 줄 카드는 높이가 비슷한 블록끼리 짝짓거나 align-start 로 자기 높이를 갖고, 푸터 동작만 바닥에 붙는다. 카드 안 빈 띠 40px 이하(섹션 머리 앞 64px 이하).",
+  "actual": "analytics-daily '요일별 미제출' 카드 h=863px 인데 차트는 255px 에서 끝나 608px 공백(이웃은 12행 표). analytics-acts '수준별 기한 준수율' h=811/공백 574, analytics-edu '교육 과정별 시간·인원' h=685/공백 454, analytics-risk '수시 평가 사유' 318·'기한경과·미실시 사업장' 287(1행뿐)·'직무별 위험요인' 88, form-F07 8개 카드 66~204, analytics-sites '종합 점수 계산 방법' 143, 종합 현황 '진행 중 요청 회수율' 156(768 에서 291), 분석 개요 '사고 유형 상위' 96. 원인: 기본 .grid 는 stretch 인데 span 8+4 / 7+5 / 6+6 로 높이가 다른 카드를 짝지음. 스크린샷: shots/1440-analytics-daily-c1.png·c2.png, 1440-analytics-acts-c2.png, 1440-analytics-risk-c1.png",
+  "suggestedFix": "JsAnalytics.html daily(약 L1760-1766 grid), edu(L1859), acts(L1934), risk(L1016) 와 form 카드 격자에 align-start 를 주거나 높이가 비슷한 블록끼리 짝짓기(긴 표 옆에는 차트 두 개를 세로로 쌓기), 표 행 수를 6~8행으로 제한하고 '전체 보기' 링크. 빈 설명 카드는 span 12 로 얇게. JsHq.html home 의 회수율 카드도 항목 수에 맞춰 높이를 줄이거나 푸터를 머리로 올리기.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "같은 줄 카드의 아래 끝이 어긋나고 오른쪽 레일이 수천 px 비어 있음(ragged-row)",
+  "area": "조치대장·사업장 상세·요청 화면·검토함·분석 재해(§4.2 '같은 줄 카드는 아래 끝 맞춤')",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsHq.html",
+   "/home/user/dcd/hds-safety/gas/JsAnalytics.html",
+   "/home/user/dcd/hds-safety/gas/Css.html"
+  ],
+  "repro": "1440×900: #/acts(스크롤), #/sites/S001, #/requests/new, #/requests/REQ-260901-01, #/review, #/analytics/incidents, #/collect, #/users. 각 .grid 자식 bottom 편차 측정.",
+  "expected": "같은 줄 카드는 아래 끝이 같거나(차이 3px 이하) 오른쪽 레일이 sticky 로 따라오거나 짧은 쪽이 내용 상단 정렬+푸터 동작 하단 고정.",
+  "actual": "조치대장: 왼쪽 목록 4632px vs 오른쪽 레일(미결 경과 분포·사업장별 기한경과) 614px → 오른쪽 1/3 폭에 약 4000px 공백(위치 static, sticky 아님). 사업장 상세 2140 vs 1123(편차 1017), 새 요청 1079 vs 메일 미리보기 501(578), 분석 재해 3카드 줄 편차 216·206, 요청 상세 126, 검토함 92(왼쪽 목록 712 vs 미리보기 804), 사용자 31, 취합 현황 아래 줄 23(S: 미제출 사업장 h307 vs 이 기간 요청 h284). 스크린샷 shots/1440-acts-c1.png·c3.png, 1440-sites-detail-c1.png",
+  "suggestedFix": "레일 카드는 position:sticky; top:72px(또는 목록 5~6행 + '전체 보기' 로 캡). 새 요청 메일 미리보기도 sticky. 취합 현황 하단 두 카드는 같은 행 수로 맞추거나 짧은 쪽 푸터를 바닥 고정. 분석 재해 3열은 행별로 높이가 비슷한 카드 묶기.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "조치대장 목록의 '상태' 열이 카드 밖으로 밀려 보이지 않음(1440), 768 에서는 수준·담당·기한·상태 모두 가려짐",
+  "area": "조치대장 표(§7 표·§12 태블릿 4~5열)",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsHq.html",
+   "/home/user/dcd/hds-safety/gas/Css.html"
+  ],
+  "repro": "1440×900 #/acts → 조치 목록 카드. 또는 768×1024. DOM: .hq-act-tbl 폭 844px, 감싸는 .tbl-wrap 폭 759px(overflow-x:auto).",
+  "expected": "가장 중요한 열(기한·상태)이 카드 안에 보이고, 식별 열(내용)이 가장 넓되 잘리지 않는다. 7열 표라면 보조 열은 내용 아래 한 줄로.",
+  "actual": "머리글 조치번호·사업장·내용·수준·담당·기한 까지만 보이고 '상태'(x 1021~1098)는 카드 오른쪽 끝(1013) 밖으로 나가 가로 스크롤을 해야 보임. '기한' 칸의 '경과 248일'은 카드 테두리에 붙어 우측 패딩이 없음. 768 에서는 내용 열이 넓어 수준·담당·기한·상태가 전부 화면 밖(shots/768-acts-c1.png). 조치번호·사업장 열이 폭을 먼저 차지.",
+  "suggestedFix": "JsHq.html L2406 의 7열을 5열로: [조치(번호는 내용 아래 보조줄) · 사업장 · 수준 · 기한 · 상태], 담당은 보조줄로. 내용 열 max-width 와 ellipsis 지정, 표 폭이 카드를 넘지 않게 table-layout 조정. 오른쪽 레일(findings 2)은 표 아래로 내리거나 8/4 대신 12 로.",
+  "_auditor": ""
+ },
+ {
+  "severity": "major",
+  "title": "분석·일일점검 '주의·불량 판정 비율 추이' 차트의 y축 눈금이 0%,0%,0%,1%,1% 로 중복·오해 유발",
+  "area": "차트 축(§6.3 '둥근 간격 눈금, 중복 없음')",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsAnalytics.html",
+   "/home/user/dcd/hds-safety/gas/JsCharts.html"
+  ],
+  "repro": "1440 #/analytics/daily → 카드 '주의·불량 판정 비율 추이'. 눈금 텍스트: document.querySelectorAll 로 text-anchor=end 인 text 5개를 읽으면 '0%,0%,0%,1%,1%'.",
+  "expected": "비율이 0.7% 이하인 데이터는 0.0%/0.2%/0.4%/0.6%/0.8% 처럼 소수 1자리 눈금(또는 소수 한 자리 tickFormat). 서로 다른 눈금이 같은 글자로 찍히면 안 됨.",
+  "actual": "fPct=pct(v) 가 정수로 반올림해 눈금 5개가 0%,0%,0%,1%,1% 로 찍힘. 최대 막대(약 0.7%)가 '1%' 줄에 닿아 보여 실제 값과 다르게 읽힘. 증거 shots/1440-daily-ratio-chart.png",
+  "suggestedFix": "JsAnalytics.html L1629 fPct 와 차트 호출(L1764 trendBody)에 { tickFormat: function(v){ return pct(v,1); } } 를 주고, JsCharts.html ticks() 결과가 라벨 반올림 후 중복이면 소수 자릿수를 늘리도록 방어.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "빨강·호박·초록이 상태가 아니라 질감으로 쓰임(모든 행에 같은 색 표시)",
+  "area": "색 규율(§11 '빨강은 질감이 아니라 신호', §7.6 '정상은 회색', §14)",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsHq.html",
+   "/home/user/dcd/hds-safety/gas/JsSite.html",
+   "/home/user/dcd/hds-safety/gas/JsAnalytics.html",
+   "/home/user/dcd/hds-safety/gas/Css.html"
+  ],
+  "repro": "1440: #/acts, #/review, #/home, #/analytics/daily, #/analytics/sites, #/sites, #/records. 사업장 390: #/home, #/records. 팔레트 집계로 빨강/호박 요소 수 측정.",
+  "expected": "정상 상태는 회색이거나 표시 없음, 색은 위험한 행에만. 한 객체당 빨강 한 곳.",
+  "actual": "조치대장 빨강 요소 79·호박 텍스트 110(65행 전부 빨간 '경과 N일' + 수준 알약). 사업장 홈 '할 일' 34행 전부 빨간 '기한경과 N일' 알약(빨강 49). 검토함 21행·종합 현황 8행 전부 빨간 점. 일일점검 분석 12행 전부 빨간 미제출 숫자, 제출률 70% 미만 막대 5개 빨강. 사업장 비교 스코어카드 정상 행마다 초록 'D-162' 알약·호박 '훈련 없음' 5개. 사업장 기록 257건 중 252건 초록 '확인' 알약(HQ 기록 100행 중 98행). 사업장 목록 12행 모두 초록 '운영' 알약.",
+  "suggestedFix": "기본 상태(확인·운영·정상 D-n)는 알약을 없애고 회색 글자/빈칸으로, 빨강은 기한경과·반려처럼 조치가 필요한 행만. 목록 전체가 기한경과면 상단 요약 한 줄에만 빨강.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "거터가 12/16/20/24px 로 섞이고 쌓은 레일은 16px, 격자는 24px",
+  "area": "간격(§4.1 '한 거터', SPEC §9 한 화면 한 거터 24px)",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/Css.html",
+   "/home/user/dcd/hds-safety/gas/CssViews.html"
+  ],
+  "repro": "1440: 페이지 직계 자식 사이 세로 간격 측정(vgaps) 및 #/acts·#/sites/S001·#/requests/<id> 의 .stack-16 간격.",
+  "expected": "한 화면 한 값(24px).",
+  "actual": "제목→본문 12px(요청·설정·분석 개요)/20px(그 외), 도구줄→카드 16px, KPI→격자 24px; 같은 화면에서 격자 칸 간격 24px 인데 .stack-16 으로 쌓은 오른쪽 카드 사이는 16px(조치대장 미결 경과 분포↔사업장별 기한경과 565→581 등).",
+  "suggestedFix": "--gap(24px) 하나로 통일: .stack-16 → gap var(--gap), title-row 아래 여백과 toolbar 아래 여백을 24px 로.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "사업장 '표준 양식' 데스크톱 표: 첫 칸 행 선이 어긋나고 날짜가 하이픈에서 줄바꿈",
+  "area": "사업장 양식 화면(표 정렬·§7.4 '단어 중간 줄바꿈 금지')",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/CssEngine.html",
+   "/home/user/dcd/hds-safety/gas/JsEngine.html"
+  ],
+  "repro": "사업장 링크(?s=<token>) 로그인 → 1440 폭에서 #/forms. 첫 행의 첫 칸과 나머지 칸의 아래 선 y 가 다름. DOM: td.rv-fcell 높이 69px, 나머지 td 88px.",
+  "expected": "행 선이 한 줄로 이어지고 '다음 마감' 날짜는 한 줄.",
+  "actual": "CssEngine.html L370 `.rv-forms td.rv-fcell{display:flex}` 때문에 첫 칸이 table-cell 이 아니어서 행 높이를 못 채움 → 첫 칸 아래 선이 다른 칸보다 약 19px 위(shots/crop-site-forms.png). '마감 2027-03-04' 가 '2027-03-' / '04' 로 갈라지고 '마감 2026-11-…' 도 잘림.",
+  "suggestedFix": "td.rv-fcell 은 display:table-cell 유지하고 안쪽 .rv-fmain/.rv-fno 를 div(flex)로 감싸기(JsEngine.html L2926). 다음 마감 열은 white-space:nowrap 과 min-width.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "값이 없는 KPI 가 28px 대시로 찍혀 '로딩 중'처럼 읽힘",
+  "area": "빈·결측 상태(§11 '대시는 값 크기로 쓰지 않음')",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsCore.html",
+   "/home/user/dcd/hds-safety/gas/Css.html"
+  ],
+  "repro": "새 DB 로 #/home(일일점검 제출률·정기 양식 회수율), #/acts(평균 처리일), #/analytics/daily(KPI 3개); 예시 데이터에서도 #/review 오른쪽 미리보기 '전파→대피(분)'.",
+  "expected": "작은 회색 대시(14~16px)와 이유 문장, 또는 칸 자체 생략.",
+  "actual": "App.ui.kpis 가 `<span class=\"faint\">—</span>` 를 KPI 값 크기 28px 그대로 출력(bigDash 측정 2~3개/화면). Css.html L229 의 `.kpi-value .dash`(작은 회색 대시) 규칙은 JS 가 쓰지 않아 죽은 규칙.",
+  "suggestedFix": "JsCore.html L1107 에서 span.dash 를 출력하고 Css.html .kpi-value .dash 를 font-size:16px 로 지정.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "긴 목록이 상한 없이 통째로 그려지고 표 머리가 따라오지 않음",
+  "area": "목록 규칙(§7.8 개요 2~5행·'머리 줄 유지')",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsHq.html",
+   "/home/user/dcd/hds-safety/gas/JsSite.html",
+   "/home/user/dcd/hds-safety/gas/Css.html"
+  ],
+  "repro": "사업장 홈 #/home(할 일 34행, 390 에서 3053px·1440 에서 2609px), HQ #/acts(65행 한 번에, 4632px, 폰 8420px), #/records(100행, th position static).",
+  "expected": "개요 목록은 4~6행 + '전체 보기', 긴 표는 머리 줄 sticky(범위·더 보기 표시는 이미 있음).",
+  "actual": "사업장 홈 '할 일' 은 기한경과 27건 포함 34행 전부 나열. 조치대장은 65건 전부 렌더하고 페이지 처리 없음. thead th 는 position static(.tbl-wrap.scroll 에만 sticky 규칙이 있고 사용 안 함).",
+  "suggestedFix": "할 일은 5행+'전체 N건' 링크(조치 탭으로), 조치대장은 50행 + '더 보기'(기록 조회와 같은 방식), 긴 표는 .tbl-wrap.scroll 에 max-height 와 sticky 머리.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "날짜·혼합 문자 열이 왼쪽 정렬이고 날짜에 tabular 숫자가 안 붙음",
+  "area": "표 숫자 정렬(§7.4)",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsHq.html",
+   "/home/user/dcd/hds-safety/gas/JsAnalytics.html",
+   "/home/user/dcd/hds-safety/gas/JsEngine.html"
+  ],
+  "repro": "1440: #/requests/REQ-260901-01(열람 열 12행), #/rec/<id>(전달교육일·dd 날짜 20개), #/analytics/incidents(발생 일시 8행), #/analytics/edu(훈련일 7행), #/analytics/sites(교육·훈련 '4/12시간 훈련 없음' 12행).",
+  "expected": "비교하는 날짜·수치 열은 오른쪽 정렬 tabular(ISO 날짜는 자릿수 고정).",
+  "actual": "위 열의 셀 text-align:left, font-variant-numeric 미지정(비 tabular).",
+  "suggestedFix": "해당 th/td 에 .num 클래스, 정의 목록 dd 의 날짜에도 .num. '4/12시간 + 알약' 은 숫자와 알약을 두 칸으로 분리.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "휴대폰 터치 대상이 44px 미만(본사·사업장 편집)",
+  "area": "폰 터치 크기(SPEC §9·§12 '44px 이상')",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/Css.html",
+   "/home/user/dcd/hds-safety/gas/CssEngine.html",
+   "/home/user/dcd/hds-safety/gas/JsHq.html"
+  ],
+  "repro": "390×844: HQ #/collect(현황판 칸 36×36 ×84개), #/home(미니 현황판 칸 26×26 ×48개, .btn.sm 36px 행 동작), #/records·#/acts(select·input 32px, .btn.sm 36px), 사업장 #/new/F07(근무조 버튼·fe-chip 40px 약 20개), #/forms(새로 쓰기 36px).",
+  "expected": "터치 대상 높이 44px 이상(체크리스트 양호/주의/불량 78×44 는 통과).",
+  "actual": "위 요소가 26~40px. 분석 하위 탭 a.an-tab 폭 24~40px(높이 44).",
+  "suggestedFix": "@media(max-width:640px) 에서 .btn.sm·.select·.input·.seg button·.fe-chip 최소 높이 44px, 현황판 칸 히트 영역을 44px 로 넓히기(보이는 표시는 그대로).",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "사업장 하단 탭바의 숫자 배지: 홈 34 가 무엇인지 알 수 없고 조치 26·받은 요청 3 과 중복",
+  "area": "내비 카운트(§3.2 '카운트는 조치가 필요한 대기열만, 명사가 분명해야')",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsCore.html",
+   "/home/user/dcd/hds-safety/gas/JsSite.html"
+  ],
+  "repro": "사업장 링크 로그인 390 #/home 아래 탭바(홈 34, 받은 요청 3, 조치 26 모두 빨강).",
+  "expected": "홈에는 배지를 두지 않거나 명사가 분명한 하나만.",
+  "actual": "홈 배지 34 가 할 일 전체(조치 26 + 받은 요청 3 + 5)이고 같은 숫자가 다른 탭에 또 있음.",
+  "suggestedFix": "홈 탭 배지 제거, 나머지 두 배지만 유지(회색 또는 빨강 한 종류).",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "사업장 홈(데스크톱)에서 내용이 960px 왼쪽 고정이라 오른쪽에 약 240px 죽은 띠",
+  "area": "캔버스 오른쪽 끝(§4.2)",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsSite.html",
+   "/home/user/dcd/hds-safety/gas/CssViews.html"
+  ],
+  "repro": "사업장 로그인 1440 #/home: 내용 left 233 right 1193, 시트 right 1432.",
+  "expected": "시트 가장자리까지 쓰거나 시트 가운데 정렬.",
+  "actual": "홈의 두 큰 버튼·할 일 카드가 1193 에서 끝나 239px 빈 띠(shots/1440-site-home-c1.png). 받은 요청·양식은 전체 폭 사용 → 화면마다 폭이 다름.",
+  "suggestedFix": "max-width 를 없애거나 .page 안에서 margin-inline:auto, 모든 사업장 화면 같은 폭 규칙.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "검토함 미리보기·기록 상세가 박스 안 박스 + 0 으로 가득한 KPI 줄 두 개를 맨 위에 올림",
+  "area": "그룹은 박스 아님(§9.4), 0 의 의미(§5)",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsEngine.html",
+   "/home/user/dcd/hds-safety/gas/JsHq.html"
+  ],
+  "repro": "1440 #/review(첫 항목 비상훈련 1단계 보고) 또는 #/rec/DR-S003-261013-01.",
+  "expected": "계산 필드 요약은 한 줄 정의 목록이나 작은 요약 문장, 의미 있는 값만. 카드 안 카드 2단계까지.",
+  "actual": "패널 > '기본 정보' 카드 > 4칸 KPI 줄('전파→대피 —', '참여 0명', '참여율 0%', '계획서 미흡 0건') > 3칸 KPI 줄(0건 ×3) > 단계 카드 로 3단 중첩. 실제 기록 내용이 화면 중간(y≈700)에서야 시작(shots/1440-review-c1.png, 1440-rec-detail-c1.png).",
+  "suggestedFix": "기록 본문 위의 계산 요약은 값이 있는 것만 한 줄 칩/요약 문장으로, 0·— 인 계산 필드는 해당 섹션 안으로.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "태블릿(768)과 취합 현황판 헤더: 열이 잘리고 식별 열이 폭을 과하게 차지",
+  "area": "태블릿 대역(§12)·표 폭 배분(§7.4 식별 열 1/3~1/2)",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsHq.html",
+   "/home/user/dcd/hds-safety/gas/JsAnalytics.html",
+   "/home/user/dcd/hds-safety/gas/CssViews.html"
+  ],
+  "repro": "768×1024 #/collect, #/analytics; 1440 #/collect 머리글·두 번째 줄 '미제출 사업장'.",
+  "expected": "머리글이 말줄임 없이 읽히거나 title 외에 짧은 이름 제공, 식별 열은 필요한 만큼만.",
+  "actual": "1440 현황판 머리글 '3분기 보호구 …', '동절기 대비 분…', '2026 하반기…' 가 말줄임(식별 열 405px=1152 폭의 35%). 768 은 일곱째 열이 카드 밖으로 잘림. 분석 개요 6칸 KPI 의 sub 문장이 최대 6줄로 접히고 KPI 라벨 '일일점검 제출률'(sw82/cw77) 이 잘림. 취합 현황 '미제출 사업장' 표에서 'S008 인천 항만 터미널' 이 두 줄로 접히는데 오른쪽 문장 열은 넓음.",
+  "suggestedFix": "현황판 식별 열 폭을 내용에 맞춰 줄이고 요청 열 머리글에 짧은 이름 필드 사용, 768 에서는 KPI 를 3×2 로, 현황판은 첫 열 sticky + 가로 스크롤 안내.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "위험성평가 누적 막대 안 흰 글자 대비 3.16:1",
+  "area": "대비(app-screens §9.2 4.5:1)",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsAnalytics.html",
+   "/home/user/dcd/hds-safety/gas/JsCharts.html"
+  ],
+  "repro": "#/analytics/risk 의 '위험성 등급 — 감소 전 → 감소 후' 막대 중 '보통' 구간(#8b90a7 위 흰색 12px '30').",
+  "expected": "4.5:1 이상(어두운 글자 또는 더 짙은 칸 색).",
+  "actual": "흰 글자 on #8b90a7 = 3.16:1(전 폭에서 동일).",
+  "suggestedFix": "회색 칸 위 글자를 --text(#14183c)로 하거나 칸 색을 #676b84 로.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "기록 조회 표의 기록번호가 사업장 코드를 빼고 보여 서로 다른 기록이 같은 번호로 보임",
+  "area": "ID 표시(§7.4 ID 규칙·데이터 신뢰)",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/JsHq.html"
+  ],
+  "repro": "1440 #/records 맨 아래로 스크롤: 'ID-261028-01' 이 S002·S011·S007·S008·S012·S009 등 여러 사업장 행에 반복.",
+  "expected": "전체 기록번호(ID-S011-261028-01)나 줄임 표시라면 고유 8자 + 말줄임·복사 버튼.",
+  "actual": "사업장 코드가 빠진 번호가 서로 다른 기록 6개 이상에 같게 표시 → 번호로 검색·구두 확인 시 혼동(검색은 전체 번호로만 일치할 가능성). 증거 shots/1440-records-bottom.png",
+  "suggestedFix": "표 셀은 전체 번호를 그대로(고정폭 13자 이내) 또는 사업장 열을 번호에 합치기.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "휴대폰에서 본사 표가 '라벨: 값' 4줄 카드로 바뀌어 한 행이 110px, 문장이 중간에서 잘림",
+  "area": "폰 표 변환(§12 '식별+핵심 수치 1줄, 나머지 13px 회색 2줄')",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/Css.html",
+   "/home/user/dcd/hds-safety/gas/JsHq.html"
+  ],
+  "repro": "390×844 #/acts: 행마다 조치번호/사업장/내용/수준·담당·기한·상태 라벨이 붙은 4줄. #/collect 는 제목·보조 설명·주 버튼·세그먼트·월 이동·체크박스 3줄의 컨트롤 때문에 현황판 첫 행이 화면 높이의 약 71% 지점에서 시작.",
+  "expected": "2줄 행(식별+핵심 수치 / 보조 필드 회색), 첫 목록 행이 화면 위 60% 안.",
+  "actual": "조치 65건이 8420px, '내용' 줄은 '일일점… 위험요인 평…' 처럼 문장 중간에서 잘림(shots/390-acts-c2.png). 취합 현황은 shots/390-collect-c1.png.",
+  "suggestedFix": "폰에서는 data-label 대신 1줄: '내용(말줄임)' + 오른쪽 상태 알약, 2줄: '사업장 · 담당 · 기한경과 N일'. 취합 현황 컨트롤은 한 줄(월 이동+범위)로 합치기.",
+  "_auditor": ""
+ },
+ {
+  "severity": "minor",
+  "title": "CI 제목체(Paperlogy)가 번들되지 않아 확인 불가, 분석 하위 8탭이 같은 골격, 부가 항목",
+  "area": "CI·템플릿성 판단(요구 '네이비·레드·Paperlogy 제목')",
+  "files": [
+   "/home/user/dcd/hds-safety/gas/Css.html",
+   "/home/user/dcd/hds-safety/vendor",
+   "/home/user/dcd/hds-safety/dev/build-preview.mjs"
+  ],
+  "repro": "미리보기에서 h1 computed font-family 는 'Paperlogy, Pretendard…' 이나 document.fonts.check('700 22px Paperlogy') 가 false(CDN 403·로컬 파일 없음). 분석 8개 탭 1440 비교.",
+  "expected": "CI 제목체가 실제로 로드된다는 증거(번들 또는 확인된 URL)와 화면마다 고유한 첫 요소.",
+  "actual": "Css.html L10-13 이 jsDelivr 의 Paperlogy-7Bold/6SemiBold 만 참조(vendor 에 woff2 없음, 6SemiBold URL 은 검증 못 함) → CDN 차단 환경(사내망)에서는 제목·워드마크가 Pretendard 로 바뀜. 분석 하위 탭은 모두 '탭→기간→KPI 4~6칸→카드 2~3열'이며 개요는 KPI 6칸 줄이 두 번(12개), 주 KPI 34px 는 형제 28px 의 1.21배(규칙 1.3배). 토스트 neg 는 pos 와 같은 네이비라 오류가 색으로 구분되지 않음.",
+  "suggestedFix": "Paperlogy woff2 를 vendor 에 두고 build-preview 가 인라인, GAS 에서는 기존 CDN + 대체 글꼴 유지. 분석 개요 하단 '운영 지표' 줄은 다른 탭과 중복이므로 제거하거나 한 줄 요약으로. 주 KPI 는 36px 이상 또는 형제를 24px 로.",
+  "_auditor": ""
+ }
+]

@@ -1,7 +1,6 @@
 <!doctype html>
 <html lang="ko" data-preview="1">
 <head>
-<base target="_top">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light">
@@ -24853,7 +24852,7 @@ return {
       (shiftLine ? '<p class="st-cta-meta">' + shiftLine + '</p>' : '') + '</div>' +
       '<div class="st-cta-cell"><button type="button" class="btn lg st-cta-btn st-sos" data-href="' + esc(newHref('F04', {})) + '">' + ic('siren', 20) +
       '<span class="st-cta-text"><span class="st-cta-label">사고·아차 보고</span><span class="st-cta-sub">재해·무상해·아차사고 속보</span></span></button>' +
-      '<p class="st-cta-meta">응급 상황은 먼저 <a class="st-119" href="tel:119">119</a>에 신고하고 소장·본사에 전화하세요.</p></div>' +
+      '<p class="st-cta-meta">응급 상황은 먼저 <a class="st-119" target="_top" href="tel:119">119</a>에 신고하고 소장·본사에 전화하세요.</p></div>' +
       '</div>';
 
     /* 할 일 목록 */
@@ -25248,14 +25247,14 @@ return {
     var mgr = '';
     if (s.managerName || s.managerPhone || s.managerEmail) {
       mgr = '<dl class="kv st-kv">' + kvRow('사업장 담당자', esc(s.managerName || '')) +
-        kvRow('연락처', s.managerPhone ? '<a href="tel:' + esc(String(s.managerPhone).replace(/[^\d+]/g, '')) + '">' + esc(s.managerPhone) + '</a>' : '') +
+        kvRow('연락처', s.managerPhone ? '<a target="_top" href="tel:' + esc(String(s.managerPhone).replace(/[^\d+]/g, '')) + '">' + esc(s.managerPhone) + '</a>' : '') +
         kvRow('메일', s.managerEmail ? esc(s.managerEmail) : '') + '</dl>';
     }
     var hqMails = ((st.mail && st.mail.hqEmails) || []).filter(Boolean);
     var hqPhone = st.hqPhone || st.contactPhone || (st.contact && st.contact.phone) || '';
     var hq = '<dl class="kv st-kv">' + kvRow('본사', esc(st.company || 'HDS(주) 안전경영지원실')) +
-      (hqPhone ? kvRow('전화', '<a href="tel:' + esc(String(hqPhone).replace(/[^\d+]/g, '')) + '">' + esc(hqPhone) + '</a>') : '') +
-      (hqMails.length ? kvRow('메일', hqMails.map(function (m) { return '<a href="mailto:' + esc(m) + '">' + esc(m) + '</a>'; }).join('<br>')) : '') + '</dl>';
+      (hqPhone ? kvRow('전화', '<a target="_top" href="tel:' + esc(String(hqPhone).replace(/[^\d+]/g, '')) + '">' + esc(hqPhone) + '</a>') : '') +
+      (hqMails.length ? kvRow('메일', hqMails.map(function (m) { return '<a target="_top" href="mailto:' + esc(m) + '">' + esc(m) + '</a>'; }).join('<br>')) : '') + '</dl>';
     var callNote = '<p class="muted st-small">사고는 먼저 전화로 알리고, 앱에는 ‘사고·아차 보고’로 속보를 남기세요.</p>';
 
     var shown = siteState.showInactive ? ppl : act;
