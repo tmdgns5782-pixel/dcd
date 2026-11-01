@@ -979,7 +979,8 @@ var Dispatch = (function () {
     p = p || {};
     if (!me) fail('AUTH', '다시 로그인해 주세요');
     var refId = str(p.refId);
-    if (!refId || !/^[A-Za-z0-9_\-:.]{1,80}$/.test(refId)) fail('INVALID', '열람 표시할 항목이 올바르지 않습니다');
+    // refId: 요청 번호(REQ-…) 또는 본사 확인 표시용 '기록번호#단계' 등
+    if (!refId || !/^[A-Za-z0-9_\-:.#\/]{1,120}$/.test(refId)) fail('INVALID', '열람 표시할 항목이 올바르지 않습니다');
     var site = me.kind === 'site' ? str(me.site) : 'HQ';
     if (!site) fail('FORBIDDEN', '사업장 정보가 없는 세션입니다');
     if (me.kind === 'site' && /^REQ-/.test(refId)) {
@@ -1293,15 +1294,8 @@ var Dispatch = (function () {
     var acts = ctx.acts();
 
     // 매일 양식(일일점검 등) 제출률
-    var dailyCodes = {};
     var per = {};
-    sites.forEach(function (s) {
-      per[s.id] = { exp: 0, got: 0, acc: 0, near: 0, stop: 0, overdue: 0, high: 0, miss: 0 };
-      requiredOf(s, st).forEach(function (r) {
-        var d = formDef(r.code);
-        if (d && d.frequency && d.frequency.type === 'daily') dailyCodes[r.code] = true;
-      });
-    });
+    sites.forEach(function (s) { per[s.id] = { exp: 0, got: 0, acc: 0, near: 0, stop: 0, overdue: 0, high: 0, miss: 0 }; });
     var expTotal = 0, gotTotal = 0;
     sites.forEach(function (s) {
       var row = per[s.id];

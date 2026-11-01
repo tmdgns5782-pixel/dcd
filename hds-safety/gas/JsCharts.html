@@ -60,10 +60,13 @@
   };
   const minutes = (t) => (t == null || t === '' ? null : typeof t === 'number' ? t : (([hh, mm]) => hh * 60 + (mm || 0))(String(t).split(':').map(Number)));
   // Round ticks (steps of 1, 2, 2.5 or 5 × 10^n) whose top sits above the largest value.
-  function ticks(min, max, count = 4) {
+  // int: true for counts — the step never drops below 1, so a count axis never reads 0, 1, 1, 2 (HDS 확장)
+  function ticks(min, max, count = 4, int = false) {
     if (max === min) max = min + 1;
     const raw = (max - min) / count, mag = 10 ** Math.floor(Math.log10(raw));
-    const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) || 10 * mag;
+    let step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) || 10 * mag;
+    if (int && step < 1) step = 1;
+    if (int && step > 1 && !Number.isInteger(step)) step = Math.ceil(step);
     const lo = Math.floor(min / step) * step; let hi = Math.ceil(max / step) * step; if (hi <= max) hi += step;
     const out = []; for (let v = lo; v <= hi + step / 2; v += step) out.push(+v.toFixed(10));
     return out;
@@ -262,7 +265,7 @@
       const all = series.flatMap((x) => x.values.filter((v) => v != null)).concat([].concat(reference || []).map((r) => r.value));
       // max caps the range (a flat series with one spike): values above it are clipped and their peak labelled
       const top = max ?? Math.max(...all);
-      const yt = yTicks || ticks(min ?? Math.min(0, ...all), top, 4);
+      const yt = yTicks || ticks(min ?? Math.min(0, ...all), top, 4, all.every((v) => Number.isInteger(+v)));
       const tick = tickFormat || format;
       const lastVal = series[0].values.filter((v) => v != null).at(-1);
       const padL = 12 + Math.max(...yt.map((v) => measure(s, tick(v), 12))), padB = 26, padR = endLabel ? 10 + measure(s, format(lastVal), 12, 600) : 0;
@@ -322,7 +325,7 @@
     const lit = (i) => highlight == null || (Array.isArray(highlight) ? highlight.includes(i) : highlight === i);
     const draw = () => {
       const { s, w, h } = frame(el, heightOf(height == null ? respH(el, 200) : height));
-      const yt = ticks(0, Math.max(...values, ...[].concat(reference || []).map((r) => r.value)), 4), tick = tickFormat || format;
+      const yt = ticks(0, Math.max(...values, ...[].concat(reference || []).map((r) => r.value)), 4, values.every((v) => Number.isInteger(+v))), tick = tickFormat || format;
       const padL = 12 + Math.max(...yt.map((v) => measure(s, tick(v), 12))), padB = 26;
       const band = (w - padL) / values.length, bw = Math.max(2, band * 0.62);
       const x = (i) => padL + band * i + band / 2;
@@ -352,7 +355,7 @@
     const draw = () => {
       const { s, w, h } = frame(el, heightOf(height == null ? respH(el, 200) : height));
       const hiUp = Math.max(0, ...up), hiDown = Math.max(0, ...down);
-      const yt = ticks(-hiDown, hiUp || 1, 4); const stp = yt[1] - yt[0]; if (hiDown > 0 && yt[0] >= -hiDown) yt.unshift(+(yt[0] - stp).toFixed(10));
+      const yt = ticks(-hiDown, hiUp || 1, 4, up.concat(down).every((v) => Number.isInteger(+v))); const stp = yt[1] - yt[0]; if (hiDown > 0 && yt[0] >= -hiDown) yt.unshift(+(yt[0] - stp).toFixed(10));
       const padL = 12 + Math.max(...yt.map((v) => measure(s, tick(v), 12))), padB = 26;
       const band = (w - padL) / labels.length, bw = Math.max(2, band * 0.62);
       const x = (i) => padL + band * i + band / 2;
@@ -660,7 +663,7 @@
     const draw = () => {
       const { s, w, h } = frame(el, heightOf(height == null ? respH(el, 220) : height));
       const C = cols();
-      const yt = percent ? [0, 0.25, 0.5, 0.75, 1] : ticks(0, Math.max(1, ...totals, ...[].concat(reference || []).map((r) => r.value)), 4);
+      const yt = percent ? [0, 0.25, 0.5, 0.75, 1] : ticks(0, Math.max(1, ...totals, ...[].concat(reference || []).map((r) => r.value)), 4, totals.every((v) => Number.isInteger(v)));
       const tick = percent ? fmt.pct(0) : tickFormat || format, top = yt[yt.length - 1];
       const padL = 12 + Math.max(...yt.map((v) => measure(s, tick(v), 12))), padB = 26;
       const band = (w - padL) / Math.max(1, labels.length), bw = Math.max(2, Math.min(band * 0.62, 64));

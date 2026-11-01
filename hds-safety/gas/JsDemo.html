@@ -325,6 +325,22 @@
       }
     });
   }
+  /** 예시 데이터엔 실제 파일이 없으므로 자동 채우기가 넣은 data: URL(사진·서명 그림)은 뺀다 — 올리는 크기를 줄이려고. */
+  function stripDataUrls(o) {
+    if (Array.isArray(o)) {
+      for (var i = o.length - 1; i >= 0; i--) {
+        if (typeof o[i] === 'string' && o[i].indexOf('data:') === 0) o.splice(i, 1);
+        else if (o[i] && typeof o[i] === 'object') stripDataUrls(o[i]);
+      }
+    } else if (o && typeof o === 'object') {
+      Object.keys(o).forEach(function (k) {
+        var v = o[k];
+        if (typeof v === 'string' && v.indexOf('data:') === 0) delete o[k];
+        else if (v && typeof v === 'object') stripDataUrls(v);
+      });
+    }
+    return o;
+  }
   /** 아직 하지 않은 단계의 섹션 값을 지운다(단계 진행 중 기록). */
   function prune(def, rec, k) {
     if (!def.stages) return;
@@ -390,6 +406,7 @@
     var k = def.stages ? (o.stages == null ? def.stages.length : o.stages) : 0;
     if (def.stages && k < def.stages.length) prune(def, rec, k);
     tidy(def, rec, preKeys, preRows, site);
+    stripDataUrls(d);
     try { E.computeAll(def, rec); } catch (e) { warn(code, e); }
     if (typeof o.after === 'function') o.after(d, rec);
     try { rec.period = String(E.periodKeyOf(def, rec) || ''); } catch (e) { rec.period = ''; }

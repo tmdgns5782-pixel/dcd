@@ -711,7 +711,11 @@ var Views = (function () {
   function onRecord(rec) {
     if (!rec || !rec.id) return false;
     try {
-      return Db.withLock(function () { return applyRecord(rec); });
+      return Db.withLock(function () {
+        // 색인 행(data 없음)을 넘겨받으면 저장된 전체 기록으로 바꾼다.
+        if (rec.data === undefined || rec.data === null) rec = Db.get('records', rec.id) || rec;
+        return applyRecord(rec);
+      });
     } catch (e) {
       console.warn('평탄화 시트 갱신 실패(' + rec.id + '): ' + (e && e.message || e));
       return false;

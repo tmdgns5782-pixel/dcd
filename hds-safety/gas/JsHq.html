@@ -685,8 +685,8 @@
     var sub = exc.length ? esc(exc[0].find) + '.' : (sites.length ? '오늘 손볼 예외가 없습니다. ' + (dRate != null ? md(y) + ' 일일점검 제출률은 ' + pctText(dRate) + '입니다.' : '') : '운영 중인 사업장이 없습니다.');
     var actions = canWrite() ? '<a class="btn" href="#/requests/new">' + ic('send') + '<span>새 요청</span></a>' : '';
     var k = kpis([
-      { label: (y === addDays(t, -1) ? '어제' : md(y)) + ' 일일점검 제출률', value: dExp ? Math.round(dGot / dExp * 100) : '—', unit: dExp ? '%' : '',
-        sub: dExp ? '근무조 ' + dGot + '/' + dExp + (dExp - dGot ? ' · <span class="t-neg">미제출 ' + (dExp - dGot) + '</span>' : '') : '받을 일일점검이 없습니다' },
+      { label: '일일점검 제출률', value: dExp ? Math.round(dGot / dExp * 100) : '—', unit: dExp ? '%' : '',
+        sub: dExp ? (y === addDays(t, -1) ? '어제' : md(y)) + ' 근무조 ' + dGot + '/' + dExp + (dExp - dGot ? ' · <span class="t-neg">미제출 ' + (dExp - dGot) + '</span>' : '') : '받을 일일점검이 없습니다' },
       { label: '이번 달 정기 양식 회수율', value: re ? Math.round(rd / re * 100) : '—', unit: re ? '%' : '', sub: re ? '마감 지난 ' + re + '건 중 ' + rd + '건' + (waitN ? ' · 마감 전 ' + waitN + '건 별도' : '') : (waitN ? '마감 전 ' + waitN + '건 · 마감 지난 건 없음' : '받을 정기 양식이 없습니다') },
       { label: '확인 대기', value: queue.length, unit: '건', sub: queue.length ? '가장 오래된 건 ' + relTime(oldest) + ' 제출 · <a href="#/review">검토함</a>' : '검토할 기록이 없습니다' },
       { label: '기한경과 조치', value: over.length, unit: '건', sub: over.length ? (overHigh ? '<span class="t-neg">높음 ' + overHigh + '건</span>' : '높음 0건') + ' · <a href="#/acts">조치대장</a>' : '기한 안에 처리되고 있습니다' }
@@ -695,11 +695,11 @@
     var excBody = exc.length ? '<ul class="list hq-exc-list">' + exc.slice(0, limit).map(excRow).join('') + '</ul>'
       : empty('오늘 손볼 예외가 없습니다. 사고·기한경과 조치·미제출이 생기면 여기에 먼저 보입니다.');
     var excFoot = exc.length > 8 ? '<button type="button" class="btn ghost sm" data-act="hq.excAll">' + (HOME.all ? '8건만 보기' : '전체 보기 ' + exc.length + '건') + '</button>' : '';
-    var excPanel = panel({ title: '오늘의 예외', sub: exc.length ? exc.length + '건 · 급한 순' : '없음', body: excBody, foot: excFoot, flush: !!exc.length, cls: 'span-8 hq-exc-panel' });
+    var excPanel = panel({ title: '오늘의 예외', sub: exc.length ? exc.length + '건 · 급한 순' : '없음', body: excBody, foot: excFoot, flush: !!exc.length, cls: 'span-7 hq-exc-panel' });
     var miniFoot = sites.length ? (missN || retN ? '<span><span class="t-neg">기한경과 ' + missN + '칸</span>' + (retN ? ' · 반려 ' + retN + '칸' : '') + '</span>' : '<span>기한이 지난 미제출이 없습니다</span>') +
       '<a href="#/collect">미제출 사업장 보기</a>' : '';
     var miniPanel = panel({ title: '이번 달 취합', sub: '열마다 지금 받는 기간', actions: '<a class="btn ghost sm" href="#/collect">전체 현황판</a>',
-      body: legendHtml(M.kinds) + matrixHtml(M, { collecting: true, noRate: true, noPct: true, cls: 'hq-mini' }), foot: miniFoot, cls: 'span-4 hq-mini-panel' });
+      body: legendHtml(M.kinds) + matrixHtml(M, { collecting: true, noRate: true, noPct: true, cls: 'hq-mini' }), foot: miniFoot, cls: 'span-5 hq-mini-panel' });
 
     // 최근 들어온 기록
     var recent = recs().filter(function (r) { return r.form !== 'F07' && (r.submittedAt || (r.stageDone || []).length); })
@@ -719,7 +719,11 @@
         '<div class="li-sub">' + (q.kind === 'notice' ? '공지 · 열람 ' : '회수 ') + st.done + '/' + st.total + ' · ' + dueText(q.due) + '</div>' + bar(st.rate, st.overdue && st.missing.length ? 'neg' : '') + '</div>' +
         '<div class="li-side num">' + pctText(st.rate) + '</div></li>';
     }).join('') + '</ul>' : empty('진행 중인 요청이 없습니다.', canWrite() ? '<a href="#/requests/new">새 요청</a>' : '');
-    var reqPanel = panel({ title: '진행 중 요청 회수율', sub: open.length ? open.length + '건 · 마감 빠른 순' : '', actions: '<a class="btn ghost sm" href="#/requests">배포·요청</a>', body: reqBody, cls: 'span-6' });
+    var openSt = open.map(function (q) { return reqStats(q, ctx); });
+    var tDone = 0, tAll = 0, lateN = 0;
+    openSt.forEach(function (st) { tDone += st.done; tAll += st.total; if (st.overdue && st.missing.length) lateN++; });
+    var reqFoot = open.length ? '<span>전체 ' + tDone + '/' + tAll + '곳 · ' + pctText(tAll ? tDone / tAll : null) + (lateN ? ' · <span class="t-neg">마감 지난 요청 ' + lateN + '건</span>' : '') + '</span><a class="btn ghost sm" href="#/requests">배포·요청</a>' : '';
+    var reqPanel = panel({ title: '진행 중 요청 회수율', sub: open.length ? open.length + '건 · 마감 빠른 순' : '', body: reqBody, foot: reqFoot, cls: 'span-6' });
 
     frame(main, titleRow('종합 현황', sub, actions) + k +
       '<div class="grid">' + excPanel + miniPanel + '</div>' +
@@ -773,10 +777,13 @@
           var lab = it.col.kind === 'req' ? '요청 ' + it.col.req.title : it.col.label;
           if (it.cell.daily) lab += ' ' + it.cell.got + '/' + it.cell.exp;
           else if (it.cell.cls === 'mk-returned') lab += ' 반려';
-          return '<span class="nowrap">' + esc(lab) + '</span>';
+          return esc(lab);
         }).join(' · ');
         var regs = m.items.filter(function (it) { return it.col.kind === 'form' && it.cell.cls === 'mk-miss'; }).map(function (it) { return it.col.code; });
-        var btn = canWrite() && regs.length ? '<a class="btn sm" href="' + esc(prefillHref({ forms: uniq(regs).join(','), sites: m.site.id, period: sameTypeKey(uniq(regs), P), title: P.label + ' 미제출 양식 제출 요청', due: addDays(today(), 3) })) + '">요청</a>' : '';
+        var openReq = m.items.filter(function (it) { return it.col.kind === 'req' && it.col.req.status === '진행' && it.cell.cls === 'mk-miss'; })[0];
+        var btn = '';
+        if (canWrite() && regs.length) btn = '<a class="btn sm" href="' + esc(prefillHref({ forms: uniq(regs).join(','), sites: m.site.id, period: sameTypeKey(uniq(regs), P), title: P.label + ' 미제출 양식 제출 요청', due: addDays(today(), 3) })) + '">요청</a>';
+        else if (canWrite() && openReq) btn = '<button type="button" class="btn sm" data-act="hq.siteRemind" data-id="' + esc(openReq.col.req.id) + '" data-site="' + esc(m.site.id) + '">독촉</button>';
         return '<tr><td data-label="사업장"><a href="#/sites/' + esc(m.site.id) + '"><b>' + esc(m.site.id) + '</b> ' + esc(m.site.name) + '</a></td><td data-label="미제출·반려">' + forms + '</td>' +
           '<td class="num" data-label="최장 경과">' + (m.overdue ? '<span class="t-neg">' + m.overdue + '일</span>' : '<span class="faint">—</span>') + '</td><td class="num">' + btn + '</td></tr>';
       }).join('') + '</tbody></table></div>' : empty('이 기간에 기한이 지난 미제출·반려가 없습니다.');
@@ -1112,7 +1119,7 @@
   }
 
   /* ═════════ 6. 검토함 (hq:review) ═════════ */
-  var RV = { form: '', site: '', sel: '', seq: 0 };
+  var RV = { form: '', site: '', sel: '', seq: 0, limit: 100 };
   function ackKey(r) { var d = r.stageDone || []; return r.id + '#' + (d[d.length - 1] || ''); }
   function reviewQueue() {
     var acked = {}; reads().forEach(function (x) { acked[x.refId] = 1; });
@@ -1140,13 +1147,16 @@
     var tool = '<div class="toolbar"><select class="select hq-rv-form" aria-label="양식"><option value="">양식 전체</option>' + formsIn.map(function (c) { return '<option value="' + esc(c) + '"' + (c === RV.form ? ' selected' : '') + '>' + esc(fshort(c)) + '</option>'; }).join('') + '</select>' +
       '<select class="select hq-rv-site" aria-label="사업장"><option value="">사업장 전체</option>' + sitesIn.map(function (id) { return '<option value="' + esc(id) + '"' + (id === RV.site ? ' selected' : '') + '>' + esc(siteLabel(id)) + '</option>'; }).join('') + '</select>' +
       '<span class="spacer"></span><span class="faint hide-phone hq-keys">j·k 이동 · a 확인</span></div>';
-    var listHtml = list.length ? '<ul class="list hq-rv-list" role="listbox" aria-label="확인 대기">' + list.map(function (x) {
+    var shown = list.slice(0, RV.limit);
+    if (RV.sel && !shown.some(function (x) { return x.r.id === RV.sel; })) { var at = list.filter(function (x) { return x.r.id === RV.sel; })[0]; if (at) shown.push(at); }
+    var more = list.length > shown.length ? '<button type="button" class="btn ghost sm" data-act="hq.rvMore">' + Math.min(100, list.length - shown.length) + '건 더 보기</button><span>' + shown.length + '/' + list.length + '건 표시</span>' : '';
+    var listHtml = list.length ? '<ul class="list hq-rv-list" role="listbox" aria-label="확인 대기">' + shown.map(function (x) {
       var r = x.r, s = siteById(r.site);
       return '<li class="li click hq-rv-item' + (r.id === RV.sel ? ' on' : '') + '" role="option" aria-selected="' + (r.id === RV.sel) + '" data-act="hq.rvSel" data-id="' + esc(r.id) + '">' +
-        dot(x.top ? 'neg' : (x.tier === 1 && hoursAgo(x.at) > 72 ? 'warn' : 'neu')) + '<div class="li-main"><div class="li-title"><b>' + esc(fshort(r.form)) + '</b> · ' + esc(s ? s.id + ' ' + s.name : r.site) + '</div>' +
+        dot(x.top ? 'neg' : 'neu') + '<div class="li-main"><div class="li-title"><b>' + esc(fshort(r.form)) + '</b> · ' + esc(s ? s.id + ' ' + s.name : r.site) + '</div>' +
         '<div class="li-sub">' + esc(r.author || '작성자 없음') + ' · ' + (x.stage ? esc(stageLabel(r)) + ' · ' : '') + esc(relTime(x.at)) + (r.rev > 1 ? ' · 재제출' : '') + '</div></div></li>';
     }).join('') + '</ul>' : empty(all.length ? '이 조건에 맞는 확인 대기가 없습니다.' : '확인할 기록이 없습니다.', all.length ? '<button type="button" class="btn ghost sm" data-act="hq.rvClear">필터 지우기</button>' : '');
-    var listPanel = panel({ title: '확인 대기', sub: list.length + '건 · 사건·단계 보고 → 보고서 → 일일점검, 각각 오래된 순', body: listHtml, flush: !!list.length, cls: 'span-4 hq-rv-left' });
+    var listPanel = panel({ title: '확인 대기', sub: list.length + '건 · 사건·단계 보고 → 보고서 → 일일점검, 각각 오래된 순', body: listHtml, foot: more, flush: !!list.length, cls: 'span-4 hq-rv-left' });
     var prevPanel = '<section class="panel span-8 hq-rv-right hide-phone" id="hq-rv-prev">' + (RV.sel ? '<div class="panel-bd">' + skel(22, '50%') + '<div style="height:12px"></div>' + skel(14, '80%') + '<div style="height:24px"></div>' + skel(160, '100%') + '</div>' : '<div class="panel-bd">' + empty(list.length ? '왼쪽에서 기록을 고르십시오.' : '미리 볼 기록이 없습니다.') + '</div>') + '</section>';
     frame(main, titleRow('검토함', sub, '') + tool + '<div class="grid align-start hq-rv">' + listPanel + prevPanel + '</div>');
     var fs = main.querySelector('.hq-rv-form'), ss = main.querySelector('.hq-rv-site');
@@ -1189,7 +1199,9 @@
   function rvSelect(id) {
     if (isPhone()) { go('#/rec/' + id); return; }
     RV.sel = id;
-    var items = document.querySelectorAll('.hq-rv-item');
+    var items = document.querySelectorAll('.hq-rv-item'), found = false;
+    [].forEach.call(items, function (li) { if (li.getAttribute('data-id') === id) found = true; });
+    if (!found) { RV.limit += 100; rerender(); return; }
     [].forEach.call(items, function (li) {
       var on = li.getAttribute('data-id') === id;
       li.classList.toggle('on', on); li.setAttribute('aria-selected', on ? 'true' : 'false');
@@ -1280,6 +1292,10 @@
       if (!codes.length) { toast('기한이 지난 미제출 정기 양식이 없습니다.'); return; }
       go(prefillHref({ forms: codes.join(','), sites: ids.join(','), period: sameTypeKey(codes, P), title: P.label + ' 미제출 양식 제출 요청', due: addDays(today(), 3) }));
     },
+    'hq.siteRemind': function (el) {
+      var q = reqById(el.getAttribute('data-id')); if (!q) return;
+      remind(q, [el.getAttribute('data-site')]);
+    },
     'hq.reqTab': function (el) { RQ.tab = el.getAttribute('data-value') || 'open'; rerender(false); },
     'hq.reqRemind': function (el) {
       var q = reqById(el.getAttribute('data-id')); if (!q) return;
@@ -1330,6 +1346,7 @@
     'hq.rfAttDel': function (el) { var f = CUR.main.querySelector('form.hq-rf'); readRF(f); RF.attachments.splice(Number(el.getAttribute('data-i')), 1); rerender(); },
     'hq.rvSel': function (el) { rvSelect(el.getAttribute('data-id')); },
     'hq.rvNext': function () { rvMove(1); },
+    'hq.rvMore': function () { RV.limit += 100; rerender(); },
     'hq.rvClear': function (el, ev) { if (ev && ev.preventDefault) ev.preventDefault(); RV.form = ''; RV.site = ''; rerender(); },
     'hq.rvReload': function () { if (RV.sel) loadPreview(RV.sel); },
     'hq.rvOk': function (el) { rvDecide(el.getAttribute('data-id'), '확인'); },
@@ -2195,15 +2212,15 @@
   });
 
   /* ======================= 조치대장 #/acts , #/acts/<id> ======================= */
-  var OPEN_ST = { '등록': 1, '조치중': 1, '보류': 1 };
-  function actOpen(a) { return !!OPEN_ST[a.status]; }
+  /* 미결 = 등록·조치중 (App.actOpen 과 같은 정의 — 다른 화면 숫자와 맞춤). 보류는 '처리 안 된 것'에만 넣는다 */
+  function actOpen(a) { return typeof App.actOpen === 'function' ? App.actOpen(a) : (a.status === '등록' || a.status === '조치중'); }
+  function actPending(a) { return actOpen(a) || a.status === '보류'; }
   function actOverdue(a, t) { return (a.status === '등록' || a.status === '조치중') && !!a.due && a.due < (t || todayStr()); }
   function actAge(a, t) { var d = daysBetween(String(a.createdAt || a.due || '').slice(0, 10), t || todayStr()); return isNaN(d) ? 0 : Math.max(0, d); }
   function dueHtml(a) {
     if (!a.due) return DASH;
     if (!actOpen(a)) return '<span class="num muted">' + esc(a.due) + '</span>';
     var d = daysBetween(todayStr(), a.due);
-    if (a.status === '보류') return '<span class="num muted">' + esc(a.due) + '</span>';
     if (d < 0) return '<span class="t-neg num nowrap">경과 ' + (-d) + '일</span>';
     if (d === 0) return '<span class="t-warn nowrap">오늘 마감</span>';
     return '<span class="num nowrap">D-' + d + '</span>';
@@ -2234,7 +2251,7 @@
     var t = todayStr();
     return rows.sort(function (a, b) {
       if (tab === 'closed') return cmpDesc(a.updatedAt || '', b.updatedAt || '');
-      var oa = actOverdue(a, t) ? 0 : actOpen(a) || a.status === '완료' ? 1 : 2, ob = actOverdue(b, t) ? 0 : actOpen(b) || b.status === '완료' ? 1 : 2;
+      var oa = actOverdue(a, t) ? 0 : actPending(a) || a.status === '완료' ? 1 : 2, ob = actOverdue(b, t) ? 0 : actPending(b) || b.status === '완료' ? 1 : 2;
       if (oa !== ob) return oa - ob;
       var da = a.due || '9999', db = b.due || '9999';
       return da < db ? -1 : da > db ? 1 : (a.id < b.id ? -1 : 1);
@@ -2247,7 +2264,7 @@
       od.forEach(function (a) { by[a.site] = (by[a.site] || 0) + 1; if (!top || by[a.site] > by[top]) top = a.site; oldest = Math.max(oldest, daysBetween(a.due, t)); });
       return '기한경과 조치 ' + num(od.length) + '건 — ' + esc(top + ' ' + siteName(top)) + '이(가) ' + num(by[top]) + '건으로 가장 많고, 가장 오래된 건은 ' + num(oldest) + '일 지났습니다.';
     }
-    var soon = all.filter(function (a) { return actOpen(a) && a.status !== '보류' && a.due && daysBetween(t, a.due) >= 0 && daysBetween(t, a.due) <= 7; }).length;
+    var soon = all.filter(function (a) { return actOpen(a) && a.due && daysBetween(t, a.due) >= 0 && daysBetween(t, a.due) <= 7; }).length;
     var open = all.filter(actOpen).length;
     if (soon) return '기한경과는 없고, 7일 안에 마감되는 조치가 ' + num(soon) + '건입니다.';
     if (open) return '미결 조치 ' + num(open) + '건이 모두 기한 안에 있습니다.';
@@ -2257,14 +2274,14 @@
   }
   function actKpis(scope) {
     var t = todayStr(), open = scope.filter(actOpen), od = scope.filter(function (a) { return actOverdue(a, t); });
-    var high = open.filter(function (a) { return a.level === '높음'; }).length;
+    var high = open.filter(function (a) { return a.level === '높음'; }).length, hold = scope.filter(function (a) { return a.status === '보류'; }).length;
     var oldest = od.reduce(function (m, a) { return Math.max(m, daysBetween(a.due, t)); }, 0);
     var soon = scope.filter(function (a) { return (a.status === '등록' || a.status === '조치중') && a.due && daysBetween(t, a.due) >= 0 && daysBetween(t, a.due) <= 7; });
     var today = soon.filter(function (a) { return a.due === t; }).length;
     var done = scope.filter(function (a) { return a.doneAt && daysBetween(String(a.doneAt).slice(0, 10), t) <= 90 && a.createdAt; });
     var avg = done.length ? done.reduce(function (s, a) { return s + Math.max(0, daysBetween(String(a.createdAt).slice(0, 10), String(a.doneAt).slice(0, 10))); }, 0) / done.length : null;
     return kpis([
-      { label: '미결', value: num(open.length), unit: '건', sub: high ? '<span class="t-neg">높음 ' + num(high) + '건</span> 포함' : '높음 수준 없음' },
+      { label: '미결', value: num(open.length), unit: '건', sub: (high ? '<span class="t-neg">높음 ' + num(high) + '건</span> 포함' : '높음 수준 없음') + (hold ? ' · 보류 ' + num(hold) + '건 별도' : '') },
       { label: '기한경과', value: '<span class="' + (od.length ? 't-neg' : '') + '">' + num(od.length) + '</span>', unit: '건', lead: true,
         sub: od.length ? '가장 오래된 건 <span class="t-neg">' + num(oldest) + '일</span> 경과' : '기한 지난 조치 없음' },
       { label: '7일 안 마감', value: num(soon.length), unit: '건', sub: today ? '오늘 마감 ' + num(today) + '건' : '오늘 마감 없음' },
@@ -2272,14 +2289,14 @@
     ]);
   }
   function actDist(scope) {
-    var t = todayStr(), open = scope.filter(actOpen), bins = [['0~7일', 0, 7], ['8~30일', 8, 30], ['31~90일', 31, 90], ['90일 넘음', 91, 1e9]];
+    var t = todayStr(), open = scope.filter(actPending), bins = [['0~7일', 0, 7], ['8~30일', 8, 30], ['31~90일', 31, 90], ['90일 넘음', 91, 1e9]];
     var cnt = bins.map(function (b) { return open.filter(function (a) { var d = actAge(a, t); return d >= b[1] && d <= b[2]; }).length; });
     var max = Math.max.apply(null, cnt.concat([1]));
     var body = open.length ? '<div class="hq-dist">' + bins.map(function (b, i) {
       return '<div class="hq-dist-row"><span class="hq-dist-label">' + b[0] + '</span><div class="bar' + (i === 3 && cnt[i] ? ' neg' : '') + '"><i style="width:' + (cnt[i] ? Math.max(2, cnt[i] / max * 100) : 0).toFixed(1) + '%"></i></div>' +
         '<span class="num hq-dist-n">' + num(cnt[i]) + '</span></div>';
     }).join('') + '</div>' : empty('처리 안 된 조치가 없습니다.');
-    return panel({ title: '미결 경과 분포', sub: '등록일부터 오늘까지 · 미결 ' + num(open.length) + '건', body: body });
+    return panel({ title: '미결 경과 분포', sub: '등록일부터 오늘까지 · 미결·보류 ' + num(open.length) + '건', body: body });
   }
   function actHot(scope, st) {
     var t = todayStr(), od = scope.filter(function (a) { return actOverdue(a, t); }), by = {}, keyFn, title;
@@ -2368,7 +2385,7 @@
     });
     drawActs();
     if (a[0]) {
-      var id = decodeURIComponent(a[0]);
+      var id = a[0];
       setTimeout(function () { if (alive(root)) openActDlg(id, true); }, 0);
     }
   }
@@ -2650,7 +2667,7 @@
   }
   function viewSites(main, args, query) {
     var a = argsArr(args);
-    if (a[0]) return viewSiteDetail(main, decodeURIComponent(a[0]));
+    if (a[0]) return viewSiteDetail(main, a[0]);
     var list = sitesAll().sort(function (x, y) { return (x.status === '종료') - (y.status === '종료') || x.id.localeCompare(y.id); });
     var last = lastInputBySite(), t = todayStr();
     var act = isAdmin() ? '<button class="btn primary" type="button" data-href="#/sites/new">' + icon('plus') + '<span>사업장 추가</span></button>' : '';

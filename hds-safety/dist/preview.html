@@ -1333,6 +1333,7 @@ body.rv-printing #print-root { display: block; min-height: 100vh; }
 .an-h3 { margin: 20px 0 8px; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--muted, #555a75); }
 .an-chart + .an-h3, .an-kv + .an-h3 { margin-top: 20px; }
 .an-note { margin: 12px 0 0; font-size: var(--fs-small, 12px); line-height: 18px; }
+.an-note-top { margin: 0 0 12px; }
 .an-kv { margin-top: 16px; }
 .an-chart + .an-kv { margin-top: 16px; }
 .an-strong { font-weight: 500; color: var(--text, #14183c); }
@@ -3632,7 +3633,8 @@ var DEFAULT_SETTINGS = {
  *
  * 설정(스크립트 속성 — 편집기 > 프로젝트 설정 > 스크립트 속성)
  *   ANTHROPIC_API_KEY  (필수) Anthropic API 키. 없으면 이 기능은 꺼진 것으로 본다.
- *   ANTHROPIC_MODEL    (선택) 모델 ID. 기본 claude-sonnet-5-5.
+ *   ANTHROPIC_MODEL    (선택) 모델 ID. 기본 claude-sonnet-5-5. 설정 화면의 settings.ai.model 이 있으면 그것이 먼저.
+ *   settings.ai.enabled === false 이면 키가 있어도 쓰지 않는다.
  *   ANTHROPIC_EFFORT   (선택) low | medium | high. 기본 medium.
  *
  * 호출: UrlFetchApp → POST https://api.anthropic.com/v1/messages
@@ -3781,19 +3783,22 @@ var Ai = (function () {
   function insight(p, me) {
     p = p || {};
     if (!me || me.kind !== 'hq') fail('FORBIDDEN', '본사 사용자만 AI 분석을 쓸 수 있습니다');
+    var st = {};
+    try { st = Db.settings() || {}; } catch (e0) { st = {}; }
+    var aiSet = (st.ai && typeof st.ai === 'object') ? st.ai : {};
+    if (aiSet.enabled === false) fail('INVALID', 'AI 분석이 꺼져 있습니다. 설정에서 AI 분석을 켜세요');
     var key = prop('ANTHROPIC_API_KEY');
     if (!key) fail('INVALID', 'AI 분석 키가 설정되지 않았습니다. 스크립트 속성 ANTHROPIC_API_KEY 를 넣으세요');
     if (p.digest == null || typeof p.digest !== 'object') fail('INVALID', '분석할 요약 숫자가 없습니다. 분석 화면에서 기간을 고른 뒤 다시 누르세요');
     var digestText = JSON.stringify(p.digest);
     if (digestText.length > MAX_DIGEST_CHARS) fail('INVALID', '분석할 요약 데이터가 너무 큽니다(' + Math.round(digestText.length / 1000) + '천 자). 기간이나 사업장을 줄여 다시 시도하세요');
 
-    var model = prop('ANTHROPIC_MODEL') || DEFAULT_MODEL;
-    if (!/^[A-Za-z0-9._:\-@\/]{3,100}$/.test(model)) fail('INVALID', '스크립트 속성 ANTHROPIC_MODEL 의 모델 이름 형식이 맞지 않습니다');
+    var model = str(aiSet.model) || prop('ANTHROPIC_MODEL') || DEFAULT_MODEL;
+    if (!/^[A-Za-z0-9._:\-@\/]{3,100}$/.test(model)) fail('INVALID', 'AI 모델 이름 형식이 맞지 않습니다(설정 또는 스크립트 속성 ANTHROPIC_MODEL)');
     var effort = prop('ANTHROPIC_EFFORT').toLowerCase();
     if (['low', 'medium', 'high'].indexOf(effort) < 0) effort = 'medium';
 
-    var company = '';
-    try { company = str((Db.settings() || {}).company); } catch (e) { company = ''; }
+    var company = str(st.company);
     var body = {
       model: model,
       max_tokens: MAX_TOKENS,
@@ -8193,15 +8198,8 @@ var Dispatch = (function () {
     var acts = ctx.acts();
 
     // 매일 양식(일일점검 등) 제출률
-    var dailyCodes = {};
     var per = {};
-    sites.forEach(function (s) {
-      per[s.id] = { exp: 0, got: 0, acc: 0, near: 0, stop: 0, overdue: 0, high: 0, miss: 0 };
-      requiredOf(s, st).forEach(function (r) {
-        var d = formDef(r.code);
-        if (d && d.frequency && d.frequency.type === 'daily') dailyCodes[r.code] = true;
-      });
-    });
+    sites.forEach(function (s) { per[s.id] = { exp: 0, got: 0, acc: 0, near: 0, stop: 0, overdue: 0, high: 0, miss: 0 }; });
     var expTotal = 0, gotTotal = 0;
     sites.forEach(function (s) {
       var row = per[s.id];
@@ -9539,7 +9537,11 @@ var Views = (function () {
   function onRecord(rec) {
     if (!rec || !rec.id) return false;
     try {
-      return Db.withLock(function () { return applyRecord(rec); });
+      return Db.withLock(function () {
+        // 색인 행(data 없음)을 넘겨받으면 저장된 전체 기록으로 바꾼다.
+        if (rec.data === undefined || rec.data === null) rec = Db.get('records', rec.id) || rec;
+        return applyRecord(rec);
+      });
     } catch (e) {
       console.warn('평탄화 시트 갱신 실패(' + rec.id + '): ' + (e && e.message || e));
       return false;
@@ -9990,10 +9992,13 @@ return {
   };
   const minutes = (t) => (t == null || t === '' ? null : typeof t === 'number' ? t : (([hh, mm]) => hh * 60 + (mm || 0))(String(t).split(':').map(Number)));
   // Round ticks (steps of 1, 2, 2.5 or 5 × 10^n) whose top sits above the largest value.
-  function ticks(min, max, count = 4) {
+  // int: true for counts — the step never drops below 1, so a count axis never reads 0, 1, 1, 2 (HDS 확장)
+  function ticks(min, max, count = 4, int = false) {
     if (max === min) max = min + 1;
     const raw = (max - min) / count, mag = 10 ** Math.floor(Math.log10(raw));
-    const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) || 10 * mag;
+    let step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) || 10 * mag;
+    if (int && step < 1) step = 1;
+    if (int && step > 1 && !Number.isInteger(step)) step = Math.ceil(step);
     const lo = Math.floor(min / step) * step; let hi = Math.ceil(max / step) * step; if (hi <= max) hi += step;
     const out = []; for (let v = lo; v <= hi + step / 2; v += step) out.push(+v.toFixed(10));
     return out;
@@ -10192,7 +10197,7 @@ return {
       const all = series.flatMap((x) => x.values.filter((v) => v != null)).concat([].concat(reference || []).map((r) => r.value));
       // max caps the range (a flat series with one spike): values above it are clipped and their peak labelled
       const top = max ?? Math.max(...all);
-      const yt = yTicks || ticks(min ?? Math.min(0, ...all), top, 4);
+      const yt = yTicks || ticks(min ?? Math.min(0, ...all), top, 4, all.every((v) => Number.isInteger(+v)));
       const tick = tickFormat || format;
       const lastVal = series[0].values.filter((v) => v != null).at(-1);
       const padL = 12 + Math.max(...yt.map((v) => measure(s, tick(v), 12))), padB = 26, padR = endLabel ? 10 + measure(s, format(lastVal), 12, 600) : 0;
@@ -10252,7 +10257,7 @@ return {
     const lit = (i) => highlight == null || (Array.isArray(highlight) ? highlight.includes(i) : highlight === i);
     const draw = () => {
       const { s, w, h } = frame(el, heightOf(height == null ? respH(el, 200) : height));
-      const yt = ticks(0, Math.max(...values, ...[].concat(reference || []).map((r) => r.value)), 4), tick = tickFormat || format;
+      const yt = ticks(0, Math.max(...values, ...[].concat(reference || []).map((r) => r.value)), 4, values.every((v) => Number.isInteger(+v))), tick = tickFormat || format;
       const padL = 12 + Math.max(...yt.map((v) => measure(s, tick(v), 12))), padB = 26;
       const band = (w - padL) / values.length, bw = Math.max(2, band * 0.62);
       const x = (i) => padL + band * i + band / 2;
@@ -10282,7 +10287,7 @@ return {
     const draw = () => {
       const { s, w, h } = frame(el, heightOf(height == null ? respH(el, 200) : height));
       const hiUp = Math.max(0, ...up), hiDown = Math.max(0, ...down);
-      const yt = ticks(-hiDown, hiUp || 1, 4); const stp = yt[1] - yt[0]; if (hiDown > 0 && yt[0] >= -hiDown) yt.unshift(+(yt[0] - stp).toFixed(10));
+      const yt = ticks(-hiDown, hiUp || 1, 4, up.concat(down).every((v) => Number.isInteger(+v))); const stp = yt[1] - yt[0]; if (hiDown > 0 && yt[0] >= -hiDown) yt.unshift(+(yt[0] - stp).toFixed(10));
       const padL = 12 + Math.max(...yt.map((v) => measure(s, tick(v), 12))), padB = 26;
       const band = (w - padL) / labels.length, bw = Math.max(2, band * 0.62);
       const x = (i) => padL + band * i + band / 2;
@@ -10590,7 +10595,7 @@ return {
     const draw = () => {
       const { s, w, h } = frame(el, heightOf(height == null ? respH(el, 220) : height));
       const C = cols();
-      const yt = percent ? [0, 0.25, 0.5, 0.75, 1] : ticks(0, Math.max(1, ...totals, ...[].concat(reference || []).map((r) => r.value)), 4);
+      const yt = percent ? [0, 0.25, 0.5, 0.75, 1] : ticks(0, Math.max(1, ...totals, ...[].concat(reference || []).map((r) => r.value)), 4, totals.every((v) => Number.isInteger(v)));
       const tick = percent ? fmt.pct(0) : tickFormat || format, top = yt[yt.length - 1];
       const padL = 12 + Math.max(...yt.map((v) => measure(s, tick(v), 12))), padB = 26;
       const band = (w - padL) / Math.max(1, labels.length), bw = Math.max(2, Math.min(band * 0.62, 64));
@@ -14534,6 +14539,22 @@ return {
       }
     });
   }
+  /** 예시 데이터엔 실제 파일이 없으므로 자동 채우기가 넣은 data: URL(사진·서명 그림)은 뺀다 — 올리는 크기를 줄이려고. */
+  function stripDataUrls(o) {
+    if (Array.isArray(o)) {
+      for (var i = o.length - 1; i >= 0; i--) {
+        if (typeof o[i] === 'string' && o[i].indexOf('data:') === 0) o.splice(i, 1);
+        else if (o[i] && typeof o[i] === 'object') stripDataUrls(o[i]);
+      }
+    } else if (o && typeof o === 'object') {
+      Object.keys(o).forEach(function (k) {
+        var v = o[k];
+        if (typeof v === 'string' && v.indexOf('data:') === 0) delete o[k];
+        else if (v && typeof v === 'object') stripDataUrls(v);
+      });
+    }
+    return o;
+  }
   /** 아직 하지 않은 단계의 섹션 값을 지운다(단계 진행 중 기록). */
   function prune(def, rec, k) {
     if (!def.stages) return;
@@ -14599,6 +14620,7 @@ return {
     var k = def.stages ? (o.stages == null ? def.stages.length : o.stages) : 0;
     if (def.stages && k < def.stages.length) prune(def, rec, k);
     tidy(def, rec, preKeys, preRows, site);
+    stripDataUrls(d);
     try { E.computeAll(def, rec); } catch (e) { warn(code, e); }
     if (typeof o.after === 'function') o.after(d, rec);
     try { rec.period = String(E.periodKeyOf(def, rec) || ''); } catch (e) { rec.period = ''; }
@@ -16390,11 +16412,11 @@ return {
     var excBody = exc.length ? '<ul class="list hq-exc-list">' + exc.slice(0, limit).map(excRow).join('') + '</ul>'
       : empty('오늘 손볼 예외가 없습니다. 사고·기한경과 조치·미제출이 생기면 여기에 먼저 보입니다.');
     var excFoot = exc.length > 8 ? '<button type="button" class="btn ghost sm" data-act="hq.excAll">' + (HOME.all ? '8건만 보기' : '전체 보기 ' + exc.length + '건') + '</button>' : '';
-    var excPanel = panel({ title: '오늘의 예외', sub: exc.length ? exc.length + '건 · 급한 순' : '없음', body: excBody, foot: excFoot, flush: !!exc.length, cls: 'span-8 hq-exc-panel' });
+    var excPanel = panel({ title: '오늘의 예외', sub: exc.length ? exc.length + '건 · 급한 순' : '없음', body: excBody, foot: excFoot, flush: !!exc.length, cls: 'span-7 hq-exc-panel' });
     var miniFoot = sites.length ? (missN || retN ? '<span><span class="t-neg">기한경과 ' + missN + '칸</span>' + (retN ? ' · 반려 ' + retN + '칸' : '') + '</span>' : '<span>기한이 지난 미제출이 없습니다</span>') +
       '<a href="#/collect">미제출 사업장 보기</a>' : '';
     var miniPanel = panel({ title: '이번 달 취합', sub: '열마다 지금 받는 기간', actions: '<a class="btn ghost sm" href="#/collect">전체 현황판</a>',
-      body: legendHtml(M.kinds) + matrixHtml(M, { collecting: true, noRate: true, noPct: true, cls: 'hq-mini' }), foot: miniFoot, cls: 'span-4 hq-mini-panel' });
+      body: legendHtml(M.kinds) + matrixHtml(M, { collecting: true, noRate: true, noPct: true, cls: 'hq-mini' }), foot: miniFoot, cls: 'span-5 hq-mini-panel' });
 
     // 최근 들어온 기록
     var recent = recs().filter(function (r) { return r.form !== 'F07' && (r.submittedAt || (r.stageDone || []).length); })
@@ -16414,7 +16436,11 @@ return {
         '<div class="li-sub">' + (q.kind === 'notice' ? '공지 · 열람 ' : '회수 ') + st.done + '/' + st.total + ' · ' + dueText(q.due) + '</div>' + bar(st.rate, st.overdue && st.missing.length ? 'neg' : '') + '</div>' +
         '<div class="li-side num">' + pctText(st.rate) + '</div></li>';
     }).join('') + '</ul>' : empty('진행 중인 요청이 없습니다.', canWrite() ? '<a href="#/requests/new">새 요청</a>' : '');
-    var reqPanel = panel({ title: '진행 중 요청 회수율', sub: open.length ? open.length + '건 · 마감 빠른 순' : '', actions: '<a class="btn ghost sm" href="#/requests">배포·요청</a>', body: reqBody, cls: 'span-6' });
+    var openSt = open.map(function (q) { return reqStats(q, ctx); });
+    var tDone = 0, tAll = 0, lateN = 0;
+    openSt.forEach(function (st) { tDone += st.done; tAll += st.total; if (st.overdue && st.missing.length) lateN++; });
+    var reqFoot = open.length ? '<span>전체 ' + tDone + '/' + tAll + '곳 · ' + pctText(tAll ? tDone / tAll : null) + (lateN ? ' · <span class="t-neg">마감 지난 요청 ' + lateN + '건</span>' : '') + '</span><a class="btn ghost sm" href="#/requests">배포·요청</a>' : '';
+    var reqPanel = panel({ title: '진행 중 요청 회수율', sub: open.length ? open.length + '건 · 마감 빠른 순' : '', body: reqBody, foot: reqFoot, cls: 'span-6' });
 
     frame(main, titleRow('종합 현황', sub, actions) + k +
       '<div class="grid">' + excPanel + miniPanel + '</div>' +
@@ -16468,10 +16494,13 @@ return {
           var lab = it.col.kind === 'req' ? '요청 ' + it.col.req.title : it.col.label;
           if (it.cell.daily) lab += ' ' + it.cell.got + '/' + it.cell.exp;
           else if (it.cell.cls === 'mk-returned') lab += ' 반려';
-          return '<span class="nowrap">' + esc(lab) + '</span>';
+          return esc(lab);
         }).join(' · ');
         var regs = m.items.filter(function (it) { return it.col.kind === 'form' && it.cell.cls === 'mk-miss'; }).map(function (it) { return it.col.code; });
-        var btn = canWrite() && regs.length ? '<a class="btn sm" href="' + esc(prefillHref({ forms: uniq(regs).join(','), sites: m.site.id, period: sameTypeKey(uniq(regs), P), title: P.label + ' 미제출 양식 제출 요청', due: addDays(today(), 3) })) + '">요청</a>' : '';
+        var openReq = m.items.filter(function (it) { return it.col.kind === 'req' && it.col.req.status === '진행' && it.cell.cls === 'mk-miss'; })[0];
+        var btn = '';
+        if (canWrite() && regs.length) btn = '<a class="btn sm" href="' + esc(prefillHref({ forms: uniq(regs).join(','), sites: m.site.id, period: sameTypeKey(uniq(regs), P), title: P.label + ' 미제출 양식 제출 요청', due: addDays(today(), 3) })) + '">요청</a>';
+        else if (canWrite() && openReq) btn = '<button type="button" class="btn sm" data-act="hq.siteRemind" data-id="' + esc(openReq.col.req.id) + '" data-site="' + esc(m.site.id) + '">독촉</button>';
         return '<tr><td data-label="사업장"><a href="#/sites/' + esc(m.site.id) + '"><b>' + esc(m.site.id) + '</b> ' + esc(m.site.name) + '</a></td><td data-label="미제출·반려">' + forms + '</td>' +
           '<td class="num" data-label="최장 경과">' + (m.overdue ? '<span class="t-neg">' + m.overdue + '일</span>' : '<span class="faint">—</span>') + '</td><td class="num">' + btn + '</td></tr>';
       }).join('') + '</tbody></table></div>' : empty('이 기간에 기한이 지난 미제출·반려가 없습니다.');
@@ -16974,6 +17003,10 @@ return {
       codes = uniq(codes); ids = uniq(ids);
       if (!codes.length) { toast('기한이 지난 미제출 정기 양식이 없습니다.'); return; }
       go(prefillHref({ forms: codes.join(','), sites: ids.join(','), period: sameTypeKey(codes, P), title: P.label + ' 미제출 양식 제출 요청', due: addDays(today(), 3) }));
+    },
+    'hq.siteRemind': function (el) {
+      var q = reqById(el.getAttribute('data-id')); if (!q) return;
+      remind(q, [el.getAttribute('data-site')]);
     },
     'hq.reqTab': function (el) { RQ.tab = el.getAttribute('data-value') || 'open'; rerender(false); },
     'hq.reqRemind': function (el) {
@@ -17890,15 +17923,15 @@ return {
   });
 
   /* ======================= 조치대장 #/acts , #/acts/<id> ======================= */
-  var OPEN_ST = { '등록': 1, '조치중': 1, '보류': 1 };
-  function actOpen(a) { return !!OPEN_ST[a.status]; }
+  /* 미결 = 등록·조치중 (App.actOpen 과 같은 정의 — 다른 화면 숫자와 맞춤). 보류는 '처리 안 된 것'에만 넣는다 */
+  function actOpen(a) { return typeof App.actOpen === 'function' ? App.actOpen(a) : (a.status === '등록' || a.status === '조치중'); }
+  function actPending(a) { return actOpen(a) || a.status === '보류'; }
   function actOverdue(a, t) { return (a.status === '등록' || a.status === '조치중') && !!a.due && a.due < (t || todayStr()); }
   function actAge(a, t) { var d = daysBetween(String(a.createdAt || a.due || '').slice(0, 10), t || todayStr()); return isNaN(d) ? 0 : Math.max(0, d); }
   function dueHtml(a) {
     if (!a.due) return DASH;
     if (!actOpen(a)) return '<span class="num muted">' + esc(a.due) + '</span>';
     var d = daysBetween(todayStr(), a.due);
-    if (a.status === '보류') return '<span class="num muted">' + esc(a.due) + '</span>';
     if (d < 0) return '<span class="t-neg num nowrap">경과 ' + (-d) + '일</span>';
     if (d === 0) return '<span class="t-warn nowrap">오늘 마감</span>';
     return '<span class="num nowrap">D-' + d + '</span>';
@@ -17929,7 +17962,7 @@ return {
     var t = todayStr();
     return rows.sort(function (a, b) {
       if (tab === 'closed') return cmpDesc(a.updatedAt || '', b.updatedAt || '');
-      var oa = actOverdue(a, t) ? 0 : actOpen(a) || a.status === '완료' ? 1 : 2, ob = actOverdue(b, t) ? 0 : actOpen(b) || b.status === '완료' ? 1 : 2;
+      var oa = actOverdue(a, t) ? 0 : actPending(a) || a.status === '완료' ? 1 : 2, ob = actOverdue(b, t) ? 0 : actPending(b) || b.status === '완료' ? 1 : 2;
       if (oa !== ob) return oa - ob;
       var da = a.due || '9999', db = b.due || '9999';
       return da < db ? -1 : da > db ? 1 : (a.id < b.id ? -1 : 1);
@@ -17942,7 +17975,7 @@ return {
       od.forEach(function (a) { by[a.site] = (by[a.site] || 0) + 1; if (!top || by[a.site] > by[top]) top = a.site; oldest = Math.max(oldest, daysBetween(a.due, t)); });
       return '기한경과 조치 ' + num(od.length) + '건 — ' + esc(top + ' ' + siteName(top)) + '이(가) ' + num(by[top]) + '건으로 가장 많고, 가장 오래된 건은 ' + num(oldest) + '일 지났습니다.';
     }
-    var soon = all.filter(function (a) { return actOpen(a) && a.status !== '보류' && a.due && daysBetween(t, a.due) >= 0 && daysBetween(t, a.due) <= 7; }).length;
+    var soon = all.filter(function (a) { return actOpen(a) && a.due && daysBetween(t, a.due) >= 0 && daysBetween(t, a.due) <= 7; }).length;
     var open = all.filter(actOpen).length;
     if (soon) return '기한경과는 없고, 7일 안에 마감되는 조치가 ' + num(soon) + '건입니다.';
     if (open) return '미결 조치 ' + num(open) + '건이 모두 기한 안에 있습니다.';
@@ -17952,14 +17985,14 @@ return {
   }
   function actKpis(scope) {
     var t = todayStr(), open = scope.filter(actOpen), od = scope.filter(function (a) { return actOverdue(a, t); });
-    var high = open.filter(function (a) { return a.level === '높음'; }).length;
+    var high = open.filter(function (a) { return a.level === '높음'; }).length, hold = scope.filter(function (a) { return a.status === '보류'; }).length;
     var oldest = od.reduce(function (m, a) { return Math.max(m, daysBetween(a.due, t)); }, 0);
     var soon = scope.filter(function (a) { return (a.status === '등록' || a.status === '조치중') && a.due && daysBetween(t, a.due) >= 0 && daysBetween(t, a.due) <= 7; });
     var today = soon.filter(function (a) { return a.due === t; }).length;
     var done = scope.filter(function (a) { return a.doneAt && daysBetween(String(a.doneAt).slice(0, 10), t) <= 90 && a.createdAt; });
     var avg = done.length ? done.reduce(function (s, a) { return s + Math.max(0, daysBetween(String(a.createdAt).slice(0, 10), String(a.doneAt).slice(0, 10))); }, 0) / done.length : null;
     return kpis([
-      { label: '미결', value: num(open.length), unit: '건', sub: high ? '<span class="t-neg">높음 ' + num(high) + '건</span> 포함' : '높음 수준 없음' },
+      { label: '미결', value: num(open.length), unit: '건', sub: (high ? '<span class="t-neg">높음 ' + num(high) + '건</span> 포함' : '높음 수준 없음') + (hold ? ' · 보류 ' + num(hold) + '건 별도' : '') },
       { label: '기한경과', value: '<span class="' + (od.length ? 't-neg' : '') + '">' + num(od.length) + '</span>', unit: '건', lead: true,
         sub: od.length ? '가장 오래된 건 <span class="t-neg">' + num(oldest) + '일</span> 경과' : '기한 지난 조치 없음' },
       { label: '7일 안 마감', value: num(soon.length), unit: '건', sub: today ? '오늘 마감 ' + num(today) + '건' : '오늘 마감 없음' },
@@ -17967,14 +18000,14 @@ return {
     ]);
   }
   function actDist(scope) {
-    var t = todayStr(), open = scope.filter(actOpen), bins = [['0~7일', 0, 7], ['8~30일', 8, 30], ['31~90일', 31, 90], ['90일 넘음', 91, 1e9]];
+    var t = todayStr(), open = scope.filter(actPending), bins = [['0~7일', 0, 7], ['8~30일', 8, 30], ['31~90일', 31, 90], ['90일 넘음', 91, 1e9]];
     var cnt = bins.map(function (b) { return open.filter(function (a) { var d = actAge(a, t); return d >= b[1] && d <= b[2]; }).length; });
     var max = Math.max.apply(null, cnt.concat([1]));
     var body = open.length ? '<div class="hq-dist">' + bins.map(function (b, i) {
       return '<div class="hq-dist-row"><span class="hq-dist-label">' + b[0] + '</span><div class="bar' + (i === 3 && cnt[i] ? ' neg' : '') + '"><i style="width:' + (cnt[i] ? Math.max(2, cnt[i] / max * 100) : 0).toFixed(1) + '%"></i></div>' +
         '<span class="num hq-dist-n">' + num(cnt[i]) + '</span></div>';
     }).join('') + '</div>' : empty('처리 안 된 조치가 없습니다.');
-    return panel({ title: '미결 경과 분포', sub: '등록일부터 오늘까지 · 미결 ' + num(open.length) + '건', body: body });
+    return panel({ title: '미결 경과 분포', sub: '등록일부터 오늘까지 · 미결·보류 ' + num(open.length) + '건', body: body });
   }
   function actHot(scope, st) {
     var t = todayStr(), od = scope.filter(function (a) { return actOverdue(a, t); }), by = {}, keyFn, title;
@@ -18063,7 +18096,7 @@ return {
     });
     drawActs();
     if (a[0]) {
-      var id = decodeURIComponent(a[0]);
+      var id = a[0];
       setTimeout(function () { if (alive(root)) openActDlg(id, true); }, 0);
     }
   }
@@ -18345,7 +18378,7 @@ return {
   }
   function viewSites(main, args, query) {
     var a = argsArr(args);
-    if (a[0]) return viewSiteDetail(main, decodeURIComponent(a[0]));
+    if (a[0]) return viewSiteDetail(main, a[0]);
     var list = sitesAll().sort(function (x, y) { return (x.status === '종료') - (y.status === '종료') || x.id.localeCompare(y.id); });
     var last = lastInputBySite(), t = todayStr();
     var act = isAdmin() ? '<button class="btn primary" type="button" data-href="#/sites/new">' + icon('plus') + '<span>사업장 추가</span></button>' : '';
@@ -19359,8 +19392,8 @@ return {
   function requiredForms(site, refDate) {
     try {
       if (App.engine && typeof App.engine.requiredForms === 'function') {
-        var r = App.engine.requiredForms(site, refDate);
-        if (!Array.isArray(r)) r = App.engine.requiredForms(site.id, refDate);
+        var r = App.engine.requiredForms(site.id, refDate);
+        if (!Array.isArray(r)) r = App.engine.requiredForms(site, refDate);
         if (Array.isArray(r)) return r.map(function (x) { return typeof x === 'string' ? x : x && (x.code || x.form); }).filter(Boolean);
       }
     } catch (e) { /* 아래로 */ }
@@ -19684,7 +19717,7 @@ return {
   // header(topic, sub, opts) → 제목 줄(h1 '분석 · 주제', 발견 문장, 보고서 인쇄) + 주제 탭 + 필터 줄
   A.header = function (topic, sub, opts) {
     opts = opts || {};
-    var actions = (opts.actions || '') + '<button type="button" class="btn" data-act="an.print">' + icon('print') + '<span>보고서 인쇄</span></button>';
+    var actions = (opts.actions || '') + '<button type="button" class="btn hide-phone" data-act="an.print">' + icon('print') + '<span>보고서 인쇄</span></button>';
     return '<div class="title-row an-title"><div class="title-main"><h1>분석 · ' + esc(A.topicLabel(topic)) + '</h1>'
       + (sub ? '<p class="sub">' + sub + '</p>' : '') + '</div><div class="actions">' + actions + '</div></div>'
       + A.tabs(topic) + A.filterBar();
@@ -19822,6 +19855,7 @@ return {
     // 사고 유형(F04 전체: 재해·무상해·아차)
     var accTypes = A.top(A.dist(D.f04, 'accType'), 6);
     var accTypeAcc = A.top(A.dist(D.acc, 'accType'), 1)[0];
+    var topShare = accTypeAcc && accTypeAcc.value >= 2 && accTypeAcc.value / Math.max(1, D.acc.length) >= 0.3;
 
     // 가장 사고가 많은 달(주석)
     var peak = null;
@@ -19845,9 +19879,9 @@ return {
     }
     if (!fs.length) {
       rising.slice(0, 2).forEach(function (x) {
-        fs.push({ tone: 'neg', html: '<b>' + esc(x.label) + '</b> 사고·아차 ' + num(x.total) + '건 — ' + esc(prevLabel) + ' ' + num(x.prev) + '건보다 ' + num(x.rise) + '건 늘었습니다.', href: x.href, link: '사업장' });
+        fs.push({ tone: 'neg', html: '<b>' + esc(x.label) + '</b> 사고·아차 ' + num(x.total) + '건 — ' + esc(prevLabel) + '(' + num(x.prev) + '건)보다 ' + num(x.rise) + '건 늘었습니다.', href: x.href, link: '사업장' });
       });
-      if (accTypeAcc && D.acc.length >= 2) {
+      if (topShare) {
         fs.push({ tone: accTypeAcc.value / D.acc.length >= 0.4 ? 'warn' : '', html: '재해·사고 ' + num(D.acc.length) + '건 중 <b>' + esc(short(accTypeAcc.label)) + ' ' + num(accTypeAcc.value) + '건</b>(' + pctTxt(accTypeAcc.value / D.acc.length, 0) + ')이 가장 많습니다.', href: '#/analytics/incidents', link: '재해·사고' });
       }
       if (ar.overdueHigh > 0) fs.push({ tone: 'neg', html: '기한이 지난 <b>높음 조치 ' + num(ar.overdueHigh) + '건</b>이 아직 끝나지 않았습니다.', href: '#/analytics/acts', link: '조치 이행' });
@@ -19860,7 +19894,8 @@ return {
 
     // 제목 줄 발견 문장
     var sub;
-    if (rising.length) sub = esc(rising[0].label) + '에서 사고·아차가 ' + esc(prevLabel) + '보다 ' + num(rising[0].rise) + '건 늘어 ' + num(rising[0].total) + '건입니다' + (accTypeAcc && D.acc.length >= 2 ? ' · 재해·사고 1위는 ' + esc(short(accTypeAcc.label)) + '(' + num(accTypeAcc.value) + '/' + num(D.acc.length) + '건)' : '') + '.';
+    if (rising.length) sub = esc(rising[0].label) + '에서 사고·아차가 ' + num(rising[0].total) + '건으로 ' + esc(prevLabel) + '(' + num(rising[0].prev) + '건)보다 ' + num(rising[0].rise) + '건 늘었습니다'
+      + (rising.length > 1 ? ' · 늘어난 사업장 모두 ' + num(rising.length) + '곳' : '') + (topShare ? ' · 재해·사고의 ' + pctTxt(accTypeAcc.value / D.acc.length, 0) + '가 ' + esc(short(accTypeAcc.label)) : '') + '.';
     else if (D.acc.length) sub = esc(sc.periodLabel) + ' 재해·사고 ' + num(D.acc.length) + '건, 아차·제안 ' + num(D.near.length) + '건 — 직전 기간보다 늘어난 사업장은 없습니다.';
     else sub = esc(sc.periodLabel) + ' 재해·사고 0건, 아차·제안 ' + num(D.near.length) + '건이 보고됐습니다.';
 
@@ -19884,8 +19919,8 @@ return {
         sub: dr.expected ? '기대 ' + num(dr.expected) + '건 중 ' + num(dr.submitted) + '건(어제까지)' : 'F07 필수 운영 사업장 없음' },
       { label: '조치 이행률', value: ar.rate == null ? na() : num(ar.rate * 100, 1), unit: ar.rate == null ? '' : '%', href: '#/analytics/acts',
         sub: ar.due ? '기한 도래 ' + num(ar.due) + '건 중 완료 ' + num(ar.done) + '건 · ' + (ar.overdue ? '<span class="t-neg">기한경과 미결 ' + num(ar.overdue) + '건</span>' : '기한경과 미결 0건') : '이 기간에 기한이 든 조치 없음' },
-      { label: 'HEC 준비도', value: hs.avg == null ? na() : num(hs.avg * 100, 1), unit: hs.avg == null ? '' : '%', href: '#/analytics/hec',
-        sub: hs.sites ? 'HEC 사업장 ' + num(hs.sites) + '곳 평균' + (hs.low ? ' · <span class="t-warn">80% 미만 ' + num(hs.low) + '곳</span>' : '') : 'HEC 대상 사업장 없음' }
+      { label: 'HEC 준비도', value: hs.avg == null ? (hs.sites ? '<span class="an-na">—</span>' : na()) : num(hs.avg * 100, 1), unit: hs.avg == null ? '' : '%', href: '#/analytics/hec',
+        sub: !hs.sites ? 'HEC 대상 사업장 없음' : hs.avg == null ? 'HEC 사업장 ' + num(hs.sites) + '곳 · 준비도를 계산하지 못했습니다' : 'HEC 사업장 ' + num(hs.measured) + '곳 평균' + (hs.low ? ' · <span class="t-warn">80% 미만 ' + num(hs.low) + '곳</span>' : '') }
     ]);
 
     var html = kpis(k)
@@ -19908,7 +19943,8 @@ return {
         Ch.stack(byId(main, 'an-trend'), {
           labels: accM.map(function (m) { return m.label; }),
           series: [{ name: '재해·사고', values: accM.map(function (m) { return m.value; }) }, { name: '아차·제안', values: nearM.map(function (m) { return m.value; }) }],
-          annotations: notes, partial: part, unit: '건', legend: byId(main, 'an-lg-trend')
+          annotations: notes, partial: part, unit: '건', legend: byId(main, 'an-lg-trend'),
+          height: function () { var el = byId(main, 'an-trend'); return el && el.clientWidth < 480 ? 180 : 260; }
         });
         if (accTypes.length) Ch.barList(byId(main, 'an-acctype'), accTypes.map(function (x) { return { label: x.label, value: x.value }; }));
         if (siteRows.length) {
@@ -19923,7 +19959,7 @@ return {
   var MET = { acc: '재해·사고', near: '아차·제안', stop: '작업중지', vio: '수칙 위반' };
   function metric() { var m = null; try { m = window.sessionStorage.getItem('hds.an.metric'); } catch (e) { m = null; } return MET[m] ? m : 'acc'; }
   var BANDS = ['0~4시', '4~8시', '8~12시', '12~16시', '16~20시', '20~24시'];
-  var STOP_BINS = [{ label: '30분 이하', max: 30 }, { label: '1시간', max: 60 }, { label: '2시간', max: 120 }, { label: '4시간', max: 240 }, { label: '4시간 초과', max: Infinity }];
+  var STOP_BINS = [{ label: '30분↓', max: 30 }, { label: '~1시간', max: 60 }, { label: '~2시간', max: 120 }, { label: '~4시간', max: 240 }, { label: '4시간↑', max: Infinity }];
 
   function incidentsBuild(sc) {
     var D = A.incidents(sc), Pp = A.prevScope(sc), P = A.incidents(Pp), part = A.partialIndex(sc), t = sc.today;
@@ -20018,7 +20054,7 @@ return {
     var recentHtml = recent.length ? '<div class="tbl-wrap"><table class="tbl an-tbl"><thead><tr><th>발생 일시</th><th>사업장</th><th>구분</th><th>재해형태</th><th>기인물</th><th>장소</th><th>진행</th></tr></thead><tbody>'
       + recent.map(function (r) {
         var si = stageInfo(r), at = String(A.fv(r, 'occurredAt') || A.dateOf(r)).replace('T', ' ').slice(0, 16);
-        return '<tr class="click" data-href="' + esc(recHref(r)) + '"><td class="num nowrap" data-label="발생 일시">' + esc(at) + '</td>'
+        return '<tr class="click" data-href="' + esc(recHref(r)) + '"><td class="nowrap" data-label="발생 일시"><span class="num">' + esc(at) + '</span></td>'
           + '<td data-label="사업장">' + esc(siteName(r.site)) + '</td>'
           + '<td data-label="구분">' + pill(A.fv(r, 'kind') || '—', kindTone[A.fv(r, 'kind')] || 'neu') + '</td>'
           + '<td data-label="재해형태">' + esc(short(A.fv(r, 'accType')) || '—') + '</td>'
@@ -20187,6 +20223,11 @@ return {
     var origins = A.top(A.tdist(cur, 'sec_hazards', 'origin') || {}, 4);
     var types = A.dist(inPeriod, 'evalType'), adhoc = A.top(A.dist(inPeriod.filter(function (r) { return A.fv(r, 'evalType') === '수시'; }), 'adhocReason'), 6);
     var noMeet = table.filter(function (x) { return x.r && !x.meets; }).length;
+    var highSites = table.filter(function (x) { return x.g && x.g.before['높음'] > 0; }).map(function (x) {
+      var afterHi = x.g.after ? x.g.after['높음'] : null;
+      return { label: x.s.name || x.s.id, value: x.g.before['높음'], sub: afterHi == null ? '위험요인 ' + num(x.g.total) + '개' : '감소 후 높음 ' + num(afterHi) + '개', href: recHref(x.r), after: afterHi };
+    });
+    var lastTypes = A.dist(cur, 'evalType');
 
     var sub;
     if (late.length) sub = '위험성평가 기한이 지났거나 아직 안 한 사업장 ' + num(late.length) + '곳' + (tot['높음'] ? ' · 현재 높음 위험요인 ' + num(tot['높음']) + '개' : '') + (accTypes[0] ? ' · 위험요인 1위 ' + esc(short(accTypes[0].label)) + '(' + num(accTypes[0].value) + '개)' : '') + '.';
@@ -20195,7 +20236,8 @@ return {
 
     var reqHref = '#/requests/new?form=F01&sites=' + late.map(function (x) { return encodeURIComponent(x.s.id); }).join(',');
     var k = kpis([
-      { label: '기한경과·미실시', value: num(late.length), unit: '곳', lead: true, sub: late.length ? '<span class="t-neg">요청을 보내 주세요</span> · 30일 안 기한 ' + num(soon.length) + '곳' : '30일 안 기한 ' + num(soon.length) + '곳' },
+      { label: '기한경과·미실시', value: num(late.length), unit: '곳', lead: true,
+        sub: (late.length ? '<span class="t-neg">미실시 ' + num(late.filter(function (x) { return x.st.state === 'none'; }).length) + ' · 기한경과 ' + num(late.filter(function (x) { return x.st.state === 'over'; }).length) + '</span><br>' : '') + '30일 안 기한·최초 대기 ' + num(soon.length) + '곳' },
       { label: '유해·위험요인', value: num(hazards), unit: '개', sub: '사업장 ' + num(cur.length) + '곳 최신 평가 합계' },
       { label: '감소 전 높음', value: num(tot['높음']), unit: '개', sub: '감소 후 보통 이상 ' + num(afterOpen) + '개' },
       { label: '기간 내 평가', value: num(inPeriod.length), unit: '건', sub: ['최초', '정기', '수시'].map(function (x) { return x + ' ' + num(types[x] || 0); }).join(' · ') },
@@ -20217,7 +20259,7 @@ return {
         return '<li class="li"><div class="li-main"><div class="li-title">' + esc(x.s.name || x.s.id) + '</div><div class="li-sub num">기한 ' + esc(x.st.due || '—') + '</div></div><div class="li-side">' + pill(x.st.label, 'warn') + '</div></li>';
       }).join('') + '</ul>' : empty('기한이 지났거나 30일 안에 오는 사업장이 없습니다.'));
 
-    var tbl = table.length ? '<div class="tbl-wrap"><table class="tbl an-tbl"><thead><tr><th>사업장</th><th>최근 평가</th><th>구분</th><th>진행</th><th class="num">위험요인</th><th class="num">높음</th><th class="num">참여 회의(1년)</th><th>다음 기한</th><th>상태</th></tr></thead><tbody>'
+    var tbl = table.length ? '<div class="tbl-wrap"><table class="tbl an-tbl"><thead><tr><th>사업장</th><th class="num">최근 평가</th><th>구분</th><th>진행</th><th class="num">위험요인</th><th class="num">높음</th><th class="num">참여 회의(1년)</th><th class="num">다음 기한</th><th>상태</th></tr></thead><tbody>'
       + table.map(function (x) {
         var href = x.r ? recHref(x.r) : '#/sites/' + encodeURIComponent(x.s.id);
         return '<tr class="click" data-href="' + esc(href) + '"><td data-label="사업장"><b class="an-strong">' + esc(x.s.name || x.s.id) + '</b> <span class="muted mono">' + esc(x.s.id) + '</span></td>'
@@ -20234,14 +20276,16 @@ return {
     var html = k
       + '<div class="grid an-grid">'
       + panel({ span: 7, title: '위험성 등급 — 감소 전 → 감소 후', sub: '사업장별 최신 평가 ' + num(cur.length) + '건의 위험요인 ' + num(hazards) + '개(기간과 무관)',
-        actions: legendBox('an-lg-grade'), body: hazards ? chartBox('an-grade') + (origins.length ? '<p class="muted an-note">위험요인 출처: ' + topText(origins) + '</p>' : '') : empty('위험요인이 기록된 평가가 없습니다.') })
+        actions: legendBox('an-lg-grade'), body: hazards ? chartBox('an-grade') + (origins.length ? '<p class="muted an-note">위험요인 출처: ' + topText(origins) + '</p>' : '')
+          + (highSites.length ? '<h3 class="an-h3">감소 전 높음이 많은 사업장</h3>' + chartBox('an-ra-high') : '') : empty('위험요인이 기록된 평가가 없습니다.') })
       + panel({ span: 5, title: '기한경과·미실시 사업장', sub: '정기 평가는 직전 평가일 + 1년, 최초 평가는 개설 후 1개월',
         actions: late.length ? '<a class="btn primary sm" href="' + esc(reqHref) + '">요청 만들기 (' + num(late.length) + '곳)</a>' : '', body: lateBody })
       + '</div>'
       + '<div class="grid an-grid">'
       + panel({ span: 4, title: '사고유형별 위험요인', sub: '많은 순 8개', body: accTypes.length ? chartBox('an-ra-type') : empty('사고유형이 적힌 위험요인이 없습니다.') })
       + panel({ span: 4, title: '직무별 위험요인', sub: '공통 포함', body: jobs.length ? chartBox('an-ra-job') : empty('직무가 적힌 위험요인이 없습니다.') })
-      + panel({ span: 4, title: '수시 평가 사유', sub: esc(sc.periodLabel) + ' 수시 평가 ' + num(types['수시'] || 0) + '건', body: adhoc.length ? chartBox('an-ra-adhoc') : empty('이 기간에 수시 평가가 없습니다.') })
+      + panel({ span: 4, title: '수시 평가 사유', sub: esc(sc.periodLabel) + ' 수시 평가 ' + num(types['수시'] || 0) + '건',
+        body: adhoc.length ? chartBox('an-ra-adhoc') : '<p class="muted an-note an-note-top">이 기간에 수시 평가가 없습니다. 사업장별 최신 평가의 구분은 이렇습니다.</p>' + (Object.keys(lastTypes).length ? chartBox('an-ra-last') : '') })
       + '</div>'
       + '<div class="grid an-grid">'
       + panel({ span: 12, title: '사업장별 평가 현황', sub: '최근 평가와 다음 기한 · 줄을 누르면 최근 평가 기록(없으면 사업장)을 엽니다', flush: true, body: tbl })
@@ -20254,6 +20298,8 @@ return {
         if (byId(main, 'an-grade')) Ch.split(byId(main, 'an-grade'), splitRows, { names: splitNames, colours: afterFull ? ['--chart-1', '--chart-2', '--chart-muted', '--grid'] : ['--chart-1', '--chart-muted'], unit: '개', legend: byId(main, 'an-lg-grade') });
         if (byId(main, 'an-ra-type')) Ch.barList(byId(main, 'an-ra-type'), accTypes.map(function (x) { return { label: short(x.label), value: x.value }; }));
         if (byId(main, 'an-ra-job')) Ch.hbars(byId(main, 'an-ra-job'), jobs, { unit: '개' });
+        if (byId(main, 'an-ra-high')) Ch.hbars(byId(main, 'an-ra-high'), highSites, { unit: '개', limit: 4, highlight: function (r) { return r.after == null || r.after > 0; } });
+        if (byId(main, 'an-ra-last')) Ch.hbars(byId(main, 'an-ra-last'), ['최초', '정기', '수시'].map(function (k) { return { label: k, value: lastTypes[k] || 0 }; }), { unit: '곳', sort: false });
         if (byId(main, 'an-ra-adhoc')) Ch.hbars(byId(main, 'an-ra-adhoc'), adhoc.map(function (x) { return { label: short(x.label), value: x.value }; }), { unit: '건' });
       }
     };
