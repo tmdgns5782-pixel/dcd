@@ -902,7 +902,9 @@
       var status = stages === 4 ? (age > 6 ? '확인' : '제출') : '작성중';
       if (status === '제출' && reviewLeft <= 0) status = '확인';
       if (status === '제출') reviewLeft--;
-      var mgrAt = add(p.day, R.i(0, 2)), decAt = add(mgrAt, R.i(1, 4));
+      /* 이미 한 일의 날짜(확인·결정·회신·종결)는 오늘을 넘지 않게 — 최근 접수 건의 진행 단계 기록 */
+      var cap = function (x) { return x > TODAY ? TODAY : x; };
+      var mgrAt = cap(add(p.day, R.i(0, 2))), decAt = cap(add(mgrAt, R.i(1, 4)));
       mk(f, site, p.day, {
         author: anon ? site._officer : R.pick(site._workers),
         pre: { kind: p.kind, channel: opt(f, 'channel', anon ? '제보함' : R.pick(['본인 직접', '담당자 대리'])), anon: anon ? '익명' : '실명',
@@ -913,8 +915,8 @@
           mgr: site._chief, mgrAt: mgrAt, verify: opt(f, 'verify', '사실 확인'), freq: fq, sev: sv, mgrOpinion: '현장 확인 결과 개선 필요',
           decision: dec, decider: site._chief, decidedAt: decAt, rejectReason: /불채택|보류/.test(dec) ? '고객사 시설 공사 일정과 연계 필요' : undefined,
           holdUntil: dec === '보류(재검토)' ? add(decAt, 30) : undefined, raLink: opt(f, 'raLink', '해당없음'), reward: '해당없음',
-          replyAt: add(decAt, 1), replyHow: opt(f, 'replyHow', 'TBM'), replyText: /채택/.test(dec) ? '제안 내용 반영해 조치 예정' : '검토 결과를 공유함',
-          closeType: opt(f, 'closeType', /불채택/.test(dec) ? '불채택 종결' : '개선 완료'), closeDate: add(decAt, R.i(3, 10)), closer: site._chief },
+          replyAt: cap(add(decAt, 1)), replyHow: opt(f, 'replyHow', 'TBM'), replyText: /채택/.test(dec) ? '제안 내용 반영해 조치 예정' : '검토 결과를 공유함',
+          closeType: opt(f, 'closeType', /불채택/.test(dec) ? '불채택 종결' : '개선 완료'), closeDate: cap(add(decAt, R.i(3, 10))), closer: site._chief },
         rows: { sec_measures: /채택/.test(dec) && dec !== '불채택' ? [{ measure: c[0].replace(/ 제안$/, '').slice(0, 40) + ' 개선', ctype: opt(f, 'sec_measures.ctype', R.pick(['자체', '고객사 협조'])),
           level: R.w([['보통', 6], ['낮음', 3], ['높음', 1]]), owner: site._sups[0], due: add(decAt, 14), adopt: '채택' }] : [] },
         stages: stages, status: status, stageAt: ts(add(p.day, Math.min(age, stages * 2)), 17, 0), createdAt: tsAdd(found, R.i(20, 240)),
@@ -1052,6 +1054,13 @@
             content: '사업장 위험요인·사고 사례·작업중지권 절차', understanding: opt(f, 'understanding', '질의응답'), countAs: opt(f, 'countAs', /관리감독자/.test(course) ? '관리감독자' : '근로자 정기'),
             attendees: att, absentees: abs, closeNote: abs.length ? '미참석자 보충교육 진행' : '전원 참석' },
           rows: { sec_makeup: mk1 },
+          /* 자동 채우기는 빈 사람 목록(미참석 0명)을 명부 앞사람으로 채우므로 참석·미참석을 다시 맞춘다
+             — 같은 사람이 양쪽에 들어가거나 보충교육 행 없는 미참석자가 생기지 않게 */
+          post: function (dd) {
+            dd.attendees = att.slice();
+            if (abs.length) dd.absentees = abs.slice(); else delete dd.absentees;
+            dd.sec_makeup = (dd.sec_makeup || []).filter(function (row) { return row && abs.indexOf(String(row.mperson || '').trim()) >= 0; });
+          },
           status: status, returnNote: rn, createdAt: ts(date, 16, R.i(10, 50)), submitAt: ts(add(date, R.i(0, 3)), 17, R.i(0, 59))
         });
       });
@@ -1280,12 +1289,24 @@
             dd.msdsHave = Math.max(0, (Number(dd.msdsTarget) || 0) - (weak && R.chance(0.5) ? 1 : 0));
             dd.healthDone = Number(dd.healthTarget) || 0;
           },
-          after: function (dd) { fixMonthly(dd, counts); },
+          after: function (dd) { fixMonthly(dd, counts); overdueNote(dd, site, mEnd); },
           status: isNow ? '제출' : '확인', keepSubmitted: isNow, createdAt: tsAdd(submitTs, -R.i(30, 120)), submitAt: submitTs,
           confirmAt: ts(add(subDay, R.i(1, 3)), R.i(9, 17), R.i(0, 59))
         });
       });
     });
+  }
+  /** 기한경과 미결 조치가 있으면 사유·완료 계획을 적는다(교차 검증: 1건 이상이면 필수). 조치번호는 build 끝에 매기므로 조치명으로 적는다 */
+  function overdueNote(dd, site, mEnd) {
+    var n = Number(dd.actsOverdue) || 0;
+    if (n < 1) { delete dd.overdueNote; return; }
+    if (String(dd.overdueNote || '').trim()) return;
+    var od = ACTS.filter(function (a) { return a.site === site.id && ['등록', '조치중'].indexOf(a.status) >= 0 && a.due && a.due <= mEnd && a.due < TODAY; });
+    var why = ['고객사 승인 대기', '자재 수급 지연', '외부 업체 일정 조정', '예산 승인 대기'];
+    var plan = add(mEnd, R.i(10, 20));
+    var lines = od.slice(0, 3).map(function (a, i) { return shortStr(a.title, 30) + ' — ' + why[(i + n) % why.length]; });
+    dd.overdueNote = (lines.length ? lines.join(' / ') + (od.length > 3 ? ' 외 ' + (od.length - 3) + '건' : '') : '기한경과 ' + n + '건 — ' + why[n % why.length])
+      + '. ' + mon(plan) + '/' + (+plan.slice(8, 10)) + ' 완료 예정';
   }
   /** 자체 월간 집계(엔진 집계가 비었을 때 대신 넣고, 재해자 수 맞춤에 씀) */
   function ownMonthly(site, from, to) {
@@ -2771,6 +2792,9 @@
   }
   function renderReview(main, args, query) {
     var gone = '';
+    /* 휴대폰: 다른 화면에서 #/review 로 새로 들어오면 목록부터 보인다(지난 미리보기를 다시 열지 않음).
+       이미 검토함이 그려져 있는 상태의 다시 그리기(고르기·처리 뒤·새로 고침)는 고른 건을 그대로 둔다. ?id= 가 있으면 아래에서 그 건을 연다 */
+    if (isPhone() && !(main && main.querySelector && main.querySelector('.hq-rv'))) RV.sel = '';
     if (query.form != null) RV.form = query.form;
     if (query.site != null) RV.site = query.site;
     var all = reviewQueue();
@@ -4966,9 +4990,7 @@
   }
   function setSystem() {
     var demo = App.demo && typeof App.demo.load === 'function';
-    return setRow('시스템', 'DB 시트·드라이브 폴더·자동 실행(트리거)·메일 할당량.', '<div data-slot="sysinfo">' + skel(5, 18) + '</div>', {
-      aside: '<p class="muted hq-small hq-mt">AI 분석 요약을 쓰려면 Apps Script 편집기 › 프로젝트 설정 › 스크립트 속성에 <span class="mono">ANTHROPIC_API_KEY</span> 를 넣으세요. 넣으면 분석 화면에 ‘AI 요약’ 버튼이 생깁니다.</p>'
-    }) +
+    return setRow('시스템', 'DB 시트·드라이브 폴더·자동 실행(트리거)·메일 할당량.', '<div data-slot="sysinfo">' + skel(5, 18) + '</div>') +
       setRow('예시 데이터', '사업장 12곳·90일 치 기록으로 화면을 미리 봅니다. 교육·시연용입니다.',
         '<p>지금 있는 사업장·기록·조치·요청을 <b>모두 지우고</b> 예시 데이터로 바꿉니다. 사용자 계정은 그대로 둡니다.</p>' +
         '<div class="hq-set-ft"><button class="btn" type="button" data-act="hq.set.demo"' + (demo ? '' : ' disabled title="예시 데이터 생성기를 불러오지 못했습니다"') + '>' + icon('upload') + '<span>예시 데이터로 바꾸기</span></button></div>') +

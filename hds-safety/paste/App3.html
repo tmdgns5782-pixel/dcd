@@ -1193,8 +1193,8 @@
 /* ===== [analytics-a] 끝 ===== */
 /* ===== [analytics-b] 시작 ===== */
 /* 분석(analytics-b): 일일점검 · 교육·훈련 · 조치 이행 · HEC 준비도 · 사업장 비교 · 양식별 자동 분석,
-   App.analytics.insights(scope) / digest(scope) / aiSummary(), 보고서 인쇄.
-   모든 숫자는 클라이언트 색인(App.S.index 의 facts)·조치·사업장에서 계산한다(서버 호출 없음, AI 요약만 api). */
+   App.analytics.insights(scope), 보고서 인쇄.
+   모든 숫자는 클라이언트 색인(App.S.index 의 facts)·조치·사업장에서 계산한다(서버 호출 없음). */
 (function () {
   "use strict";
   var App = window.App = window.App || {};
@@ -1787,44 +1787,6 @@
   };
   function safeScope() { try { return AN.scope(); } catch (e) { return null; } }
 
-  /* ================= AI 요약용 숫자 ================= */
-  AN.digest = function (scopeIn) { return memo(function () { return digestOf(scopeIn); }); };
-  function digestOf(scopeIn) {
-    var s = scopeIn && scopeIn.siteObjs ? scopeIn : norm(scopeIn || safeScope());
-    var t = today(), inc = rows('F04', s), f02 = rows('F02', s), ds = dailyStats(s), acts = actsList(s);
-    var created = acts.filter(function (a) { var d = dateOf(a.createdAt); return d >= s.from && d <= s.to; });
-    var closed = acts.filter(function (a) { var d = dateOf(a.doneAt); return isClosed(a) && d >= s.from && d <= s.to; });
-    var withDue = closed.filter(function (a) { return a.due; });
-    var half = periodOf('half', endOf(s)), es = s.siteObjs.map(function (x) { return eduSite(x, s); });
-    var n1 = rows('N1', s).filter(n1Done), drills = s.siteObjs.map(function (x) { return drillOf(x, half); });
-    var hec = hecSites(s).map(function (x) { var m = mockScore(x.id); var rv = hecReady(x.id); return { site: x.name, ready: rv == null ? null : Math.round(rv * 10) / 10, partI: m ? m.partI : null, d1: m ? m.d1 : null }; });
-    function top(obj, n) { return ranked(obj).slice(0, n || 5).map(function (x) { return [x.k, x.n]; }); }
-    return {
-      scope: { from: s.from, to: s.to, label: s.label, sites: s.siteObjs.length, today: t },
-      incidents: {
-        total: inc.length, byKind: countBy(inc, function (r) { return V(r, 'kind'); }),
-        byType: top(countBy(inc, function (r) { return V(r, 'accType'); })), byAgent: top(countBy(inc, function (r) { return V(r, 'agent'); })),
-        bySite: top(countBy(inc, function (r) { return siteName(r.site); })), lossDays: sum(inc, function (r) { var tb = Tb(r, 'sec_victims'); return tb && tb.s ? tb.s.vlossDays : 0; }),
-        prevPeriod: rows('F04', prevScope(s)).length
-      },
-      voice: { total: f02.length, byKind: countBy(f02, function (r) { return V(r, 'kind'); }) },
-      violations: { total: rows('F05', s).length, bySite: top(countBy(rows('F05', s), function (r) { return siteName(r.site); })) },
-      stopWork: { total: rows('F10', s).length },
-      daily: { expected: ds.exp, submitted: ds.done, rate: ds.rate == null ? null : Math.round(ds.rate * 1000) / 10, onTimeRate: ds.ontimeRate == null ? null : Math.round(ds.ontimeRate * 1000) / 10,
-        lowest: ds.sites.filter(function (x) { return x.exp; }).sort(function (a, b) { return a.rate - b.rate; }).slice(0, 3).map(function (x) { return [x.name, Math.round(x.rate * 1000) / 10]; }) },
-      acts: { created: created.length, closed: closed.length, open: acts.filter(isOpen).length, overdue: acts.filter(function (a) { return isOverdue(a, t); }).length,
-        overdueHigh: acts.filter(function (a) { return isOverdue(a, t) && a.level === '높음'; }).length,
-        onTimeRate: withDue.length ? Math.round(withDue.filter(function (a) { return dateOf(a.doneAt) <= a.due; }).length / withDue.length * 1000) / 10 : null,
-        medianDays: median(closed.map(function (a) { return diff(dateOf(a.createdAt), dateOf(a.doneAt)); }).filter(isFinite)) },
-      education: { sessions: n1.length, hours: Math.round(sum(n1, eduHours) * 10) / 10, attendees: sum(n1, function (r) { var a = nV(r, 'attendCount'); return a != null ? a : peopleN(r, 'attendees'); }),
-        half: half.label, legalWorkerHours: eduStd().worker, sitesBelow: es.filter(function (x) { return x.short; }).map(function (x) { return x.basis === 'person' ? [x.name, '미달 ' + x.below + '/' + x.persons + '명'] : [x.name, x.hours]; }) },
-      drills: { half: half.label, done: drills.filter(function (x) { return x.done; }).length, missing: drills.filter(function (x) { return !x.done; }).map(function (x) { return x.name; }) },
-      risk: s.siteObjs.map(function (x) { var r = riskOf(x); return [x.name, r.label]; }).filter(function (x) { return !/^D-/.test(x[1]) || +x[1].slice(2) <= 30; }),
-      hec: { sites: hec.length, avgReady: hec.length ? Math.round(sum(hec, function (x) { return x.ready; }) / hec.length * 10) / 10 : null, lowest: hec.slice().sort(function (a, b) { return (a.ready || 0) - (b.ready || 0); }).slice(0, 3) },
-      findings: AN.insights(s).map(function (x) { return x.text; })
-    };
-  };
-
   /* ================= 차트(analytics-a 의 Charts 사용, 없으면 간단한 HTML) ================= */
   var JOBS = [], SEQ = 0;
   function chart(kind, data, opts, cls) {
@@ -1929,7 +1891,6 @@
   }
   function head(key, title, sub, s) {
     var acts = '';
-    if (isHQ()) acts += '<button class="btn ghost" type="button" data-act="an.ai">' + icon('chart') + '<span>AI 요약</span></button>';
     acts += '<button class="btn" type="button" data-act="an.bPrint">' + icon('print') + '<span>보고서 인쇄</span></button>';
     return '<div class="title-row"><div class="title-main"><h1>분석 · ' + esc(title) + '</h1><p class="sub">' + sub + '</p></div><div class="actions">' + acts + '</div></div>' +
       tabsHTML(key) + filterHTML(s);
@@ -2481,24 +2442,7 @@
   }
   function stackLegend() { return '<div class="mk-legend"><span><i class="anb-sw b"></i>불량</span><span><i class="anb-sw w"></i>주의</span><span><i class="anb-sw g"></i>양호</span></div>'; }
 
-  /* ================= AI 요약 · 인쇄 ================= */
-  AN.aiSummary = function () {
-    var s = scope(), dg = AN.digest(s);
-    var dlg = null;
-    dlg = App.dialog ? App.dialog({ title: 'AI 요약 · ' + s.label, wide: true, body: '<div class="stack"><div class="skel" style="height:16px;width:90%"></div><div class="skel" style="height:16px;width:75%"></div><div class="skel" style="height:16px;width:82%"></div></div>',
-      actions: [{ label: '닫기', kind: 'ghost', onClick: function () { if (dlg && dlg.close) dlg.close(); } }] }) : null;
-    function show(html) { var bd = dlg && dlg.el && dlg.el.querySelector('.dlg-bd'); if (bd) bd.innerHTML = html; else if (!dlg && App.toast) App.toast(html.replace(/<[^>]+>/g, ''), 'neu'); }
-    if (!App.api) { show('<p>서버에 연결되지 않았습니다.</p>'); return; }
-    App.api('ai.insight', { scope: { from: s.from, to: s.to, sites: s.all ? [] : s.sites }, digest: dg }, { silent: true }).then(function (d) {
-      var text = String((d && d.text) || '').trim();
-      show(text ? '<div class="anb-ai">' + text.split(/\n{2,}/).map(function (p) { return '<p>' + esc(p).replace(/\n/g, '<br>') + '</p>'; }).join('') + '</div><p class="faint small">규칙 기반 숫자(기록 ' + esc(s.label) + ')를 AI 가 요약한 글입니다. 판단 전에 각 화면의 숫자를 확인해 주세요.</p>' : '<p class="muted">요약 결과가 비어 있습니다.</p>');
-    }).catch(function (e) {
-      var msg = String((e && e.message) || '');
-      var nokey = /키|key|설정|API/i.test(msg) || (e && e.code === 'INVALID');
-      show(nokey ? '<p>AI 요약을 쓰려면 관리자가 설정에서 Claude API 키를 넣어야 합니다.</p>' + (App.isAdmin && App.isAdmin() ? '<p><a class="btn sm" href="#/settings">설정 열기</a></p>' : '<p class="muted">관리자에게 요청해 주세요.</p>')
-        : '<div class="err">요약을 만들지 못했습니다. ' + esc(msg) + '</div>');
-    });
-  };
+  /* ================= 인쇄 ================= */
   function printNow() {
     var body = document.querySelector('.anb-body'); if (!body) { window.print(); return; }
     var s = scope(), title = body.getAttribute('data-title') || '분석';
@@ -2515,7 +2459,6 @@
     'an.bRetry': function () { rerender(); },
     'an.bSort': function (el) { var k = el.getAttribute('data-key'); if (sortSt.key === k) sortSt.desc = !sortSt.desc; else { sortSt.key = k; sortSt.desc = k === 'name' ? false : k === 'inc' || k === 'acts'; } rerender(); }
   };
-  if (!App.actions['an.ai']) acts['an.ai'] = function () { AN.aiSummary(); };
   Object.keys(acts).forEach(function (k) { App.actions[k] = acts[k]; });
   document.addEventListener('change', function (ev) {
     var el = ev.target; if (!el || !el.getAttribute) return;
@@ -2523,7 +2466,6 @@
     if (k === 'daily-site') { dailySite = el.value; rerender(); }
     else if (k === 'form') go('#/analytics/form/' + el.value);
   });
-  AN.aiButton = function () { return isHQ() ? '<button class="btn ghost" type="button" data-act="an.ai">' + icon('chart') + '<span>AI 요약</span></button>' : ''; };
 
   /* ================= 화면 등록 ================= */
   view('daily', '분석 · 일일점검', renderDaily);

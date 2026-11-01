@@ -697,9 +697,9 @@ async function fillVisible(page, all = false) {
       if (['checkbox', 'radio', 'file', 'hidden', 'button', 'submit', 'search', 'password', 'color', 'range'].includes(d.type)) continue;
       let v = null;
       if (d.type === 'number') v = all ? '1' : '0';
-      else if (d.type === 'time') v = '08:30';
+      else if (d.type === 'time') v = '00:10';
       else if (d.type === 'date') v = today;
-      else if (d.type === 'datetime-local') v = today + 'T08:30';
+      else if (d.type === 'datetime-local') v = today + 'T00:10'; // 오늘 자정 직후 — 언제 돌려도 '미래 일시' 검사에 걸리지 않게
       else if (d.type === 'month') v = today.slice(0, 7);
       else if (d.req || all) v = d.tag === 'textarea' ? '특이사항 없음' : '이상 없음';
       if (v === null) continue;

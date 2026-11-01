@@ -4468,7 +4468,6 @@ var Api = (function () {
     try {
       if (name === 'Dispatch' && typeof Dispatch !== 'undefined') m = Dispatch;
       else if (name === 'Export' && typeof Export !== 'undefined') m = Export;
-      else if (name === 'Ai' && typeof Ai !== 'undefined') m = Ai;
       else if (name === 'Views' && typeof Views !== 'undefined') m = Views;
     } catch (e) { m = null; }
     return m;
@@ -6149,13 +6148,6 @@ var Api = (function () {
       }
       changed.push('requiredForms');
     }
-    if (has(src, 'ai')) {
-      if (!isObj(src.ai)) fail('INVALID', 'AI 설정이 올바르지 않습니다');
-      out.ai = isObj(out.ai) ? out.ai : {};
-      if (has(src.ai, 'enabled')) out.ai.enabled = bool(src.ai.enabled);
-      if (has(src.ai, 'model')) out.ai.model = str(src.ai.model, 80, 'AI 모델');
-      changed.push('ai');
-    }
     if (!changed.length) fail('INVALID', '바꿀 설정 항목이 없습니다');
     Db.saveSettings(out);
     audit(ctx, 'settings', changed.join(','), '설정 변경: ' + changed.join(', '));
@@ -6334,15 +6326,6 @@ var Api = (function () {
     return out;
   }
 
-  function hAiInsight(p, me, ctx) {
-    if (!isObj(p.scope)) p.scope = {};
-    if (p.digest !== undefined && !isObj(p.digest)) fail('INVALID', '분석 요약 숫자가 올바르지 않습니다');
-    if (p.digest && JSON.stringify(p.digest).length > 60000) fail('INVALID', '분석 요약이 너무 큽니다');
-    var out = callMod('Ai', 'insight', [p, me]);
-    audit(ctx, 'ai', '', 'AI 분석 요약 요청');
-    return out;
-  }
-
   /* ======================================================================
    * 메서드 표
    * ==================================================================== */
@@ -6398,9 +6381,7 @@ var Api = (function () {
     'admin.wipe': { perm: 'admin', lock: true, fn: hWipe },
     'admin.info': { perm: 'admin', fn: hInfo },
     'admin.installTriggers': { perm: 'admin', fn: hInstallTriggers },
-    'admin.log': { perm: 'hq', fn: hLog },
-
-    'ai.insight': { perm: 'hq', fn: hAiInsight }
+    'admin.log': { perm: 'hq', fn: hLog }
   };
 
   /* ======================================================================
@@ -23299,9 +23280,7 @@ return {
   }
   function setSystem() {
     var demo = App.demo && typeof App.demo.load === 'function';
-    return setRow('시스템', 'DB 시트·드라이브 폴더·자동 실행(트리거)·메일 할당량.', '<div data-slot="sysinfo">' + skel(5, 18) + '</div>', {
-      aside: '<p class="muted hq-small hq-mt">AI 분석 요약을 쓰려면 Apps Script 편집기 › 프로젝트 설정 › 스크립트 속성에 <span class="mono">ANTHROPIC_API_KEY</span> 를 넣으세요. 넣으면 분석 화면에 ‘AI 요약’ 버튼이 생깁니다.</p>'
-    }) +
+    return setRow('시스템', 'DB 시트·드라이브 폴더·자동 실행(트리거)·메일 할당량.', '<div data-slot="sysinfo">' + skel(5, 18) + '</div>') +
       setRow('예시 데이터', '사업장 12곳·90일 치 기록으로 화면을 미리 봅니다. 교육·시연용입니다.',
         '<p>지금 있는 사업장·기록·조치·요청을 <b>모두 지우고</b> 예시 데이터로 바꿉니다. 사용자 계정은 그대로 둡니다.</p>' +
         '<div class="hq-set-ft"><button class="btn" type="button" data-act="hq.set.demo"' + (demo ? '' : ' disabled title="예시 데이터 생성기를 불러오지 못했습니다"') + '>' + icon('upload') + '<span>예시 데이터로 바꾸기</span></button></div>') +

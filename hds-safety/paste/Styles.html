@@ -1144,9 +1144,9 @@ button.mk-na:hover { background: transparent; }
   .fe-grid > .w2, .fe-grid > .w3, .fe-grid > .w4 { grid-column: 1 / -1; }
 }
 @media (max-width: 640px) {
-  .fe { padding-bottom: calc(72px + var(--safe-b)); }
+  .fe { padding-bottom: calc(var(--fe-bar-h, calc(60px + var(--safe-b))) + 12px); }
   body.fe-editing .tabbar { display: none; }
-  body.fe-editing #toasts { bottom: calc(84px + var(--safe-b)); }
+  body.fe-editing #toasts { bottom: calc(var(--fe-bar-h, calc(60px + var(--safe-b))) + 24px); }
   .fe-grid { grid-template-columns: minmax(0, 1fr); }
   .fe-grid > .w2, .fe-grid > .w3, .fe-grid > .w4 { grid-column: auto; }
   .fe-sec-hd { flex-wrap: wrap; padding: 14px 16px 0; }
@@ -1193,7 +1193,8 @@ button.mk-na:hover { background: transparent; }
   .fe-bar .spacer { display: none; }
   .fe-bar .btn.lg { flex: none; }
   /* 상단바(48px)·아래 고정 줄 뒤로 포커스 칸·오류 요약·섹션이 숨지 않게 — 브라우저 자동 스크롤과 scrollIntoView 모두에 적용 */
-  html:has(body.fe-editing) { scroll-padding-top: 64px; scroll-padding-bottom: calc(88px + var(--safe-b)); }
+  /* --fe-bar-h: JsEngine 이 ResizeObserver 로 잰 하단 줄 실제 높이(안전 영역 포함, 접히면 0). 없으면 한 줄 기준 */
+  html:has(body.fe-editing) { scroll-padding-top: 64px; scroll-padding-bottom: calc(var(--fe-bar-h, calc(72px + var(--safe-b))) + 16px); }
   /* 소프트 키보드가 열려 보이는 높이가 줄면 고정 줄을 접어 입력칸을 가리지 않는다 */
   body.fe-kb .fe-bar { display: none; }
   body.fe-kb .fe { padding-bottom: 16px; }
@@ -1201,7 +1202,7 @@ button.mk-na:hover { background: transparent; }
 @supports not selector(:has(a)) {
   @media (max-width: 640px) {
     .fe-errs, .fe-sec, .fe-notice, .fe-stages { scroll-margin-top: 64px; }
-    .fe [data-fe-eid] { scroll-margin-top: 64px; scroll-margin-bottom: calc(88px + var(--safe-b)); }
+    .fe [data-fe-eid] { scroll-margin-top: 64px; scroll-margin-bottom: calc(var(--fe-bar-h, calc(72px + var(--safe-b))) + 16px); }
   }
 }
 @media print {
@@ -1269,7 +1270,16 @@ button.mk-na:hover { background: transparent; }
 /* 열이 많은 표: 데스크톱은 인쇄처럼 열 묶음(행 번호 반복)으로 나눠 가로 스크롤 없이 모든 열을 보인다 */
 .rv-tparts { display: flex; flex-direction: column; }
 .rv-tpart + .rv-tpart { border-top: 1px solid var(--border); }
-.rv-tpart-cap { margin: 0; padding: 10px 16px 0; font-size: var(--fs-small, 12px); line-height: 16px; color: var(--muted); }
+.rv-tpart-cap { margin: 0; padding: 10px var(--card-pad) 0; font-size: var(--fs-small, 12px); line-height: 16px; color: var(--muted); }
+/* 열 묶음·휴대폰 한 표는 .flush 바로 아래가 아니어서 Css 의 flush 표 여백 규칙이 닿지 않음 — 같은 안쪽 여백을 여기서 준다 */
+.flush > .rv-tparts > .rv-tpart > .tbl-wrap .tbl th:first-child, .flush > .rv-tparts > .rv-tpart > .tbl-wrap .tbl td:first-child,
+.flush > .rv-tflat > .tbl-wrap .tbl th:first-child, .flush > .rv-tflat > .tbl-wrap .tbl td:first-child { padding-left: var(--card-pad); }
+.flush > .rv-tparts > .rv-tpart > .tbl-wrap .tbl th:last-child, .flush > .rv-tparts > .rv-tpart > .tbl-wrap .tbl td:last-child,
+.flush > .rv-tflat > .tbl-wrap .tbl th:last-child, .flush > .rv-tflat > .tbl-wrap .tbl td:last-child { padding-right: var(--card-pad); }
+@media (max-width: 640px) {
+  .flush > .rv-tflat > .tbl-wrap .tbl:not(.keep) tr { padding-left: var(--card-pad); padding-right: var(--card-pad); }
+  .flush > .rv-tflat > .tbl-wrap .tbl:not(.keep) td { padding-left: 0 !important; padding-right: 0 !important; }
+}
 .rv-tpart .tbl { table-layout: auto; }
 .rv-tpart .tbl td.rv-long { min-width: 160px; }
 .rv-wait-note { font-size: var(--fs-small, 12px); line-height: 16px; white-space: nowrap; }
@@ -1342,13 +1352,23 @@ button.mk-na:hover { background: transparent; }
   .rv-forms td.rv-sched { min-width: 0; white-space: normal; }
   .rv-forms .rv-row-acts { flex-wrap: wrap; justify-content: flex-end; white-space: normal; max-width: 112px; }
 }
+/* 휴대폰: 공용 두 줄 행(.tbl.rows2) — 1줄 번호+양식 이름 / 오른쪽 다음 마감(사업장) 또는 '새로 쓰기'(본사), 2줄 .r-l2 */
 @media (max-width: 640px) {
   .rv-fcell { min-width: 0; }
-  .rv-forms td.rv-fcell { display: block !important; }
-  .rv-forms td.rv-sched { min-width: 0; }
-  .rv-fno { width: auto; text-align: left; }
-  .rv-forms .rv-act-col { flex: 1 1 100%; width: auto; margin-top: 6px; text-align: left; }
-  .rv-row-acts { justify-content: flex-start; }
+  .rv-forms td.r-main { position: relative; }
+  .rv-forms .rv-fcell-in { gap: 8px; }
+  .rv-fno { width: auto; min-width: 28px; text-align: left; font-weight: 400; }
+  .rv-fmain { flex: 1 1 auto; overflow: hidden; }
+  .rv-forms .rv-fsub { display: none; }
+  .rv-forms .rv-fname { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* 이름 버튼의 누름 영역을 칸 전체로(44px 이상) — 양식 설명(새로 쓰기·빈 양식 인쇄 포함)이 열림 */
+  .rv-forms .rv-fname::after { content: ""; position: absolute; inset: 0; }
+  .rv-forms td.rv-sched.r-key { min-width: 0; white-space: nowrap; }
+  .rv-forms td.rv-sched.r-key div { display: none; }
+  .rv-forms td.rv-act-col.r-key { width: auto; }
+  .rv-forms td.r-key .rv-row-acts { gap: 0; }
+  /* 오른쪽은 한 동작만: 쓸 수 있으면 '새로 쓰기', 열람 권한이면 빈 양식 인쇄 */
+  .rv-forms td.r-key [data-act="fe.forms-info"], .rv-forms td.r-key .btn ~ .icon-btn { display: none; }
 }
 .rv-info-purpose { margin: 0; font-size: 14px; line-height: 1.6; }
 .rv-info-h { margin: 0 0 8px; font-size: 13px; font-weight: 600; }
@@ -1530,6 +1550,16 @@ body.rv-printing #print-root { display: block; min-height: 100vh; }
 .hq-keys { font-size: 12px; line-height: 16px; }
 @media (max-width: 1100px) {
   .hq-mail-panel, .hq-rv-right { position: static; max-height: none; }
+  /* 검토함 미리보기(태블릿·휴대폰): 긴 보고서도 끝까지 내리지 않고 바로 누르도록 동작 줄을 화면 아래에 붙인다.
+     줄은 흐름 안에 자리를 차지하므로 끝까지 내리면 본문 마지막 줄이 그 위에 온다(가리지 않음) */
+  .hq-rv-ft {
+    position: sticky; bottom: 0; z-index: 5; flex-wrap: wrap;
+    border-top: 1px solid var(--border); border-radius: 0 0 var(--radius-card) var(--radius-card);
+    padding-bottom: calc(12px + var(--safe-b));
+  }
+  .hq-rv-ft .btn { min-height: 44px; }
+  .hq-rv-ft .muted { flex: 1 1 100%; }
+  .hq-rv-body { padding-bottom: 24px; }
 }
 @media (max-width: 640px) {
   .hq-pick, .hq-pick-tags { grid-template-columns: minmax(0, 1fr); }
@@ -1873,8 +1903,6 @@ a.anb-hkb:focus-visible { outline: 2px solid var(--accent, #223189); outline-off
 .anb-cols i { display: block; width: 62%; background: var(--chart-1, #223189); }
 .anb-cols span { font-size: 11px; color: var(--axis-ink, #676b84); margin-top: 4px; white-space: nowrap; }
 
-/* AI 요약 */
-.anb-ai p { margin: 0 0 12px; line-height: 1.65; }
 
 /* 인쇄용 머리 문장(보고서) */
 .anb-pmeta { color: var(--muted, #555a75); font-size: 12px; margin: 0 0 6px; }

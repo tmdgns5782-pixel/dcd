@@ -1,7 +1,7 @@
 /**
  * HDS 안전장부 — 서버 코드 (Code.gs) · 버전 1.0.0
  * 이 파일은 dev/build-paste.mjs 가 gas/*.gs 를 이어 붙여 만든 것입니다. 고칠 때는 gas/ 원본을 고치고 다시 만드세요.
- * 원본 순서: Config.gs, Ai.gs, Api.gs, Auth.gs, Db.gs, Dispatch.gs, Export.gs, Main.gs, Setup.gs, Views.gs
+ * 원본 순서: Config.gs, Api.gs, Auth.gs, Db.gs, Dispatch.gs, Export.gs, Main.gs, Setup.gs, Views.gs
  * 편집기에서 처음 한 번 함수 목록의 setup 을 골라 [실행] 하세요(실행 로그에 관리자 임시 비밀번호가 나옵니다).
  */
 
@@ -81,241 +81,6 @@ var DEFAULT_SETTINGS = {
   monthlyDueDay: 5,
   requiredForms: { 'default': ['F07', 'F09', 'F01', 'N1', 'N2', 'N4', 'F08B', 'F10B'], seasonal: { F06: [4, 5, 6, 7, 8, 9] } }
 };
-
-
-/* ======================================================================
- * Ai.gs
- * ==================================================================== */
-
-/**
- * Ai.gs — (선택 기능) AI 분석 요약. SPEC §6 ai.insight.
- *
- * 공개: Ai.insight(p, me) → {text, model}
- *   p = { scope:{from, to, sites?}, digest:{…클라이언트가 만든 숫자 요약…} }
- *
- * 설정(스크립트 속성 — 편집기 > 프로젝트 설정 > 스크립트 속성)
- *   ANTHROPIC_API_KEY  (필수) Anthropic API 키. 없으면 이 기능은 꺼진 것으로 본다.
- *   ANTHROPIC_MODEL    (선택) 모델 ID. 기본 claude-opus-5-5. 설정 화면의 settings.ai.model 이 있으면 그것이 먼저.
- *   settings.ai.enabled === false 이면 키가 있어도 쓰지 않는다.
- *   ANTHROPIC_EFFORT   (선택) low | medium | high. 기본 medium.
- *
- * 호출: UrlFetchApp → POST https://api.anthropic.com/v1/messages
- *   헤더 x-api-key, anthropic-version: 2026-10-21 (이 버전은 temperature·top_p·top_k 를 받지 않으므로 보내지 않는다).
- *   지원 모델이면 서버 쪽 대체 실행(fallbacks:'default', 베타 server-side-fallback-2026-07-01)을 켠다 — 안전 분류기가
- *   거절하면 API 가 권장 모델로 다시 돌린다. 베타가 계정에서 막혀 있으면 한 번 그 옵션 없이 다시 보낸다.
- * 비용 관리: 같은 입력은 6시간 캐시, 사용자당 1시간 30회 제한.
- */
-var Ai = (function () {
-  'use strict';
-
-  var ENDPOINT = 'https://api.anthropic.com/v1/messages';
-  var API_VERSION = '2026-10-21';
-  var DEFAULT_MODEL = 'claude-opus-5-5';
-  var FALLBACK_BETA = 'server-side-fallback-2026-07-01';
-  var FALLBACK_MODELS = { 'claude-sonnet-5-5': true, 'claude-opus-5-5': true, 'claude-opus-5': true, 'claude-fable-5-1': true };
-  var EFFORT_RE = /^claude-(?:(?:fable|mythos|opus|sonnet|haiku)-5(?:-\d+)?|opus-4-[5-8]|sonnet-4-6)$/;
-  var MAX_TOKENS = 4000;
-  var MAX_DIGEST_CHARS = 60000;
-  var CACHE_SEC = 6 * 3600;
-  var RATE_MAX = 30;
-  var RATE_SEC = 3600;
-
-  var SYSTEM = [
-    '당신은 HDS(주) 안전경영지원실을 돕는 안전보건 데이터 분석가입니다.',
-    '사업장(건물 보안·안내·주차·미화·시설 인력 파견 현장)이 제출한 표준 안전보건 양식의 집계 숫자만 보고 분석합니다.',
-    '규칙:',
-    '- 주어진 숫자와 이름만 사용합니다. 주어지지 않은 숫자·비율·추세·원인은 만들지 않습니다. 근거가 부족하면 "자료로는 판단이 어렵습니다"라고 씁니다.',
-    '- 비율을 새로 계산할 때는 주어진 두 숫자로만 계산하고 소수 첫째 자리까지 씁니다.',
-    '- 한국어 존댓말(~합니다)로, 현장 업무 용어(미제출, 기한경과, 반려, 아차사고, 작업중지, 조치)를 씁니다.',
-    '- 마크다운 기호(#, *, **, 표)와 이모지는 쓰지 않습니다. 줄마다 한 문장 또는 두 문장입니다.'
-  ].join('\n');
-
-  function fail(code, msg) {
-    var e = new Error(msg);
-    e.code = code;
-    throw e;
-  }
-  function str(v) { return v == null ? '' : String(v).trim(); }
-  function prop(k) {
-    try { return str(PropertiesService.getScriptProperties().getProperty(k)); } catch (e) { return ''; }
-  }
-  function cache() { try { return CacheService.getScriptCache(); } catch (e) { return null; } }
-  function who(me) { return me ? (me.name || me.id || '') + (me.id ? ' (' + me.id + ')' : '') : 'system'; }
-  function log(me, ref, text) { try { Db.log(who(me), 'ai', ref || '', text); } catch (e) { console.warn('AI 기록 실패'); } }
-
-  function hash(text) {
-    var bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, text, Utilities.Charset.UTF_8);
-    return bytes.map(function (b) { var h = (b & 255).toString(16); return h.length < 2 ? '0' + h : h; }).join('');
-  }
-
-  function scopeText(scope) {
-    scope = scope || {};
-    var parts = [];
-    if (scope.from || scope.to) parts.push('기간 ' + str(scope.from || '처음') + ' ~ ' + str(scope.to || '오늘'));
-    var sites = Array.isArray(scope.sites) ? scope.sites.filter(Boolean) : [];
-    parts.push(sites.length ? '사업장 ' + sites.length + '곳(' + sites.slice(0, 30).join(', ') + (sites.length > 30 ? ' 외' : '') + ')' : '전체 사업장');
-    return parts.join(' · ');
-  }
-
-  function buildPrompt(p, company) {
-    var digest = JSON.stringify(p.digest);
-    return [
-      (/안전경영지원실/.test(company) ? company : (company ? company + ' ' : '') + '안전경영지원실') + ' 담당자에게 드릴 5~7줄 분석을 써 주세요.',
-      '분석 범위: ' + scopeText(p.scope),
-      '',
-      '구성(순서대로, 전체 5~7줄):',
-      '1) 가장 큰 위험 신호 1~2줄 — 어느 사업장·어느 지표인지 숫자와 함께.',
-      '2) 사업장 비교 1~2줄 — 잘하는 곳과 손볼 곳을 이름과 숫자로.',
-      '3) 다음 달 할 일 3가지 — 줄마다 "할 일 1)", "할 일 2)", "할 일 3)"로 시작하고, 누가 무엇을 언제까지 하는지 짧게.',
-      '숫자는 아래 요약에 있는 것만 쓰고, 없는 숫자를 지어내지 마세요. 줄 사이에 빈 줄을 넣지 마세요.',
-      '',
-      '<digest>',
-      digest,
-      '</digest>'
-    ].join('\n');
-  }
-
-  function errorText(code, body) {
-    var type = '', message = '';
-    try {
-      var j = JSON.parse(body);
-      type = str(j && j.error && j.error.type);
-      message = str(j && j.error && j.error.message);
-    } catch (e) { /* 본문이 JSON 이 아님 */ }
-    if (code === 401 || type === 'authentication_error') return 'AI 분석 키가 올바르지 않습니다. 스크립트 속성 ANTHROPIC_API_KEY 를 확인하세요';
-    if (code === 402 || type === 'billing_error') return 'AI 분석 계정의 결제 상태를 확인해야 합니다(Anthropic 콘솔 > 결제)';
-    if (code === 403 || type === 'permission_error') return '이 AI 분석 키로는 해당 모델을 쓸 수 없습니다. 스크립트 속성 ANTHROPIC_MODEL 을 확인하세요';
-    if (code === 404 || type === 'not_found_error') return 'AI 모델을 찾을 수 없습니다. 스크립트 속성 ANTHROPIC_MODEL 의 이름을 확인하세요';
-    if (code === 413 || type === 'request_too_large') return '분석할 요약 데이터가 너무 큽니다. 기간이나 사업장을 줄여 다시 시도하세요';
-    if (code === 429 || type === 'rate_limit_error') return 'AI 분석 요청이 많아 잠시 막혔습니다. 1분쯤 뒤에 다시 시도하세요';
-    if (code === 529 || type === 'overloaded_error' || code >= 500) return 'AI 분석 서비스가 지금 응답하지 않습니다. 잠시 후 다시 시도하세요';
-    if (code === 400) return 'AI 분석 요청이 거절되었습니다' + (message ? '(' + message.slice(0, 160) + ')' : '') + '. 관리자에게 알려 주세요';
-    return 'AI 분석 중 오류가 났습니다(HTTP ' + code + '). 잠시 후 다시 시도하세요';
-  }
-
-  function retryable(code) { return code === 429 || code === 500 || code === 529 || code === 503 || code === 502; }
-
-  /** 한 번 호출. → {code, body} (네트워크 오류는 code 0) */
-  function post(key, body, withFallback) {
-    var headers = { 'x-api-key': key, 'anthropic-version': API_VERSION };
-    var payload = JSON.parse(JSON.stringify(body));
-    if (withFallback) {
-      headers['anthropic-beta'] = FALLBACK_BETA;
-      payload.fallbacks = 'default';
-    }
-    try {
-      var res = UrlFetchApp.fetch(ENDPOINT, {
-        method: 'post',
-        contentType: 'application/json',
-        headers: headers,
-        payload: JSON.stringify(payload),
-        muteHttpExceptions: true
-      });
-      return { code: res.getResponseCode(), body: res.getContentText() };
-    } catch (e) {
-      return { code: 0, body: '', err: String((e && e.message) || e) };
-    }
-  }
-
-  function call(key, body) {
-    var useFallback = !!FALLBACK_MODELS[body.model];
-    var r = post(key, body, useFallback);
-    // 계정에 베타가 없으면(400: anthropic-beta / fallbacks) 그 옵션 없이 한 번 더.
-    if (useFallback && r.code === 400 && /anthropic-beta|fallback/i.test(r.body)) {
-      useFallback = false;
-      r = post(key, body, false);
-    }
-    if (r.code === 0 || retryable(r.code)) {
-      Utilities.sleep(r.code === 429 ? 4000 : 1500);
-      r = post(key, body, useFallback);
-    }
-    return r;
-  }
-
-  function cleanText(t) {
-    return String(t || '')
-      .replace(/\r\n/g, '\n')
-      .replace(/^#{1,6}\s*/gm, '')
-      .replace(/\*\*(.+?)\*\*/g, '$1')
-      .replace(/^\s*[-*•]\s+/gm, '')
-      .replace(/\n{2,}/g, '\n')
-      .trim();
-  }
-
-  function insight(p, me) {
-    p = p || {};
-    if (!me || me.kind !== 'hq') fail('FORBIDDEN', '본사 사용자만 AI 분석을 쓸 수 있습니다');
-    var st = {};
-    try { st = Db.settings() || {}; } catch (e0) { st = {}; }
-    var aiSet = (st.ai && typeof st.ai === 'object') ? st.ai : {};
-    if (aiSet.enabled === false) fail('INVALID', 'AI 분석이 꺼져 있습니다. 설정에서 AI 분석을 켜세요');
-    var key = prop('ANTHROPIC_API_KEY');
-    if (!key) fail('INVALID', 'AI 분석 키가 설정되지 않았습니다. 스크립트 속성 ANTHROPIC_API_KEY 를 넣으세요');
-    if (p.digest == null || typeof p.digest !== 'object') fail('INVALID', '분석할 요약 숫자가 없습니다. 분석 화면에서 기간을 고른 뒤 다시 누르세요');
-    var digestText = JSON.stringify(p.digest);
-    if (digestText.length > MAX_DIGEST_CHARS) fail('INVALID', '분석할 요약 데이터가 너무 큽니다(' + Math.round(digestText.length / 1000) + '천 자). 기간이나 사업장을 줄여 다시 시도하세요');
-
-    var model = str(aiSet.model) || prop('ANTHROPIC_MODEL') || DEFAULT_MODEL;
-    if (!/^[A-Za-z0-9._:\-@\/]{3,100}$/.test(model)) fail('INVALID', 'AI 모델 이름 형식이 맞지 않습니다(설정 또는 스크립트 속성 ANTHROPIC_MODEL)');
-    var effort = prop('ANTHROPIC_EFFORT').toLowerCase();
-    if (['low', 'medium', 'high'].indexOf(effort) < 0) effort = 'medium';
-
-    var company = str(st.company);
-    var body = {
-      model: model,
-      max_tokens: MAX_TOKENS,
-      system: SYSTEM,
-      messages: [{ role: 'user', content: buildPrompt(p, company) }]
-    };
-    if (EFFORT_RE.test(model)) body.output_config = { effort: effort };
-
-    var c = cache();
-    var ckey = 'ai:r:' + hash(JSON.stringify(body));
-    if (c) {
-      try {
-        var hit = c.get(ckey);
-        if (hit) return JSON.parse(hit);
-      } catch (e2) { /* 캐시는 보조 */ }
-    }
-
-    var rkey = 'ai:n:' + String((me && me.id) || 'hq').toLowerCase();
-    var used = 0;
-    if (c) { try { used = Number(c.get(rkey) || 0) || 0; } catch (e3) { used = 0; } }
-    if (used >= RATE_MAX) fail('INVALID', 'AI 분석은 한 사람당 1시간에 ' + RATE_MAX + '번까지 쓸 수 있습니다. 잠시 후 다시 시도하세요');
-    if (c) { try { c.put(rkey, String(used + 1), RATE_SEC); } catch (e4) { /* 제한 카운터 실패는 무시 */ } }
-
-    var r = call(key, body);
-    if (r.code === 0) {
-      log(me, model, 'AI 분석 연결 실패: ' + (r.err || ''));
-      fail('SERVER', 'AI 분석 서버에 연결하지 못했습니다. 잠시 후 다시 시도하세요');
-    }
-    if (r.code !== 200) {
-      log(me, model, 'AI 분석 실패 HTTP ' + r.code);
-      fail('SERVER', errorText(r.code, r.body));
-    }
-    var j;
-    try { j = JSON.parse(r.body); } catch (e5) { fail('SERVER', 'AI 분석 응답을 읽지 못했습니다. 잠시 후 다시 시도하세요'); }
-    if (j.stop_reason === 'refusal') {
-      log(me, model, 'AI 분석 거절(' + str(j.stop_details && j.stop_details.category) + ')');
-      fail('SERVER', 'AI 가 이 요청에 답하지 않았습니다. 요약 범위를 바꿔 다시 시도하세요');
-    }
-    var text = cleanText((j.content || []).filter(function (b) { return b && b.type === 'text'; })
-      .map(function (b) { return b.text; }).join('\n'));
-    if (!text) fail('SERVER', 'AI 가 빈 답을 보냈습니다. 다시 시도하세요');
-    if (j.stop_reason === 'max_tokens') text += '\n(답이 길어 일부가 잘렸습니다)';
-
-    var out = { text: text, model: str(j.model) || model };
-    var u = j.usage || {};
-    log(me, out.model, 'AI 분석 · ' + scopeText(p.scope) + ' · 입력 ' + (u.input_tokens || 0) + ' / 출력 ' + (u.output_tokens || 0) + ' 토큰');
-    if (c) { try { c.put(ckey, JSON.stringify(out), CACHE_SEC); } catch (e6) { /* 캐시는 보조 */ } }
-    return out;
-  }
-
-  /** 키가 있는지만(설정 화면 표시용). */
-  function enabled() { return !!prop('ANTHROPIC_API_KEY'); }
-
-  return { insight: insight, enabled: enabled };
-})();
 
 
 /* ======================================================================
@@ -555,7 +320,6 @@ var Api = (function () {
     try {
       if (name === 'Dispatch' && typeof Dispatch !== 'undefined') m = Dispatch;
       else if (name === 'Export' && typeof Export !== 'undefined') m = Export;
-      else if (name === 'Ai' && typeof Ai !== 'undefined') m = Ai;
       else if (name === 'Views' && typeof Views !== 'undefined') m = Views;
     } catch (e) { m = null; }
     return m;
@@ -882,6 +646,38 @@ var Api = (function () {
       case 'annual': return y;
       default: return '';
     }
+  }
+
+  /*
+   * 한 사업장·한 기간(일일점검은 날짜+근무조)에 보고된 기록은 1건 — 화면 엔진(JsEngine findDup·singlePerPeriod·isReported)과 같은 규칙.
+   * 화면 확인창은 그 기기의 색인만 보므로 다른 기기·API 직접 호출로 건너뛸 수 있어 서버가 잠금 안에서 다시 본다.
+   *  - 대상: 정기 양식(frequency.type 이 event 아님) 가운데 한 기간 여러 건 양식(multiPerPeriod: '회마다 기록 1건|1회 이상|차수마다')과
+   *    수시 추가 작성이 있는 양식(due 에 '수시': 위험성평가 수시평가·폭염 수시 점검)은 뺀다.
+   *  - 같은 site·form·period(근무조 양식이면 근무조도. 근무조가 빈 기존 기록은 어느 근무조와도 겹침)의 삭제되지 않은 다른 기록 가운데
+   *    이미 보고된 것(제출·확인·반려 또는 단계 보고)이 있으면 그 번호. 없으면 ''.
+   */
+  function multiPerPeriodSrv(def) {
+    var fq = def.frequency || {};
+    if (fq.multiPerPeriod !== undefined) return !!fq.multiPerPeriod;
+    return /회마다 기록 1건|1회 이상|차수마다/.test(String(fq.due || ''));
+  }
+  function singlePerPeriodSrv(def) {
+    var fq = def.frequency || {};
+    if (!fq.type || fq.type === 'event' || multiPerPeriodSrv(def)) return false;
+    return !/수시/.test(String(fq.due || ''));
+  }
+  function reportedRec(r) {
+    return !!r && (r.status === '제출' || r.status === '확인' || r.status === '반려' || (Array.isArray(r.stageDone) && r.stageDone.length > 0));
+  }
+  function reportedDupId(def, rec) {
+    if (!singlePerPeriodSrv(def)) return '';
+    var shifts = !!(def.frequency && def.frequency.shifts);
+    var pk = String(rec.period || '');
+    var hit = Db.all('records').filter(function (r) {
+      return r && !r.deleted && r.id !== rec.id && r.site === rec.site && r.form === def.code && String(r.period || '') === pk &&
+        (!shifts || !r.shift || r.shift === rec.shift) && reportedRec(r);
+    })[0];
+    return hit ? String(hit.id) : '';
   }
 
   function emptyRecord(def, site, me) {
@@ -1329,6 +1125,15 @@ var Api = (function () {
     var rec = x.rec, def = x.def, cur = x.cur;
     var prev = cur ? clone(cur) : null;
     var isNew = !cur;
+    // 처음 보고하는 기록(새 기록·아직 보고 안 한 작성중)만 본다. 같은 기록의 재제출·수정 제출·다음 단계 제출은 그대로.
+    if (!reportedRec(cur)) {
+      var dupId = reportedDupId(def, rec);
+      if (dupId) {
+        var pl = rec.period ? String(rec.period) + (def.frequency && def.frequency.shifts && rec.shift ? ' ' + rec.shift : '') : '';
+        fail('CONFLICT', '같은 기간' + (pl ? '(' + pl + ')' : '') + '에 이미 보고한 ' + formName(def) + ' 기록이 있습니다: ' + dupId +
+          '. 같은 기간 기록은 1건만 냅니다. 그 기록을 이어서 쓰거나 수정 제출하세요');
+      }
+    }
     if (isNew) rec.id = newRecordId(def, rec.site, rec.date, me);
     var stage = null;
     var wasReturned = cur && cur.status === '반려';
@@ -2195,13 +2000,6 @@ var Api = (function () {
       }
       changed.push('requiredForms');
     }
-    if (has(src, 'ai')) {
-      if (!isObj(src.ai)) fail('INVALID', 'AI 설정이 올바르지 않습니다');
-      out.ai = isObj(out.ai) ? out.ai : {};
-      if (has(src.ai, 'enabled')) out.ai.enabled = bool(src.ai.enabled);
-      if (has(src.ai, 'model')) out.ai.model = str(src.ai.model, 80, 'AI 모델');
-      changed.push('ai');
-    }
     if (!changed.length) fail('INVALID', '바꿀 설정 항목이 없습니다');
     Db.saveSettings(out);
     audit(ctx, 'settings', changed.join(','), '설정 변경: ' + changed.join(', '));
@@ -2380,15 +2178,6 @@ var Api = (function () {
     return out;
   }
 
-  function hAiInsight(p, me, ctx) {
-    if (!isObj(p.scope)) p.scope = {};
-    if (p.digest !== undefined && !isObj(p.digest)) fail('INVALID', '분석 요약 숫자가 올바르지 않습니다');
-    if (p.digest && JSON.stringify(p.digest).length > 60000) fail('INVALID', '분석 요약이 너무 큽니다');
-    var out = callMod('Ai', 'insight', [p, me]);
-    audit(ctx, 'ai', '', 'AI 분석 요약 요청');
-    return out;
-  }
-
   /* ======================================================================
    * 메서드 표
    * ==================================================================== */
@@ -2444,9 +2233,7 @@ var Api = (function () {
     'admin.wipe': { perm: 'admin', lock: true, fn: hWipe },
     'admin.info': { perm: 'admin', fn: hInfo },
     'admin.installTriggers': { perm: 'admin', fn: hInstallTriggers },
-    'admin.log': { perm: 'hq', fn: hLog },
-
-    'ai.insight': { perm: 'hq', fn: hAiInsight }
+    'admin.log': { perm: 'hq', fn: hLog }
   };
 
   /* ======================================================================
