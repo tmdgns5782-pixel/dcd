@@ -3438,9 +3438,7 @@
   }
   function setSystem() {
     var demo = App.demo && typeof App.demo.load === 'function';
-    return setRow('시스템', 'DB 시트·드라이브 폴더·자동 실행(트리거)·메일 할당량.', '<div data-slot="sysinfo">' + skel(5, 18) + '</div>', {
-      aside: '<p class="muted hq-small hq-mt">AI 분석 요약을 쓰려면 Apps Script 편집기 › 프로젝트 설정 › 스크립트 속성에 <span class="mono">ANTHROPIC_API_KEY</span> 를 넣으세요. 넣으면 분석 화면에 ‘AI 요약’ 버튼이 생깁니다.</p>'
-    }) +
+    return setRow('시스템', 'DB 시트·드라이브 폴더·자동 실행(트리거)·메일 할당량.', '<div data-slot="sysinfo">' + skel(5, 18) + '</div>') +
       setRow('예시 데이터', '사업장 12곳·90일 치 기록으로 화면을 미리 봅니다. 교육·시연용입니다.',
         '<p>지금 있는 사업장·기록·조치·요청을 <b>모두 지우고</b> 예시 데이터로 바꿉니다. 사용자 계정은 그대로 둡니다.</p>' +
         '<div class="hq-set-ft"><button class="btn" type="button" data-act="hq.set.demo"' + (demo ? '' : ' disabled title="예시 데이터 생성기를 불러오지 못했습니다"') + '>' + icon('upload') + '<span>예시 데이터로 바꾸기</span></button></div>') +

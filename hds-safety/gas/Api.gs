@@ -231,7 +231,6 @@ var Api = (function () {
     try {
       if (name === 'Dispatch' && typeof Dispatch !== 'undefined') m = Dispatch;
       else if (name === 'Export' && typeof Export !== 'undefined') m = Export;
-      else if (name === 'Ai' && typeof Ai !== 'undefined') m = Ai;
       else if (name === 'Views' && typeof Views !== 'undefined') m = Views;
     } catch (e) { m = null; }
     return m;
@@ -1912,13 +1911,6 @@ var Api = (function () {
       }
       changed.push('requiredForms');
     }
-    if (has(src, 'ai')) {
-      if (!isObj(src.ai)) fail('INVALID', 'AI 설정이 올바르지 않습니다');
-      out.ai = isObj(out.ai) ? out.ai : {};
-      if (has(src.ai, 'enabled')) out.ai.enabled = bool(src.ai.enabled);
-      if (has(src.ai, 'model')) out.ai.model = str(src.ai.model, 80, 'AI 모델');
-      changed.push('ai');
-    }
     if (!changed.length) fail('INVALID', '바꿀 설정 항목이 없습니다');
     Db.saveSettings(out);
     audit(ctx, 'settings', changed.join(','), '설정 변경: ' + changed.join(', '));
@@ -2097,15 +2089,6 @@ var Api = (function () {
     return out;
   }
 
-  function hAiInsight(p, me, ctx) {
-    if (!isObj(p.scope)) p.scope = {};
-    if (p.digest !== undefined && !isObj(p.digest)) fail('INVALID', '분석 요약 숫자가 올바르지 않습니다');
-    if (p.digest && JSON.stringify(p.digest).length > 60000) fail('INVALID', '분석 요약이 너무 큽니다');
-    var out = callMod('Ai', 'insight', [p, me]);
-    audit(ctx, 'ai', '', 'AI 분석 요약 요청');
-    return out;
-  }
-
   /* ======================================================================
    * 메서드 표
    * ==================================================================== */
@@ -2161,9 +2144,7 @@ var Api = (function () {
     'admin.wipe': { perm: 'admin', lock: true, fn: hWipe },
     'admin.info': { perm: 'admin', fn: hInfo },
     'admin.installTriggers': { perm: 'admin', fn: hInstallTriggers },
-    'admin.log': { perm: 'hq', fn: hLog },
-
-    'ai.insight': { perm: 'hq', fn: hAiInsight }
+    'admin.log': { perm: 'hq', fn: hLog }
   };
 
   /* ======================================================================
