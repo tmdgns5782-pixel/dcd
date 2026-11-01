@@ -2,5 +2,199 @@
 /* ===== [engine-a] 시작 ===== */
 /* ===== [engine-a] 끝 ===== */
 /* ===== [engine-b] 시작 ===== */
+/* engine-b: 기록 상세(.rv-*)·표준 양식 목록·A4 인쇄(.pdoc, .print-bar) */
+.rv { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--gap, 24px); align-items: start; }
+.rv-main, .rv-body, .rv-rail { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.rv-rail { position: sticky; top: 16px; }
+@media (max-width: 1100px) { .rv { grid-template-columns: minmax(0, 1fr); } .rv-rail { position: static; } }
+
+/* 상태 띠 */
+.rv-band { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--radius-card, 8px); background: var(--raised); }
+.rv-band-main { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 14px; line-height: 1.45; }
+.rv-band-main .pill { flex: none; }
+.rv-band-note { flex-basis: 100%; margin: 0; font-size: 14px; line-height: 1.55; white-space: pre-wrap; }
+.rv-band-note .muted { margin-right: 8px; font-size: 12px; }
+.rv-steps { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 0 auto; padding: 0; list-style: none; }
+.rv-steps li { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px 0 4px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--muted); font-size: 12px; white-space: nowrap; }
+.rv-step-no { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--rule); color: var(--muted); font-size: 11px; font-weight: 600; }
+.rv-steps li.is-done { color: var(--text); }
+.rv-steps li.is-done .rv-step-no { background: var(--text); color: var(--primary-ink, #fff); }
+.rv-steps li.is-current { color: var(--text); border-color: var(--text); font-weight: 600; }
+
+/* 두 열 정의 목록 */
+.rv-kv { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 24px; margin: 0; }
+.rv-kv > div { min-width: 0; }
+.rv-kv dt { margin: 0 0 4px; font-size: 12px; color: var(--muted); }
+.rv-kv dd { margin: 0; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.rv-kv .rv-wide { grid-column: 1 / -1; }
+.rv-pre { white-space: pre-wrap; }
+@media (max-width: 640px) { .rv-kv { grid-template-columns: minmax(0, 1fr); gap: 12px; } }
+
+/* 단계 머리 */
+.rv-stage { display: flex; align-items: center; gap: 10px; min-width: 0; padding-top: 8px; font-size: 15px; }
+.rv-stage b { font-weight: 600; white-space: nowrap; }
+.rv-stage .muted { min-width: 0; font-size: 12px; }
+.rv-stage .spacer { flex: 1 1 auto; }
+.rv-stage .pill { flex: none; }
+.rv-stage-no { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.rv-stage-wait { margin: 0; }
+
+/* 표·체크리스트 */
+.rv-tbl td { vertical-align: top; }
+.rv-tbl td.rv-long { min-width: 220px; }
+.rv-tbl tr.rv-grp th { padding: 16px 16px 6px; border-bottom: 1px solid var(--rule); background: none; color: var(--muted); font-size: 12px; font-weight: 600; text-align: left; }
+.rv-chk td:first-child { width: 72px; }
+.rv-chk td:nth-child(3) { width: 96px; }
+.rv-sec.is-only-bad tr.rv-ok { display: none; }
+@media (max-width: 640px) {
+  .rv-tbl tr.rv-grp { display: block; }
+  .rv-tbl tr.rv-grp th { display: block; padding: 14px 0 4px; border: 0; }
+  .rv-chk td:first-child, .rv-chk td:nth-child(3) { width: auto; }
+}
+
+/* 사진·서명 */
+.rv-thumb { position: relative; display: inline-flex; flex: none; align-items: center; justify-content: center; width: 72px; height: 54px; padding: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--raised); cursor: zoom-in; vertical-align: middle; }
+.rv-thumb:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rv-thumb-ph { display: block; width: 56%; height: 8px; border-radius: 2px; background: var(--active); }
+.rv-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.rv-thumb.is-err { cursor: default; }
+.rv-thumb-err { font-size: 11px; color: var(--faint); }
+.rv-thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 16px; }
+.rv-fig { min-width: 0; margin: 0; }
+.rv-fig .rv-thumb { width: 100%; height: auto; aspect-ratio: 4 / 3; border-radius: 8px; }
+.rv-fig figcaption { margin-top: 6px; font-size: 12px; line-height: 1.4; color: var(--muted); }
+.rv-sigs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.rv-sig { min-width: 0; }
+.rv-sig .rv-thumb, .rv-sig-empty { width: 100%; height: 64px; }
+.rv-sig .rv-thumb { background: #fff; }
+.rv-sig .rv-thumb img { object-fit: contain; }
+.rv-sig-empty { display: flex; align-items: center; justify-content: center; border: 1px dashed var(--control); border-radius: 6px; color: var(--faint); font-size: 12px; }
+.rv-sig-who { margin-top: 6px; font-size: 13px; font-weight: 500; overflow-wrap: anywhere; }
+.rv-sig-at { min-height: 16px; font-size: 12px; }
+.rv-photo-big img { display: block; max-width: 100%; max-height: 72vh; margin: 0 auto; border-radius: 8px; }
+
+/* 오른쪽 레일 */
+.rv-hist { display: flex; flex-direction: column; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.rv-hist li { display: grid; grid-template-columns: 8px minmax(0, 1fr); gap: 10px; font-size: 13px; line-height: 1.45; }
+.rv-hist-dot { width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: var(--control); }
+.rv-hist li:first-child .rv-hist-dot { background: var(--text); }
+.rv-hist-note { margin-top: 4px; padding: 6px 8px; border-radius: 6px; background: var(--raised); font-size: 12px; white-space: pre-wrap; }
+
+/* 글자 링크 버튼(해시 이동은 data-href) */
+.rv-link { margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; -webkit-appearance: none; appearance: none; }
+.rv-link:hover { text-decoration: underline; text-underline-offset: 2px; }
+.rv-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+/* 표준 양식 목록 */
+.rv-fname { color: var(--text); font-weight: 600; }
+.rv-fsub { margin-top: 2px; font-size: 12px; }
+.rv-fcell { min-width: 220px; }
+.rv-act-col { width: 1%; text-align: right; }
+.rv-row-acts { display: flex; align-items: center; justify-content: flex-end; gap: 4px; white-space: nowrap; }
+@media (max-width: 640px) {
+  .rv-fcell { min-width: 0; }
+  .rv-forms .rv-act-col { width: auto; text-align: left; }
+  .rv-row-acts { justify-content: flex-start; }
+}
+.rv-info-purpose { margin: 0; font-size: 14px; line-height: 1.6; }
+.rv-info-h { margin: 0 0 8px; font-size: 13px; font-weight: 600; }
+.rv-info-list { display: flex; flex-direction: column; gap: 4px; margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.5; }
+
+/* 인쇄 미리보기 */
+#print-root { display: none; }
+body.rv-printing { background: var(--ground, #f3f4f8); }
+body.rv-printing > :not(#print-root):not(#toasts):not(script):not(style) { display: none !important; }
+body.rv-printing #print-root { display: block; min-height: 100vh; }
+.print-bar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 8px; min-height: 56px; padding: 8px 16px; border-bottom: 1px solid var(--border, #e4e6ee); background: var(--surface, #fff); font-size: 14px; }
+.print-bar b { flex: none; font-weight: 600; }
+.print-bar .ellipsis { min-width: 0; }
+.print-bar .spacer { flex: 1 1 auto; }
+.print-pages { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 24px 12px 64px; }
+.print-wait { padding: 48px 16px; color: var(--muted); font-size: 14px; }
+
+/* A4 공문(인쇄 양식은 공문 규칙: 선 있는 표 허용) */
+.pdoc { box-sizing: border-box; width: 210mm; min-height: 297mm; padding: 14mm; border: 1px solid var(--border, #e4e6ee); background: #fff; color: #14183c; font-family: var(--font); font-size: 10pt; line-height: 1.45; word-break: keep-all; overflow-wrap: anywhere; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.pdoc * { box-sizing: border-box; }
+.pdoc-frame { width: 100%; border-collapse: collapse; }
+.pdoc-frame > tbody > tr > td, .pdoc-frame > tfoot > tr > td { padding: 0; border: 0; vertical-align: top; }
+.pdoc-foot { display: flex; justify-content: space-between; gap: 8mm; margin-top: 4mm; padding-top: 1.5mm; border-top: 1px solid #9aa0b4; color: #555a75; font-size: 7.5pt; font-variant-numeric: tabular-nums; }
+.pdoc-hd { display: grid; grid-template-columns: 36mm minmax(0, 1fr) auto; align-items: center; gap: 4mm; padding-bottom: 3mm; border-bottom: 1.5px solid #14183c; }
+.pdoc-brand { display: flex; flex-direction: column; gap: 1mm; color: #555a75; font-size: 7pt; line-height: 1.3; }
+.pdoc-mark { display: block; width: auto; height: 7mm; }
+.pdoc-title { margin: 0; color: #14183c; font-family: var(--font-brand, var(--font)); font-size: 20px; font-weight: 700; line-height: 1.25; text-align: center; }
+.pdoc-appr { border-collapse: collapse; table-layout: fixed; }
+.pdoc-appr th, .pdoc-appr td { width: 17mm; padding: 0.8mm; border: 1px solid #9aa0b4; font-size: 7.5pt; text-align: center; }
+.pdoc-appr th { background: #f2f3f7; font-weight: 600; }
+.pdoc-appr-sign td { height: 15mm; vertical-align: bottom; }
+.pdoc-appr-name, .pdoc-appr-date { display: block; line-height: 1.25; }
+.pdoc-appr-date { color: #555a75; font-size: 6.5pt; font-variant-numeric: tabular-nums; }
+.pdoc .pimg-sig { display: block; max-width: 100%; height: 8mm; margin: 0 auto 0.5mm; object-fit: contain; }
+.pdoc-meta { display: flex; flex-wrap: wrap; gap: 1mm 5mm; margin: 2mm 0 4mm; color: #555a75; font-size: 8pt; font-variant-numeric: tabular-nums; }
+.pdoc-meta-id { margin-left: auto; color: #14183c; }
+.pb-line { display: inline-block; width: 40mm; height: 1em; border-bottom: 1px solid #9aa0b4; vertical-align: bottom; }
+.pdoc-h2 { margin: 5mm 0 1.8mm; color: #14183c; font-size: 11pt; font-weight: 700; break-after: avoid; page-break-after: avoid; }
+.pdoc-h2 small { margin-left: 2mm; color: #555a75; font-size: 8pt; font-weight: 400; }
+.pdoc-stage { margin: 6mm 0 0; padding: 1.5mm 0; border-bottom: 1px solid #14183c; font-size: 10pt; font-weight: 700; break-after: avoid; page-break-after: avoid; }
+.pdoc-stage small { margin-left: 2mm; color: #555a75; font-size: 8pt; font-weight: 400; }
+.pdoc-stage-note { margin: 4mm 0 0; padding: 2mm 3mm; border: 1px dashed #9aa0b4; color: #555a75; font-size: 9pt; }
+.pdoc-note { margin: 3mm 0; padding: 2mm 3mm; border: 1px solid #c9ccd8; background: #f8f9fb; color: #353a52; font-size: 8.5pt; line-height: 1.5; break-inside: avoid; page-break-inside: avoid; }
+.pdoc-empty { margin: 0 0 3mm; color: #555a75; font-size: 9pt; }
+.pdoc table.pt { width: 100%; margin: 0 0 2.5mm; border-collapse: collapse; table-layout: fixed; font-size: 9pt; }
+.pdoc .pt th, .pdoc .pt td { padding: 1.2mm 1.6mm; border: 1px solid #9aa0b4; text-align: left; vertical-align: top; }
+.pdoc .pt th { background: #f2f3f7; color: #14183c; font-weight: 600; }
+.pdoc .pt thead { display: table-header-group; }
+.pdoc .pt tr { break-inside: avoid; page-break-inside: avoid; }
+.pdoc .pt-kv th { font-size: 8.5pt; }
+.pdoc .pt-grp td { background: #f8f9fb; color: #353a52; font-size: 8.5pt; font-weight: 700; }
+.pdoc .pt-part td { padding: 0 0 1mm; border: 0; background: none; color: #555a75; font-size: 7.5pt; }
+.pdoc .pt-code, .pdoc .pt-no { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pdoc .pt-no { color: #555a75; text-align: center; }
+.pdoc .pt-num { text-align: right; font-variant-numeric: tabular-nums; }
+.pdoc .pt-strong { font-weight: 700; }
+.pdoc .pt-faint { color: #676b84; }
+.pdoc .pt-chk col.c-code { width: 14mm; }
+.pdoc .pt-chk col.c-judge { width: 18mm; }
+.pdoc .pt-chk col.c-note { width: 30%; }
+.pdoc .pt-chk.is-blank col.c-judge { width: 50mm; }
+.pdoc .pt-chk.is-blank col.c-note { width: 22%; }
+.pdoc .pt-chk td, .pdoc .pt-grid td { font-size: 8.5pt; }
+.pdoc .pt-chk.is-blank td { padding-top: 1.8mm; padding-bottom: 1.8mm; }
+.pdoc .pt-blankrow td { height: 8.5mm; }
+.pdoc .pt-signsheet td { height: 10mm; }
+.pdoc .pt-sum th { font-size: 8pt; text-align: center; }
+.pdoc .pt-sum td { font-weight: 600; text-align: center; }
+.pdoc .pre { white-space: pre-wrap; }
+.pb-boxes { display: inline-flex; flex-wrap: wrap; gap: 0.5mm 3mm; }
+.pb-box { white-space: nowrap; }
+.pb-fill { color: #353a52; }
+.pb-num { display: block; color: #555a75; text-align: right; }
+.pb-unit { font-size: 8.5pt; }
+.pb-hint { color: #676b84; font-size: 8pt; }
+.pb-area { min-height: 14mm; }
+.pdoc-figs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3mm; margin: 0 0 3mm; }
+.pdoc-figs figure { margin: 0; padding: 1.5mm; border: 1px solid #9aa0b4; break-inside: avoid; page-break-inside: avoid; }
+.pdoc-figs img { display: block; width: 100%; height: 58mm; background: #fff; object-fit: contain; }
+.pdoc-figs figcaption { margin-top: 1mm; color: #353a52; font-size: 8pt; text-align: center; }
+.pb-photo-box { display: flex; align-items: center; justify-content: center; height: 58mm; border: 1px dashed #c9ccd8; color: #9aa0b4; font-size: 9pt; }
+.pdoc-sigs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2mm; margin: 0 0 3mm; }
+.pdoc-sig { padding: 1.5mm; border: 1px solid #9aa0b4; text-align: center; break-inside: avoid; page-break-inside: avoid; }
+.pdoc-sig-img { display: flex; align-items: center; justify-content: center; height: 13mm; font-size: 8pt; }
+.pdoc-sig-img img { max-width: 100%; max-height: 13mm; object-fit: contain; }
+.pdoc-sig-name { padding-top: 1mm; border-top: 1px solid #e4e6ee; font-size: 8.5pt; font-weight: 600; }
+.pdoc-sig-at { min-height: 3mm; color: #555a75; font-size: 7pt; font-variant-numeric: tabular-nums; }
+.pimg-miss { display: flex; align-items: center; justify-content: center; height: 20mm; color: #676b84; font-size: 8pt; }
+
+@page hdsdoc {
+  size: A4;
+  margin: 14mm;
+  @bottom-right { content: counter(page) " / " counter(pages) "쪽"; color: #555a75; font-size: 7.5pt; }
+}
+@media print {
+  html, body.rv-printing { background: #fff !important; }
+  body.rv-printing .print-bar, body.rv-printing #toasts { display: none !important; }
+  body.rv-printing .print-pages { display: block; padding: 0; zoom: 1 !important; }
+  body.rv-printing .pdoc { page: hdsdoc; width: auto; min-height: 0; padding: 0; border: 0; break-after: page; page-break-after: always; }
+  body.rv-printing .pdoc:last-child { break-after: auto; page-break-after: auto; }
+}
 /* ===== [engine-b] 끝 ===== */
 </style>

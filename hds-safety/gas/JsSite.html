@@ -390,28 +390,38 @@
       var st = reqState(q);
       if (st.done) return;
       if (q.kind === 'notice' && !q.ackRequired) return;
-      var di = dueInfo(q.due), one = st.left.length === 1 ? st.left[0] : null;
+      var todoForms = st.left.filter(function (f) { return !(f.rec && f.rec.status === '반려'); });
+      if (q.kind !== 'notice' && !todoForms.length) return;            /* 반려 기록 줄이 대신 보여 줌 */
+      var di = dueInfo(q.due), one = todoForms.length === 1 ? todoForms[0] : null;
       var href = '#/inbox/' + enc(q.id), go = '보기';
       if (q.kind !== 'notice' && one) {
         href = one.rec && (one.rec.status === '작성중' || one.rec.status === '반려') ? recHref(one.rec) : newHref(one.code, { req: q.id });
         go = one.rec ? '이어서 쓰기' : '작성하기';
       } else if (q.kind === 'notice') go = '확인하기';
       var sub = q.kind === 'notice' ? '공지 · 확인 필요' :
-        '본사 요청 · ' + (one ? formShort(one.code) : st.left.length + '종 남음 (' + st.forms.length + '종 중)');
+        '본사 요청 · ' + (one ? formShort(one.code) : todoForms.length + '종 남음 (' + st.forms.length + '종 중)');
       if (q.due) sub += ' · 마감 ' + fmtDue(q.due);
       todos.push({
-        kind: 'req', sort: q.due ? String(q.due) : t + ' 23:59', due: q.due, info: q.due ? di : { text: '새 요청', tone: 'acc', left: 99 },
+        kind: 'req', sort: q.due ? String(q.due) : t + ' 23:59', due: q.due,
+        info: q.due ? di : (q.kind === 'notice' ? { text: '확인 필요', tone: 'warn', left: 99 } : { text: '새 요청', tone: 'acc', left: 99 }),
         title: q.title || '본사 요청', sub: sub, href: href, go: go, unread: !st.read,
         say: '본사 요청 ‘' + (q.title || '') + '’ ' + (q.due ? (di.over ? '마감이 지났습니다' : '마감이 ' + (di.left === 0 ? '오늘입니다' : di.left + '일 남았습니다')) : '을 처리해 주세요')
       });
     });
 
-    /* 3) 정기 양식 마감(미제출·임박 14일 이내) */
+    /* 3) 정기 양식 마감(미제출·임박 14일 이내, 기한경과는 45일까지 — 더 오래된 것은 본사 독촉으로) */
+    var reqCover = {};
+    myRequests().forEach(function (q) {
+      if (q.status !== '진행' || !q.periodKey) return;
+      (q.forms || []).forEach(function (code) { reqCover[code + '|' + q.periodKey] = 1; });
+    });
     periodicCandidates(site).forEach(function (c) {
+      if (reqCover[c.code + '|' + c.key]) return;                       /* 같은 기간 본사 요청 줄이 대신 보여 줌 */
       var list = candRecs(c), rec = pickRec(list);
       if (rec && (DONE_REC[rec.status] || rec.status === '반려')) return;
       var di = dueInfo(c.due);
       if (!di.over && di.left > 14) return;
+      if (di.over && di.left < -45 && !c.noRecord) return;
       var def = formDef(c.code) || {}, short = def.short || c.code;
       var plabel = periodText(c.key) && !c.noRecord && c.after === undefined ? periodText(c.key) : (c.label || '');
       if (c.noRecord) di = { left: di.left, over: di.over, text: '기록 없음', tone: di.over ? 'neg' : 'warn' };
@@ -442,7 +452,7 @@
       if (!di.over && di.left > 7 && a.level !== '높음') { rest++; return; }
       todos.push({
         kind: 'act', sort: a.due || t + ' 23:59', due: a.due, info: di,
-        title: a.title || '조치', sub: '조치 ' + (a.status || '등록') + ' · ' + (a.level ? '등급 ' + a.level + ' · ' : '') + (a.due ? '기한 ' + fmtMD(a.due) : '기한 없음'),
+        title: a.title || '조치', sub: (a.status === '조치중' ? '조치중' : '조치 전') + ' · ' + (a.level ? '등급 ' + a.level + ' · ' : '') + (a.due ? '기한 ' + fmtMD(a.due) : '기한 없음'),
         href: '#/acts/' + enc(a.id), go: a.status === '조치중' ? '완료 보고' : '처리하기',
         say: '조치 ‘' + (a.title || '') + '’ ' + (di.over ? '기한이 ' + (-di.left || 0) + '일 지났습니다' : di.left === 0 ? '오늘이 기한입니다' : '기한이 ' + di.left + '일 남았습니다')
       });
@@ -456,13 +466,15 @@
     var t = today(), mFrom = t.slice(0, 8) + '01', shifts = shiftsOf(site), dDone = 0, dAll = 0;
     for (var d = mFrom; d <= t; d = addDays(d, 1)) {
       if (site.openDate && d < site.openDate) continue;
-      dAll++;
       var ok = shifts.every(function (sh) { var r = pickRec(dailyRecs(d, sh, site)); return r && DONE_REC[r.status]; });
+      if (d === t && !ok) continue;                                    /* 오늘은 다 냈을 때만 셈 */
+      dAll++;
       if (ok) dDone++;
     }
     var cands = periodicCandidates(site).filter(function (c) { return String(c.due).slice(0, 7) === t.slice(0, 7); });
     var pDone = cands.filter(function (c) { var r = pickRec(candRecs(c)); return r && DONE_REC[r.status]; }).length;
-    return { dDone: dDone, dAll: dAll, pDone: pDone, pAll: cands.length, month: +t.slice(5, 7), cands: cands, hasDaily: requiredCodes(site).indexOf('F07') >= 0 };
+    var todayIn = shifts.every(function (sh) { var r = pickRec(dailyRecs(t, sh, site)); return r && DONE_REC[r.status]; });
+    return { dDone: dDone, dAll: dAll, todayIn: todayIn, pDone: pDone, pAll: cands.length, month: +t.slice(5, 7), cands: cands, hasDaily: requiredCodes(site).indexOf('F07') >= 0 };
   }
 
   /* ───────────── 공통 조각 ───────────── */
@@ -546,6 +558,8 @@
     d.addEventListener('cancel', function () { setTimeout(close, 0); });
     document.body.appendChild(d);
     try { if (d.showModal) d.showModal(); else d.setAttribute('open', ''); } catch (e) { d.setAttribute('open', ''); }
+    d.setAttribute('tabindex', '-1');
+    try { d.focus({ preventScroll: true }); } catch (e) { /* 초점 이동 실패는 무시 */ }
     return { el: d, close: close, fill: fill };
   }
   function sheetOf(el) { return el && el.closest ? el.closest('dialog') : null; }
@@ -584,7 +598,8 @@
     var first = todos[0];
     var overN = todos.filter(function (x) { return x.info && x.info.over; }).length;
     var sub;
-    if (first) sub = esc(first.say) + (overN > (first.info.over ? 1 : 0) ? ' 외 기한경과 ' + (overN - (first.info.over ? 1 : 0)) + '건.' : '.');
+    var moreOver = overN - (first && first.info.over ? 1 : 0);
+    if (first) sub = esc(first.say) + '.' + (moreOver > 0 ? ' 이 밖에 기한이 지난 일이 ' + moreOver + '건 있습니다.' : '');
     else sub = ms.hasDaily && ms.dAll ? '이번 달 일일점검 ' + ms.dDone + '/' + ms.dAll + '일 제출, 밀린 양식과 미결 조치가 없습니다.' : '밀린 양식과 미결 조치가 없습니다.';
 
     var eyebrow = esc((d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + WD[d.getDay()] + '요일') + ' · ' + esc(cur.shift) + ' 근무' +
@@ -627,9 +642,10 @@
     var dPct = ms.dAll ? Math.round(ms.dDone / ms.dAll * 100) : 0, pPct = ms.pAll ? Math.round(ms.pDone / ms.pAll * 100) : 0;
     var rows = '';
     if (ms.hasDaily) {
-      rows += '<div class="st-stat"><div class="st-stat-hd"><span>일일점검</span><b class="num">' + ms.dDone + '<span class="faint">/' + ms.dAll + '일</span></b></div>' +
-        '<div class="bar' + (ms.dAll && ms.dDone < ms.dAll - 1 ? ' neg' : '') + '"><i style="width:' + dPct + '%"></i></div>' +
-        '<p class="st-stat-note">모든 근무조(' + esc(shifts.join('·')) + ')를 낸 날 · 오늘 포함</p></div>';
+      rows += '<div class="st-stat"><div class="st-stat-hd"><span>일일점검</span><b class="num">' + (ms.dAll ? ms.dDone + '<span class="faint">/' + ms.dAll + '일</span>' : '<span class="faint">—</span>') + '</b></div>' +
+        (ms.dAll ? '<div class="bar' + (ms.dDone < ms.dAll - 1 ? ' neg' : '') + '"><i style="width:' + dPct + '%"></i></div>' +
+          '<p class="st-stat-note">모든 근무조(' + esc(shifts.join('·')) + ')를 낸 날 · 어제까지' + (ms.dAll && ms.todayIn ? '와 오늘' : '') + '</p>'
+          : '<p class="st-stat-note">이번 달은 아직 마감된 근무일이 없습니다.</p>') + '</div>';
     }
     rows += '<div class="st-stat"><div class="st-stat-hd"><span>정기 양식</span><b class="num">' + (ms.pAll ? ms.pDone + '<span class="faint">/' + ms.pAll + '</span>' : '<span class="faint">—</span>') + '</b></div>' +
       (ms.pAll ? '<div class="bar"><i style="width:' + pPct + '%"></i></div><p class="st-stat-note">' + esc(ms.cands.map(function (c) { return formShort(c.code); }).join(' · ')) + ' — 이번 달 마감분</p>'
@@ -671,7 +687,8 @@
     if (!rows.length) sub = '본사에서 받은 요청·공지가 없습니다.';
     else if (todo) {
       var nearest = rows.filter(function (x) { return x.q.status === '진행' && !x.st.done && x.q.kind !== 'notice' && x.q.due; })[0];
-      sub = '아직 내지 않은 요청 ' + todo + '건' + (nearest ? ' — 가장 가까운 마감은 ‘' + esc(nearest.q.title) + '’ ' + esc(dueInfo(nearest.q.due).text) : '') + '.';
+      var nd = nearest ? dueInfo(nearest.q.due) : null;
+      sub = '아직 내지 않은 요청 ' + todo + '건' + (nearest ? ' — ‘' + esc(nearest.q.title) + '’ ' + (nd.over ? '마감이 ' + (nd.left < 0 ? -nd.left + '일 ' : '') + '지났습니다' : nd.left === 0 ? '오늘 마감입니다' : '마감까지 ' + nd.left + '일 남았습니다') : '') + '.';
     } else sub = '받은 요청을 모두 냈습니다' + (unread ? ', 안 읽은 공지 ' + unread + '건' : '') + '.';
 
     var listHtml = list.length ? '<ul class="list st-inbox-list">' + list.map(function (x) {
@@ -883,7 +900,7 @@
   function actSheetParts(a, stt) {
     var di = a.due ? dueInfo(a.due) : null, isOpen = !!OPEN_ACT[a.status];
     var src = a.srcId ? '<a href="#/rec/' + enc(a.srcId) + '" data-close>' + esc(formShort(a.srcForm)) + ' ' + esc(a.srcId) + '</a>' : '직접 등록(본사·고객사 지적)';
-    var body = '<div class="st-act-hd">' + (isOverdueAct(a) ? pill(di.text, 'neg') + ' ' : '') + actStatusPill(a) + (a.level ? ' <span class="muted">등급 ' + esc(a.level) + '</span>' : '') + '</div>' +
+    var body = '<div class="st-act-hd">' + actStatusPill(a) + (a.level ? ' <span class="muted">등급 ' + esc(a.level) + '</span>' : '') + '</div>' +
       '<p class="st-act-title">' + esc(a.title || '조치') + '</p>';
     if (stt.mode === 'done') {
       body += '<p class="muted st-gap">무엇을 어떻게 고쳤는지 적고, 고친 뒤 사진을 넣으세요. 사진을 찍을 수 없으면 이유를 고르세요.</p>' +
@@ -895,7 +912,7 @@
         '<input type="file" accept="image/*" name="photo" class="sr-only"' + (stt.uploading ? ' disabled' : '') + '></label></div>' +
         '<span class="field-hint">' + (stt.photo ? '사진을 올렸습니다.' : '사진은 자동으로 줄여서 올립니다.') + '</span></div>' +
         '<label class="field" data-field="nophoto"><span class="field-label">사진이 없는 이유</span><select class="select" name="nophoto"' + (stt.photo ? ' disabled' : '') + '>' +
-        '<option value="">사진을 넣었습니다</option>' + NO_PHOTO.map(function (x) { return '<option' + (stt.nophoto === x ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') +
+        '<option value="">선택 안 함(사진을 넣음)</option>' + NO_PHOTO.map(function (x) { return '<option' + (stt.nophoto === x ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') +
         '</select><span class="field-err"></span></label>';
       return {
         title: '완료 보고', body: body,
@@ -903,7 +920,7 @@
       };
     }
     body += '<dl class="kv st-kv">' +
-      '<div><dt>기한</dt><dd>' + (a.due ? esc(fmtMD(a.due)) : '<span class="faint">—</span>') + '</dd></div>' +
+      '<div><dt>기한</dt><dd>' + (a.due ? esc(fmtMD(a.due)) + (isOverdueAct(a) ? ' <span class="t-neg">· ' + esc(di.text) + '</span>' : '') : '<span class="faint">—</span>') + '</dd></div>' +
       '<div><dt>출처</dt><dd>' + src + (a.srcItem ? '<br><span class="muted">' + esc(a.srcItem) + '</span>' : '') + '</dd></div>' +
       '<div><dt>담당</dt><dd>' + (a.owner ? esc(a.owner) : '<span class="faint">—</span>') + '</dd></div>' +
       (a.type ? '<div><dt>조치 방법</dt><dd>' + esc(a.type) + '</dd></div>' : '') + '</dl>' +
@@ -968,7 +985,13 @@
   function kvRow(label, val) { return '<div><dt>' + esc(label) + '</dt><dd>' + (val ? val : '<span class="faint">—</span>') + '</dd></div>'; }
   function renderSite(main) {
     var s = mySite(), st = settings(), ppl = peopleAll(), act = ppl.filter(function (p) { return p.active !== false; }), off = ppl.filter(function (p) { return p.active === false; });
-    var req = requiredCodes(s).map(function (c) { return formShort(c); });
+    var seas = (st.requiredForms && st.requiredForms.seasonal) || {};
+    var req = requiredCodes(s).map(function (c) {
+      var m = seas[c];
+      if (!m || !m.length) return formShort(c);
+      var ms = m.slice().sort(function (x, y) { return x - y; }), run = ms[ms.length - 1] - ms[0] === ms.length - 1;
+      return formShort(c) + '(' + (run ? ms[0] + '~' + ms[ms.length - 1] : ms.join('·')) + '월)';
+    });
     var hecTxt = s.hec ? '대상' + (s.hecNextEval ? ' · 다음 평가 ' + fmtMD(s.hecNextEval) : '') + (s.hecLastEval ? ' · 직전 ' + fmtMD(s.hecLastEval) : '') : (s.hec === false ? '대상 아님' : '');
     var headTxt = s.headcount ? s.headcount + '명(계약) · 명부 ' + act.length + '명' : '명부 ' + act.length + '명';
     var sub = s.headcount && act.length < Number(s.headcount) ? '인원 명부가 계약 인원보다 ' + (Number(s.headcount) - act.length) + '명 적습니다. 명부를 채우면 점검표에서 이름을 고를 수 있습니다.'
@@ -992,8 +1015,8 @@
     var hqPhone = st.hqPhone || st.contactPhone || (st.contact && st.contact.phone) || '';
     var hq = '<dl class="kv st-kv">' + kvRow('본사', esc(st.company || 'HDS(주) 안전경영지원실')) +
       (hqPhone ? kvRow('전화', '<a href="tel:' + esc(String(hqPhone).replace(/[^\d+]/g, '')) + '">' + esc(hqPhone) + '</a>') : '') +
-      (hqMails.length ? kvRow('메일', hqMails.map(function (m) { return '<a href="mailto:' + esc(m) + '">' + esc(m) + '</a>'; }).join('<br>')) : '') + '</dl>' +
-      '<p class="muted st-small">사고는 먼저 전화로 알리고, 앱에는 ‘사고·아차 보고’로 속보를 남기세요.</p>';
+      (hqMails.length ? kvRow('메일', hqMails.map(function (m) { return '<a href="mailto:' + esc(m) + '">' + esc(m) + '</a>'; }).join('<br>')) : '') + '</dl>';
+    var callNote = '<p class="muted st-small">사고는 먼저 전화로 알리고, 앱에는 ‘사고·아차 보고’로 속보를 남기세요.</p>';
 
     var shown = siteState.showInactive ? ppl : act;
     shown = shown.slice().sort(function (a, b) { return ((a.active === false) - (b.active === false)) || String(a.name).localeCompare(String(b.name), 'ko'); });
@@ -1013,7 +1036,7 @@
 
     var html = '<div class="st-page st-sitepage">' + titleRow(s.name || '사업장 정보', esc(sub), '', '') +
       section('사업장 기본 정보', '본사가 등록한 정보입니다.', panel({ title: esc(s.name || s.id), sub: esc([s.type, s.region].filter(Boolean).join(' · ')), body: info })) +
-      section('연락처', '급할 때 먼저 전화할 곳입니다.', panel({ title: '본사 · 사업장 담당', body: hq + mgr })) +
+      section('연락처', '급할 때 먼저 전화할 곳입니다.', panel({ title: '본사 · 사업장 담당', body: hq + mgr + callNote })) +
       section('인원 명부', '점검표·교육 기록에서 이름을 고를 때 쓰입니다. 그만둔 사람은 지우지 말고 비활성으로 바꾸세요.',
         panel({ title: '근무 인원 <span class="muted num">' + act.length + '명</span>', flush: !!shown.length, body: plist, foot: pfoot,
           actions: '<button type="button" class="btn sm" data-act="st.personPaste">' + ic('copy', 16) + '엑셀 붙여넣기</button><button type="button" class="btn sm" data-act="st.personNew">' + ic('plus', 16) + '한 명 추가</button>' })) +
@@ -1215,6 +1238,14 @@
     var t = ev.target;
     if (!t || !t.getAttribute) return;
     if (t.getAttribute('data-st-change') === 'recForm') { recState.form = t.value; recState.limit = 40; rerender(); }
+  });
+  /* 뒤로 가기 등으로 화면이 바뀌면 열린 시트를 닫음(지금 해시가 가리키는 조치 시트는 유지) */
+  window.addEventListener('hashchange', function () {
+    var keep = actSheetState && location.hash === '#/acts/' + enc(actSheetState.id) ? actSheetState.dlg.el : null;
+    document.querySelectorAll('dialog.st-sheet').forEach(function (d) {
+      if (d === keep) return;
+      try { if (d.open) d.close(); else d.remove(); } catch (e) { d.remove(); }
+    });
   });
   /* 작성자 이름 칸에서 Enter */
   document.addEventListener('submit', function (ev) {

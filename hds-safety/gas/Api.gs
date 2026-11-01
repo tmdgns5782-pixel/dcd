@@ -370,8 +370,9 @@ var Api = (function () {
     var forms = strList(p.forms, 50, 10, '양식');
     var sites = strList(p.sites, 500, 8, '사업장');
     if (me.kind === 'site') sites = [me.site];
+    var withDeleted = me.kind === 'hq' && bool(p.deleted);
     return Db.all('records').filter(function (r) {
-      if (r.deleted) return false;
+      if (r.deleted && !withDeleted) return false;
       if (sites.length && sites.indexOf(r.site) < 0) return false;
       if (forms.length && forms.indexOf(r.form) < 0) return false;
       var d = r.date || String(r.updatedAt || '').slice(0, 10);
@@ -507,8 +508,8 @@ var Api = (function () {
     if (isNew) rec.id = newRecordId(x.def, rec.site, rec.date, me);
     writeRecord(rec, isNew);
     if (rec.status !== '작성중' || rec.stageDone.length) views('onRecord', rec);
+    // 자동 임시저장(3초마다)이 감사 기록을 채우지 않도록 새로 만들 때만 남긴다. 제출·검토·삭제는 각 핸들러가 남긴다.
     if (isNew) audit(ctx, 'record', rec.id, formName(x.def) + ' 새로 작성(임시저장)');
-    else if (rec.status === '제출') audit(ctx, 'record', rec.id, formName(x.def) + ' 제출 후 내용 수정(임시저장)');
     return { record: rec };
   }
 
@@ -1323,6 +1324,10 @@ var Api = (function () {
           var months = [];
           ms.forEach(function (x) { var n = int(x, 1, 12, null); if (n !== null && months.indexOf(n) < 0) months.push(n); });
           sea[c] = months.sort(function (a, b) { return a - b; });
+        });
+        // 저장은 기존 설정과 깊게 합쳐지므로, 뺀 양식은 빈 달 목록으로 남겨 '계절 양식 아님'을 표시한다.
+        Object.keys(isObj(out.requiredForms.seasonal) ? out.requiredForms.seasonal : {}).forEach(function (c) {
+          if (!has(sea, c)) sea[c] = [];
         });
         out.requiredForms.seasonal = sea;
       }

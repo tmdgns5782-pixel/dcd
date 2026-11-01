@@ -1,0 +1,4 @@
+{
+  "//": "dev/*.js(gas-mock.js) 는 UMD/CommonJS 입니다. .mjs 는 그대로 ES 모듈.",
+  "type": "commonjs"
+}

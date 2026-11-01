@@ -2,11 +2,2190 @@
 /* ===== [analytics-a] 시작 ===== */
 (function () {
   "use strict";
+  /* 분석 공통(App.analytics: 범위·필터·탭·행 고르기·월별 묶기·인쇄) + 화면 hq:analytics(개요), hq:analytics/incidents(재해·사고),
+     hq:analytics/risk(위험성평가). 모든 숫자는 App.S(index·acts·sites)와 FD 에서 서버 호출 없이 계산한다.
+     파일 순서와 무관하게 동작하도록, 다른 파일의 객체(App.u, App.ui, App.engine, Charts)는 함수 안에서만 찾는다. */
+  var App = window.App = window.App || {};
+  var A = App.analytics = App.analytics || {};
+
+  /* ---------- 작은 도구 ---------- */
+  var ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  function esc(v) { return v == null ? '' : String(v).replace(/[&<>"']/g, function (c) { return ESC[c]; }); }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function dkey(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function parseD(s) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || '')); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; }
+  function isDay(s) { return /^\d{4}-\d{2}-\d{2}$/.test(String(s || '')); }
+  function today() {
+    try { if (App.u && typeof App.u.today === 'function') { var t = App.u.today(); if (isDay(t)) return t; } } catch (e) { /* 기본값 사용 */ }
+    return dkey(new Date());
+  }
+  function addDays(s, n) { var d = parseD(s); if (!d) return ''; d.setDate(d.getDate() + n); return dkey(d); }
+  function addMonths(s, n) {
+    var d = parseD(s); if (!d) return '';
+    var day = d.getDate(); d.setDate(1); d.setMonth(d.getMonth() + n);
+    var last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); d.setDate(Math.min(day, last));
+    return dkey(d);
+  }
+  function monthStart(s, n) { var d = parseD(s); if (!d) return ''; d.setDate(1); d.setMonth(d.getMonth() + (n || 0)); return dkey(d); }
+  function monthEnd(s) { var d = parseD(s); if (!d) return ''; return dkey(new Date(d.getFullYear(), d.getMonth() + 1, 0)); }
+  function diffDays(a, b) { var x = parseD(a), y = parseD(b); return x && y ? Math.round((y - x) / 864e5) : null; }
+  var NF = {};
+  function nf(d) { var k = d || 0; return NF[k] || (NF[k] = new Intl.NumberFormat('ko-KR', { minimumFractionDigits: k, maximumFractionDigits: k })); }
+  function num(v, d) { return v == null || v === '' || !isFinite(v) ? '—' : nf(d).format(+v); }
+  function pctTxt(r, d) { return r == null || !isFinite(r) ? '—' : nf(d == null ? 1 : d).format(r * 100) + '%'; }
+  function toSet(arr) { var o = {}; (arr || []).forEach(function (k) { o[k] = true; }); return o; }
+  function sum(arr, fn) { return (arr || []).reduce(function (a, x) { var v = fn ? fn(x) : x; v = +v; return a + (isFinite(v) ? v : 0); }, 0); }
+  function median(arr) { var a = arr.filter(function (v) { return v != null && isFinite(v); }).map(Number).sort(function (x, y) { return x - y; }); if (!a.length) return null; var m = Math.floor(a.length / 2); return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; }
+  function icon(name) { try { return App.icon ? App.icon(name) : ''; } catch (e) { return ''; } }
+  function minus(v) { return v < 0 ? '−' + Math.abs(v) : (v > 0 ? '+' : '') + v; }
+  // 받침에 따라 이/가, 은/는, 을/를, 과/와, (으)로 — 한글이 아니면 앞의 것을 괄호로
+  function josa(word, pair) {
+    var w = String(word || ''), ch = w.charCodeAt(w.length - 1), p = pair.split('/');
+    if (ch >= 0xAC00 && ch <= 0xD7A3) {
+      var jong = (ch - 0xAC00) % 28;
+      if (pair === '으로/로') return w + (jong === 0 || jong === 8 ? '로' : '으로');
+      return w + (jong ? p[0] : p[1]);
+    }
+    if (/[0-9]$/.test(w)) return w + p[0];
+    return w + p[0] + '(' + p[1] + ')';
+  }
+  // 선택지 이름에서 괄호 설명을 뗀 짧은 이름: '넘어짐(미끄러짐·걸림 포함)' → '넘어짐'
+  function short(label) { var s = String(label == null ? '' : label); var i = s.indexOf('('); return i > 0 ? s.slice(0, i).trim() : s; }
+
+  /* ---------- 데이터 접근(JsCore 가 채운 App.S, 없으면 빈 값) ---------- */
+  function S() { return App.S || {}; }
+  function listOf(x) {
+    if (!x) return [];
+    if (Array.isArray(x)) return x;
+    if (typeof x.values === 'function') return Array.from(x.values());
+    return Object.keys(x).map(function (k) { return x[k]; });
+  }
+  function FD() {
+    if (App.FD) return App.FD;
+    if (!A._fd) {
+      try { A._fd = JSON.parse(document.getElementById('forms-data').textContent); }
+      catch (e) { A._fd = { forms: [], kpiCodes: [], codes: {} }; }
+    }
+    return A._fd;
+  }
+  function formDef(code) {
+    if (App.FORM && App.FORM[code]) return App.FORM[code];
+    var f = (FD().forms || []).filter(function (x) { return x.code === code; })[0];
+    return f || null;
+  }
+  function allSites() { return listOf(S().sites); }
+  function siteOf(id) {
+    try { if (typeof App.site === 'function') { var s = App.site(id); if (s) return s; } } catch (e) { /* 아래로 */ }
+    return allSites().filter(function (s) { return s.id === id; })[0] || null;
+  }
+  function siteName(id) { var s = siteOf(id); return s && s.name ? s.name : (id || '—'); }
+  function stageList(r) {
+    var s = r && r.stageDone;
+    if (typeof s === 'string') { try { s = JSON.parse(s); } catch (e) { s = s ? [s] : []; } }
+    return Array.isArray(s) ? s : [];
+  }
+  function counted(r) {
+    if (!r || r.deleted === true || r.deleted === 'TRUE') return false;
+    if (r.status === '제출' || r.status === '확인') return true;
+    return r.status === '작성중' && stageList(r).length > 0;
+  }
+  function allIndex() {
+    try { if (typeof App.recs === 'function') { var a = App.recs(function () { return true; }); if (Array.isArray(a)) return a; } } catch (e) { /* 아래로 */ }
+    return listOf(S().index).filter(function (r) { return r && r.deleted !== true; });
+  }
+  function allActs() {
+    try { if (typeof App.acts === 'function') { var a = App.acts(function () { return true; }); if (Array.isArray(a)) return a; } } catch (e) { /* 아래로 */ }
+    return listOf(S().acts).filter(function (x) { return x && x.deleted !== true; });
+  }
+  function settings() { return S().settings || {}; }
+  // 사업장의 필수 양식(엔진이 있으면 엔진 규칙, 없으면 사업장 설정 → 기본값)
+  function requiredForms(site, refDate) {
+    try {
+      if (App.engine && typeof App.engine.requiredForms === 'function') {
+        var r = App.engine.requiredForms(site, refDate);
+        if (!Array.isArray(r)) r = App.engine.requiredForms(site.id, refDate);
+        if (Array.isArray(r)) return r.map(function (x) { return typeof x === 'string' ? x : x && (x.code || x.form); }).filter(Boolean);
+      }
+    } catch (e) { /* 아래로 */ }
+    if (site && Array.isArray(site.forms) && site.forms.length) return site.forms;
+    var rf = settings().requiredForms || {};
+    return rf['default'] || ['F07', 'F09', 'F01', 'N1', 'N2', 'N4', 'F08B', 'F10B'];
+  }
+
+  /* ---------- facts 읽기 ---------- */
+  function facts(r) { var f = r && r.facts; if (typeof f === 'string') { try { f = JSON.parse(f); } catch (e) { f = null; } } return f || {}; }
+  A.facts = facts;
+  A.fv = function (r, id) { var v = facts(r).v; return v ? v[id] : undefined; };
+  A.fcount = function (r, id) {
+    var v = facts(r).v || {}, n = v[id + '#n'];
+    if (n != null && n !== '') return +n || 0;
+    var x = v[id]; return Array.isArray(x) ? x.length : (x != null && x !== '' ? 1 : 0);
+  };
+  A.sm = function (r, id) {
+    var def = formDef(r && r.form), sm = facts(r).sm;
+    if (!def || !Array.isArray(def.summary) || !Array.isArray(sm)) return undefined;
+    for (var i = 0; i < def.summary.length; i++) if (def.summary[i].id === id) return sm[i];
+    return undefined;
+  };
+  A.minutes = function (v) {
+    if (v == null || v === '') return null;
+    if (typeof v === 'number') return isFinite(v) ? v : null;
+    var s = String(v), h = /(\d+)\s*시간/.exec(s), m = /(\d+)\s*분/.exec(s);
+    if (h || m) return (h ? +h[1] * 60 : 0) + (m ? +m[1] : 0);
+    var n = parseFloat(s); return isFinite(n) ? n : null;
+  };
+  // 값 분포: select 는 값 하나, multi 는 배열의 값마다 1
+  A.dist = function (rows, id, skip) {
+    var out = {}, sk = toSet(skip || []);
+    (rows || []).forEach(function (r) {
+      var v = A.fv(r, id); if (v == null || v === '') return;
+      [].concat(v).forEach(function (x) { if (x == null || x === '' || sk[x]) return; out[x] = (out[x] || 0) + 1; });
+    });
+    return out;
+  };
+  // 표 열 분포(facts.t.<table>.c.<col>)를 행들에 걸쳐 더함
+  A.tdist = function (rows, table, col) {
+    var out = {}, seen = false;
+    (rows || []).forEach(function (r) {
+      var t = (facts(r).t || {})[table], c = t && t.c && t.c[col];
+      if (!c) return; seen = true;
+      Object.keys(c).forEach(function (k) { if (k === '' || k == null) return; out[k] = (out[k] || 0) + (+c[k] || 0); });
+    });
+    return seen ? out : null;
+  };
+  A.tsum = function (rows, table, col) {
+    var total = 0, seen = false;
+    (rows || []).forEach(function (r) { var t = (facts(r).t || {})[table], s = t && t.s; if (s && s[col] != null && s[col] !== '') { seen = true; total += +s[col] || 0; } });
+    return seen ? total : null;
+  };
+  A.tn = function (rows, table) { return sum(rows, function (r) { var t = (facts(r).t || {})[table]; return t ? t.n : 0; }); };
+  // 분포 → 정렬된 [{label, value}] (0 건 제외)
+  A.top = function (dist, n) {
+    var arr = Object.keys(dist || {}).map(function (k) { return { label: k, value: +dist[k] || 0 }; }).filter(function (x) { return x.value > 0; });
+    arr.sort(function (a, b) { return b.value - a.value || a.label.localeCompare(b.label, 'ko'); });
+    return n ? arr.slice(0, n) : arr;
+  };
+
+  /* ---------- 기록의 사건 날짜 ---------- */
+  var EVF = { F04: 'occurredAt', F02: 'foundAt', F05: 'occurredAt', F10: 'stopAt', F01: 'evalDate', F01B: 'meetDate' };
+  A.dateOf = function (r) {
+    if (!r) return '';
+    if (r.form === 'F09' && /^\d{4}-\d{2}$/.test(r.period || '')) return r.period + '-01';
+    var f = EVF[r.form], v = f ? A.fv(r, f) : null;
+    if (r.form === 'F10' && !v) v = A.fv(r, 'hazardAt');
+    if (v && /^\d{4}-\d{2}-\d{2}/.test(String(v))) return String(v).slice(0, 10);
+    return String(r.date || '').slice(0, 10);
+  };
+  A.counted = counted;
+
+  /* ---------- 범위(기간·사업장) — sessionStorage 'hds.an' ---------- */
+  var KEY = 'hds.an';
+  var RANGES = [{ v: '3m', label: '최근 3개월', n: 3 }, { v: '6m', label: '6개월', n: 6 }, { v: '12m', label: '12개월', n: 12 }, { v: 'ytd', label: '올해' }, { v: 'custom', label: '직접' }];
+  function loadState() {
+    var st = null;
+    try { st = JSON.parse(window.sessionStorage.getItem(KEY) || 'null'); } catch (e) { st = null; }
+    st = st && typeof st === 'object' ? st : {};
+    if (!RANGES.some(function (r) { return r.v === st.range; })) st.range = '6m';
+    if (!st.site) st.site = '*';
+    return st;
+  }
+  function saveState(st) { try { window.sessionStorage.setItem(KEY, JSON.stringify(st)); } catch (e) { /* 저장 못 해도 화면은 동작 */ } A._state = st; }
+  function state() { return A._state || (A._state = loadState()); }
+  function tagsOf(s) { var t = s && s.tags; if (typeof t === 'string') t = t.split(/[,\s]+/); return Array.isArray(t) ? t.filter(Boolean) : []; }
+  function sitesFor(sel) {
+    var all = allSites();
+    if (!sel || sel === '*') return { ids: all.map(function (s) { return s.id; }), label: '전체 사업장', all: true };
+    if (sel.indexOf('tag:') === 0) {
+      var tag = sel.slice(4), ids = all.filter(function (s) { return tagsOf(s).indexOf(tag) >= 0; }).map(function (s) { return s.id; });
+      return { ids: ids, label: '태그 ' + tag + ' (' + ids.length + '곳)', all: false };
+    }
+    var s = siteOf(sel);
+    return s ? { ids: [s.id], label: s.name || s.id, all: false } : { ids: all.map(function (x) { return x.id; }), label: '전체 사업장', all: true };
+  }
+  function rangeOf(st, t) {
+    var r = RANGES.filter(function (x) { return x.v === st.range; })[0] || RANGES[1];
+    if (r.v === 'ytd') return { from: t.slice(0, 4) + '-01-01', to: t, label: '올해', months: null };
+    if (r.v === 'custom') {
+      var f = isDay(st.from) ? st.from : monthStart(t, -5), to = isDay(st.to) ? st.to : t;
+      if (f > to) { var x = f; f = to; to = x; }
+      return { from: f, to: to, label: f + ' ~ ' + to, months: null };
+    }
+    return { from: monthStart(t, -(r.n - 1)), to: t, label: r.v === '3m' ? '최근 3개월' : '최근 ' + r.n + '개월', months: r.n };
+  }
+  // scope() → { from, to, sites:[id], label, periodLabel, siteLabel, range, site, all, days }
+  A.scope = function () {
+    var st = state(), t = today(), rg = rangeOf(st, t), ss = sitesFor(st.site);
+    return {
+      from: rg.from, to: rg.to, sites: ss.ids, all: ss.all, range: st.range, site: st.site,
+      periodLabel: rg.label, siteLabel: ss.label, months: rg.months,
+      label: rg.label + ' · ' + ss.label, days: diffDays(rg.from, rg.to) + 1, today: t
+    };
+  };
+  // 같은 길이의 직전 기간(달 단위 범위는 달 단위로, 끝은 같은 날짜까지)
+  A.prevScope = function (sc) {
+    sc = sc || A.scope();
+    var p = {}; Object.keys(sc).forEach(function (k) { p[k] = sc[k]; });
+    var nm = (A.months(sc) || []).length;
+    if (sc.range !== 'custom' && sc.from.slice(8) === '01') {
+      p.from = monthStart(sc.from, -nm); p.to = addMonths(sc.to, -nm);
+      if (p.to >= sc.from) p.to = addDays(sc.from, -1);
+    } else {
+      var len = diffDays(sc.from, sc.to) + 1; p.to = addDays(sc.from, -1); p.from = addDays(sc.from, -len);
+    }
+    p.periodLabel = sc.range === 'ytd' ? '작년 같은 기간' : sc.range === 'custom' ? '직전 ' + (diffDays(p.from, p.to) + 1) + '일' : '직전 ' + nm + '개월';
+    if (sc.range === 'ytd') { p.from = (+sc.from.slice(0, 4) - 1) + sc.from.slice(4); p.to = addMonths(sc.to, -12); }
+    p.label = p.periodLabel + ' · ' + sc.siteLabel;
+    return p;
+  };
+  A.setScope = function (k, v) {
+    var st = state(), cur = A.scope(), next = {};
+    Object.keys(st).forEach(function (x) { next[x] = st[x]; });
+    if (k === 'range') {
+      if (!RANGES.some(function (r) { return r.v === v; })) return;
+      next.range = v;
+      if (v === 'custom' && !(isDay(st.from) && isDay(st.to))) { next.from = cur.from; next.to = cur.to; }
+    } else if (k === 'site') next.site = v || '*';
+    else if (k === 'from' || k === 'to') { if (!isDay(v)) return; next[k] = v; next.range = 'custom'; if (!isDay(next.from)) next.from = cur.from; if (!isDay(next.to)) next.to = cur.to; }
+    else return;
+    saveState(next);
+    A.rerender();
+  };
+
+  /* ---------- 행 고르기·월별 묶기 ---------- */
+  // rows(formCodes, scope) → 범위 안 색인 행(제출·확인·단계보고, 삭제·반려·작성중 제외). formCodes: 'F04' | ['F02','F04'] | null(전체)
+  A.rows = function (forms, sc) {
+    sc = sc || A.scope();
+    var fset = forms == null ? null : toSet([].concat(forms)), sset = sc.all ? null : toSet(sc.sites || []);
+    var from = sc.from || '0000-01-01', to = sc.to || '9999-12-31';
+    return allIndex().filter(function (r) {
+      if (!counted(r)) return false;
+      if (fset && !fset[r.form]) return false;
+      if (sset && !sset[r.site]) return false;
+      var d = A.dateOf(r); return !!d && d >= from && d <= to;
+    });
+  };
+  A.months = function (sc) {
+    sc = sc || A.scope();
+    var out = [], m = sc.from.slice(0, 7), end = sc.to.slice(0, 7), guard = 0;
+    while (m <= end && guard++ < 240) { out.push(m); m = monthStart(m + '-01', 1).slice(0, 7); }
+    return out;
+  };
+  // '2026-06' → '6월' (해가 바뀌는 1월과 첫 칸은 '26년 1월')
+  A.monthLabel = function (m, i, list) {
+    var y = m.slice(2, 4), mo = +m.slice(5, 7), multi = list && list.length && list[0].slice(0, 4) !== list[list.length - 1].slice(0, 4);
+    return (multi && (mo === 1 || i === 0) ? y + '년 ' : '') + mo + '월';
+  };
+  // byMonth(rows, fn, scope) → [{month, label, rows, value}] (scope 의 달 순서, fn(행들, 달) 기본은 건수)
+  A.byMonth = function (rows, fn, sc) {
+    var months = A.months(sc), map = {};
+    months.forEach(function (m) { map[m] = []; });
+    (rows || []).forEach(function (r) { var m = A.dateOf(r).slice(0, 7); if (map[m]) map[m].push(r); });
+    return months.map(function (m, i) {
+      var rs = map[m]; return { month: m, label: A.monthLabel(m, i, months), rows: rs, value: fn ? fn(rs, m) : rs.length };
+    });
+  };
+  // 범위가 오늘로 끝나고 이번 달이 다 안 지났으면 마지막 달은 '진행 중'
+  A.partialIndex = function (sc) {
+    sc = sc || A.scope(); var ms = A.months(sc);
+    return sc.to === sc.today && sc.to !== monthEnd(sc.to) ? ms.length - 1 : null;
+  };
+  A.siteName = siteName;
+
+  /* ---------- 공통 지표(개요와 각 주제 화면이 같은 값을 쓰도록 한 곳에서 계산) ---------- */
+  // 재해·사고: F04 중 아차사고 제외(재해·무상해), 아차·제안: F02 전체 + F04 아차사고
+  A.incidents = function (sc) {
+    sc = sc || A.scope();
+    var f04 = A.rows('F04', sc), f02 = A.rows('F02', sc), f05 = A.rows('F05', sc), f10 = A.rows('F10', sc);
+    var acc = [], injury = [], noInj = [], nm04 = [];
+    f04.forEach(function (r) {
+      var k = A.fv(r, 'kind');
+      if (k === '아차사고') nm04.push(r); else { acc.push(r); if (k === '재해') injury.push(r); else if (k === '무상해') noInj.push(r); }
+    });
+    var nmF02 = f02.filter(function (r) { return A.fv(r, 'kind') === '아차사고'; });
+    return { sc: sc, f04: f04, f02: f02, f05: f05, f10: f10, acc: acc, injury: injury, noInj: noInj, nm04: nm04,
+      near: f02.concat(nm04), nearMiss: nmF02.concat(nm04), proposals: f02.filter(function (r) { return A.fv(r, 'kind') !== '아차사고'; }) };
+  };
+  // 재해율·도수율(F09 제출·확인 기준). 도수율 = ΣA01 ÷ ΣH02 × 1,000,000 (FD R08), 재해율 = ΣA02 ÷ 평균 월말 재적인원(H01) × 100.
+  // 분모가 0 이면 null(화면에는 '해당없음').
+  A.rates = function (sc) {
+    sc = sc || A.scope();
+    var latest = {};
+    A.rows('F09', sc).forEach(function (r) {
+      if (r.status !== '제출' && r.status !== '확인') return;
+      var k = r.site + '|' + (r.period || A.dateOf(r).slice(0, 7)), cur = latest[k];
+      if (!cur || String(r.updatedAt || '') > String(cur.updatedAt || '')) latest[k] = r;
+    });
+    var rows = Object.keys(latest).map(function (k) { return latest[k]; });
+    var val = function (r, id) { var v = A.fv(r, id); return v == null || v === '' ? null : +v; };
+    var a01 = sum(rows, function (r) { return val(r, 'incidents'); }), a02 = sum(rows, function (r) { return val(r, 'victims'); });
+    var h02 = sum(rows, function (r) { return val(r, 'workHours'); });
+    var byM = {};
+    rows.forEach(function (r) { var h = val(r, 'headcount'); if (h == null) return; var m = r.period || A.dateOf(r).slice(0, 7); byM[m] = (byM[m] || 0) + h; });
+    var ms = Object.keys(byM), avgHead = ms.length ? sum(ms, function (m) { return byM[m]; }) / ms.length : 0;
+    return { reports: rows.length, months: ms.length, a01: a01, a02: a02, h02: h02, avgHead: avgHead,
+      freq: h02 > 0 ? a01 / h02 * 1e6 : null, rate: avgHead > 0 ? a02 / avgHead * 100 : null };
+  };
+  // 일일점검 제출률: 기대 = 운영 사업장(F07 필수)의 운영일(개설일 이후, 어제까지) × 근무조 수, 제출 = 같은 날짜·근무조의 F07(제출·확인)
+  A.dailyRate = function (sc) {
+    sc = sc || A.scope();
+    var y = addDays(sc.today || today(), -1), to = sc.to < y ? sc.to : y, sset = toSet(sc.sites), expected = 0, perSite = {};
+    allSites().forEach(function (s) {
+      if (!sset[s.id] || s.status === '종료') return;
+      if (requiredForms(s, to).indexOf('F07') < 0) return;
+      var from = sc.from; if (isDay(s.openDate) && s.openDate > from) from = s.openDate;
+      if (from > to) return;
+      var shifts = Array.isArray(s.shifts) && s.shifts.length ? s.shifts.length : 1, n = (diffDays(from, to) + 1) * shifts;
+      expected += n; perSite[s.id] = { expected: n, submitted: 0 };
+    });
+    var seen = {};
+    A.rows('F07', { from: sc.from, to: to, sites: sc.sites, all: false }).forEach(function (r) {
+      if (!perSite[r.site]) return;
+      var k = r.site + '|' + A.dateOf(r) + '|' + (r.shift || ''); if (seen[k]) return; seen[k] = 1;
+      perSite[r.site].submitted++;
+    });
+    var submitted = 0; Object.keys(perSite).forEach(function (id) { perSite[id].submitted = Math.min(perSite[id].submitted, perSite[id].expected); submitted += perSite[id].submitted; });
+    return { expected: expected, submitted: submitted, rate: expected ? submitted / expected : null, perSite: perSite, to: to };
+  };
+  // 조치 이행률: 기한이 범위 안(오늘까지)에 든 조치 중 완료·확인된 비율. 기한경과 미결 = 기한 지난 미완료(완료·확인 외 상태) 조치.
+  A.actRate = function (sc) {
+    sc = sc || A.scope();
+    var t = sc.today || today(), sset = toSet(sc.sites), end = sc.to < t ? sc.to : t;
+    var acts = allActs().filter(function (a) { return a && sset[a.site]; });
+    var isDone = function (a) { return a.status === '완료' || a.status === '확인'; };
+    var due = acts.filter(function (a) { return isDay(String(a.due || '').slice(0, 10)) && a.due.slice(0, 10) >= sc.from && a.due.slice(0, 10) <= end; });
+    var done = due.filter(isDone), onTime = done.filter(function (a) { return !a.doneAt || String(a.doneAt).slice(0, 10) <= a.due.slice(0, 10); });
+    var overdue = acts.filter(function (a) { return !isDone(a) && isDay(String(a.due || '').slice(0, 10)) && a.due.slice(0, 10) < t; });
+    return { due: due.length, done: done.length, onTime: onTime.length, rate: due.length ? done.length / due.length : null,
+      overdue: overdue.length, overdueHigh: overdue.filter(function (a) { return a.level === '높음'; }).length, acts: acts };
+  };
+  function ratio01(x) {
+    if (x == null) return null;
+    if (typeof x === 'object') x = x.pct != null ? x.pct : x.rate != null ? x.rate : x.ready != null ? x.ready : x.score != null ? x.score : x.value;
+    x = +x; if (!isFinite(x)) return null;
+    return x > 1 ? x / 100 : x;
+  }
+  // HEC 준비도: HEC 대상 운영 사업장의 App.engine.hecReady(site) 평균
+  A.hecSummary = function (sc) {
+    sc = sc || A.scope();
+    var sset = toSet(sc.sites), list = [];
+    allSites().forEach(function (s) {
+      if (!sset[s.id] || s.status === '종료' || !(s.hec === true || s.hec === 'TRUE' || s.hec === 1)) return;
+      var r = null;
+      try { if (App.engine && typeof App.engine.hecReady === 'function') r = ratio01(App.engine.hecReady(s)); } catch (e) { r = null; }
+      list.push({ site: s, ready: r });
+    });
+    var vals = list.filter(function (x) { return x.ready != null; });
+    return { sites: list.length, measured: vals.length, avg: vals.length ? sum(vals, function (x) { return x.ready; }) / vals.length : null,
+      low: vals.filter(function (x) { return x.ready < 0.8; }).length, list: list };
+  };
+
+  /* ---------- 화면 조각: 필터 줄·주제 탭·제목 줄 ---------- */
+  var TOPICS = [
+    { key: '', label: '개요' }, { key: 'incidents', label: '재해·사고' }, { key: 'risk', label: '위험성평가' },
+    { key: 'daily', label: '일일점검' }, { key: 'edu', label: '교육·훈련' }, { key: 'acts', label: '조치 이행' },
+    { key: 'hec', label: 'HEC 준비도' }, { key: 'sites', label: '사업장 비교' }, { key: 'form', label: '양식별' }
+  ];
+  A.TOPICS = TOPICS;
+  function topicKey(t) { t = String(t || ''); return t === 'overview' || t === 'analytics' ? '' : t.replace(/^analytics\/?/, '').split('/')[0]; }
+  A.topicLabel = function (t) { var k = topicKey(t), x = TOPICS.filter(function (o) { return o.key === k; })[0]; return x ? x.label : String(t || ''); };
+  // tabs(active) → 언더라인 탭(링크). active: '' | 'overview' | 'incidents' | 'risk' | 'daily' | …
+  A.tabs = function (active) {
+    var k = topicKey(active);
+    return '<nav class="tabs an-tabs" aria-label="분석 주제">' + TOPICS.map(function (t) {
+      var on = t.key === k;
+      return '<a class="an-tab' + (on ? ' on' : '') + '" href="#/analytics' + (t.key ? '/' + t.key : '') + '"' + (on ? ' aria-current="page"' : '') + '>' + esc(t.label) + '</a>';
+    }).join('') + '</nav>';
+  };
+  // filterBar() → 공통 필터 줄(기간 세그먼트·직접 기간·사업장 선택). 바뀌면 'an.scope' 로 저장하고 현재 분석 화면을 다시 그린다.
+  A.filterBar = function () {
+    var st = state(), sc = A.scope(), sites = allSites();
+    var seg = '<div class="seg an-seg hide-phone" role="group" aria-label="기간">' + RANGES.map(function (r) {
+      var on = st.range === r.v;
+      return '<button type="button" class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '" data-act="an.scope" data-k="range" data-v="' + r.v + '">' + esc(r.label) + '</button>';
+    }).join('') + '</div>';
+    var sel = '<select class="select an-range-sel only-phone" aria-label="기간" data-act="an.scope" data-k="range">' + RANGES.map(function (r) {
+      return '<option value="' + r.v + '"' + (st.range === r.v ? ' selected' : '') + '>' + esc(r.v === '6m' || r.v === '12m' ? '최근 ' + r.label : r.label) + '</option>';
+    }).join('') + '</select>';
+    var custom = st.range === 'custom'
+      ? '<span class="an-dates"><input type="date" class="input" aria-label="시작일" data-act="an.scope" data-k="from" value="' + esc(sc.from) + '" max="' + esc(sc.today) + '"><span class="muted">~</span><input type="date" class="input" aria-label="종료일" data-act="an.scope" data-k="to" value="' + esc(sc.to) + '" max="' + esc(sc.today) + '"></span>'
+      : '';
+    var tags = {};
+    sites.forEach(function (s) { tagsOf(s).forEach(function (t) { tags[t] = (tags[t] || 0) + 1; }); });
+    var tagKeys = Object.keys(tags).sort(function (a, b) { return a.localeCompare(b, 'ko'); });
+    var opt = function (v, label) { return '<option value="' + esc(v) + '"' + (st.site === v ? ' selected' : '') + '>' + esc(label) + '</option>'; };
+    var active = sites.filter(function (s) { return s.status !== '종료'; });
+    var siteSel = '<select class="select an-site-sel" aria-label="사업장" data-act="an.scope" data-k="site">'
+      + opt('*', '전체 사업장 (' + sites.length + '곳)')
+      + (tagKeys.length ? '<optgroup label="태그">' + tagKeys.map(function (t) { return opt('tag:' + t, t + ' (' + tags[t] + '곳)'); }).join('') + '</optgroup>' : '')
+      + (sites.length ? '<optgroup label="사업장">' + sites.slice().sort(function (a, b) { return String(a.id).localeCompare(String(b.id)); }).map(function (s) {
+        return opt(s.id, s.id + ' ' + (s.name || '') + (s.status === '종료' ? ' (종료)' : ''));
+      }).join('') + '</optgroup>' : '')
+      + '</select>';
+    var note = '<span class="an-scope-note muted num hide-phone">' + esc(sc.from) + ' ~ ' + esc(sc.to) + ' · ' + esc(sc.all ? '운영 ' + active.length + '곳' : sc.siteLabel) + '</span>';
+    return '<div class="toolbar an-filter">' + seg + sel + custom + siteSel + '<span class="spacer"></span>' + note + '</div>';
+  };
+  // header(topic, sub, opts) → 제목 줄(h1 '분석 · 주제', 발견 문장, 보고서 인쇄) + 주제 탭 + 필터 줄
+  A.header = function (topic, sub, opts) {
+    opts = opts || {};
+    var actions = (opts.actions || '') + '<button type="button" class="btn" data-act="an.print">' + icon('print') + '<span>보고서 인쇄</span></button>';
+    return '<div class="title-row an-title"><div class="title-main"><h1>분석 · ' + esc(A.topicLabel(topic)) + '</h1>'
+      + (sub ? '<p class="sub">' + sub + '</p>' : '') + '</div><div class="actions">' + actions + '</div></div>'
+      + A.tabs(topic) + A.filterBar();
+  };
+  // mount(main, topic, build): build(scope) → {sub, html, actions, after(main)}. 필터가 바뀌면 같은 build 로 다시 그린다.
+  A.mount = function (main, topic, build) {
+    register();
+    var hash = location.hash;
+    var run = function () {
+      var sc = A.scope(), out;
+      if (!App.S || !App.S.index) {
+        main.innerHTML = A.header(topic, '') + '<div class="an-body"><div class="skel" style="height:96px"></div><div class="skel" style="height:280px;margin-top:24px"></div></div>';
+        return;
+      }
+      try { out = build(sc) || {}; }
+      catch (e) {
+        if (window.console) console.error(e);
+        main.innerHTML = A.header(topic, '') + '<div class="an-body"><div class="err">분석을 계산하지 못했습니다. <button type="button" class="btn ghost sm" data-act="an.retry">다시 시도</button></div></div>';
+        return;
+      }
+      main.innerHTML = A.header(topic, out.sub || '', out) + '<div class="an-body">' + (out.html || '') + '</div>';
+      if (typeof out.after === 'function') { try { out.after(main); } catch (e2) { if (window.console) console.error(e2); } }
+    };
+    A._cur = { main: main, hash: hash, run: run };
+    run();
+  };
+  // 필터가 바뀌면 지금 화면을 같은 스크롤 위치에서 다시 그린다(analytics-b 화면은 App.route({keep:true}) 로)
+  A.rerender = function () {
+    var main = document.getElementById('main'), y = main ? main.scrollTop : 0, wy = window.scrollY || 0;
+    var cur = A._cur;
+    if (cur && cur.hash === location.hash && cur.main && document.body.contains(cur.main)) cur.run();
+    else if (typeof App.route === 'function') { App.route({ keep: true }); return; }
+    else if (cur) cur.run();
+    if (main) main.scrollTop = y;
+    if (window.scrollY !== wy) window.scrollTo(0, wy);
+  };
+
+  /* ---------- 보고서 인쇄(#print-root 에 A4) ---------- */
+  // printReport(title, html): html 을 빼면 지금 화면의 분석 본문(.an-body, 차트 SVG 포함)을 옮겨 찍는다.
+  A.printReport = function (title, html) {
+    var root = document.getElementById('print-root'); if (!root) { window.print(); return; }
+    var sc = A.scope(), st = settings();
+    if (html == null) { var body = document.querySelector('.an-body'); html = body ? body.innerHTML : ''; }
+    var now = new Date(), stamp = dkey(now) + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes());
+    root.innerHTML = '<article class="pdoc an-print">'
+      + '<header class="an-print-hd"><div><div class="an-print-brand">' + esc(st.appName || 'HDS 안전장부') + '</div><div class="an-print-co">' + esc(st.company || 'HDS(주) 안전경영지원실') + '</div></div>'
+      + '<div class="an-print-meta">' + esc(sc.from + ' ~ ' + sc.to) + '<br>' + esc(sc.siteLabel) + '<br>출력 ' + esc(stamp) + '</div></header>'
+      + '<h1 class="an-print-title">' + esc(title || '분석 보고서') + '</h1>'
+      + '<div class="an-print-body">' + html + '</div></article>';
+    Array.prototype.forEach.call(root.querySelectorAll('button, select, input, .chart-tip, .an-noprint, .seg'), function (n) { n.remove(); });
+    Array.prototype.forEach.call(root.querySelectorAll('[data-href],[data-act]'), function (n) { n.removeAttribute('data-href'); n.removeAttribute('data-act'); });
+    document.body.classList.add('an-printing');
+    var done = function () { document.body.classList.remove('an-printing'); root.innerHTML = ''; window.removeEventListener('afterprint', done); };
+    window.addEventListener('afterprint', done);
+    setTimeout(function () { window.print(); }, 60);
+  };
+
+  /* ---------- 마크업 조각(AGENT-BRIEF 마크업 계약) ---------- */
+  function kpis(items) {
+    return '<div class="kpis an-kpis" style="--n:' + items.length + '">' + items.map(function (k) {
+      return '<div class="kpi' + (k.lead ? ' is-lead' : '') + (k.href ? ' click an-kpi-link' : '') + '"' + (k.href ? ' data-href="' + esc(k.href) + '" role="link" tabindex="0"' : '') + '>'
+        + '<div class="kpi-label">' + esc(k.label) + '</div>'
+        + '<div class="kpi-value num">' + k.value + (k.unit ? '<span class="unit">' + esc(k.unit) + '</span>' : '') + '</div>'
+        + (k.sub ? '<div class="kpi-sub">' + k.sub + '</div>' : '') + '</div>';
+    }).join('') + '</div>';
+  }
+  function na(text) { return '<span class="an-na">' + esc(text || '해당없음') + '</span>'; }
+  function panel(o) {
+    return '<section class="panel ' + (o.span ? 'span-' + o.span : '') + (o.cls ? ' ' + o.cls : '') + '"' + (o.id ? ' id="' + o.id + '"' : '') + '>'
+      + '<header class="panel-hd"><div><h2>' + esc(o.title) + '</h2>' + (o.sub ? '<p class="panel-sub">' + o.sub + '</p>' : '') + '</div>'
+      + (o.actions ? '<div class="panel-actions">' + o.actions + '</div>' : '') + '</header>'
+      + '<div class="panel-bd' + (o.flush ? ' flush' : '') + '">' + (o.body || '') + '</div>'
+      + (o.foot ? '<footer class="panel-ft">' + o.foot + '</footer>' : '') + '</section>';
+  }
+  function empty(text, action) { return '<div class="empty">' + esc(text) + (action ? ' ' + action : '') + '</div>'; }
+  function pill(text, tone) { return '<span class="pill ' + (tone || 'neu') + '">' + esc(text) + '</span>'; }
+  // 직전 기간과의 차이: good 'down'(줄면 좋음) | 'up' | 'neutral'. 0 이나 직전 0 은 회색.
+  function delta(cur, prev, prevLabel, unit, good) {
+    unit = unit || '건';
+    if (prev == null) return '<span class="muted">' + esc(prevLabel) + ' —</span>';
+    var d = cur - prev;
+    if (d === 0) return '<span class="muted">' + esc(prevLabel) + '과 같음(' + num(prev) + unit + ')</span>';
+    var tone = good === 'neutral' ? '' : (d > 0) === (good === 'down') ? 't-neg' : 't-pos';
+    if (prev === 0) return '<span class="muted">+' + num(cur) + unit + ' (새로 발생) · ' + esc(prevLabel) + ' 0' + unit + '</span>';
+    return '<span class="' + tone + '">' + minus(d) + unit + '</span> <span class="muted">' + esc(prevLabel) + ' ' + num(prev) + unit + ' 대비</span>';
+  }
+  function chartBox(id, cls) { return '<div class="an-chart ' + (cls || '') + '" id="' + id + '"></div>'; }
+  function legendBox(id) { return '<div class="an-legend" id="' + id + '"></div>'; }
+  function C() { return window.Charts || null; }
+  function byId(main, id) { return main.querySelector('#' + id); }
+  function noCharts(el) { if (el) el.innerHTML = '<div class="err">차트를 불러오지 못했습니다.</div>'; }
+  // 한 기록 줄 → #/rec/<id>
+  function recHref(r) { return '#/rec/' + encodeURIComponent(r.id); }
+  function timeOf(v) { var m = /[T ](\d{2}):(\d{2})/.exec(String(v || '')); return m ? { h: +m[1], m: +m[2] } : null; }
+  function dowOf(day) { var d = parseD(day); return d ? (d.getDay() + 6) % 7 : null; } // 월=0 … 일=6
+  var DOW = ['월', '화', '수', '목', '금', '토', '일'];
+  function findings(items) {
+    if (!items.length) return empty('이 범위에서 따로 짚을 변화가 없습니다.');
+    return '<ul class="findings">' + items.map(function (f) {
+      return '<li class="finding' + (f.tone ? ' ' + f.tone : '') + '">' + f.html + (f.href ? ' <a href="' + esc(f.href) + '">' + esc(f.link || '보기') + '</a>' : '') + '</li>';
+    }).join('') + '</ul>';
+  }
+  function topText(arr, total) { return arr.map(function (x) { return esc(short(x.label)) + ' ' + num(x.value); }).join(' · ') + (total != null ? ' (' + num(total) + '건 중)' : ''); }
+
+  /* ---------- F04 단계 진행 ---------- */
+  var F04_STAGE_DAYS = { s2: 3, s3: 7 }; // 속보 후 조사·원인 3일, 재발방지 대책 7일(F04 frequency.due)
+  function stageInfo(r) {
+    var def = formDef(r.form) || {}, stages = def.stages || [], done = toSet(stageList(r));
+    if (r.status === '제출' || r.status === '확인') return { closed: true, label: '종결', cur: stages.length ? stages[stages.length - 1] : null };
+    var last = null, next = null;
+    stages.forEach(function (s) { if (done[s.id]) last = s; else if (!next) next = s; });
+    return { closed: false, last: last, next: next, label: last ? (last.label || last.title || last.id) : '작성 중', nextLabel: next ? (next.label || next.title || next.id) : '' };
+  }
+
+  /* ========== 화면: 분석 개요 ========== */
+  function overviewBuild(sc) {
+    var D = A.incidents(sc), P = A.incidents(A.prevScope(sc)), prevLabel = A.prevScope(sc).periodLabel;
+    var R = A.rates(sc), dr = A.dailyRate(sc), ar = A.actRate(sc), hs = A.hecSummary(sc);
+    var months = A.months(sc), part = A.partialIndex(sc);
+    var accM = A.byMonth(D.acc, null, sc), nearM = A.byMonth(D.near, null, sc);
+
+    // 사업장별 사고·아차와 직전 기간 대비 증가
+    var bySite = {}, prevBySite = {};
+    D.acc.forEach(function (r) { (bySite[r.site] = bySite[r.site] || [0, 0])[0]++; });
+    D.near.forEach(function (r) { (bySite[r.site] = bySite[r.site] || [0, 0])[1]++; });
+    P.acc.concat(P.near).forEach(function (r) { prevBySite[r.site] = (prevBySite[r.site] || 0) + 1; });
+    var siteRows = Object.keys(bySite).map(function (id) {
+      var v = bySite[id], tot = v[0] + v[1], pv = prevBySite[id] || 0;
+      return { id: id, label: siteName(id), parts: v, total: tot, prev: pv, rise: tot - pv,
+        sub: '직전 ' + num(pv) + '건', href: '#/sites/' + encodeURIComponent(id) };
+    });
+    var rising = siteRows.filter(function (x) { return x.rise >= 2; }).sort(function (a, b) { return b.rise - a.rise || b.total - a.total; });
+    var quiet = sc.sites.filter(function (id) { var s = siteOf(id); return s && s.status !== '종료' && !bySite[id]; }).length;
+
+    // 사고 유형(F04 전체: 재해·무상해·아차)
+    var accTypes = A.top(A.dist(D.f04, 'accType'), 6);
+    var accTypeAcc = A.top(A.dist(D.acc, 'accType'), 1)[0];
+
+    // 가장 사고가 많은 달(주석)
+    var peak = null;
+    accM.forEach(function (m, i) { if (m.value > 0 && (!peak || m.value > peak.value)) peak = { i: i, value: m.value, label: m.label, rows: m.rows }; });
+    var meanAcc = D.acc.length / Math.max(1, months.length);
+    var notes = [];
+    if (peak && peak.value >= 2 && peak.value >= meanAcc * 1.5) {
+      var pt = A.top(A.dist(peak.rows, 'accType'), 1)[0];
+      notes.push({ at: peak.i, label: peak.label + ' 재해·사고 ' + peak.value + '건' + (pt && pt.value > 1 ? ' · ' + short(pt.label) + ' ' + pt.value + '건' : ''), short: peak.value + '건' });
+    }
+
+    // 발견 문장: analytics-b 의 insights 가 있으면 그것, 없으면 이 화면의 규칙
+    var fs = [];
+    if (typeof A.insights === 'function') {
+      try {
+        (A.insights(sc) || []).slice(0, 5).forEach(function (x) {
+          if (typeof x === 'string') fs.push({ html: /<(b|a|strong|span)\b/.test(x) ? x : esc(x) });
+          else if (x) fs.push({ html: x.html || esc(x.text || ''), tone: x.tone, href: x.href, link: x.link });
+        });
+      } catch (e) { fs = []; }
+    }
+    if (!fs.length) {
+      rising.slice(0, 2).forEach(function (x) {
+        fs.push({ tone: 'neg', html: '<b>' + esc(x.label) + '</b> 사고·아차 ' + num(x.total) + '건 — ' + esc(prevLabel) + ' ' + num(x.prev) + '건보다 ' + num(x.rise) + '건 늘었습니다.', href: x.href, link: '사업장' });
+      });
+      if (accTypeAcc && D.acc.length >= 2) {
+        fs.push({ tone: accTypeAcc.value / D.acc.length >= 0.4 ? 'warn' : '', html: '재해·사고 ' + num(D.acc.length) + '건 중 <b>' + esc(short(accTypeAcc.label)) + ' ' + num(accTypeAcc.value) + '건</b>(' + pctTxt(accTypeAcc.value / D.acc.length, 0) + ')이 가장 많습니다.', href: '#/analytics/incidents', link: '재해·사고' });
+      }
+      if (ar.overdueHigh > 0) fs.push({ tone: 'neg', html: '기한이 지난 <b>높음 조치 ' + num(ar.overdueHigh) + '건</b>이 아직 끝나지 않았습니다.', href: '#/analytics/acts', link: '조치 이행' });
+      var openF04 = D.f04.filter(function (r) { var si = stageInfo(r); return !si.closed && si.next && F04_STAGE_DAYS[si.next.id] != null && diffDays(A.dateOf(r), sc.today) > F04_STAGE_DAYS[si.next.id]; });
+      if (openF04.length) fs.push({ tone: 'warn', html: '단계 보고 기한이 지난 재해·사고 보고 <b>' + num(openF04.length) + '건</b>이 있습니다.', href: '#/analytics/incidents', link: '단계 진행' });
+      if (dr.rate != null && dr.rate < 0.9) fs.push({ tone: 'warn', html: '일일점검 제출률이 <b>' + pctTxt(dr.rate) + '</b>입니다(기대 ' + num(dr.expected) + '건 중 ' + num(dr.submitted) + '건).', href: '#/analytics/daily', link: '일일점검' });
+      if (!D.acc.length && !D.near.length) fs.push({ html: '이 범위에는 재해·사고와 아차·제안 보고가 없습니다.' });
+      fs = fs.slice(0, 5);
+    }
+
+    // 제목 줄 발견 문장
+    var sub;
+    if (rising.length) sub = esc(rising[0].label) + '에서 사고·아차가 ' + esc(prevLabel) + '보다 ' + num(rising[0].rise) + '건 늘어 ' + num(rising[0].total) + '건입니다' + (accTypeAcc && D.acc.length >= 2 ? ' · 재해·사고 1위는 ' + esc(short(accTypeAcc.label)) + '(' + num(accTypeAcc.value) + '/' + num(D.acc.length) + '건)' : '') + '.';
+    else if (D.acc.length) sub = esc(sc.periodLabel) + ' 재해·사고 ' + num(D.acc.length) + '건, 아차·제안 ' + num(D.near.length) + '건 — 직전 기간보다 늘어난 사업장은 없습니다.';
+    else sub = esc(sc.periodLabel) + ' 재해·사고 0건, 아차·제안 ' + num(D.near.length) + '건이 보고됐습니다.';
+
+    var k = [
+      { label: '재해·사고', value: num(D.acc.length), unit: '건', lead: true, href: '#/analytics/incidents',
+        sub: '재해 ' + num(D.injury.length) + ' · 무상해 ' + num(D.noInj.length) + '<br>' + delta(D.acc.length, P.acc.length, prevLabel, '건', 'down') },
+      { label: '아차·제안', value: num(D.near.length), unit: '건',
+        sub: '아차 ' + num(D.nearMiss.length) + ' · 제안·발굴·의견 ' + num(D.proposals.length) + '<br>' + delta(D.near.length, P.near.length, prevLabel, '건', 'neutral') },
+      { label: '작업중지', value: num(D.f10.length), unit: '건', sub: '많고 적음으로 평가하지 않는 지표<br>' + delta(D.f10.length, P.f10.length, prevLabel, '건', 'neutral') },
+      { label: '안전수칙 위반', value: num(D.f05.length), unit: '건', sub: delta(D.f05.length, P.f05.length, prevLabel, '건', 'down') },
+      R.freq == null
+        ? { label: '도수율', value: na(), sub: R.reports ? 'F09 근로시간 합계 0' : 'F09 월간보고 없음' }
+        : { label: '도수율', value: num(R.freq, 2), sub: '재해 ' + num(R.a01) + '건 ÷ 근로 ' + num(R.h02) + '시간 × 100만' },
+      R.rate == null
+        ? { label: '재해율', value: na(), sub: R.reports ? 'F09 재적인원 0' : 'F09 월간보고 없음' }
+        : { label: '재해율', value: num(R.rate, 2), unit: '%', sub: '재해자 ' + num(R.a02) + '명 ÷ 평균 재적 ' + num(R.avgHead, 0) + '명' }
+    ];
+
+    var ops = kpis([
+      { label: '일일점검 제출률', value: dr.rate == null ? na() : num(dr.rate * 100, 1), unit: dr.rate == null ? '' : '%', href: '#/analytics/daily',
+        sub: dr.expected ? '기대 ' + num(dr.expected) + '건 중 ' + num(dr.submitted) + '건(어제까지)' : 'F07 필수 운영 사업장 없음' },
+      { label: '조치 이행률', value: ar.rate == null ? na() : num(ar.rate * 100, 1), unit: ar.rate == null ? '' : '%', href: '#/analytics/acts',
+        sub: ar.due ? '기한 도래 ' + num(ar.due) + '건 중 완료 ' + num(ar.done) + '건 · ' + (ar.overdue ? '<span class="t-neg">기한경과 미결 ' + num(ar.overdue) + '건</span>' : '기한경과 미결 0건') : '이 기간에 기한이 든 조치 없음' },
+      { label: 'HEC 준비도', value: hs.avg == null ? na() : num(hs.avg * 100, 1), unit: hs.avg == null ? '' : '%', href: '#/analytics/hec',
+        sub: hs.sites ? 'HEC 사업장 ' + num(hs.sites) + '곳 평균' + (hs.low ? ' · <span class="t-warn">80% 미만 ' + num(hs.low) + '곳</span>' : '') : 'HEC 대상 사업장 없음' }
+    ]);
+
+    var html = kpis(k)
+      + '<div class="grid an-grid">'
+      + panel({ span: 8, title: '월별 재해·아차 추이', sub: '재해·사고(F04 재해·무상해)와 아차·제안(F02 전체·F04 아차) · ' + esc(sc.periodLabel) + (part != null ? ' · 이번 달은 진행 중' : ''),
+        actions: legendBox('an-lg-trend'), body: chartBox('an-trend', 'an-chart-lg') })
+      + panel({ span: 4, title: '발견', sub: '이 범위의 숫자로 계산한 문장', body: findings(fs), cls: 'an-findings' })
+      + panel({ span: 6, title: '사고 유형 상위', sub: 'F04 ' + num(D.f04.length) + '건(아차 포함)의 재해형태',
+        body: accTypes.length ? chartBox('an-acctype') : empty('이 범위에 재해·사고 보고가 없습니다.'), foot: '<a href="#/analytics/incidents">재해·사고 분석 보기</a>' })
+      + panel({ span: 6, title: '사업장별 사고·아차', sub: '많은 순 6곳 · 오른쪽 숫자는 합계, 회색 글은 ' + esc(prevLabel),
+        actions: legendBox('an-lg-sites'), body: siteRows.length ? chartBox('an-sites') : empty('이 범위에 사고·아차 보고가 없습니다.'),
+        foot: '보고 0건 사업장 ' + num(quiet) + '곳' + (siteRows.length > 6 ? ' · 보고한 사업장 ' + num(siteRows.length) + '곳 중 6곳 표시' : '') })
+      + panel({ span: 12, title: '운영 지표', sub: esc(sc.label) + ' · 칸을 누르면 주제 분석으로 이동합니다', body: ops, flush: true, cls: 'an-ops' })
+      + '</div>';
+
+    return {
+      sub: sub, html: html,
+      after: function (main) {
+        var Ch = C(); if (!Ch) { noCharts(byId(main, 'an-trend')); return; }
+        Ch.stack(byId(main, 'an-trend'), {
+          labels: accM.map(function (m) { return m.label; }),
+          series: [{ name: '재해·사고', values: accM.map(function (m) { return m.value; }) }, { name: '아차·제안', values: nearM.map(function (m) { return m.value; }) }],
+          annotations: notes, partial: part, unit: '건', legend: byId(main, 'an-lg-trend')
+        });
+        if (accTypes.length) Ch.barList(byId(main, 'an-acctype'), accTypes.map(function (x) { return { label: x.label, value: x.value }; }));
+        if (siteRows.length) {
+          Ch.hbars(byId(main, 'an-sites'), siteRows.map(function (x) { return { label: x.label, parts: x.parts, sub: x.sub, href: x.href }; }),
+            { parts: ['재해·사고', '아차·제안'], limit: 6, unit: '건', legend: byId(main, 'an-lg-sites') });
+        }
+      }
+    };
+  }
+
+  /* ========== 화면: 재해·사고 ========== */
+  var MET = { acc: '재해·사고', near: '아차·제안', stop: '작업중지', vio: '수칙 위반' };
+  function metric() { var m = null; try { m = window.sessionStorage.getItem('hds.an.metric'); } catch (e) { m = null; } return MET[m] ? m : 'acc'; }
+  var BANDS = ['0~4시', '4~8시', '8~12시', '12~16시', '16~20시', '20~24시'];
+  var STOP_BINS = [{ label: '30분 이하', max: 30 }, { label: '1시간', max: 60 }, { label: '2시간', max: 120 }, { label: '4시간', max: 240 }, { label: '4시간 초과', max: Infinity }];
+
+  function incidentsBuild(sc) {
+    var D = A.incidents(sc), Pp = A.prevScope(sc), P = A.incidents(Pp), part = A.partialIndex(sc), t = sc.today;
+    var met = metric(), rowsOf = { acc: D.acc, near: D.near, stop: D.f10, vio: D.f05 }, prevOf = { acc: P.acc, near: P.near, stop: P.f10, vio: P.f05 };
+    var mm = A.byMonth(rowsOf[met], null, sc);
+
+    // 사람·일수
+    var victims = sum(D.injury, function (r) { var n = A.sm(r, 'victims'); if (n == null) { var tt = (facts(r).t || {}).sec_victims; n = tt ? tt.n : 0; } return n; });
+    var lost = A.tsum(D.injury, 'sec_return', 'lostDays'); if (lost == null) lost = A.tsum(D.injury, 'sec_victims', 'vlossDays');
+    var parts = A.tdist(D.injury, 'sec_victims', 'vpart'), vjobs = A.tdist(D.injury, 'sec_victims', 'vjob');
+    var amb = D.f04.filter(function (r) { return A.fv(r, 'hospital') === '119 이송'; }).length;
+
+    // 단계 진행(F04 미종결)
+    var open = D.f04.map(function (r) {
+      var si = stageInfo(r), age = diffDays(A.dateOf(r), t), lim = si.next ? F04_STAGE_DAYS[si.next.id] : null;
+      return { r: r, si: si, age: age, late: lim != null && age > lim };
+    }).filter(function (x) { return !x.si.closed; }).sort(function (a, b) { return (b.late - a.late) || (b.age - a.age); });
+    var stageCount = {}; D.f04.forEach(function (r) { var si = stageInfo(r); var l = si.closed ? '종결' : si.label; stageCount[l] = (stageCount[l] || 0) + 1; });
+
+    // 작업중지 시간
+    var durs = D.f10.map(function (r) { return A.minutes(A.fv(r, 'stopDuration')); });
+    var bins = STOP_BINS.map(function () { return 0; }), unresumed = 0;
+    D.f10.forEach(function (r, i) {
+      var d = durs[i];
+      if (d == null) { unresumed++; return; }
+      for (var j = 0; j < STOP_BINS.length; j++) if (d <= STOP_BINS[j].max) { bins[j]++; break; }
+    });
+    var medStop = median(durs);
+
+    // 위반 반복 사업장
+    var vioSite = {}; D.f05.forEach(function (r) { vioSite[r.site] = (vioSite[r.site] || 0) + 1; });
+    var repeat = Object.keys(vioSite).filter(function (id) { return vioSite[id] >= 2; }).sort(function (a, b) { return vioSite[b] - vioSite[a]; });
+
+    // 시간대 × 요일(F04 전체)
+    var grid = BANDS.map(function () { return [0, 0, 0, 0, 0, 0, 0]; }), noTime = 0;
+    D.f04.forEach(function (r) {
+      var at = A.fv(r, 'occurredAt'), tm = timeOf(at), dw = dowOf(A.dateOf(r));
+      if (!tm || dw == null) { noTime++; return; }
+      grid[Math.min(5, Math.floor(tm.h / 4))][dw]++;
+    });
+
+    // F04 분포(재해·사고와 아차를 나눠서)
+    var split2 = function (id) {
+      var a = A.dist(D.acc, id), b = A.dist(D.nm04, id), keys = {};
+      Object.keys(a).concat(Object.keys(b)).forEach(function (x) { keys[x] = 1; });
+      return Object.keys(keys).map(function (x) { return { label: x, parts: [a[x] || 0, b[x] || 0] }; });
+    };
+    var types = split2('accType'), agents = split2('agent'), areas = split2('area'), jobs = split2('job');
+
+    // F02 · F05 · F10 분포
+    var f02kind = A.top(A.dist(D.f02, 'kind'));
+    var decided = D.f02.filter(function (r) { return A.fv(r, 'decision'); }), adopted = decided.filter(function (r) { var d = A.fv(r, 'decision'); return d === '채택' || d === '일부 채택'; });
+    var replied = D.f02.filter(function (r) { return A.fv(r, 'replyAt'); }).length;
+    var vtypes = A.top(A.dist(D.f05, 'vtype'), 5);
+    var hz = A.top(A.dist(D.f10, 'hazardTypes'), 4);
+    var follow = sum(D.f10, function (r) { return A.sm(r, 'measures'); });
+    var raNeed = D.f10.filter(function (r) { return /^수시/.test(String(A.fv(r, 'raNeed') || '')); }).length;
+    var hold = D.f10.filter(function (r) { return /보류/.test(String(A.fv(r, 'resumeType') || '')); }).length;
+
+    // 발견 문장(제목 줄): facts 로 계산되는 것만
+    var sub, topAcc = A.top(A.dist(D.acc, 'accType'), 1)[0];
+    if (topAcc && D.acc.length >= 3 && topAcc.value / D.acc.length >= 0.3) {
+      var same = D.acc.filter(function (r) { return A.fv(r, 'accType') === topAcc.label; });
+      var where = A.top(A.dist(same, 'area'), 1)[0], when = null;
+      var bandCount = [0, 0, 0, 0, 0, 0]; same.forEach(function (r) { var tm = timeOf(A.fv(r, 'occurredAt')); if (tm) bandCount[Math.min(5, Math.floor(tm.h / 4))]++; });
+      var bmax = Math.max.apply(null, bandCount); if (bmax >= 2 && bmax / same.length >= 0.5) when = BANDS[bandCount.indexOf(bmax)];
+      sub = josa(esc(short(topAcc.label)), '이/가') + ' 재해·사고의 ' + pctTxt(topAcc.value / D.acc.length, 0) + '(' + num(D.acc.length) + '건 중 ' + num(topAcc.value) + '건)'
+        + (where && where.value >= 2 && where.value / same.length >= 0.5 ? '이고 그중 ' + num(where.value) + '건이 ' + esc(short(where.label)) + '에서' + (when ? ', ' + num(bmax) + '건이 ' + esc(when) + '에' : '') + ' 났습니다.' : '입니다.');
+    } else if (D.acc.length) {
+      sub = esc(sc.periodLabel) + ' 재해·사고 ' + num(D.acc.length) + '건: ' + topText(A.top(A.dist(D.acc, 'accType'), 3)) + (open.filter(function (x) { return x.late; }).length ? ' · 단계 보고 기한경과 ' + num(open.filter(function (x) { return x.late; }).length) + '건' : '') + '.';
+    } else {
+      sub = esc(sc.periodLabel) + ' 재해·사고 0건 — 아차·제안 ' + num(D.near.length) + '건, 작업중지 ' + num(D.f10.length) + '건, 수칙 위반 ' + num(D.f05.length) + '건이 보고됐습니다.';
+    }
+
+    var lateN = open.filter(function (x) { return x.late; }).length;
+    var html = kpis([
+      { label: '재해·사고', value: num(D.acc.length), unit: '건', lead: true, sub: '재해 ' + num(D.injury.length) + ' · 무상해 ' + num(D.noInj.length) + '<br>' + delta(D.acc.length, P.acc.length, Pp.periodLabel, '건', 'down') },
+      { label: '재해자', value: num(victims), unit: '명', sub: lost == null ? '휴업일수 —(민감정보 비집계)' : '휴업일수 합 ' + num(lost) + '일' },
+      { label: '아차·제안', value: num(D.near.length), unit: '건', sub: '아차 ' + num(D.nearMiss.length) + ' · 제안·발굴·의견 ' + num(D.proposals.length) },
+      { label: '작업중지', value: num(D.f10.length), unit: '건', sub: medStop == null ? '중지 시간 —' : '중지~재개 중앙값 ' + num(medStop) + '분' },
+      { label: '안전수칙 위반', value: num(D.f05.length), unit: '건', sub: repeat.length ? '<span class="t-warn">2건 이상 사업장 ' + num(repeat.length) + '곳</span>' : '반복 사업장 0곳' },
+      { label: '단계 진행 중', value: num(open.length), unit: '건', sub: lateN ? '<span class="t-neg">단계 기한경과 ' + num(lateN) + '건</span>' : '단계 기한경과 0건' }
+    ]);
+
+    var segHtml = '<div class="seg an-seg" role="group" aria-label="지표">' + Object.keys(MET).map(function (m) {
+      return '<button type="button" class="' + (m === met ? 'on' : '') + '" aria-pressed="' + (m === met) + '" data-act="an.metric" data-v="' + m + '">' + MET[m] + '</button>';
+    }).join('') + '</div>';
+    var curN = rowsOf[met].length, prevN = prevOf[met].length;
+
+    var recent = D.f04.slice().sort(function (a, b) { return String(A.fv(b, 'occurredAt') || A.dateOf(b)).localeCompare(String(A.fv(a, 'occurredAt') || A.dateOf(a))); }).slice(0, 10);
+    var kindTone = { '재해': 'neg', '무상해': 'warn', '아차사고': 'neu' };
+    var recentHtml = recent.length ? '<div class="tbl-wrap"><table class="tbl an-tbl"><thead><tr><th>발생 일시</th><th>사업장</th><th>구분</th><th>재해형태</th><th>기인물</th><th>장소</th><th>진행</th></tr></thead><tbody>'
+      + recent.map(function (r) {
+        var si = stageInfo(r), at = String(A.fv(r, 'occurredAt') || A.dateOf(r)).replace('T', ' ').slice(0, 16);
+        return '<tr class="click" data-href="' + esc(recHref(r)) + '"><td class="num nowrap" data-label="발생 일시">' + esc(at) + '</td>'
+          + '<td data-label="사업장">' + esc(siteName(r.site)) + '</td>'
+          + '<td data-label="구분">' + pill(A.fv(r, 'kind') || '—', kindTone[A.fv(r, 'kind')] || 'neu') + '</td>'
+          + '<td data-label="재해형태">' + esc(short(A.fv(r, 'accType')) || '—') + '</td>'
+          + '<td data-label="기인물">' + esc(short(A.fv(r, 'agent')) || '—') + '</td>'
+          + '<td data-label="장소">' + esc(short(A.fv(r, 'area')) || '—') + '</td>'
+          + '<td data-label="진행">' + (si.closed ? pill('종결', 'pos') : pill(si.label + ' 보고', 'acc')) + '</td></tr>';
+      }).join('') + '</tbody></table></div>' : empty('이 범위에 재해·사고 보고(F04)가 없습니다.');
+
+    var openHtml = open.length ? '<ul class="list an-list">' + open.slice(0, 5).map(function (x) {
+      var r = x.r;
+      return '<li class="li click" data-href="' + esc(recHref(r)) + '"><div class="li-main"><div class="li-title">' + esc(siteName(r.site)) + ' · ' + esc(A.fv(r, 'kind') || 'F04') + '</div>'
+        + '<div class="li-sub">' + esc(x.si.label) + ' 보고 후 · 다음 ' + esc(x.si.nextLabel || '—') + '</div></div>'
+        + '<div class="li-side">' + pill(num(x.age) + '일째', x.late ? 'neg' : 'neu') + '</div></li>';
+    }).join('') + '</ul>' : empty('단계 보고가 남은 재해·사고 보고가 없습니다.');
+    var stageLine = Object.keys(stageCount).map(function (k) { return esc(k) + ' ' + num(stageCount[k]); }).join(' · ');
+
+    var victimBody = D.injury.length
+      ? '<dl class="kv an-kv"><div><dt>재해자</dt><dd class="num">' + num(victims) + '명</dd></div>'
+        + '<div><dt>119 이송</dt><dd class="num">' + num(amb) + '건</dd></div>'
+        + '<div><dt>휴업일수 합</dt><dd class="num">' + (lost == null ? '<span class="muted">—</span>' : num(lost) + '일') + '</dd></div></dl>'
+        + (parts ? '<h3 class="an-h3">부상 부위</h3>' + chartBox('an-vpart') : (vjobs ? '<h3 class="an-h3">재해자 직무</h3>' + chartBox('an-vjob') : ''))
+        + (parts ? '' : '<p class="faint an-note">부상 부위·휴업일수는 민감정보라 분석에 넣지 않습니다. 기록 상세에서 확인하세요.</p>')
+      : empty('이 범위에 재해(부상) 보고가 없습니다.');
+
+    var stopBody = D.f10.length
+      ? (hz.length ? chartBox('an-hz') : '')
+        + '<h3 class="an-h3">중지~재개 시간</h3>' + chartBox('an-stopdur', 'an-chart-sm')
+        + '<dl class="kv an-kv"><div><dt>재개 전·기록 없음</dt><dd class="num">' + num(unresumed) + '건</dd></div><div><dt>재개 보류</dt><dd class="num">' + num(hold) + '건</dd></div>'
+        + '<div><dt>후속 조치 등록</dt><dd class="num">' + num(follow) + '건</dd></div><div><dt>수시 위험성평가 필요</dt><dd class="num">' + num(raNeed) + '건</dd></div></dl>'
+      : empty('이 범위에 작업중지권 행사(F10)가 없습니다.');
+
+    var f02Body = D.f02.length
+      ? chartBox('an-f02kind')
+        + '<dl class="kv an-kv"><div><dt>채택률</dt><dd class="num">' + (decided.length ? pctTxt(adopted.length / decided.length) + ' <span class="muted">(' + num(adopted.length) + '/' + num(decided.length) + ')</span>' : '<span class="muted">—</span>') + '</dd></div>'
+        + '<div><dt>제보자 회신</dt><dd class="num">' + num(replied) + '/' + num(D.f02.length) + '건</dd></div></dl>'
+        + (A.top(A.dist(D.f02, 'potentialType'), 3).length ? '<p class="muted an-note">이어질 수 있는 사고: ' + topText(A.top(A.dist(D.f02, 'potentialType'), 3)) + '</p>' : '')
+      : empty('이 범위에 소통센터 접수(F02)가 없습니다.');
+
+    var f05Body = D.f05.length
+      ? (vtypes.length ? chartBox('an-vtype') : '')
+        + '<h3 class="an-h3">반복 사업장(2건 이상)</h3>'
+        + (repeat.length ? '<ul class="list an-list">' + repeat.slice(0, 4).map(function (id) {
+          return '<li class="li click" data-href="#/sites/' + esc(encodeURIComponent(id)) + '"><div class="li-main"><div class="li-title">' + esc(siteName(id)) + '</div></div><div class="li-side num">' + num(vioSite[id]) + '건</div></li>';
+        }).join('') + '</ul>' : '<p class="muted an-note">같은 사업장에서 2건 이상 나온 위반은 없습니다.</p>')
+      : empty('이 범위에 안전수칙 위반 보고(F05)가 없습니다.');
+
+    var html2 = '<div class="grid an-grid">'
+      + panel({ span: 8, title: '월별 ' + MET[met], sub: esc(sc.periodLabel) + ' ' + num(curN) + '건 · ' + esc(Pp.periodLabel) + ' ' + num(prevN) + '건' + (part != null ? ' · 이번 달은 진행 중(옅게)' : ''),
+        actions: segHtml, body: chartBox('an-inc-trend', 'an-chart-lg') })
+      + panel({ span: 4, title: '시간대 × 요일', sub: 'F04 발생 일시 ' + num(D.f04.length - noTime) + '건(아차 포함)' + (noTime ? ' · 시각 없는 ' + num(noTime) + '건 제외' : ''),
+        actions: legendBox('an-lg-heat'), body: D.f04.length - noTime > 0 ? chartBox('an-heat') : empty('발생 일시가 적힌 보고가 없습니다.') })
+      + '</div>'
+      + '<div class="grid an-grid">'
+      + panel({ span: 4, title: '재해형태', sub: 'F04 ' + num(D.f04.length) + '건 · 많은 순 6개', actions: legendBox('an-lg-type'), body: types.length ? chartBox('an-type') : empty('재해형태가 적힌 보고가 없습니다.') })
+      + panel({ span: 4, title: '기인물', sub: '사고를 일으킨 물건·설비 · 많은 순 6개', actions: legendBox('an-lg-agent'), body: agents.length ? chartBox('an-agent') : empty('기인물이 적힌 보고가 없습니다.') })
+      + panel({ span: 4, title: '장소', sub: '장소 구분 · 많은 순 6개', actions: legendBox('an-lg-area'), body: areas.length ? chartBox('an-area') : empty('장소가 적힌 보고가 없습니다.') })
+      + '</div>'
+      + '<div class="grid an-grid align-start">'
+      + panel({ span: 4, title: '관련 직무', sub: 'F04 관련 직무', actions: legendBox('an-lg-job'), body: jobs.length ? chartBox('an-job') : empty('직무가 적힌 보고가 없습니다.') })
+      + panel({ span: 4, title: '재해자', sub: '재해(부상) ' + num(D.injury.length) + '건 기준', body: victimBody })
+      + panel({ span: 4, title: '단계 진행', sub: stageLine || 'F04 보고 없음', body: openHtml, foot: open.length > 5 ? '단계가 남은 보고 ' + num(open.length) + '건 중 오래된 5건' : '' })
+      + '</div>'
+      + '<div class="grid an-grid align-start">'
+      + panel({ span: 4, title: '아차·제안 (F02)', sub: '구분별 ' + num(D.f02.length) + '건' + (D.nm04.length ? ' · F04 아차 ' + num(D.nm04.length) + '건 별도' : ''), body: f02Body })
+      + panel({ span: 4, title: '안전수칙 위반 (F05)', sub: '위반 유형(복수 선택) · ' + num(D.f05.length) + '건', body: f05Body })
+      + panel({ span: 4, title: '작업중지 (F10)', sub: '위험 유형·중지 시간·후속 조치 · ' + num(D.f10.length) + '건', body: stopBody })
+      + '</div>'
+      + '<div class="grid an-grid">'
+      + panel({ span: 12, title: '최근 재해·사고 보고', sub: '발생 일시 순 최근 ' + num(recent.length) + '건 · 줄을 누르면 기록을 엽니다', flush: true, body: recentHtml,
+        actions: '<a class="btn ghost sm" href="#/records?form=F04">기록 조회</a>' })
+      + '</div>';
+
+    return {
+      sub: sub, html: html + html2,
+      after: function (main) {
+        var Ch = C(); if (!Ch) { noCharts(byId(main, 'an-inc-trend')); return; }
+        var notes = [], pk = null;
+        mm.forEach(function (m, i) { if (m.value > 0 && (!pk || m.value > pk.value)) pk = { i: i, value: m.value, m: m }; });
+        if (pk && pk.value >= 2 && pk.value >= (curN / Math.max(1, mm.length)) * 1.5) {
+          var key = met === 'acc' || met === 'near' ? 'accType' : met === 'vio' ? 'vtype' : 'hazardTypes';
+          var kk = met === 'near' ? 'potentialType' : key;
+          var tp = A.top(A.dist(pk.m.rows, kk), 1)[0];
+          notes.push({ at: pk.i, label: pk.m.label + ' ' + pk.value + '건' + (tp && tp.value > 1 ? ' · ' + short(tp.label) + ' ' + tp.value + '건' : ''), short: pk.value + '건' });
+        }
+        Ch.bars(byId(main, 'an-inc-trend'), { labels: mm.map(function (m) { return m.label; }), values: mm.map(function (m) { return m.value; }),
+          dim: part != null ? [part] : [], annotations: notes, format: Ch.fmt.int });
+        if (byId(main, 'an-heat')) Ch.heat(byId(main, 'an-heat'), { rows: BANDS, cols: DOW, values: grid, unit: '건', legend: byId(main, 'an-lg-heat') });
+        var pp = ['재해·사고', '아차'];
+        if (types.length) Ch.hbars(byId(main, 'an-type'), types.map(function (x) { return { label: short(x.label), parts: x.parts }; }), { parts: pp, limit: 6, unit: '건', legend: byId(main, 'an-lg-type') });
+        if (agents.length) Ch.hbars(byId(main, 'an-agent'), agents.map(function (x) { return { label: short(x.label), parts: x.parts }; }), { parts: pp, limit: 6, unit: '건', legend: byId(main, 'an-lg-agent') });
+        if (areas.length) Ch.hbars(byId(main, 'an-area'), areas.map(function (x) { return { label: short(x.label), parts: x.parts }; }), { parts: pp, limit: 6, unit: '건', legend: byId(main, 'an-lg-area') });
+        if (jobs.length) Ch.hbars(byId(main, 'an-job'), jobs.map(function (x) { return { label: x.label, parts: x.parts }; }), { parts: pp, limit: 6, unit: '건', legend: byId(main, 'an-lg-job') });
+        if (byId(main, 'an-vpart')) Ch.hbars(byId(main, 'an-vpart'), A.top(parts, 5), { unit: '명' });
+        if (byId(main, 'an-vjob')) Ch.hbars(byId(main, 'an-vjob'), A.top(vjobs, 5), { unit: '명' });
+        if (byId(main, 'an-f02kind')) Ch.hbars(byId(main, 'an-f02kind'), f02kind, { unit: '건', highlight: function (r) { return r.label === '아차사고'; } });
+        if (byId(main, 'an-vtype')) Ch.hbars(byId(main, 'an-vtype'), vtypes.map(function (x) { return { label: short(x.label), value: x.value }; }), { unit: '건' });
+        if (byId(main, 'an-hz')) Ch.hbars(byId(main, 'an-hz'), hz.map(function (x) { return { label: short(x.label), value: x.value }; }), { unit: '건' });
+        if (byId(main, 'an-stopdur')) Ch.bars(byId(main, 'an-stopdur'), { labels: STOP_BINS.map(function (b) { return b.label; }), values: bins, height: 150, format: Ch.fmt.int });
+      }
+    };
+  }
+
+  /* ========== 화면: 위험성평가 ========== */
+  var GRADES = ['높음', '보통', '낮음'];
+  function gradesOf(r) {
+    var t = (facts(r).t || {}).sec_hazards || {}, c = t.c || {};
+    var total = t.n != null ? +t.n || 0 : +A.sm(r, 'hzTotal') || 0;
+    var pick = function (dist) { var o = { '높음': 0, '보통': 0, '낮음': 0 }; GRADES.forEach(function (g) { o[g] = +dist[g] || 0; }); o['미산정'] = Math.max(0, total - o['높음'] - o['보통'] - o['낮음']); return o; };
+    var before, after = null, afterOpen = null;
+    if (c.grade) before = pick(c.grade);
+    else { var hi = +A.sm(r, 'hzHigh') || 0, mid = +A.sm(r, 'hzMid') || 0; before = { '높음': hi, '보통': mid, '낮음': Math.max(0, total - hi - mid), '미산정': 0 }; }
+    if (c.gradeAfter) after = pick(c.gradeAfter);
+    else { var op = A.sm(r, 'hzAfterOpen'); if (op != null && op !== '') afterOpen = +op || 0; }
+    return { total: total, before: before, after: after, afterOpen: afterOpen, c: c };
+  }
+  function latestBySite(rows) {
+    var out = {};
+    rows.forEach(function (r) {
+      var cur = out[r.site], d = A.dateOf(r);
+      if (!cur || d > A.dateOf(cur) || (d === A.dateOf(cur) && String(r.updatedAt || '') > String(cur.updatedAt || ''))) out[r.site] = r;
+    });
+    return out;
+  }
+  // 사업장별 위험성평가 상태: 정기 = 직전 평가일 + 1년(FD F01 dueRule yearly), 최초 = 개설 후 1개월 안 착수
+  function raStatus(site, latest, t) {
+    if (latest) {
+      var ev = A.dateOf(latest), due = addMonths(ev, 12), left = diffDays(t, due);
+      return { ev: ev, due: due, left: left, state: left < 0 ? 'over' : left <= 30 ? 'soon' : 'ok',
+        label: left < 0 ? num(-left) + '일 경과' : left <= 30 ? 'D-' + left : '정상', tone: left < 0 ? 'neg' : left <= 30 ? 'warn' : '' };
+    }
+    if (!isDay(site.openDate)) return { ev: null, due: null, left: null, state: 'none', label: '미실시', tone: 'neg' };
+    var d0 = addMonths(site.openDate, 1), l0 = diffDays(t, d0);
+    return { ev: null, due: d0, left: l0, state: l0 < 0 ? 'none' : 'first', label: l0 < 0 ? '미실시' : '최초 평가 대기', tone: l0 < 0 ? 'neg' : 'warn' };
+  }
+
+  function riskBuild(sc) {
+    var t = sc.today, sset = toSet(sc.sites);
+    var sites = allSites().filter(function (s) { return sset[s.id] && s.status !== '종료'; });
+    var allF01 = A.rows('F01', { from: '0000-01-01', to: t, sites: sc.sites, all: sc.all });
+    var latest = latestBySite(allF01);
+    var inPeriod = A.rows('F01', sc), f01b = A.rows('F01B', sc);
+    var f01bYear = A.rows('F01B', { from: addMonths(t, -12), to: t, sites: sc.sites, all: sc.all });
+    var meetBySite = {}; f01bYear.forEach(function (r) { meetBySite[r.site] = (meetBySite[r.site] || 0) + 1; });
+
+    var table = sites.map(function (s) {
+      var need = requiredForms(s, t).indexOf('F01') >= 0, r = latest[s.id] || null, st = raStatus(s, r, t), g = r ? gradesOf(r) : null;
+      return { s: s, r: r, need: need, st: st, g: g, type: r ? A.fv(r, 'evalType') || '—' : '—', meets: meetBySite[s.id] || 0, si: r ? stageInfo(r) : null };
+    });
+    var sev = { none: 0, over: 1, soon: 2, first: 3, ok: 4 };
+    table.sort(function (a, b) { return (a.need === b.need ? 0 : a.need ? -1 : 1) || sev[a.st.state] - sev[b.st.state] || String(a.st.due || '').localeCompare(String(b.st.due || '')); });
+    var late = table.filter(function (x) { return x.need && (x.st.state === 'over' || x.st.state === 'none'); });
+    var soon = table.filter(function (x) { return x.need && (x.st.state === 'soon' || x.st.state === 'first'); });
+
+    // 현재 위험요인(사업장별 최신 평가 합)
+    var cur = table.filter(function (x) { return x.r; }).map(function (x) { return x.r; });
+    var tot = { '높음': 0, '보통': 0, '낮음': 0, '미산정': 0 }, aft = { '높음': 0, '보통': 0, '낮음': 0, '미산정': 0 }, hazards = 0, afterFull = cur.length > 0, afterOpen = 0;
+    cur.forEach(function (r) {
+      var g = gradesOf(r); hazards += g.total;
+      Object.keys(tot).forEach(function (k) { tot[k] += g.before[k] || 0; });
+      if (g.after) Object.keys(aft).forEach(function (k) { aft[k] += g.after[k] || 0; });
+      else afterFull = false;
+      afterOpen += g.after ? (g.after['높음'] + g.after['보통']) : (g.afterOpen || 0);
+    });
+    var accTypes = A.top(A.tdist(cur, 'sec_hazards', 'accType') || {}, 8);
+    var jobs = A.top(A.tdist(cur, 'sec_hazards', 'job') || {}, 7);
+    var origins = A.top(A.tdist(cur, 'sec_hazards', 'origin') || {}, 4);
+    var types = A.dist(inPeriod, 'evalType'), adhoc = A.top(A.dist(inPeriod.filter(function (r) { return A.fv(r, 'evalType') === '수시'; }), 'adhocReason'), 6);
+    var noMeet = table.filter(function (x) { return x.r && !x.meets; }).length;
+
+    var sub;
+    if (late.length) sub = '위험성평가 기한이 지났거나 아직 안 한 사업장 ' + num(late.length) + '곳' + (tot['높음'] ? ' · 현재 높음 위험요인 ' + num(tot['높음']) + '개' : '') + (accTypes[0] ? ' · 위험요인 1위 ' + esc(short(accTypes[0].label)) + '(' + num(accTypes[0].value) + '개)' : '') + '.';
+    else if (hazards) sub = '모든 사업장이 기한 안에 평가했습니다 · 위험요인 ' + num(hazards) + '개 중 감소 전 높음 ' + num(tot['높음']) + '개, 감소 후 보통 이상 ' + num(afterOpen) + '개.';
+    else sub = '평가 기록이 아직 없습니다 · 대상 사업장 ' + num(table.filter(function (x) { return x.need; }).length) + '곳.';
+
+    var reqHref = '#/requests/new?form=F01&sites=' + late.map(function (x) { return encodeURIComponent(x.s.id); }).join(',');
+    var k = kpis([
+      { label: '기한경과·미실시', value: num(late.length), unit: '곳', lead: true, sub: late.length ? '<span class="t-neg">요청을 보내 주세요</span> · 30일 안 기한 ' + num(soon.length) + '곳' : '30일 안 기한 ' + num(soon.length) + '곳' },
+      { label: '유해·위험요인', value: num(hazards), unit: '개', sub: '사업장 ' + num(cur.length) + '곳 최신 평가 합계' },
+      { label: '감소 전 높음', value: num(tot['높음']), unit: '개', sub: '감소 후 보통 이상 ' + num(afterOpen) + '개' },
+      { label: '기간 내 평가', value: num(inPeriod.length), unit: '건', sub: ['최초', '정기', '수시'].map(function (x) { return x + ' ' + num(types[x] || 0); }).join(' · ') },
+      { label: '근로자 참여 회의', value: num(f01b.length), unit: '건', sub: noMeet ? '<span class="t-warn">최근 1년 회의 없는 사업장 ' + num(noMeet) + '곳</span>' : '최근 1년 회의 없는 사업장 0곳' }
+    ]);
+
+    var splitNames = afterFull ? ['높음', '보통', '낮음', '미산정'] : ['보통 이상', '낮음·미산정'];
+    var splitRows = afterFull
+      ? [{ label: '감소 전', values: [tot['높음'], tot['보통'], tot['낮음'], tot['미산정']] }, { label: '감소 후', values: [aft['높음'], aft['보통'], aft['낮음'], aft['미산정']] }]
+      : [{ label: '감소 전', sub: '높음 ' + num(tot['높음']) + ' · 보통 ' + num(tot['보통']), values: [tot['높음'] + tot['보통'], tot['낮음'] + tot['미산정']] }, { label: '감소 후', values: [afterOpen, Math.max(0, hazards - afterOpen)] }];
+
+    var lateBody = late.length
+      ? '<ul class="list an-list">' + late.slice(0, 6).map(function (x) {
+        return '<li class="li click" data-href="#/sites/' + esc(encodeURIComponent(x.s.id)) + '"><div class="li-main"><div class="li-title">' + esc(x.s.name || x.s.id) + '</div>'
+          + '<div class="li-sub num">' + (x.st.ev ? '최근 평가 ' + esc(x.st.ev) + ' · 기한 ' + esc(x.st.due) : '평가 기록 없음' + (x.st.due ? ' · 최초 기한 ' + esc(x.st.due) : '')) + '</div></div>'
+          + '<div class="li-side">' + pill(x.st.label, 'neg') + '</div></li>';
+      }).join('') + '</ul>' + (late.length > 6 ? '<p class="muted an-note">외 ' + num(late.length - 6) + '곳은 아래 표에 있습니다.</p>' : '')
+      : (soon.length ? '<p class="muted an-note">기한이 지난 사업장은 없습니다. 30일 안에 기한이 오는 곳:</p><ul class="list an-list">' + soon.slice(0, 5).map(function (x) {
+        return '<li class="li"><div class="li-main"><div class="li-title">' + esc(x.s.name || x.s.id) + '</div><div class="li-sub num">기한 ' + esc(x.st.due || '—') + '</div></div><div class="li-side">' + pill(x.st.label, 'warn') + '</div></li>';
+      }).join('') + '</ul>' : empty('기한이 지났거나 30일 안에 오는 사업장이 없습니다.'));
+
+    var tbl = table.length ? '<div class="tbl-wrap"><table class="tbl an-tbl"><thead><tr><th>사업장</th><th>최근 평가</th><th>구분</th><th>진행</th><th class="num">위험요인</th><th class="num">높음</th><th class="num">참여 회의(1년)</th><th>다음 기한</th><th>상태</th></tr></thead><tbody>'
+      + table.map(function (x) {
+        var href = x.r ? recHref(x.r) : '#/sites/' + encodeURIComponent(x.s.id);
+        return '<tr class="click" data-href="' + esc(href) + '"><td data-label="사업장"><b class="an-strong">' + esc(x.s.name || x.s.id) + '</b> <span class="muted mono">' + esc(x.s.id) + '</span></td>'
+          + '<td class="num" data-label="최근 평가">' + (x.st.ev ? esc(x.st.ev) : '<span class="muted">—</span>') + '</td>'
+          + '<td data-label="구분">' + esc(x.type) + '</td>'
+          + '<td data-label="진행">' + (x.si ? (x.si.closed ? '완료' : esc(x.si.label)) : '<span class="muted">—</span>') + '</td>'
+          + '<td class="num" data-label="위험요인">' + (x.g ? num(x.g.total) : '<span class="muted">—</span>') + '</td>'
+          + '<td class="num" data-label="높음">' + (x.g ? num(x.g.before['높음']) : '<span class="muted">—</span>') + '</td>'
+          + '<td class="num" data-label="참여 회의">' + num(x.meets) + '</td>'
+          + '<td class="num" data-label="다음 기한">' + (x.st.due ? esc(x.st.due) : '<span class="muted">—</span>') + '</td>'
+          + '<td data-label="상태">' + (!x.need ? '<span class="muted">필수 아님</span>' : x.st.tone ? pill(x.st.label, x.st.tone) : '<span class="muted">' + esc(x.st.label) + '</span>') + '</td></tr>';
+      }).join('') + '</tbody></table></div>' : empty('이 범위에 운영 중인 사업장이 없습니다.');
+
+    var html = k
+      + '<div class="grid an-grid">'
+      + panel({ span: 7, title: '위험성 등급 — 감소 전 → 감소 후', sub: '사업장별 최신 평가 ' + num(cur.length) + '건의 위험요인 ' + num(hazards) + '개(기간과 무관)',
+        actions: legendBox('an-lg-grade'), body: hazards ? chartBox('an-grade') + (origins.length ? '<p class="muted an-note">위험요인 출처: ' + topText(origins) + '</p>' : '') : empty('위험요인이 기록된 평가가 없습니다.') })
+      + panel({ span: 5, title: '기한경과·미실시 사업장', sub: '정기 평가는 직전 평가일 + 1년, 최초 평가는 개설 후 1개월',
+        actions: late.length ? '<a class="btn primary sm" href="' + esc(reqHref) + '">요청 만들기 (' + num(late.length) + '곳)</a>' : '', body: lateBody })
+      + '</div>'
+      + '<div class="grid an-grid">'
+      + panel({ span: 4, title: '사고유형별 위험요인', sub: '많은 순 8개', body: accTypes.length ? chartBox('an-ra-type') : empty('사고유형이 적힌 위험요인이 없습니다.') })
+      + panel({ span: 4, title: '직무별 위험요인', sub: '공통 포함', body: jobs.length ? chartBox('an-ra-job') : empty('직무가 적힌 위험요인이 없습니다.') })
+      + panel({ span: 4, title: '수시 평가 사유', sub: esc(sc.periodLabel) + ' 수시 평가 ' + num(types['수시'] || 0) + '건', body: adhoc.length ? chartBox('an-ra-adhoc') : empty('이 기간에 수시 평가가 없습니다.') })
+      + '</div>'
+      + '<div class="grid an-grid">'
+      + panel({ span: 12, title: '사업장별 평가 현황', sub: '최근 평가와 다음 기한 · 줄을 누르면 최근 평가 기록(없으면 사업장)을 엽니다', flush: true, body: tbl })
+      + '</div>';
+
+    return {
+      sub: sub, html: html,
+      after: function (main) {
+        var Ch = C(); if (!Ch) { noCharts(byId(main, 'an-grade')); return; }
+        if (byId(main, 'an-grade')) Ch.split(byId(main, 'an-grade'), splitRows, { names: splitNames, colours: afterFull ? ['--chart-1', '--chart-2', '--chart-muted', '--grid'] : ['--chart-1', '--chart-muted'], unit: '개', legend: byId(main, 'an-lg-grade') });
+        if (byId(main, 'an-ra-type')) Ch.barList(byId(main, 'an-ra-type'), accTypes.map(function (x) { return { label: short(x.label), value: x.value }; }));
+        if (byId(main, 'an-ra-job')) Ch.hbars(byId(main, 'an-ra-job'), jobs, { unit: '개' });
+        if (byId(main, 'an-ra-adhoc')) Ch.hbars(byId(main, 'an-ra-adhoc'), adhoc.map(function (x) { return { label: short(x.label), value: x.value }; }), { unit: '건' });
+      }
+    };
+  }
+
+  /* ---------- 액션·화면 등록 ---------- */
+  var ACTIONS = {
+    'an.scope': function (el) {
+      if (!el || el.tagName === 'SELECT' || el.tagName === 'INPUT') return; // 선택·날짜는 change 에서
+      A.setScope(el.getAttribute('data-k'), el.getAttribute('data-v'));
+    },
+    'an.metric': function (el) {
+      var v = el && el.getAttribute('data-v'); if (!MET[v]) return;
+      try { window.sessionStorage.setItem('hds.an.metric', v); } catch (e) { /* 무시 */ }
+      A.rerender();
+    },
+    'an.print': function () {
+      var h1 = document.querySelector('.an-title h1');
+      A.printReport(h1 ? h1.textContent : '분석 보고서');
+    },
+    'an.retry': function () { A.rerender(); }
+  };
+  function register() { App.actions = App.actions || {}; Object.keys(ACTIONS).forEach(function (k) { App.actions[k] = ACTIONS[k]; }); }
+  register();
+  document.addEventListener('change', function (ev) {
+    var el = ev.target;
+    if (!el || !el.getAttribute || el.getAttribute('data-act') !== 'an.scope') return;
+    if (el.tagName !== 'SELECT' && el.tagName !== 'INPUT') return;
+    A.setScope(el.getAttribute('data-k'), el.value);
+  });
+  function reg(name, def) {
+    if (typeof App.view === 'function') App.view(name, def);
+    else { App.views = App.views || {}; App.views[name] = def; }
+  }
+  reg('hq:analytics', { title: '분석', nav: 'analytics', render: function (main) { A.mount(main, '', overviewBuild); } });
+  reg('hq:analytics/incidents', { title: '분석 · 재해·사고', nav: 'analytics', render: function (main) { A.mount(main, 'incidents', incidentsBuild); } });
+  reg('hq:analytics/risk', { title: '분석 · 위험성평가', nav: 'analytics', render: function (main) { A.mount(main, 'risk', riskBuild); } });
+  // 시험·다른 모듈용(내부 계산을 바깥에서 확인)
+  A._build = { overview: overviewBuild, incidents: incidentsBuild, risk: riskBuild };
 })();
 /* ===== [analytics-a] 끝 ===== */
 /* ===== [analytics-b] 시작 ===== */
+/* 분석(analytics-b): 일일점검 · 교육·훈련 · 조치 이행 · HEC 준비도 · 사업장 비교 · 양식별 자동 분석,
+   App.analytics.insights(scope) / digest(scope) / aiSummary(), 보고서 인쇄.
+   모든 숫자는 클라이언트 색인(App.S.index 의 facts)·조치·사업장에서 계산한다(서버 호출 없음, AI 요약만 api). */
 (function () {
   "use strict";
+  var App = window.App = window.App || {};
+  var AN = App.analytics = App.analytics || {};
+
+  var OPEN = ['등록', '조치중'], DONE = ['완료', '확인'];
+  var HIGH_RISK = ['고소·사다리', '전기', '화기', '밀폐공간'];
+  var WD = ['일', '월', '화', '수', '목', '금', '토'];
+  var JUDGE = { '양호': 'g', '주의': 'w', '불량': 'b', '해당없음': 'na' };
+  var TOPICS = [['', '개요'], ['incidents', '재해·사고'], ['risk', '위험성평가'], ['daily', '일일점검'], ['edu', '교육·훈련'],
+    ['acts', '조치 이행'], ['hec', 'HEC 준비도'], ['sites', '사업장 비교'], ['form', '양식별']];
+  var WEIGHTS = [
+    { key: 'daily', label: '일일점검 제출률', w: 25, how: '범위 안 기대 건수(근무일 × 근무조) 대비 제출 건수' },
+    { key: 'periodic', label: '정기 양식 회수율', w: 20, how: '범위 안 마감이 지난 월간·분기·반기·시즌 필수 양식 중 제출한 비율' },
+    { key: 'acts', label: '조치 기한 관리', w: 15, how: '지금 미결인 조치 중 기한이 지나지 않은 비율(미결이 없으면 100)' },
+    { key: 'risk', label: '위험성평가', w: 10, how: '정기 기한까지 30일 넘게 남음 100 · 30일 안 70 · 기한경과·기록 없음 0' },
+    { key: 'edu', label: '교육·훈련', w: 15, how: '이번 반기 근로자 정기교육 시간 충족률(최대 100)과 비상훈련 실시(100 또는 0)의 평균' },
+    { key: 'hec', label: 'HEC 준비도', w: 15, how: '해당 항목 중 양호 비율. HEC 대상이 아니면 이 항목을 빼고 나머지 가중치로 환산' }
+  ];
+
+  /* ---------- 기본 도구 ---------- */
+  function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function dkey(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function parseD(s) { var m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; }
+  function addDays(s, n) { var d = parseD(s); d.setDate(d.getDate() + n); return dkey(d); }
+  function diff(a, b) { return Math.round((parseD(b) - parseD(a)) / 864e5); }
+  function dateOf(v) { return v ? String(v).slice(0, 10) : ''; }
+  function minS(a, b) { return a < b ? a : b; }
+  function maxS(a, b) { return a > b ? a : b; }
+  function today() { try { if (App.u && App.u.today) { var t = App.u.today(); if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t; } } catch (e) { /* 코어 없음 */ } return dkey(new Date()); }
+  function num(v, d) {
+    if (v == null || v === '' || !isFinite(v)) return '—';
+    d = d || 0;
+    return new Intl.NumberFormat('ko-KR', { minimumFractionDigits: 0, maximumFractionDigits: d }).format(v);
+  }
+  function pct(r, d) { return r == null || !isFinite(r) ? '—' : num(Math.round(r * 1000) / 10, d == null ? 0 : d) + '%'; }
+  function ratio(a, b) { return b > 0 ? a / b : null; }
+  function sum(arr, fn) { return arr.reduce(function (s, x) { var v = Number(fn ? fn(x) : x); return s + (isFinite(v) ? v : 0); }, 0); }
+  function median(arr) { if (!arr.length) return null; var a = arr.slice().sort(function (x, y) { return x - y; }); var m = a.length >> 1; return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; }
+  function trunc(s, n) { s = String(s || ''); return s.length > n ? s.slice(0, n - 1) + '…' : s; }
+  function toSet(arr) { var o = {}; (arr || []).forEach(function (x) { o[x] = 1; }); return o; }
+  function countBy(list, fn) {
+    var o = {};
+    list.forEach(function (x) { [].concat(fn(x)).forEach(function (k) { if (k == null || k === '') return; o[k] = (o[k] || 0) + 1; }); });
+    return o;
+  }
+  function ranked(obj) { return Object.keys(obj).map(function (k) { return { k: k, n: obj[k] }; }).sort(function (a, b) { return b.n - a.n || (a.k < b.k ? -1 : 1); }); }
+  function icon(n) { try { return App.icon ? App.icon(n, 16) : ''; } catch (e) { return ''; } }
+  function S() { return App.S || {}; }
+  function settings() { return S().settings || {}; }
+  function isHQ() { try { return App.isHQ ? App.isHQ() : true; } catch (e) { return true; } }
+  function form(code) {
+    if (App.FORM && App.FORM[code]) return App.FORM[code];
+    var fd = App.FD || {}; var list = fd.forms || [];
+    for (var i = 0; i < list.length; i++) if (list[i].code === code) return list[i];
+    return null;
+  }
+  function forms() { return App.FORMS || ((App.FD || {}).forms) || []; }
+  function allSites() { return S().sites || []; }
+  function activeSites() {
+    try { if (App.activeSites) return App.activeSites(); } catch (e) { /* 아래 */ }
+    return allSites().filter(function (s) { return s.status !== '종료'; });
+  }
+  function siteById(id) { var l = allSites(); for (var i = 0; i < l.length; i++) if (l[i].id === id) return l[i]; return null; }
+  function siteName(id) { var s = siteById(id); return s ? s.name : id; }
+  function go(h) { if (App.go) App.go(h); else location.hash = h; }
+
+  /* ---------- 기간 ---------- */
+  function periodOf(type, date) {
+    var d = parseD(date), y = d.getFullYear(), m = d.getMonth();
+    if (type === 'monthly' || type === 'season') return { key: y + '-' + pad(m + 1), from: dkey(new Date(y, m, 1)), to: dkey(new Date(y, m + 1, 0)), label: y + '년 ' + (m + 1) + '월' };
+    if (type === 'quarterly') { var q = Math.floor(m / 3); return { key: y + '-Q' + (q + 1), from: dkey(new Date(y, q * 3, 1)), to: dkey(new Date(y, q * 3 + 3, 0)), label: y + '년 ' + (q + 1) + '분기' }; }
+    if (type === 'half') { var h = m < 6 ? 0 : 1; return { key: y + '-H' + (h + 1), from: dkey(new Date(y, h * 6, 1)), to: dkey(new Date(y, h * 6 + 6, 0)), label: y + '년 ' + (h ? '하' : '상') + '반기' }; }
+    if (type === 'annual') return { key: String(y), from: y + '-01-01', to: y + '-12-31', label: y + '년' };
+    return { key: date, from: date, to: date, label: date };
+  }
+  function dueOf(def, p) {
+    var r = (def.frequency && def.frequency.dueRule) || {};
+    if (r.kind === 'nextDayTime') return addDays(p.to, 1);
+    if (r.kind === 'monthDay') return addDays(p.to, Number(r.day) || 5);
+    if (r.kind === 'periodEndPlusDays') return addDays(p.to, Number(r.days) || 0);
+    return p.to;
+  }
+  function monthsBetween(from, to) {
+    var out = [], y = +from.slice(0, 4), m = +from.slice(5, 7), ey = +to.slice(0, 4), em = +to.slice(5, 7);
+    while ((y < ey || (y === ey && m <= em)) && out.length < 120) { out.push(y + '-' + pad(m)); m++; if (m > 12) { m = 1; y++; } }
+    return out;
+  }
+  function mLabel(k, all) { var cross = all.length && all[0].slice(0, 4) !== all[all.length - 1].slice(0, 4); return cross ? k.slice(2, 4) + '.' + k.slice(5, 7) : (+k.slice(5, 7)) + '월'; }
+  function endOf(s) { return minS(s.to, today()); }
+  function spanLabel(s) { var n = diff(s.from, s.to) + 1, m = Math.round(n / 30.44); return m >= 1 && Math.abs(n - m * 30.44) <= 5 ? m + '개월' : n + '일'; }
+  function prevScope(s) { var n = diff(s.from, s.to), to = addDays(s.from, -1); return { from: addDays(to, -n), to: to, sites: s.sites, siteObjs: s.siteObjs, label: '직전 ' + spanLabel(s) }; }
+  /* 70일 이하면 주(월요일 시작), 넘으면 월 */
+  function buckets(s) {
+    var end = endOf(s), out = [];
+    if (end < s.from) end = s.from;
+    if (diff(s.from, end) + 1 <= 70) {
+      var w = addDays(s.from, -((parseD(s.from).getDay() + 6) % 7));
+      for (; w <= end; w = addDays(w, 7)) out.push({ key: w, from: maxS(w, s.from), to: minS(addDays(w, 6), end), label: (+w.slice(5, 7)) + '/' + (+w.slice(8, 10)) });
+      return { unit: '주', list: out };
+    }
+    var ms = monthsBetween(s.from, end);
+    ms.forEach(function (k) { var p = periodOf('monthly', k + '-01'); out.push({ key: k, from: maxS(p.from, s.from), to: minS(p.to, end), label: mLabel(k, ms) }); });
+    return { unit: '월', list: out };
+  }
+  function bucketOf(b, date) { for (var i = 0; i < b.list.length; i++) if (date >= b.list[i].from && date <= b.list[i].to) return i; return -1; }
+
+  /* ---------- 범위·기록 ---------- */
+  function scope() {
+    var s = null;
+    try { if (AN.scope) s = AN.scope(); } catch (e) { s = null; }
+    return norm(s);
+  }
+  function norm(s) {
+    var t = today();
+    if (!s || !s.from || !s.to) s = { from: periodOf('monthly', addDays(periodOf('monthly', t).from, -62)).from, to: t, sites: [], label: '최근 3개월' };
+    var act = activeSites();
+    var ids = s.sites && s.sites.length ? s.sites.slice() : act.map(function (x) { return x.id; });
+    var set = toSet(ids);
+    var objs = allSites().filter(function (x) { return set[x.id]; });
+    return { from: s.from, to: s.to, sites: ids, siteObjs: objs, label: s.label || (s.from + ' ~ ' + s.to), all: !(s.sites && s.sites.length) };
+  }
+  function isSub(r) { return !!r && !r.deleted && (r.status === '제출' || r.status === '확인' || !!(r.stageDone && r.stageDone.length)); }
+  function isFull(r) { return !!r && !r.deleted && (r.status === '제출' || r.status === '확인'); }
+  function stageDone(r, st) { return isFull(r) || !!(r && r.stageDone && r.stageDone.indexOf(st) >= 0); }
+  function recs(fn) {
+    if (App.recs) { try { return App.recs(fn); } catch (e) { /* 아래 */ } }
+    var out = [], idx = S().index;
+    if (idx && idx.forEach) idx.forEach(function (r) { if (r && !r.deleted && fn(r)) out.push(r); });
+    return out;
+  }
+  /* 범위 사업장의 제출(단계보고 포함) 기록 — 날짜 무관 */
+  var MEMO = null;   /* 한 번 그리는 동안만 쓰는 조회 캐시(색인 전체 훑기를 줄임) */
+  function memo(fn) { var own = !MEMO; if (own) MEMO = {}; try { return fn(); } finally { if (own) MEMO = null; } }
+  function allRows(codes, s) {
+    codes = [].concat(codes);
+    var key = codes.join(',') + '|' + (s && s.sites ? s.sites.join(',') : '*');
+    if (MEMO && MEMO[key]) return MEMO[key];
+    var fs = toSet(codes), ss = s && s.sites ? toSet(s.sites) : null;
+    var out = recs(function (r) { return fs[r.form] && isSub(r) && (!ss || ss[r.site]); });
+    if (MEMO) MEMO[key] = out;
+    return out;
+  }
+  /* 범위(기간·사업장) 안 기록 — analytics-a 의 rows 를 우선 쓴다 */
+  function rows(codes, s) {
+    codes = [].concat(codes);
+    if (AN.rows) {
+      try { var r = AN.rows(codes, { from: s.from, to: s.to, sites: s.sites, label: s.label }); if (Array.isArray(r)) return r.filter(isSub); } catch (e) { /* 아래 */ }
+    }
+    return allRows(codes, s).filter(function (r) { return r.date >= s.from && r.date <= s.to; });
+  }
+  function bySite(list) { var o = {}; list.forEach(function (r) { (o[r.site] = o[r.site] || []).push(r); }); return o; }
+  function V(r, id) { return r && r.facts && r.facts.v ? r.facts.v[id] : undefined; }
+  function K(r, sec) { return (r && r.facts && r.facts.k && r.facts.k[sec]) || null; }
+  function Tb(r, id) { return (r && r.facts && r.facts.t && r.facts.t[id]) || null; }
+  function nV(r, id) { var v = V(r, id); if (v === '' || v == null || typeof v === 'boolean') return null; var n = Number(v); return isFinite(n) ? n : null; }
+  function peopleN(r, id) { var n = V(r, id + '#n'); if (n != null && n !== '' && isFinite(n)) return Number(n); var v = V(r, id); return Array.isArray(v) ? v.length : null; }
+  function judge(v) { return v && typeof v === 'object' ? v.r : v; }
+  function minutesOf(t) { var m = String(t || '').match(/^(\d{1,2}):(\d{2})/); return m ? +m[1] * 60 + +m[2] : null; }
+
+  /* ---------- 조치 ---------- */
+  function actsList(s) {
+    var list = null;
+    if (App.acts) { try { list = App.acts(function () { return true; }); } catch (e) { list = null; } }
+    if (!list) { list = []; var m = S().acts; if (m && m.forEach) m.forEach(function (a) { list.push(a); }); }
+    var ss = s ? toSet(s.sites) : null;
+    return list.filter(function (a) { return a && !a.deleted && (!ss || ss[a.site]); });
+  }
+  function isOpen(a) { return OPEN.indexOf(a.status) >= 0; }
+  function isOverdue(a, t) { return isOpen(a) && a.due && a.due < (t || today()); }
+  function isClosed(a) { return DONE.indexOf(a.status) >= 0; }
+
+  /* ---------- 일일점검(F07) ---------- */
+  function shiftsOf(site) { return site && site.shifts && site.shifts.length ? site.shifts : ['']; }
+  function dailyStats(s) {
+    var end = minS(s.to, addDays(today(), -1)), due = settings().dailyDue || '10:00';
+    var R = bySite(rows('F07', s)), wdMiss = [0, 0, 0, 0, 0, 0, 0], wdExp = [0, 0, 0, 0, 0, 0, 0];
+    var list = s.siteObjs.map(function (site) {
+      var from = site.openDate && site.openDate > s.from ? site.openDate : s.from;
+      var sh = shiftsOf(site), got = {}, days = {}, exp = 0, done = 0, ontime = 0;
+      (R[site.id] || []).forEach(function (r) { if (r.date >= from && r.date <= end) (got[r.date] = got[r.date] || []).push(r); });
+      if (from <= end) {
+        for (var d = from; d <= end; d = addDays(d, 1)) {
+          var seen = {}, n = 0, ot = 0, lim = addDays(d, 1) + 'T' + due + ':00';
+          (got[d] || []).slice().sort(function (a, b) { return String(a.submittedAt || a.updatedAt) < String(b.submittedAt || b.updatedAt) ? -1 : 1; })
+            .forEach(function (r) {
+              var key = sh.length > 1 ? (r.shift || r.id) : 'x';
+              if (seen[key] || n >= sh.length) return;
+              seen[key] = 1; n++;
+              if (String(r.submittedAt || r.updatedAt || '') <= lim) ot++;
+            });
+          exp += sh.length; done += n; ontime += ot;
+          days[d] = { done: n, total: sh.length };
+          var w = parseD(d).getDay(); wdExp[w] += sh.length; wdMiss[w] += sh.length - n;
+        }
+      }
+      return { id: site.id, name: site.name, shifts: sh, exp: exp, done: done, miss: exp - done, rate: ratio(done, exp), ontime: ontime, ontimeRate: ratio(ontime, done), days: days, from: from, end: end };
+    });
+    var exp = sum(list, function (x) { return x.exp; }), done = sum(list, function (x) { return x.done; }), ontime = sum(list, function (x) { return x.ontime; });
+    return { sites: list, exp: exp, done: done, miss: exp - done, rate: ratio(done, exp), ontime: ontime, ontimeRate: ratio(ontime, done), wdMiss: wdMiss, wdExp: wdExp, end: end };
+  }
+  function checkTally(list, secId) {
+    var t = {};
+    list.forEach(function (r) {
+      var k = K(r, secId); if (!k) return;
+      Object.keys(k).forEach(function (code) {
+        var j = JUDGE[judge(k[code])]; if (!j) return;
+        var o = t[code] || (t[code] = { g: 0, w: 0, b: 0, na: 0 });
+        o[j]++;
+      });
+    });
+    return t;
+  }
+  function checkSections(def) { return ((def && def.sections) || []).filter(function (x) { return x.type === 'checklist'; }); }
+  function itemMap(def) {
+    var m = {};
+    checkSections(def).forEach(function (sec) { (sec.items || []).forEach(function (it) { if (it.code) m[sec.id + '|' + it.code] = it; }); });
+    return m;
+  }
+
+  /* ---------- 교육·훈련 ---------- */
+  var stdCache = null;
+  function eduStd() {
+    if (stdCache) return stdCache;
+    var txt = '', n1 = form('N1');
+    ((n1 && n1.sections) || []).forEach(function (sec) { if (sec.type === 'notice' && /법정/.test(sec.text || '')) txt += ' ' + sec.text; });
+    var w = txt.match(/그 밖의 근로자[^—]*?매반기\s*(\d+)\s*시간/), o = txt.match(/사무직[^—]*?매반기\s*(\d+)\s*시간/), v = txt.match(/관리감독자 정기교육\s*—\s*연간\s*(\d+)\s*시간/);
+    stdCache = { worker: w ? +w[1] : null, office: o ? +o[1] : null, supervisor: v ? +v[1] : null };
+    return stdCache;
+  }
+  function n1Done(r) { return stageDone(r, 's2'); }
+  function eduDate(r) { return dateOf(V(r, 'eduDate')) || r.date; }
+  function eduHours(r) {
+    var h = nV(r, 'eduHours'); if (h != null) return h;
+    var a = minutesOf(V(r, 'startTime')), b = minutesOf(V(r, 'endTime'));
+    return a != null && b != null && b > a ? Math.round((b - a) / 6) / 10 : null;
+  }
+  function isWorkerRegular(r) { var ca = V(r, 'countAs'); return ca ? ca === '근로자 정기교육 시간' : V(r, 'course') === '정기교육-근로자'; }
+  function isSupRegular(r) { var ca = V(r, 'countAs'); return ca ? ca === '관리감독자 정기교육 시간' : V(r, 'course') === '정기교육-관리감독자'; }
+  function eduSite(site, s) {
+    var std = eduStd(), end = endOf(s), half = periodOf('half', end), year = end.slice(0, 4);
+    var R = allRows('N1', { sites: [site.id] }).filter(n1Done), hw = 0, hs = 0, sess = 0;
+    R.forEach(function (r) {
+      var d = eduDate(r), h = eduHours(r) || 0;
+      if (d >= half.from && d <= half.to) { sess++; if (isWorkerRegular(r)) hw += h; }
+      if (d.slice(0, 4) === year && isSupRegular(r)) hs += h;
+    });
+    var office = /사무/.test(site.type || '');
+    return { id: site.id, name: site.name, hours: Math.round(hw * 10) / 10, std: office ? std.office : std.worker, sup: Math.round(hs * 10) / 10, supStd: std.supervisor, sessions: sess, half: half };
+  }
+  function n2DrillDate(r) { return dateOf(V(r, 'drillDate')) || dateOf(V(r, 'planDate')) || r.date; }
+  function drillOf(site, half) {
+    var R = allRows('N2', { sites: [site.id] }).filter(function (r) { var d = n2DrillDate(r); return d >= half.from && d <= half.to; });
+    var done = R.filter(function (r) { return stageDone(r, 's2'); }).sort(function (a, b) { return n2DrillDate(a) < n2DrillDate(b) ? 1 : -1; });
+    var r = done[0] || R[0] || null;
+    return { id: site.id, name: site.name, done: done.length > 0, planned: !done.length && R.length > 0, count: done.length, rec: r };
+  }
+  function partRate(r) {
+    var p = nV(r, 'partCount'); if (p == null) p = peopleN(r, 'participants');
+    var t = nV(r, 'targetCount');
+    if (p != null && t) return p / t;
+    var pr = nV(r, 'partRate'); return pr == null ? null : (pr > 1.5 ? pr / 100 : pr);
+  }
+
+  /* ---------- 위험성평가 ---------- */
+  function riskOf(site) {
+    var t = today(), last = '';
+    allRows('F01', { sites: [site.id] }).forEach(function (r) { if (isFull(r) && r.date > last) last = r.date; });
+    if (!last) {
+      if (site.openDate && diff(site.openDate, t) < 30) return { state: 'new', label: '개설 1개월 안', score: null };
+      return { state: 'none', label: '실시 기록 없음', score: 0 };
+    }
+    var due = addDays(last, 365), left = diff(t, due);
+    return { state: left < 0 ? 'over' : left <= 30 ? 'soon' : 'ok', last: last, due: due, left: left, label: left < 0 ? '기한 ' + (-left) + '일 경과' : 'D-' + left, score: left < 0 ? 0 : left <= 30 ? 70 : 100 };
+  }
+
+  /* ---------- HEC ---------- */
+  function hecItems() { return (App.FD || {}).hecItems || []; }
+  function hecWin(w) { return w === '1y' ? 365 : w === 'contract' ? 3650 : 183; }
+  function hecCellLocal(item, siteId) {
+    var site = siteById(siteId) || {}, t = today();
+    if (item.hdsScope && /미적용|해당없음/.test(item.hdsScope)) return { c: 'n', t: '해당없음' };
+    var n4 = allRows('N4', { sites: [siteId] }).filter(isFull).sort(function (a, b) { return a.date < b.date ? 1 : -1; })[0];
+    if (n4 && n4.date >= addDays(t, -100) && n4.facts && n4.facts.k) {
+      var ks = n4.facts.k;
+      for (var sec in ks) {
+        var x = judge(ks[sec] && ks[sec][item.code]);
+        var m = { '양호': ['g', '○ 점검'], '주의': ['y', '△ 점검'], '불량': ['r', 'X 점검'], '해당없음': ['n', 'N/A'] }[x];
+        if (m) return { c: m[0], t: m[1], rec: n4.id };
+      }
+    }
+    var since = site.hecLastEval && item.window === '6m' ? site.hecLastEval : addDays(t, -hecWin(item.window));
+    var ev = allRows(item.forms || [], { sites: [siteId] }).filter(isFull).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+    var inWin = ev.filter(function (r) { return r.date >= since; });
+    if (inWin.length) return { c: 'g', t: '증빙 ' + inWin.length, recs: inWin.map(function (r) { return r.id; }) };
+    if (ev.length) return { c: 'y', t: '기간 지남', recs: ev.map(function (r) { return r.id; }) };
+    return { c: 'r', t: '없음' };
+  }
+  /* 엔진 결과를 g(양호)·y(주의)·r(불량)·x(증빙 없음)·n(해당없음) 으로 맞춘다 */
+  function hecCell(item, siteId) {
+    var c = null;
+    try { if (App.engine && App.engine.hecCell) c = App.engine.hecCell(item, siteId); } catch (e) { c = null; }
+    if (!c) c = hecCellLocal(item, siteId);
+    var code = String(c.c || c.code || c.state || ''), t = String(c.t || c.label || '');
+    var k = /^(g|ok|good|양호)$/.test(code) ? 'g' : /^(y|w|warn|주의)$/.test(code) ? 'y' : /^(n|na|해당없음)$/.test(code) ? 'n'
+      : /^(x|none|miss)$/.test(code) || /없음/.test(t) ? 'x' : 'r';
+    var rec = c.rec || (c.recs && c.recs[0]) || null;
+    return { k: k, t: t || { g: '양호', y: '주의', r: '불량', x: '증빙 없음', n: '해당없음' }[k], rec: rec };
+  }
+  function hecReady(siteId, cells) {
+    var v = null;
+    try { if (App.engine && App.engine.hecReady) v = App.engine.hecReady(siteId); } catch (e) { v = null; }
+    if (v && typeof v === 'object') v = v.pct != null ? v.pct : v.ready != null ? v.ready : v.value;
+    if (typeof v === 'number' && isFinite(v)) return v <= 1 && v > 0 && v !== 1 ? Math.round(v * 100) : Math.round(v);
+    var c = (cells || hecItems().map(function (it) { return hecCell(it, siteId); })).filter(function (x) { return x.k !== 'n'; });
+    return c.length ? Math.round(c.filter(function (x) { return x.k === 'g'; }).length / c.length * 100) : null;
+  }
+  function mockScore(siteId) {
+    try { if (App.engine && App.engine.mockScore) return App.engine.mockScore(siteId); } catch (e) { /* 아래 */ }
+    var n4 = allRows('N4', { sites: [siteId] }).filter(isFull).sort(function (a, b) { return a.date < b.date ? 1 : -1; })[0];
+    if (!n4) return null;
+    var pts = 0, n = 0, ks = (n4.facts && n4.facts.k) || {};
+    Object.keys(ks).forEach(function (sec) { Object.keys(ks[sec] || {}).forEach(function (code) { var x = judge(ks[sec][code]); if (!x || x === '해당없음') return; n++; pts += x === '양호' ? 10 : x === '주의' ? 5 : 0; }); });
+    var d1 = 100, tb = Tb(n4, 'sec_d1'), byType = (tb && tb.c && tb.c.d1type) || {};
+    Object.keys(byType).forEach(function (k) {
+      var m = String(k).match(/D1-(\d+)/), no = m ? +m[1] : 0, dt = ((App.FD || {}).d1Types || []).filter(function (x) { return x.no === no; })[0];
+      d1 -= Math.min(byType[k], (dt && dt.maxCount) || 5) * (dt ? dt.deduct : 5);
+    });
+    return { partI: n ? Math.round(pts / (n * 10) * 1000) / 10 : null, d1: Math.max(0, d1), date: n4.date, id: n4.id };
+  }
+  function hecSites(s) { return s.siteObjs.filter(function (x) { return x.hec !== false; }); }
+
+  /* ---------- 정기 양식 회수 ---------- */
+  function seasonMonths(code, def) {
+    var seas = (settings().requiredForms || {}).seasonal || {};
+    if (seas[code] && seas[code].length) return seas[code];
+    return (def.frequency && def.frequency.seasonMonths) || [];
+  }
+  function requiredOf(site) {
+    var codes = null;
+    try {
+      if (App.engine && App.engine.requiredForms) {
+        var r = App.engine.requiredForms(site.id);
+        if (Array.isArray(r)) codes = r.map(function (x) { return typeof x === 'string' ? x : x && (x.code || (x.def && x.def.code)); }).filter(Boolean);
+      }
+    } catch (e) { codes = null; }
+    var rf = settings().requiredForms || {};
+    if (!codes) codes = site.forms && site.forms.length ? site.forms.slice() : (rf.default || ['F07', 'F09', 'F01', 'N1', 'N2', 'N4', 'F08B', 'F10B']).slice();
+    Object.keys(rf.seasonal || {}).forEach(function (c) { if (codes.indexOf(c) < 0 && (!site.forms || !site.forms.length || site.forms.indexOf(c) >= 0)) codes.push(c); });
+    return codes;
+  }
+  function periodicStats(site, s) {
+    var t = today(), exp = 0, got = 0, late = 0, miss = [];
+    requiredOf(site).forEach(function (code) {
+      var def = form(code); if (!def) return;
+      var ty = (def.frequency || {}).type;
+      if (['monthly', 'quarterly', 'half', 'season'].indexOf(ty) < 0) return;
+      var pt = ty === 'season' ? 'monthly' : ty, months = ty === 'season' ? seasonMonths(code, def) : null;
+      var R = allRows(code, { sites: [site.id] }), p = periodOf(pt, s.from), guard = 0;
+      while (p.from <= s.to && guard++ < 80) {
+        var due = dueOf(def, p);
+        if ((!months || months.indexOf(+p.from.slice(5, 7)) >= 0) && (!site.openDate || p.to >= site.openDate) && due < t) {
+          exp++;
+          var hit = R.filter(function (r) { return r.period ? r.period === p.key : r.date >= p.from && r.date <= p.to; });
+          if (hit.length) { got++; if (hit.every(function (r) { return dateOf(r.submittedAt || r.updatedAt) > due; })) late++; }
+          else miss.push({ code: code, label: p.label, key: p.key });
+        }
+        p = periodOf(pt, addDays(p.to, 1));
+      }
+    });
+    return { exp: exp, got: got, late: late, miss: miss, rate: ratio(got, exp) };
+  }
+
+  /* ---------- 사고·아차 ---------- */
+  function f02NearMiss(r) { return V(r, 'kind') === '아차사고'; }
+  function incRows(s) { return rows('F04', s).concat(rows('F02', s).filter(f02NearMiss)); }
+
+  /* ================= 발견 문장 ================= */
+  AN.insights = function (scopeIn) { return memo(function () { return insightsOf(scopeIn); }); };
+  function insightsOf(scopeIn) {
+    var s = scopeIn && scopeIn.siteObjs ? scopeIn : norm(scopeIn || (AN.scope ? safeScope() : null));
+    var t = today(), out = [], lbl = spanLabel(s), curLbl = /^최근/.test(s.label) ? s.label : '이번 ' + lbl;
+    function add(w, tone, text, href) { out.push({ w: w, tone: tone, text: text, href: href || '' }); }
+
+    // 1) 사고 유형 집중
+    var inc = rows('F04', s);
+    if (inc.length >= 3) {
+      var top = ranked(countBy(inc, function (r) { return V(r, 'accType'); }))[0];
+      if (top && top.n >= 2 && top.n / inc.length >= 0.3) {
+        var harm = inc.filter(function (r) { return V(r, 'accType') === top.k && V(r, 'kind') === '재해'; }).length;
+        add(60 + top.n, top.n / inc.length >= 0.5 ? 'neg' : 'warn', '재해·사고 보고 ' + inc.length + '건 중 ' + top.k + ' ' + top.n + '건(' + pct(top.n / inc.length) + ')이 가장 많습니다' + (harm ? ' — 그중 재해 ' + harm + '건' : ''), '#/analytics/incidents');
+      }
+    }
+    // 2) 사업장 사고·아차 급증(직전 같은 길이 기간 대비)
+    var ps = prevScope(s), cur = countBy(incRows(s), function (r) { return r.site; }), prev = countBy(incRows(ps), function (r) { return r.site; });
+    Object.keys(cur).map(function (id) { return { id: id, c: cur[id], p: prev[id] || 0 }; })
+      .filter(function (x) { return x.c >= 3 && x.c >= x.p * 2 && x.c - x.p >= 2; })
+      .sort(function (a, b) { return (b.c - b.p) - (a.c - a.p); }).slice(0, 2)
+      .forEach(function (x) { add(70 + x.c - x.p, 'neg', siteName(x.id) + ' 사고·아차 직전 ' + lbl + ' ' + x.p + '건 → ' + curLbl + ' ' + x.c + '건', '#/analytics/incidents'); });
+    // 3) 일일점검 제출률 최저
+    var ds = dailyStats(s), low = ds.sites.filter(function (x) { return x.exp >= 7; }).sort(function (a, b) { return a.rate - b.rate; })[0];
+    if (low && low.rate < 0.9) add(low.rate < 0.7 ? 80 : 55, low.rate < 0.7 ? 'neg' : 'warn', '일일점검 제출률이 가장 낮은 곳은 ' + low.name + ' ' + pct(low.rate) + '(기대 ' + num(low.exp) + '건 중 ' + num(low.done) + '건)입니다', '#/analytics/daily');
+    else if (ds.exp > 0) add(5, 'pos', '일일점검 제출률 ' + pct(ds.rate) + '(기대 ' + num(ds.exp) + '건 중 ' + num(ds.done) + '건) — 모든 사업장이 90% 이상입니다', '#/analytics/daily');
+    // 4) 기한경과 '높음' 조치
+    var od = actsList(s).filter(function (a) { return isOverdue(a, t) && a.level === '높음'; }).sort(function (a, b) { return a.due < b.due ? -1 : 1; });
+    if (od.length) add(90 + od.length, 'neg', '기한경과 \'높음\' 조치 ' + od.length + '건 — 가장 오래된 건 ' + siteName(od[0].site) + ' \'' + trunc(od[0].title, 22) + '\' 기한 ' + diff(od[0].due, t) + '일 경과', '#/analytics/acts');
+    // 5) 위험성평가 기한
+    var rk = s.siteObjs.map(function (x) { var r = riskOf(x); r.name = x.name; return r; });
+    var over = rk.filter(function (x) { return x.state === 'over' || x.state === 'none'; }), soon = rk.filter(function (x) { return x.state === 'soon'; }).sort(function (a, b) { return a.left - b.left; });
+    if (over.length) add(85, 'neg', '위험성평가 기한경과·기록 없음 ' + over.length + '곳' + (soon.length ? ', 30일 안 도래 ' + soon.length + '곳' : '') + ' — ' + over.slice(0, 3).map(function (x) { return x.name; }).join(', ') + (over.length > 3 ? ' 외' : ''), '#/analytics/risk');
+    else if (soon.length) add(58, 'warn', '위험성평가 정기 기한이 30일 안에 오는 곳 ' + soon.length + '곳 — 가장 급한 ' + soon[0].name + ' D-' + soon[0].left, '#/analytics/risk');
+    // 6) 교육 법정 시간 미달
+    var es = s.siteObjs.map(function (x) { return eduSite(x, s); }), half = periodOf('half', endOf(s)), left = diff(t, half.to);
+    var below = es.filter(function (x) { return x.std && x.hours < x.std; }).sort(function (a, b) { return a.hours - b.hours; });
+    if (below.length) add(left <= 30 ? 75 : 45, left <= 30 ? 'neg' : 'warn', half.label + ' 근로자 정기교육이 법정 시간에 못 미친 곳 ' + below.length + '곳(반기 마감까지 ' + Math.max(0, left) + '일) — 가장 적은 ' + below[0].name + ' ' + num(below[0].hours, 1) + '시간/' + below[0].std + '시간', '#/analytics/edu');
+    // 7) 반기 비상훈련 미실시
+    var miss = s.siteObjs.map(function (x) { return drillOf(x, half); }).filter(function (x) { return !x.done; });
+    if (miss.length) add(left <= 30 ? 74 : 44, left <= 30 ? 'neg' : 'warn', half.label + ' 비상훈련 미실시 ' + miss.length + '곳' + (miss.filter(function (x) { return x.planned; }).length ? '(계획만 등록 ' + miss.filter(function (x) { return x.planned; }).length + '곳)' : '') + ' — 반기 마감까지 ' + Math.max(0, left) + '일', '#/analytics/edu');
+    // 8) HEC 준비도 하락 항목(직전 분기 점검 대비)
+    var drops = {};
+    hecSites(s).forEach(function (site) {
+      var n4 = allRows('N4', { sites: [site.id] }).filter(isFull).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+      if (n4.length < 2 || n4[0].date < s.from) return;
+      var a = (n4[0].facts && n4[0].facts.k) || {}, b = (n4[1].facts && n4[1].facts.k) || {};
+      Object.keys(a).forEach(function (sec) {
+        Object.keys(a[sec] || {}).forEach(function (code) {
+          var now = judge(a[sec][code]), was = judge((b[sec] || {})[code]);
+          if (was === '양호' && (now === '주의' || now === '불량')) (drops[code] = drops[code] || []).push(site.id);
+        });
+      });
+    });
+    var dr = Object.keys(drops).map(function (k) { return { k: k, n: drops[k].length }; }).sort(function (x, y) { return y.n - x.n; });
+    if (dr.length) {
+      var hi = hecItems().filter(function (x) { return x.code === dr[0].k; })[0];
+      add(50 + dr[0].n, 'warn', 'HEC ' + dr[0].k + (hi ? ' ' + hi.name : '') + ' — 직전 분기 점검 대비 ' + dr[0].n + '곳에서 하락(양호 → 주의·불량)' + (dr.length > 1 ? ', 하락 항목 모두 ' + dr.length + '개' : ''), '#/analytics/hec');
+    }
+    // 9) 폭염 시즌 점검 누락(F06) + 폭염 휴식 미부여(F07)
+    var f06 = form('F06');
+    if (f06) {
+      var sm = seasonMonths('F06', f06), mm = {};
+      monthsBetween(s.from, endOf(s)).forEach(function (k) {
+        if (sm.indexOf(+k.slice(5, 7)) < 0) return;
+        var p = periodOf('monthly', k + '-01'); if (dueOf(f06, p) >= t) return;
+        s.siteObjs.forEach(function (site) {
+          if (requiredOf(site).indexOf('F06') < 0 || (site.openDate && site.openDate > p.to)) return;
+          var hit = allRows('F06', { sites: [site.id] }).some(function (r) { return r.period ? r.period === p.key : r.date >= p.from && r.date <= p.to; });
+          if (!hit) mm[k] = (mm[k] || 0) + 1;
+        });
+      });
+      var mk = Object.keys(mm).sort();
+      if (mk.length) add(68, 'neg', '폭염 대응 점검(F06) 누락 — ' + mk.map(function (k) { return (+k.slice(5, 7)) + '월 ' + mm[k] + '곳'; }).join(', '), '#/analytics/form/F06');
+    }
+    var hot = rows('F07', s).filter(function (r) { return /경고|위험/.test(V(r, 'heatStage') || '') && /미부여/.test(V(r, 'heatRest') || ''); });
+    if (hot.length) add(66, 'neg', '체감온도 경고 이상인 날 휴식을 다 주지 못한 일일점검 ' + hot.length + '건(' + Object.keys(bySite(hot)).length + '곳)', '#/analytics/daily');
+
+    out.sort(function (a, b) { return b.w - a.w; });
+    if (!out.length) {
+      var n = rows(forms().map(function (f) { return f.code; }), s).length;
+      return [{ tone: 'neu', text: n ? '이 범위에서 기준을 넘는 변화가 없습니다(기록 ' + num(n) + '건 기준).' : '이 범위에 제출된 기록이 없습니다.', href: '' }];
+    }
+    return out.slice(0, 8).map(function (x) { return { tone: x.tone, text: x.text, href: x.href }; });
+  };
+  function safeScope() { try { return AN.scope(); } catch (e) { return null; } }
+
+  /* ================= AI 요약용 숫자 ================= */
+  AN.digest = function (scopeIn) { return memo(function () { return digestOf(scopeIn); }); };
+  function digestOf(scopeIn) {
+    var s = scopeIn && scopeIn.siteObjs ? scopeIn : norm(scopeIn || safeScope());
+    var t = today(), inc = rows('F04', s), f02 = rows('F02', s), ds = dailyStats(s), acts = actsList(s);
+    var created = acts.filter(function (a) { var d = dateOf(a.createdAt); return d >= s.from && d <= s.to; });
+    var closed = acts.filter(function (a) { var d = dateOf(a.doneAt); return isClosed(a) && d >= s.from && d <= s.to; });
+    var withDue = closed.filter(function (a) { return a.due; });
+    var half = periodOf('half', endOf(s)), es = s.siteObjs.map(function (x) { return eduSite(x, s); });
+    var n1 = rows('N1', s).filter(n1Done), drills = s.siteObjs.map(function (x) { return drillOf(x, half); });
+    var hec = hecSites(s).map(function (x) { var m = mockScore(x.id); return { site: x.name, ready: hecReady(x.id), partI: m ? m.partI : null, d1: m ? m.d1 : null }; });
+    function top(obj, n) { return ranked(obj).slice(0, n || 5).map(function (x) { return [x.k, x.n]; }); }
+    return {
+      scope: { from: s.from, to: s.to, label: s.label, sites: s.siteObjs.length, today: t },
+      incidents: {
+        total: inc.length, byKind: countBy(inc, function (r) { return V(r, 'kind'); }),
+        byType: top(countBy(inc, function (r) { return V(r, 'accType'); })), byAgent: top(countBy(inc, function (r) { return V(r, 'agent'); })),
+        bySite: top(countBy(inc, function (r) { return siteName(r.site); })), lossDays: sum(inc, function (r) { var tb = Tb(r, 'sec_victims'); return tb && tb.s ? tb.s.vlossDays : 0; }),
+        prevPeriod: rows('F04', prevScope(s)).length
+      },
+      voice: { total: f02.length, byKind: countBy(f02, function (r) { return V(r, 'kind'); }) },
+      violations: { total: rows('F05', s).length, bySite: top(countBy(rows('F05', s), function (r) { return siteName(r.site); })) },
+      stopWork: { total: rows('F10', s).length },
+      daily: { expected: ds.exp, submitted: ds.done, rate: ds.rate == null ? null : Math.round(ds.rate * 1000) / 10, onTimeRate: ds.ontimeRate == null ? null : Math.round(ds.ontimeRate * 1000) / 10,
+        lowest: ds.sites.filter(function (x) { return x.exp; }).sort(function (a, b) { return a.rate - b.rate; }).slice(0, 3).map(function (x) { return [x.name, Math.round(x.rate * 1000) / 10]; }) },
+      acts: { created: created.length, closed: closed.length, open: acts.filter(isOpen).length, overdue: acts.filter(function (a) { return isOverdue(a, t); }).length,
+        overdueHigh: acts.filter(function (a) { return isOverdue(a, t) && a.level === '높음'; }).length,
+        onTimeRate: withDue.length ? Math.round(withDue.filter(function (a) { return dateOf(a.doneAt) <= a.due; }).length / withDue.length * 1000) / 10 : null,
+        medianDays: median(closed.map(function (a) { return diff(dateOf(a.createdAt), dateOf(a.doneAt)); }).filter(isFinite)) },
+      education: { sessions: n1.length, hours: Math.round(sum(n1, eduHours) * 10) / 10, attendees: sum(n1, function (r) { var a = nV(r, 'attendCount'); return a != null ? a : peopleN(r, 'attendees'); }),
+        half: half.label, legalWorkerHours: eduStd().worker, sitesBelow: es.filter(function (x) { return x.std && x.hours < x.std; }).map(function (x) { return [x.name, x.hours]; }) },
+      drills: { half: half.label, done: drills.filter(function (x) { return x.done; }).length, missing: drills.filter(function (x) { return !x.done; }).map(function (x) { return x.name; }) },
+      risk: s.siteObjs.map(function (x) { var r = riskOf(x); return [x.name, r.label]; }).filter(function (x) { return !/^D-/.test(x[1]) || +x[1].slice(2) <= 30; }),
+      hec: { sites: hec.length, avgReady: hec.length ? Math.round(sum(hec, function (x) { return x.ready; }) / hec.length) : null, lowest: hec.slice().sort(function (a, b) { return (a.ready || 0) - (b.ready || 0); }).slice(0, 3) },
+      findings: AN.insights(s).map(function (x) { return x.text; })
+    };
+  };
+
+  /* ================= 차트(analytics-a 의 Charts 사용, 없으면 간단한 HTML) ================= */
+  var JOBS = [], SEQ = 0;
+  function chart(kind, data, opts, cls) {
+    var id = 'anb-c' + (++SEQ);
+    JOBS.push({ id: id, kind: kind, data: data, opts: opts || {} });
+    return '<div class="anb-chart ' + (cls || '') + '" id="' + id + '"></div>';
+  }
+  function legendSlot(id) { return '<div class="anb-legend" id="' + id + '"></div>'; }
+  function runJobs() {
+    var jobs = JOBS; JOBS = [];
+    jobs.forEach(function (j) {
+      var el = document.getElementById(j.id); if (!el) return;
+      var C = window.Charts || {};
+      try {
+        if (j.kind === 'hbars') {
+          if (C.hbars) return C.hbars(el, j.data, j.opts);
+          if (C.barList) return C.barList(el, j.data, { format: j.opts.format, thin: true });
+        } else if (j.kind === 'heatCal' && C.heatCal) return C.heatCal(el, j.data);
+        else if (C[j.kind]) {
+          var o = {}; Object.keys(j.data).forEach(function (k) { o[k] = j.data[k]; }); Object.keys(j.opts).forEach(function (k) { o[k] = j.opts[k]; });
+          if (o.legend && typeof o.legend === 'string') o.legend = document.getElementById(o.legend);
+          return C[j.kind](el, o);
+        }
+      } catch (e) { if (window.console) console.warn('[analytics] chart', j.kind, e); }
+      el.innerHTML = fallbackChart(j);
+    });
+  }
+  function fallbackChart(j) {
+    var f = j.opts.format || function (v) { return num(v); };
+    if (j.kind === 'hbars') {
+      var mx = Math.max.apply(null, j.data.map(function (r) { return r.value; }).concat([0])) || 1;
+      return '<ol class="anb-hb">' + j.data.map(function (r) {
+        return '<li><div class="anb-hb-l"><span class="ellipsis">' + esc(r.label) + '</span><b class="num">' + esc(f(r.value)) + '</b></div><i style="width:' + (r.value / mx * 100).toFixed(1) + '%"></i>' + (r.sub ? '<small>' + esc(r.sub) + '</small>' : '') + '</li>';
+      }).join('') + '</ol>';
+    }
+    if (j.kind === 'heatCal') return '';
+    var labels = j.data.labels || [], vals = j.data.values || j.data.up || (j.data.series && j.data.series[0] && j.data.series[0].values) || [];
+    var m = Math.max.apply(null, vals.concat([0])) || 1;
+    return '<div class="anb-cols">' + labels.map(function (l, i) {
+      return '<div title="' + esc(l + ': ' + f(vals[i] || 0)) + '"><i style="height:' + ((vals[i] || 0) / m * 100).toFixed(1) + '%"></i><span>' + esc(l) + '</span></div>';
+    }).join('') + '</div>';
+  }
+  var fInt = function (v) { return num(v); };
+  var fPct = function (v) { return pct(v); };
+  var fHour = function (v) { return num(v, 1) + '시간'; };
+
+  /* ================= 마크업 도우미(계약 클래스) ================= */
+  function kpis(items) {
+    return '<div class="kpis" style="--n:' + items.length + '">' + items.map(function (k) {
+      var miss = k.value === '—';
+      return '<div class="kpi' + (k.lead ? ' is-lead' : '') + '"><div class="kpi-label">' + esc(k.label) + '</div><div class="kpi-value num' + (miss ? ' faint' : '') + '">' + esc(k.value) +
+        (k.unit && !miss ? '<span class="unit">' + esc(k.unit) + '</span>' : '') + '</div>' + (k.sub ? '<div class="kpi-sub">' + k.sub + '</div>' : '') + '</div>';
+    }).join('') + '</div>';
+  }
+  function panel(o) {
+    return '<section class="panel ' + (o.span ? 'span-' + o.span : '') + ' ' + (o.cls || '') + '"><header class="panel-hd"><div><h2>' + esc(o.title) + '</h2>' +
+      (o.sub ? '<p class="panel-sub">' + o.sub + '</p>' : '') + '</div>' + (o.actions ? '<div class="panel-actions">' + o.actions + '</div>' : '') + '</header>' +
+      '<div class="panel-bd' + (o.flush ? ' flush' : '') + '">' + o.body + '</div>' + (o.foot ? '<footer class="panel-ft">' + o.foot + '</footer>' : '') + '</section>';
+  }
+  function empty(t) { return '<div class="empty">' + t + '</div>'; }
+  function pill(t, tone) { return '<span class="pill ' + (tone || 'neu') + '">' + esc(t) + '</span>'; }
+  function bar(r, tone) { var w = r == null ? 0 : Math.max(0, Math.min(1, r)) * 100; return '<div class="bar' + (tone ? ' ' + tone : '') + '"><i style="width:' + w.toFixed(1) + '%"></i></div>'; }
+  function table(cols, list, o) {
+    o = o || {};
+    if (!list.length) return empty(o.empty || '이 범위에 해당하는 기록이 없습니다.');
+    return '<div class="tbl-wrap"><table class="tbl ' + (o.cls || '') + '"><thead><tr>' + cols.map(function (c) {
+      var lab = esc(c.label);
+      if (o.sortAct && c.sort) lab = '<button type="button" class="anb-sort' + (o.sortKey === c.key ? ' on' : '') + '" data-act="' + o.sortAct + '" data-key="' + c.key + '">' + lab + (o.sortKey === c.key ? (o.desc ? ' ↓' : ' ↑') : '') + '</button>';
+      return '<th' + (c.num ? ' class="num"' : '') + (c.width ? ' style="width:' + c.width + '"' : '') + '>' + lab + '</th>';
+    }).join('') + '</tr></thead><tbody>' + list.map(function (r) {
+      var href = o.href ? o.href(r) : '';
+      return '<tr class="' + (href ? 'click ' : '') + (o.rowCls ? o.rowCls(r) : '') + '"' + (href ? ' data-href="' + esc(href) + '"' : '') + '>' + cols.map(function (c) {
+        return '<td' + (c.num ? ' class="num"' : '') + ' data-label="' + esc(c.label) + '">' + c.render(r) + '</td>';
+      }).join('') + '</tr>';
+    }).join('') + '</tbody></table></div>';
+  }
+  function tabsHTML(key) {
+    if (AN.tabs) { try { var h = AN.tabs(key); if (h) return h; } catch (e) { /* 아래 */ } }
+    return '<div class="tabs anb-topics">' + TOPICS.map(function (t) {
+      return '<button type="button" class="' + (t[0] === key ? 'on' : '') + '" data-href="#/analytics' + (t[0] ? '/' + t[0] : '') + '">' + t[1] + '</button>';
+    }).join('') + '</div>';
+  }
+  function filterHTML(s) {
+    if (AN.filterBar) { try { var h = AN.filterBar(); if (h) return h; } catch (e) { /* 아래 */ } }
+    return '<div class="toolbar"><span class="muted">' + esc(s.label) + ' · ' + esc(s.from) + ' ~ ' + esc(s.to) + ' · 사업장 ' + s.siteObjs.length + '곳</span></div>';
+  }
+  function head(key, title, sub, s) {
+    var acts = '';
+    if (isHQ()) acts += '<button class="btn ghost" type="button" data-act="an.ai">' + icon('chart') + '<span>AI 요약</span></button>';
+    acts += '<button class="btn" type="button" data-act="an.bPrint">' + icon('print') + '<span>보고서 인쇄</span></button>';
+    return '<div class="title-row"><div class="title-main"><h1>분석 · ' + esc(title) + '</h1><p class="sub">' + sub + '</p></div><div class="actions">' + acts + '</div></div>' +
+      tabsHTML(key) + filterHTML(s);
+  }
+  var CUR = null;
+  function page(main, key, title, sub, s, body) {
+    main.innerHTML = '<div class="anb" data-topic="' + esc(key) + '">' + head(key, title, sub, s) + '<div class="anb-body" data-title="분석 · ' + esc(title) + '">' + body + '</div></div>';
+    runJobs();
+  }
+  function rerender() { if (CUR) CUR.fn(CUR.main, CUR.args, CUR.query); }
+  function view(name, title, fn) {
+    var def = {
+      title: title, nav: 'analytics',
+      render: function (main, args, query) {
+        CUR = { fn: def.render, main: main, args: args, query: query };
+        JOBS = [];
+        var s = scope();
+        try { memo(function () { fn(main, s, args, query); }); } catch (e) {
+          if (window.console) console.error('[analytics]', name, e);
+          main.innerHTML = '<div class="anb">' + head(name.split('/')[1] || '', title, '분석을 계산하지 못했습니다.', s) + '<div class="err">이 화면을 계산하지 못했습니다. <button class="btn ghost sm" type="button" data-act="an.bRetry">다시 시도</button></div></div>';
+        }
+      }
+    };
+    if (typeof App.view === 'function') App.view('hq:analytics/' + name, def);
+    else { App.views = App.views || {}; App.views['hq:analytics/' + name] = def; }
+  }
+  function sitesSub(s) { return s.all ? '전체 ' + s.siteObjs.length + '곳' : s.siteObjs.length + '곳'; }
+
+  /* ================= 일일점검 ================= */
+  var dailySite = '';
+  function renderDaily(main, s) {
+    var def = form('F07'), list = rows('F07', s), ds = dailyStats(s), t = today();
+    var items = itemMap(def), sec = (checkSections(def)[0] || {}).id || 'sec_items', tally = checkTally(list, sec);
+    var judged = 0, bad = 0;
+    Object.keys(tally).forEach(function (c) { var o = tally[c]; judged += o.g + o.w + o.b; bad += o.w + o.b; });
+    var sorted = ds.sites.filter(function (x) { return x.exp > 0; }).sort(function (a, b) { return a.rate - b.rate || b.miss - a.miss; });
+    var low = sorted[0];
+    var sub = !ds.exp ? '이 범위에는 지난 근무일이 없어 제출률을 계산하지 않습니다.'
+      : low && low.rate < 0.9 ? esc(low.name) + ' 제출률 ' + pct(low.rate) + '(기대 ' + num(low.exp) + '건 중 ' + num(low.done) + '건)로 가장 낮습니다.'
+        : '모든 사업장 제출률이 90% 이상입니다 — 전체 ' + pct(ds.rate) + '(기대 ' + num(ds.exp) + '건 중 ' + num(ds.done) + '건).';
+    var body = kpis([
+      { label: '제출률', value: pct(ds.rate), lead: true, sub: '기대 ' + num(ds.exp) + '건 중 ' + num(ds.done) + '건 · ' + sitesSub(s) },
+      { label: '미제출', value: num(ds.miss), unit: '건', sub: ds.exp ? '근무일 × 근무조 기준, ' + esc(ds.end) + '까지' : '—' },
+      { label: '기한 내 제출', value: pct(ds.ontimeRate), sub: '다음 날 ' + esc(settings().dailyDue || '10:00') + '까지 낸 비율' },
+      { label: '주의·불량 판정', value: pct(ratio(bad, judged), 1), sub: '판정 ' + num(judged) + '항목 중 ' + num(bad) + '항목' }
+    ]);
+    // 사업장별 제출률
+    var siteTbl = table([
+      { label: '사업장', render: function (r) { return '<b>' + esc(r.name) + '</b>' + (r === low && r.rate < 0.9 ? ' ' + pill('최저', 'neg') : '') + '<div class="faint small">' + esc(r.shifts.filter(Boolean).join('·') || '근무조 1') + '</div>'; } },
+      { label: '기대', num: true, render: function (r) { return num(r.exp); } },
+      { label: '제출', num: true, render: function (r) { return num(r.done); } },
+      { label: '미제출', num: true, render: function (r) { return r.miss ? '<span class="t-neg">' + num(r.miss) + '</span>' : '0'; } },
+      { label: '제출률', num: true, width: '28%', render: function (r) { return '<div class="anb-rate"><span class="num">' + pct(r.rate) + '</span>' + bar(r.rate, r.rate < 0.7 ? 'neg' : '') + '</div>'; } },
+      { label: '기한 내', num: true, render: function (r) { return pct(r.ontimeRate); } }
+    ], sorted, { empty: '지난 근무일이 있는 사업장이 없습니다.', rowCls: function (r) { return r.id === dailySite ? 'is-sel' : ''; } });
+    var pick = '<select class="select sm" data-an="daily-site" aria-label="달력 사업장"><option value="">전체 사업장(최근 4주)</option>' +
+      s.siteObjs.map(function (x) { return '<option value="' + esc(x.id) + '"' + (x.id === dailySite ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select>';
+    var cal, calFoot = calLegend(), hasCal = !!(window.Charts && window.Charts.heatCal);
+    var one = dailySite && ds.sites.filter(function (x) { return x.id === dailySite; })[0];
+    if (one) {
+      var days = [], fb = [];
+      for (var d = s.from; d <= s.to; d = addDays(d, 1)) {
+        var x = one.days[d], st = d > ds.end ? 'future' : d < one.from ? 'na' : !x ? 'none' : x.done >= x.total ? 'ok' : x.done ? 'part' : 'none';
+        if (st !== 'future') days.push({ date: d, value: x ? x.done + '/' + x.total : '', state: st });
+        fb.push({ date: d, label: x ? x.done + '/' + x.total : '', state: { ok: 'full', part: 'part', none: 'none' }[st] || 'future' });
+      }
+      cal = hasCal ? chart('heatCal', { days: days, from: s.from, to: s.to, today: today(), legend: '#anb-lg-cal' }) : calHTML(fb);
+      if (hasCal) calFoot = legendSlot('anb-lg-cal');
+    } else cal = matrixHTML(ds, s);
+    // 항목별 주의·불량 비율 상위
+    var itemRows = Object.keys(tally).map(function (code) {
+      var o = tally[code], n = o.g + o.w + o.b, it = items[sec + '|' + code] || {};
+      return { code: code, text: it.text || code, n: n, w: o.w, b: o.b, r: ratio(o.w + o.b, n) };
+    }).filter(function (x) { return x.n >= 3 && x.w + x.b > 0; }).sort(function (a, b) { return b.r - a.r || b.b - a.b; }).slice(0, 8);
+    var itemsBody = itemRows.length ? chart('hbars', itemRows.map(function (x) { return { label: x.code + ' ' + trunc(x.text, 34), value: x.r, sub: '불량 ' + x.b + ' · 주의 ' + x.w + ' / 판정 ' + x.n }; }), { format: fPct, highlight: 0 })
+      : empty(judged ? '판정한 항목이 모두 양호입니다(판정 ' + num(judged) + '항목).' : '이 범위에 판정 기록이 없습니다.');
+    // 요일별 미제출
+    var wdOrder = [1, 2, 3, 4, 5, 6, 0], wv = wdOrder.map(function (i) { return ds.wdMiss[i]; }), wmax = Math.max.apply(null, wv);
+    var wdBody = ds.exp ? chart('bars', { labels: wdOrder.map(function (i) { return WD[i]; }), values: wv }, { format: fInt, highlight: wmax > 0 ? wv.indexOf(wmax) : null, height: 180 }) : empty('지난 근무일이 없습니다.');
+    // 판정 추이
+    var b = buckets(s), bj = b.list.map(function () { return { n: 0, bad: 0 }; });
+    list.forEach(function (r) { var i = bucketOf(b, r.date); if (i < 0) return; var k = K(r, sec) || {}; Object.keys(k).forEach(function (c) { var j = JUDGE[judge(k[c])]; if (!j || j === 'na') return; bj[i].n++; if (j !== 'g') bj[i].bad++; }); });
+    var trendVals = bj.map(function (x) { return x.n ? x.bad / x.n : 0; });
+    var trendBody = judged ? chart('bars', { labels: b.list.map(function (x) { return x.label; }), values: trendVals }, { format: fPct, dim: bj.map(function (x, i) { return x.n ? -1 : i; }).filter(function (i) { return i >= 0; }), height: 180 }) : empty('이 범위에 판정 기록이 없습니다.');
+    body += '<div class="grid">' +
+      panel({ span: 8, title: '사업장별 제출률', sub: '기대 = 근무일 × 근무조, 낮은 순', body: siteTbl, flush: true }) +
+      panel({ span: 4, title: '요일별 미제출', sub: '범위 안 미제출 ' + num(ds.miss) + '건', body: wdBody }) +
+      panel({ span: 12, title: '제출 달력', sub: one ? esc(one.name) + ' · ' + esc(s.from) + ' ~ ' + esc(s.to) : '사업장 × 날짜', actions: pick, body: cal, foot: calFoot }) +
+      panel({ span: 7, title: '주의·불량 비율이 높은 점검 항목', sub: '판정 3회 이상 항목, 해당없음 제외', body: itemsBody }) +
+      panel({ span: 5, title: '주의·불량 판정 비율 추이', sub: b.unit + '별, 판정 항목 중 주의·불량', body: trendBody }) +
+      '</div>';
+    page(main, 'daily', '일일점검', sub, s, body);
+  }
+  function dayCell(st, title) { return '<i class="anb-d anb-d-' + st + '" title="' + esc(title) + '"></i>'; }
+  function calLegend() {
+    return '<div class="mk-legend anb-dleg"><span>' + dayCell('full', '') + '모두 제출</span><span>' + dayCell('part', '') + '일부 근무조</span><span>' + dayCell('none', '') + '미제출</span><span>' + dayCell('future', '') + '대상 아님</span></div>';
+  }
+  function matrixHTML(ds, s) {
+    var end = ds.end, from = maxS(s.from, addDays(end, -27));
+    if (end < from) return empty('이 범위에는 지난 근무일이 없습니다.');
+    var dates = []; for (var d = from; d <= end; d = addDays(d, 1)) dates.push(d);
+    return '<div class="matrix-wrap"><table class="matrix anb-dmx"><thead><tr><th class="mx-row"></th>' + dates.map(function (d) {
+      var wd = parseD(d).getDay();
+      return '<th class="anb-dh' + (wd === 0 || wd === 6 ? ' we' : '') + '"><span class="num">' + (+d.slice(8)) + '</span></th>';
+    }).join('') + '</tr></thead><tbody>' + ds.sites.map(function (x) {
+      return '<tr><th class="mx-row">' + esc(x.name) + '<small class="num">' + pct(x.rate) + '</small></th>' + dates.map(function (d) {
+        var c = x.days[d];
+        var st = !c ? 'future' : c.done >= c.total ? 'full' : c.done ? 'part' : 'none';
+        return '<td>' + dayCell(st, x.name + ' ' + d + ' ' + (c ? c.done + '/' + c.total : '대상 아님')) + '</td>';
+      }).join('') + '</tr>';
+    }).join('') + '</tbody></table></div>';
+  }
+  function calHTML(days) {
+    if (!days.length) return '';
+    var first = days[0].date, lead = (parseD(first).getDay() + 6) % 7, cells = [];
+    for (var i = 0; i < lead; i++) cells.push('<i class="anb-d anb-d-blank"></i>');
+    days.forEach(function (d) { cells.push(dayCell(d.state, d.date + ' ' + (d.label || ''))); });
+    return '<div class="anb-cal">' + cells.join('') + '</div>';
+  }
+
+  /* ================= 교육·훈련 ================= */
+  function renderEdu(main, s) {
+    var t = today(), n1 = rows('N1', s).filter(n1Done), std = eduStd(), half = periodOf('half', endOf(s)), left = diff(t, half.to);
+    var hours = Math.round(sum(n1, eduHours) * 10) / 10;
+    var att = sum(n1, function (r) { var a = nV(r, 'attendCount'); return a != null ? a : peopleN(r, 'attendees'); });
+    var tg = n1.filter(function (r) { return nV(r, 'targetCount'); });
+    var attRate = ratio(sum(tg, function (r) { var a = nV(r, 'attendCount'); return a != null ? a : peopleN(r, 'attendees'); }), sum(tg, function (r) { return nV(r, 'targetCount'); }));
+    var es = s.siteObjs.map(function (x) { return eduSite(x, s); }).sort(function (a, b) { return (a.std ? a.hours / a.std : 9) - (b.std ? b.hours / b.std : 9); });
+    var below = es.filter(function (x) { return x.std && x.hours < x.std; });
+    var drills = s.siteObjs.map(function (x) { return drillOf(x, half); });
+    var prevHalf = periodOf('half', addDays(half.from, -1));
+    var dmiss = drills.filter(function (x) { return !x.done; });
+    var sub = (below.length ? half.label + ' 근로자 정기교육 법정 시간 미달 ' + below.length + '곳' : std.worker ? half.label + ' 근로자 정기교육 법정 시간을 모든 사업장이 채웠습니다' : half.label + ' 교육 ' + n1.length + '회') +
+      (dmiss.length ? ', 비상훈련 미실시 ' + dmiss.length + '곳' : ', 비상훈련은 모두 실시') + ' — 반기 마감까지 ' + Math.max(0, left) + '일.';
+    var body = kpis([
+      { label: '교육 실시', value: num(n1.length), unit: '회', lead: true, sub: s.label + ' · ' + sitesSub(s) },
+      { label: '교육 시간', value: num(hours, 1), unit: '시간', sub: '회차 시간의 합' },
+      { label: '참석 연인원', value: num(att), unit: '명', sub: '같은 사람 두 번이면 2' },
+      { label: '참석률', value: pct(attRate), sub: '대상 인원을 적은 ' + tg.length + '회 기준' }
+    ]);
+    // 과정별
+    var byCourse = {};
+    n1.forEach(function (r) { var c = V(r, 'course') || '미분류', o = byCourse[c] || (byCourse[c] = { k: c, n: 0, h: 0, p: 0, mh: 0 }); o.n++; o.h += eduHours(r) || 0; var a = nV(r, 'attendCount'); o.p += a != null ? a : (peopleN(r, 'attendees') || 0); o.mh += nV(r, 'manHours') || 0; });
+    var courses = Object.keys(byCourse).map(function (k) { return byCourse[k]; }).sort(function (a, b) { return b.h - a.h; });
+    var courseTbl = table([
+      { label: '교육 과정', render: function (r) { return esc(r.k); } },
+      { label: '회', num: true, render: function (r) { return num(r.n); } },
+      { label: '시간', num: true, render: function (r) { return num(r.h, 1); } },
+      { label: '참석 연인원', num: true, render: function (r) { return num(r.p); } },
+      { label: '인·시간', num: true, render: function (r) { return r.mh ? num(r.mh, 1) : '—'; } }
+    ], courses, { empty: '이 범위에 실시한 교육(2단계 실시 결과)이 없습니다.' });
+    // 사업장별 법정 기준
+    var hasStd = !!std.worker;
+    var cols = [{ label: '사업장', render: function (r) { return '<b>' + esc(r.name) + '</b>'; } },
+      { label: '근로자 정기교육', num: true, render: function (r) { return num(r.hours, 1) + '<span class="faint">' + (r.std ? ' / ' + r.std : '') + '시간</span>'; } }];
+    if (hasStd) cols.push({ label: '충족', num: true, width: '24%', render: function (r) { var q = r.std ? r.hours / r.std : null; return '<div class="anb-rate"><span class="num">' + pct(q == null ? null : Math.min(q, 9.99)) + '</span>' + bar(q, q != null && q < 1 && left <= 30 ? 'neg' : '') + '</div>'; } });
+    if (std.supervisor) cols.push({ label: '관리감독자(연)', num: true, render: function (r) { return num(r.sup, 1) + '<span class="faint"> / ' + r.supStd + '시간</span>'; } });
+    cols.push({ label: '비상훈련', render: function (r) { var d = drills.filter(function (x) { return x.id === r.id; })[0]; return d.done ? pill('실시', 'pos') : d.planned ? pill('계획만', 'warn') : pill('미실시', left <= 30 ? 'neg' : 'warn'); } });
+    var siteTbl = table(cols, es, { empty: '범위에 사업장이 없습니다.', href: function (r) { return '#/sites/' + r.id; } });
+    // 비상훈련 목록
+    var dRows = rows('N2', { from: prevHalf.from, to: half.to, sites: s.sites, label: '' }).filter(function (r) { return stageDone(r, 's2'); }).sort(function (a, b) { return n2DrillDate(a) < n2DrillDate(b) ? 1 : -1; });
+    var drillTbl = table([
+      { label: '훈련일', render: function (r) { return '<span class="num nowrap">' + esc(n2DrillDate(r)) + '</span>'; } },
+      { label: '사업장', render: function (r) { return esc(siteName(r.site)); } },
+      { label: '시나리오', render: function (r) { return esc(V(r, 'scenario') || '—'); } },
+      { label: '유형', render: function (r) { return esc(V(r, 'drillType') || '—'); } },
+      { label: '참여율', num: true, render: function (r) { return pct(partRate(r)); } },
+      { label: '전파→대피', num: true, render: function (r) { var m = nV(r, 'cResp'); return m == null ? '—' : num(m) + '분'; } }
+    ], dRows.slice(0, 8), { empty: prevHalf.label + '·' + half.label + '에 실시한 훈련이 없습니다.', href: function (r) { return '#/rec/' + r.id; } });
+    var resp = dRows.map(function (r) { return nV(r, 'cResp'); }).filter(function (v) { return v != null; });
+    var dType = ranked(countBy(dRows, function (r) { return V(r, 'scenario'); })).slice(0, 6);
+    var drillSide = (dType.length ? chart('hbars', dType.map(function (x) { return { label: x.k, value: x.n }; }), { format: fInt }) : empty('실시한 훈련이 없습니다.')) +
+      '<dl class="kv anb-kv"><div><dt>' + esc(half.label) + ' 실시</dt><dd class="num">' + (drills.length - dmiss.length) + ' / ' + drills.length + '곳</dd></div>' +
+      '<div><dt>합동 훈련(고객사·HEC)</dt><dd class="num">' + dRows.filter(function (r) { return /합동/.test(V(r, 'drillType') || ''); }).length + '회</dd></div>' +
+      '<div><dt>전파→대피 완료 중앙값</dt><dd class="num">' + (resp.length ? num(median(resp), 1) + '분' : '—') + '</dd></div>' +
+      '<div><dt>가장 오래 걸린 훈련</dt><dd class="num">' + (resp.length ? num(Math.max.apply(null, resp)) + '분' : '—') + '</dd></div></dl>';
+    // 작업허가(N3)
+    var n3 = rows('N3', s), wt = ranked(countBy(n3, function (r) { return V(r, 'workTypes'); }));
+    var b = buckets(s), hv = b.list.map(function () { return 0; });
+    n3.forEach(function (r) { var types = [].concat(V(r, 'workTypes') || []); if (!types.some(function (x) { return HIGH_RISK.indexOf(x) >= 0; })) return; var i = bucketOf(b, r.date); if (i >= 0) hv[i]++; });
+    var hiN = sum(hv);
+    var dec = countBy(n3, function (r) { return V(r, 'decision'); });
+    body += '<div class="grid">' +
+      panel({ span: 7, title: '사업장별 법정 교육 시간', sub: esc(half.label) + (hasStd ? ' · 근로자 정기교육 기준 ' + std.worker + '시간(사무직 ' + (std.office || '—') + '시간)' : '') + ', 회차 시간 합', body: siteTbl, flush: true }) +
+      panel({ span: 5, title: '교육 과정별 시간·인원', sub: s.label + ' · 실시 ' + n1.length + '회', body: courseTbl, flush: true }) +
+      panel({ span: 7, title: '비상대응훈련', sub: esc(prevHalf.label) + '부터 최근 순', body: drillTbl, flush: true }) +
+      panel({ span: 5, title: '훈련 시나리오', sub: '실시한 훈련 ' + dRows.length + '회', body: drillSide }) +
+      panel({ span: 6, title: '작업허가 종류별', sub: '사전작업 허가서 ' + n3.length + '건 · 허가 ' + (dec['허가'] || 0) + ' · 보류 ' + (dec['보류 — 조치를 갖춘 뒤 다시 판단'] || 0) + ' · 불허 ' + (dec['불허 — 이 방법으로는 작업하지 않음'] || 0), body: wt.length ? chart('hbars', wt.slice(0, 8).map(function (x) { return { label: x.k, value: x.n }; }), { format: fInt }) : empty('이 범위에 발행한 허가서가 없습니다.') }) +
+      panel({ span: 6, title: '고위험 작업 허가 추이', sub: b.unit + '별 · 고소·전기·화기·밀폐공간 ' + hiN + '건', body: n3.length ? chart('bars', { labels: b.list.map(function (x) { return x.label; }), values: hv }, { format: fInt, height: 180 }) : empty('이 범위에 발행한 허가서가 없습니다.') }) +
+      '</div>';
+    page(main, 'edu', '교육·훈련', sub, s, body);
+  }
+
+  /* ================= 조치 이행 ================= */
+  function renderActs(main, s) {
+    var t = today(), all = actsList(s);
+    var created = all.filter(function (a) { var d = dateOf(a.createdAt); return d >= s.from && d <= s.to; });
+    var closed = all.filter(function (a) { var d = dateOf(a.doneAt); return isClosed(a) && d >= s.from && d <= s.to; });
+    var open = all.filter(isOpen), over = open.filter(function (a) { return isOverdue(a, t); });
+    var withDue = closed.filter(function (a) { return a.due; }), onTime = withDue.filter(function (a) { return dateOf(a.doneAt) <= a.due; });
+    var overHigh = over.filter(function (a) { return a.level === '높음'; });
+    var oldest = over.slice().sort(function (a, b) { return a.due < b.due ? -1 : 1; })[0];
+    var sub = over.length ? '기한경과 ' + over.length + '건' + (overHigh.length ? '(높음 ' + overHigh.length + '건)' : '') + ' — 가장 오래된 건 ' + esc(siteName(oldest.site)) + ' \'' + esc(trunc(oldest.title, 22)) + '\' ' + diff(oldest.due, t) + '일 경과.'
+      : open.length ? '미결 ' + open.length + '건 모두 기한 안에 있습니다.' : '미결 조치가 없습니다.';
+    var body = kpis([
+      { label: '기한경과', value: num(over.length), unit: '건', lead: true, sub: over.length ? '<span class="t-neg">높음 ' + overHigh.length + '건</span> · 지금 기준' : '지금 기준' },
+      { label: '미결', value: num(open.length), unit: '건', sub: '등록·조치중 · 보류·이관 ' + all.filter(function (a) { return a.status === '보류' || a.status === '고객사 이관'; }).length + '건 별도' },
+      { label: '신규 · 완료', value: num(created.length) + ' · ' + num(closed.length), unit: '건', sub: s.label },
+      { label: '기한 준수율', value: pct(ratio(onTime.length, withDue.length)), sub: '범위 안 완료 ' + withDue.length + '건 중 ' + onTime.length + '건' }
+    ]);
+    var ms = monthsBetween(s.from, endOf(s) < s.from ? s.from : endOf(s));
+    var up = ms.map(function (k) { return created.filter(function (a) { return dateOf(a.createdAt).slice(0, 7) === k; }).length; });
+    var down = ms.map(function (k) { return closed.filter(function (a) { return dateOf(a.doneAt).slice(0, 7) === k; }).length; });
+    var flow = created.length + closed.length ? chart('diverging', { labels: ms.map(function (k) { return mLabel(k, ms); }), up: up, down: down }, { above: '등록', below: '완료', format: fInt, height: 200, legend: 'anb-lg-flow' }) : empty('이 범위에 등록·완료된 조치가 없습니다.');
+    // 소요일 분포(같은 폭 7일, 마지막 칸은 35일 이상)
+    var days = closed.map(function (a) { return diff(dateOf(a.createdAt), dateOf(a.doneAt)); }).filter(function (v) { return isFinite(v) && v >= 0; });
+    var bins = [0, 0, 0, 0, 0, 0], binL = ['0–6일', '7–13일', '14–20일', '21–27일', '28–34일', '35일 이상'];
+    days.forEach(function (d) { bins[Math.min(5, Math.floor(d / 7))]++; });
+    var hist = days.length ? chart('bars', { labels: binL, values: bins }, { format: fInt, height: 180 }) : empty('이 범위에 완료된 조치가 없습니다.');
+    // 사업장별 미결·기한경과
+    var bs = s.siteObjs.map(function (x) { var o = open.filter(function (a) { return a.site === x.id; }); return { label: x.name, value: o.length, over: o.filter(function (a) { return isOverdue(a, t); }).length }; })
+      .filter(function (x) { return x.value; }).sort(function (a, b) { return b.over - a.over || b.value - a.value; });
+    var siteBars = bs.length ? chart('hbars', bs.slice(0, 10).map(function (x) { return { label: x.label, value: x.value, over: x.over, sub: x.over ? '기한경과 ' + x.over + '건' : '기한경과 없음' }; }), { format: fInt, highlight: function (r) { return r.over > 0; } }) : empty('미결 조치가 없습니다.');
+    // 출처 양식별
+    var src = {};
+    created.concat(open).forEach(function (a) { var k = a.srcForm || '본사 등록'; src[k] = src[k] || { k: k, c: {}, o: {}, ov: {} }; });
+    created.forEach(function (a) { src[a.srcForm || '본사 등록'].c[a.id] = 1; });
+    open.forEach(function (a) { var o = src[a.srcForm || '본사 등록']; o.o[a.id] = 1; if (isOverdue(a, t)) o.ov[a.id] = 1; });
+    var srcRows = Object.keys(src).map(function (k) { var o = src[k]; return { k: k, c: Object.keys(o.c).length, o: Object.keys(o.o).length, ov: Object.keys(o.ov).length }; }).sort(function (a, b) { return b.c - a.c || b.o - a.o; });
+    var srcTbl = table([
+      { label: '출처', render: function (r) { var f = form(r.k); return esc(f ? r.k + ' ' + (f.short || f.title) : r.k); } },
+      { label: '신규', num: true, render: function (r) { return num(r.c); } },
+      { label: '미결', num: true, render: function (r) { return num(r.o); } },
+      { label: '기한경과', num: true, render: function (r) { return r.ov ? '<span class="t-neg">' + num(r.ov) + '</span>' : '0'; } }
+    ], srcRows, { empty: '이 범위에 조치가 없습니다.' });
+    // 수준별 기한 준수율
+    var lvRows = ['높음', '보통', '낮음'].map(function (lv) {
+      var c = withDue.filter(function (a) { return a.level === lv; }), ok = c.filter(function (a) { return dateOf(a.doneAt) <= a.due; }).length;
+      return { lv: lv, n: c.length, ok: ok, r: ratio(ok, c.length), ov: over.filter(function (a) { return a.level === lv; }).length };
+    });
+    var lvTbl = table([
+      { label: '수준', render: function (r) { return App.ui && App.ui.level ? App.ui.level(r.lv) : pill(r.lv, r.lv === '높음' ? 'neg' : r.lv === '보통' ? 'warn' : 'neu'); } },
+      { label: '완료', num: true, render: function (r) { return num(r.n); } },
+      { label: '기한 내', num: true, render: function (r) { return num(r.ok); } },
+      { label: '준수율', num: true, width: '30%', render: function (r) { return '<div class="anb-rate"><span class="num">' + pct(r.r) + '</span>' + bar(r.r) + '</div>'; } },
+      { label: '지금 기한경과', num: true, render: function (r) { return r.ov ? '<span class="t-neg">' + num(r.ov) + '</span>' : '0'; } }
+    ], lvRows);
+    // 오래된 미결
+    var olds = open.slice().sort(function (a, b) { return String(a.createdAt) < String(b.createdAt) ? -1 : 1; }).slice(0, 8);
+    var oldList = olds.length ? '<ul class="list">' + olds.map(function (a) {
+      var od = isOverdue(a, t);
+      return '<li class="li click" data-href="#/acts/' + esc(a.id) + '"><div class="li-main"><div class="li-title">' + esc(a.title || a.id) + '</div><div class="li-sub">' + esc(siteName(a.site)) + ' · ' + esc(a.srcForm || '본사 등록') + ' · 등록 ' + diff(dateOf(a.createdAt), t) + '일 전</div></div>' +
+        '<div class="li-side">' + (App.ui && App.ui.level ? App.ui.level(a.level) : pill(a.level || '—')) + ' <span class="num ' + (od && a.level === '높음' ? 't-neg' : 'muted') + '">' + (a.due ? (od ? '기한 ' + diff(a.due, t) + '일 경과' : '기한 ' + esc(a.due.slice(5))) : '기한 없음') + '</span></div></li>';
+    }).join('') + '</ul>' : empty('미결 조치가 없습니다.');
+    body += '<div class="grid">' +
+      panel({ span: 8, title: '월별 등록·완료', sub: '위 = 등록, 아래 = 완료(같은 눈금)', actions: legendSlot('anb-lg-flow'), body: flow }) +
+      panel({ span: 4, title: '처리 소요일', sub: '범위 안 완료 ' + days.length + '건 · 중앙값 ' + (days.length ? num(median(days), 1) + '일' : '—'), body: hist }) +
+      panel({ span: 6, title: '오래된 미결', sub: '등록이 오래된 순 ' + olds.length + '건 / 미결 ' + open.length + '건', body: oldList, flush: true, foot: open.length > olds.length ? '<a href="#/acts">조치대장에서 모두 보기</a>' : '' }) +
+      panel({ span: 6, title: '사업장별 미결', sub: '기한경과 많은 순 · 막대 = 미결', body: siteBars }) +
+      panel({ span: 6, title: '수준별 기한 준수율', sub: '범위 안 완료한 조치(기한 있는 것)', body: lvTbl, flush: true }) +
+      panel({ span: 6, title: '출처 양식별', sub: '신규 = 범위 안 등록, 미결·기한경과 = 지금', body: srcTbl, flush: true }) +
+      '</div>';
+    page(main, 'acts', '조치 이행', sub, s, body);
+  }
+
+  /* ================= HEC 준비도 ================= */
+  function renderHec(main, s) {
+    var t = today(), sites = hecSites(s), items = hecItems();
+    var grid = {}, per = sites.map(function (x) {
+      var cells = items.map(function (it) { var c = hecCell(it, x.id); grid[it.code + '|' + x.id] = c; return c; });
+      var m = mockScore(x.id);
+      return { id: x.id, name: x.name, site: x, ready: hecReady(x.id, cells), partI: m ? m.partI : null, d1: m ? m.d1 : null, mockDate: m ? m.date : null, mockId: m ? m.id : null,
+        next: x.hecNextEval || '', g: cells.filter(function (c) { return c.k === 'g'; }).length, bad: cells.filter(function (c) { return c.k === 'r' || c.k === 'x'; }).length };
+    }).sort(function (a, b) { return (a.ready == null ? 999 : a.ready) - (b.ready == null ? 999 : b.ready); });
+    var rd = per.filter(function (x) { return x.ready != null; });
+    var avg = rd.length ? Math.round(sum(rd, function (x) { return x.ready; }) / rd.length) : null;
+    var pI = per.filter(function (x) { return x.partI != null; }), d1 = per.filter(function (x) { return x.d1 != null; });
+    var soon = per.filter(function (x) { return x.next && x.next >= t && diff(t, x.next) <= 30; });
+    var weak = items.map(function (it) {
+      var b = 0, x = 0, w = 0, ss = [];
+      sites.forEach(function (st) { var c = grid[it.code + '|' + st.id]; if (c.k === 'r') { b++; ss.push(st.id); } else if (c.k === 'x') { x++; ss.push(st.id); } else if (c.k === 'y') w++; });
+      return { it: it, b: b, x: x, w: w, n: b + x, sites: ss };
+    }).filter(function (r) { return r.n + r.w > 0; }).sort(function (a, b) { return b.n - a.n || b.w - a.w; });
+    var low = per[0];
+    var sub = !sites.length ? '범위에 HEC 평가 대상 사업장이 없습니다.'
+      : low && low.ready != null ? esc(low.name) + ' 준비도 ' + low.ready + '%로 가장 낮습니다' + (weak.length && weak[0].n ? ' — 가장 약한 항목 ' + esc(weak[0].it.code) + ' ' + esc(trunc(weak[0].it.name, 20)) + '(' + weak[0].n + '곳 불량·증빙 없음).' : '.') : '준비도를 계산할 항목이 없습니다.';
+    var body = kpis([
+      { label: '평균 준비도', value: avg == null ? '—' : num(avg), unit: '%', lead: true, sub: 'HEC 대상 ' + sites.length + '곳 · 해당없음 제외 양호 비율' },
+      { label: '모의 Part I 평균', value: pI.length ? num(sum(pI, function (x) { return x.partI; }) / pI.length, 1) : '—', unit: '점', sub: '최근 분기 점검(N4) ' + pI.length + '곳 기준' },
+      { label: 'D1 현장실태 평균', value: d1.length ? num(sum(d1, function (x) { return x.d1; }) / d1.length, 1) : '—', unit: '점', sub: '100점에서 유형별 감점' },
+      { label: '30일 안 평가', value: num(soon.length), unit: '곳', sub: soon.length ? esc(soon.map(function (x) { return x.name; }).slice(0, 2).join(', ')) + (soon.length > 2 ? ' 외' : '') : '평가 예정일 기준' }
+    ]);
+    var siteTbl = table([
+      { label: '사업장', render: function (r) { return '<b>' + esc(r.name) + '</b>'; } },
+      { label: '준비도', num: true, width: '26%', render: function (r) { return '<div class="anb-rate"><span class="num">' + (r.ready == null ? '—' : r.ready + '%') + '</span>' + bar(r.ready == null ? null : r.ready / 100, r.ready != null && r.ready < 70 ? 'neg' : '') + '</div>'; } },
+      { label: '모의 Part I', num: true, render: function (r) { return r.partI == null ? '<span class="faint">—</span>' : num(r.partI, 1); } },
+      { label: 'D1', num: true, render: function (r) { return r.d1 == null ? '<span class="faint">—</span>' : num(r.d1); } },
+      { label: '불량·없음', num: true, render: function (r) { return r.bad ? '<span class="t-neg">' + r.bad + '</span>' : '0'; } },
+      { label: '다음 평가', num: true, render: function (r) { if (!r.next) return '<span class="faint">—</span>'; var d = diff(t, r.next); return '<span class="nowrap">' + esc(r.next) + (d >= 0 ? ' <span class="' + (d <= 30 ? 't-warn' : 'faint') + '">D-' + d + '</span>' : '') + '</span>'; } }
+    ], per, { empty: 'HEC 평가 대상 사업장이 없습니다.', href: function (r) { return r.mockId ? '#/rec/' + r.mockId : ''; } });
+    var weakBody = weak.length ? chart('hbars', weak.slice(0, 6).map(function (r) { return { label: r.it.code + ' ' + trunc(r.it.name, 26), value: r.n, sub: [r.b ? '불량 ' + r.b : '', r.x ? '증빙 없음 ' + r.x : '', r.w ? '주의 ' + r.w : ''].filter(Boolean).join(' · ') }; }), { format: function (v) { return num(v) + '곳'; }, highlight: 0 }) : empty('모든 항목이 양호이거나 해당없음입니다.');
+    // 증빙 부족 → 양식
+    var need = {};
+    weak.filter(function (r) { return r.x > 0; }).forEach(function (r) { (r.it.forms || []).forEach(function (f) { var o = need[f] || (need[f] = { f: f, items: [], sites: {} }); o.items.push(r.it.code); r.sites.forEach(function (id) { if (grid[r.it.code + '|' + id].k === 'x') o.sites[id] = 1; }); }); });
+    var needRows = Object.keys(need).map(function (k) { var o = need[k]; return { f: k, items: o.items, sites: Object.keys(o.sites) }; }).sort(function (a, b) { return b.sites.length - a.sites.length || b.items.length - a.items.length; });
+    var needTbl = table([
+      { label: '증빙 양식', render: function (r) { var f = form(r.f); return '<b class="mono">' + esc(r.f) + '</b> ' + esc(f ? f.short || f.title : ''); } },
+      { label: '항목', render: function (r) { return '<span class="mono small">' + esc(r.items.slice(0, 5).join(' ')) + (r.items.length > 5 ? ' 외 ' + (r.items.length - 5) : '') + '</span>'; } },
+      { label: '사업장', num: true, render: function (r) { return num(r.sites.length) + '곳'; } },
+      { label: '', render: function (r) { return isHQ() ? '<a class="btn sm" href="#/requests/new?form=' + encodeURIComponent(r.f) + '&sites=' + encodeURIComponent(r.sites.join(',')) + '">요청 만들기</a>' : ''; } }
+    ], needRows, { empty: '증빙이 없는 항목이 없습니다.' });
+    body += '<div class="grid">' +
+      panel({ span: 7, title: '사업장별 준비도·모의 점수', sub: '준비도 낮은 순 · 모의 점수는 최근 분기 점검(N4) 기준', body: siteTbl, flush: true }) +
+      panel({ span: 5, title: '가장 약한 항목', sub: '불량·증빙 없음 사업장 수', body: weakBody }) +
+      panel({ span: 12, title: '사업장 × HEC 항목', sub: items.length + '개 항목 · 분기 점검(N4) 판정이 있으면 그 판정, 없으면 평가 창 안 증빙 기록', body: hecGridHTML(items, sites, grid), foot: hecLegend(), flush: true }) +
+      panel({ span: 12, title: '증빙이 없는 항목의 양식', sub: '양식을 받으면 해당 항목 증빙이 채워집니다', body: needTbl, flush: true }) +
+      '</div>';
+    page(main, 'hec', 'HEC 준비도', sub, s, body);
+  }
+  var HK_TXT = { g: '양호', y: '주의', r: '불량', x: '증빙 없음', n: '해당없음' };
+  function hk(k, title, href) {
+    var inner = '<i class="anb-hk anb-hk-' + k + '" aria-hidden="true"></i><span class="sr-only">' + HK_TXT[k] + '</span>';
+    return href ? '<a class="anb-hkb" href="' + esc(href) + '" title="' + esc(title) + '">' + inner + '</a>' : '<span class="anb-hkb" title="' + esc(title) + '">' + inner + '</span>';
+  }
+  function hecLegend() { return '<div class="mk-legend">' + ['g', 'y', 'r', 'x', 'n'].map(function (k) { return '<span><i class="anb-hk anb-hk-' + k + '"></i>' + HK_TXT[k] + '</span>'; }).join('') + '</div>'; }
+  function hecGridHTML(items, sites, grid) {
+    if (!sites.length || !items.length) return empty('HEC 평가 대상 사업장이 없습니다.');
+    var group = '';
+    return '<div class="matrix-wrap anb-hecwrap"><table class="matrix anb-hec"><thead><tr><th class="mx-row">항목</th>' + sites.map(function (x) {
+      var g = items.filter(function (it) { return grid[it.code + '|' + x.id].k === 'g'; }).length, n = items.filter(function (it) { return grid[it.code + '|' + x.id].k !== 'n'; }).length;
+      return '<th class="mx-col"><span>' + esc(trunc(x.name, 8)) + '</span><small class="num">' + (n ? Math.round(g / n * 100) + '%' : '—') + '</small></th>';
+    }).join('') + '</tr></thead><tbody>' + items.map(function (it) {
+      var gl = it.group !== group ? (group = it.group, '<tr class="anb-hg"><th class="mx-row" colspan="' + (sites.length + 1) + '">' + esc(it.group + ' ' + (it.area || '')) + '</th></tr>') : '';
+      return gl + '<tr><th class="mx-row"><span class="mono">' + esc(it.code) + '</span> ' + esc(trunc(it.name, 26)) + '<small>' + esc((it.forms || []).join(' · ') || '—') + '</small></th>' + sites.map(function (x) {
+        var c = grid[it.code + '|' + x.id];
+        return '<td>' + hk(c.k, it.code + ' · ' + x.name + ': ' + c.t, c.rec ? '#/rec/' + c.rec : '') + '</td>';
+      }).join('') + '</tr>';
+    }).join('') + '</tbody></table></div>';
+  }
+
+  /* ================= 사업장 비교 ================= */
+  var sortSt = { key: 'total', desc: false };
+  function renderSites(main, s) {
+    var t = today(), ds = dailyStats(s), half = periodOf('half', endOf(s)), acts = actsList(s), inc = incRows(s);
+    var list = s.siteObjs.map(function (x) {
+      var d = ds.sites.filter(function (y) { return y.id === x.id; })[0] || {};
+      var p = periodicStats(x, s), r = riskOf(x), e = eduSite(x, s), dr = drillOf(x, half);
+      var o = acts.filter(function (a) { return a.site === x.id && isOpen(a); }), ov = o.filter(function (a) { return isOverdue(a, t); }).length;
+      var hec = x.hec === false ? null : hecReady(x.id);
+      var incN = inc.filter(function (q) { return q.site === x.id && q.form === 'F04' && V(q, 'kind') === '재해'; }).length, nm = inc.filter(function (q) { return q.site === x.id; }).length - incN;
+      var eduQ = e.std ? Math.min(1, e.hours / e.std) : null;
+      var comp = { daily: d.rate == null ? null : d.rate * 100, periodic: p.rate == null ? null : p.rate * 100, acts: o.length ? (o.length - ov) / o.length * 100 : 100,
+        risk: r.score, edu: eduQ == null ? (dr.done ? 100 : 0) : (eduQ * 100 + (dr.done ? 100 : 0)) / 2, hec: hec };
+      var ws = 0, tot = 0;
+      WEIGHTS.forEach(function (w) { if (comp[w.key] != null) { ws += w.w; tot += comp[w.key] * w.w; } });
+      return { id: x.id, name: x.name, d: d, p: p, r: r, e: e, dr: dr, open: o.length, over: ov, hec: hec, inc: incN, nm: nm, comp: comp, total: ws ? Math.round(tot / ws) : null };
+    });
+    var ranks = list.filter(function (x) { return x.total != null; }).slice().sort(function (a, b) { return a.total - b.total; });
+    var bottom = toSet(ranks.length > 3 ? ranks.slice(0, 3).map(function (x) { return x.id; }) : []);
+    var key = sortSt.key, desc = sortSt.desc;
+    var val = {
+      name: function (x) { return x.name; }, daily: function (x) { return x.d.rate; }, periodic: function (x) { return x.p.rate; }, inc: function (x) { return x.inc + x.nm; },
+      acts: function (x) { return x.over * 1000 + x.open; }, risk: function (x) { return x.r.score; }, edu: function (x) { return x.comp.edu; }, hec: function (x) { return x.hec; }, total: function (x) { return x.total; }
+    }[key] || function (x) { return x.total; };
+    list.sort(function (a, b) {
+      var va = val(a), vb = val(b);
+      if (va == null && vb == null) return 0; if (va == null) return 1; if (vb == null) return -1;
+      return (va < vb ? -1 : va > vb ? 1 : 0) * (desc ? -1 : 1);
+    });
+    var sub = ranks.length > 3 ? '종합 점수 하위 3곳: ' + ranks.slice(0, 3).map(function (x) { return esc(x.name) + ' ' + x.total + '점'; }).join(', ') + '.'
+      : ranks.length ? '종합 점수 ' + esc(ranks[0].name) + ' ' + ranks[0].total + '점이 가장 낮습니다.' : '비교할 사업장이 없습니다.';
+    var riskTone = { ok: 'pos', soon: 'warn', over: 'neg', none: 'neg', 'new': 'neu' };
+    var tbl = table([
+      { key: 'name', sort: true, label: '사업장', render: function (x) { return '<b>' + esc(x.name) + '</b>' + (bottom[x.id] ? ' ' + pill('하위', 'neg') : ''); } },
+      { key: 'total', sort: true, label: '종합', num: true, width: '15%', render: function (x) { return '<div class="anb-rate"><span class="num"><b>' + (x.total == null ? '—' : x.total) + '</b></span>' + bar(x.total == null ? null : x.total / 100) + '</div>'; } },
+      { key: 'daily', sort: true, label: '일일점검', num: true, render: function (x) { return pct(x.d.rate); } },
+      { key: 'periodic', sort: true, label: '정기 양식', num: true, render: function (x) { return pct(x.p.rate) + '<div class="faint small">' + x.p.got + '/' + x.p.exp + '</div>'; } },
+      { key: 'inc', sort: true, label: '재해·아차', num: true, render: function (x) { return num(x.inc) + ' · ' + num(x.nm); } },
+      { key: 'acts', sort: true, label: '미결·기한경과', num: true, render: function (x) { return num(x.open) + ' · ' + (x.over ? '<span class="t-neg">' + x.over + '</span>' : '0'); } },
+      { key: 'risk', sort: true, label: '위험성평가', render: function (x) { return pill(x.r.label, riskTone[x.r.state]); } },
+      { key: 'edu', sort: true, label: '교육·훈련', render: function (x) { return '<span class="num">' + num(x.e.hours, 1) + (x.e.std ? '/' + x.e.std : '') + '시간</span> ' + (x.dr.done ? pill('훈련', 'pos') : pill('훈련 없음', 'warn')); } },
+      { key: 'hec', sort: true, label: 'HEC', num: true, render: function (x) { return x.hec == null ? '<span class="faint">—</span>' : x.hec + '%'; } }
+    ], list, { cls: 'anb-score', sortAct: 'an.bSort', sortKey: key, desc: desc, empty: '범위에 사업장이 없습니다.', href: function (x) { return '#/sites/' + x.id; } });
+    var barsBody = ranks.length ? chart('hbars', ranks.slice().reverse().map(function (x) { return { label: x.name, value: x.total, low: !!bottom[x.id], sub: bottom[x.id] ? '하위 3' : '', href: '#/sites/' + x.id }; }), { format: function (v) { return num(v) + '점'; }, highlight: function (r) { return r.low; } }) : empty('비교할 사업장이 없습니다.');
+    var wt = '<div class="tbl-wrap"><table class="tbl anb-wt"><thead><tr><th>지표</th><th class="num">가중치</th><th>계산</th></tr></thead><tbody>' + WEIGHTS.map(function (w) {
+      return '<tr><td data-label="지표">' + esc(w.label) + '</td><td class="num" data-label="가중치">' + w.w + '%</td><td data-label="계산" class="muted">' + esc(w.how) + '</td></tr>';
+    }).join('') + '<tr><td data-label="지표">재해·아차</td><td class="num" data-label="가중치">0%</td><td data-label="계산" class="muted">보고를 위축시키지 않도록 점수에 넣지 않고 표에만 보여 줍니다.</td></tr></tbody></table></div>';
+    var body = '<div class="grid">' +
+      panel({ span: 12, title: '사업장 스코어카드', sub: s.label + ' · 미결 조치·위험성평가·HEC 는 지금 기준, 교육·훈련은 ' + esc(half.label) + ' · 머리글을 누르면 정렬', body: tbl, flush: true }) +
+      panel({ span: 6, title: '종합 점수', sub: '높은 순 · 하위 3곳 강조', body: barsBody }) +
+      panel({ span: 6, title: '종합 점수 계산 방법', sub: '가중 평균(0~100점), 값이 없는 지표는 빼고 환산', body: wt, flush: true }) +
+      '</div>';
+    page(main, 'sites', '사업장 비교', sub, s, body);
+  }
+
+  /* ================= 양식별 자동 분석 ================= */
+  function fieldList(def) {
+    var out = [];
+    (def.header || []).forEach(function (f) { out.push(f); });
+    (def.sections || []).forEach(function (sec) { if (sec.fields && sec.type !== 'table' && sec.type !== 'checklist') sec.fields.forEach(function (f) { out.push(f); }); });
+    var seen = {};
+    return out.filter(function (f) { if (!f || !f.id || f.sensitive || seen[f.id]) return false; seen[f.id] = 1; return true; });
+  }
+  function renderForm(main, s, args) {
+    var code = (Array.isArray(args) ? args[0] : typeof args === 'string' ? args : args && (args.code || args.id)) || (location.hash.match(/analytics\/form\/([A-Za-z0-9]+)/) || [])[1] || 'F07';
+    var def = form(code) || form('F07') || forms()[0];
+    if (!def) { page(main, 'form', '양식별', '양식 정의를 불러오지 못했습니다.', s, empty('양식 정의(FormsData)가 없습니다.')); return; }
+    code = def.code;
+    var list = rows(code, s), sel = '<select class="select" data-an="form" aria-label="양식">' + forms().map(function (f) { return '<option value="' + esc(f.code) + '"' + (f.code === code ? ' selected' : '') + '>' + esc(f.code + ' ' + (f.short || f.title)) + '</option>'; }).join('') + '</select>';
+    var confirmed = list.filter(function (r) { return r.status === '확인'; }).length, staged = list.filter(function (r) { return r.status === '작성중'; }).length;
+    var last = list.reduce(function (m, r) { var d = dateOf(r.submittedAt) || r.date; return d > m ? d : m; }, '');
+    var nSites = Object.keys(bySite(list)).length;
+    var dists = [], nums = [], noData = 0;
+    fieldList(def).forEach(function (f) {
+      var ty = f.type;
+      if (ty === 'select' || ty === 'bool' || ty === 'multi') {
+        var c = countBy(list, function (r) { var v = V(r, f.id); if (ty === 'bool') return v === true ? '예' : v === false ? '아니오' : null; return v; });
+        var rk = ranked(c), tot = sum(rk, function (x) { return x.n; });
+        if (rk.length) dists.push({ f: f, rk: rk, answered: ty === 'multi' ? list.filter(function (r) { var v = V(r, f.id); return v && v.length; }).length : tot }); else noData++;
+      } else if (ty === 'number' || ty === 'computed') {
+        var vs = list.map(function (r) { return nV(r, f.id); }).filter(function (v) { return v != null; });
+        if (vs.length) nums.push({ f: f, n: vs.length, sum: sum(vs), avg: sum(vs) / vs.length, max: Math.max.apply(null, vs) });
+        else if (ty === 'computed') {
+          var cc = ranked(countBy(list, function (r) { var v = V(r, f.id); return typeof v === 'string' ? v : null; }));
+          if (cc.length) dists.push({ f: f, rk: cc, answered: sum(cc, function (x) { return x.n; }) }); else noData++;
+        } else noData++;
+      } else if (ty === 'person' || ty === 'people') {
+        var ps = list.map(function (r) { return peopleN(r, f.id); }).filter(function (v) { return v != null; });
+        if (ps.length && ty === 'people') nums.push({ f: { id: f.id, label: f.label + '(인원)', unit: '명' }, n: ps.length, sum: sum(ps), avg: sum(ps) / ps.length, max: Math.max.apply(null, ps) });
+      }
+    });
+    var top = dists.filter(function (d) { return d.rk[0].n >= 2; }).sort(function (a, b) { return b.rk[0].n / b.answered - a.rk[0].n / a.answered; })[0];
+    var sub = !list.length ? esc(code) + ' ' + esc(def.short || def.title) + ' — 이 범위에 제출된 기록이 없습니다.'
+      : esc(code) + ' ' + list.length + '건(' + nSites + '곳)' + (top ? ' — ' + esc(top.f.label) + ' \'' + esc(trunc(top.rk[0].k, 24)) + '\' ' + top.rk[0].n + '건(' + pct(top.rk[0].n / top.answered) + ')이 가장 많습니다.' : '.');
+    var body = '<div class="toolbar anb-formbar">' + sel + '<span class="muted">' + esc(def.title) + ' · ' + esc((def.frequency && def.frequency.type) || '') + '</span><span class="spacer"></span><a class="btn ghost sm" href="#/records?form=' + esc(code) + '">기록 조회</a></div>';
+    body += kpis([
+      { label: '기록', value: num(list.length), unit: '건', lead: true, sub: s.label },
+      { label: '사업장', value: num(nSites), unit: '곳', sub: '범위 ' + s.siteObjs.length + '곳 중' },
+      { label: '확인 완료', value: pct(ratio(confirmed, list.length)), sub: confirmed + '건 · 단계보고 ' + staged + '건' },
+      { label: '최근 제출', value: last || '—', sub: last ? diff(last, today()) + '일 전' : '' }
+    ]);
+    var b = buckets(s), mv = b.list.map(function () { return 0; });
+    list.forEach(function (r) { var i = bucketOf(b, r.date); if (i >= 0) mv[i]++; });
+    var siteRk = ranked(countBy(list, function (r) { return siteName(r.site); }));
+    var html = '<div class="grid">' +
+      panel({ span: 8, title: b.unit + '별 건수', sub: s.label, body: list.length ? chart('bars', { labels: b.list.map(function (x) { return x.label; }), values: mv }, { format: fInt, height: 190 }) : empty('이 범위에 제출된 기록이 없습니다.') }) +
+      panel({ span: 4, title: '사업장별 건수', sub: '많은 순', body: siteRk.length ? chart('hbars', siteRk.slice(0, 8).map(function (x) { return { label: x.k, value: x.n }; }), { format: fInt }) : empty('기록이 없습니다.') });
+    dists.forEach(function (d) {
+      var others = d.rk.length > 8 ? sum(d.rk.slice(8), function (x) { return x.n; }) : 0;
+      html += panel({ span: 4, title: d.f.label, sub: (d.f.type === 'multi' ? '복수 선택 · 응답 ' : '응답 ') + d.answered + '건' + (others ? ' · 그 밖 ' + others + '건' : ''),
+        body: chart('hbars', d.rk.slice(0, 8).map(function (x) { return { label: x.k, value: x.n }; }), { format: fInt }) });
+    });
+    if (dists.length % 3) for (var i = dists.length % 3; i < 3; i++) html += '<div class="span-4 anb-pad" aria-hidden="true"></div>';
+    if (nums.length) html += panel({ span: 12, title: '숫자 항목', sub: '응답한 기록 기준', flush: true, body: table([
+      { label: '항목', render: function (r) { return esc(r.f.label); } },
+      { label: '응답', num: true, render: function (r) { return num(r.n); } },
+      { label: '합계', num: true, render: function (r) { return num(r.sum, 1); } },
+      { label: '평균', num: true, render: function (r) { return num(r.avg, 1); } },
+      { label: '최대', num: true, render: function (r) { return num(r.max, 1); } },
+      { label: '단위', render: function (r) { return '<span class="muted">' + esc(r.f.unit || '') + '</span>'; } }
+    ], nums) });
+    checkSections(def).forEach(function (sec) {
+      var tl = checkTally(list, sec.id), its = (sec.items || []).map(function (it) { var o = tl[it.code] || { g: 0, w: 0, b: 0, na: 0 }; return { it: it, o: o, n: o.g + o.w + o.b }; }).filter(function (x) { return x.n + x.o.na > 0; });
+      its.sort(function (a, b) { return ratio(b.o.w + b.o.b, b.n || 1) - ratio(a.o.w + a.o.b, a.n || 1) || b.o.b - a.o.b; });
+      var shown = its.slice(0, 12);
+      html += panel({ span: 12, title: sec.title || '체크리스트', sub: '항목별 판정 분포 · 주의·불량 비율 높은 순 ' + shown.length + '/' + (sec.items || []).length + '항목', flush: true, actions: stackLegend(),
+        body: table([
+          { label: '항목', render: function (r) { return '<span class="mono">' + esc(r.it.code) + '</span> ' + esc(trunc(r.it.text || r.it.name || '', 60)); } },
+          { label: '판정', width: '30%', render: function (r) { return stack100(r.o); } },
+          { label: '양호', num: true, render: function (r) { return num(r.o.g); } },
+          { label: '주의', num: true, render: function (r) { return num(r.o.w); } },
+          { label: '불량', num: true, render: function (r) { return r.o.b ? '<span class="t-neg">' + num(r.o.b) + '</span>' : '0'; } },
+          { label: '해당없음', num: true, render: function (r) { return num(r.o.na); } }
+        ], shown, { empty: '이 범위에 판정 기록이 없습니다.' }) });
+    });
+    (def.sections || []).filter(function (x) { return x.type === 'table'; }).forEach(function (sec) {
+      var cols = (sec.columns || []).filter(function (c) { return c.type === 'select' && !c.sensitive; }), ncol = (sec.columns || []).filter(function (c) { return c.type === 'number'; });
+      var nrows = sum(list, function (r) { var tb = Tb(r, sec.id); return tb ? tb.n : 0; });
+      if (!nrows) return;
+      var parts = cols.map(function (c) {
+        var agg = {};
+        list.forEach(function (r) { var tb = Tb(r, sec.id), m = tb && tb.c && tb.c[c.id]; if (m) Object.keys(m).forEach(function (k) { agg[k] = (agg[k] || 0) + (Number(m[k]) || 0); }); });
+        var rk = ranked(agg);
+        return rk.length ? '<div class="anb-tcol"><h3>' + esc(c.label) + '</h3>' + chart('hbars', rk.slice(0, 6).map(function (x) { return { label: x.k, value: x.n }; }), { format: fInt }) + '</div>' : '';
+      }).join('');
+      var sums = ncol.map(function (c) { return '<div><dt>' + esc(c.label) + ' 합계</dt><dd class="num">' + num(sum(list, function (r) { var tb = Tb(r, sec.id); return tb && tb.s ? tb.s[c.id] : 0; }), 1) + (c.unit ? ' ' + esc(c.unit) : '') + '</dd></div>'; }).join('');
+      html += panel({ span: 12, title: sec.title || '표', sub: '표 행 ' + num(nrows) + '개 · 열 값 분포', body: (parts ? '<div class="anb-tcols">' + parts + '</div>' : '') + (sums ? '<dl class="kv">' + sums + '</dl>' : '') || empty('분포를 낼 수 있는 열이 없습니다.') });
+    });
+    html += '</div>';
+    if (noData) html += '<p class="faint small anb-note">이 범위에 값이 하나도 없는 항목 ' + noData + '개는 뺐습니다.</p>';
+    page(main, 'form', '양식별', sub, s, body + html);
+  }
+  function stack100(o) {
+    var n = o.g + o.w + o.b; if (!n) return '<span class="faint">—</span>';
+    return '<div class="anb-st" title="양호 ' + o.g + ' · 주의 ' + o.w + ' · 불량 ' + o.b + '">' + (o.b ? '<i class="b" style="width:' + (o.b / n * 100).toFixed(1) + '%"></i>' : '') + (o.w ? '<i class="w" style="width:' + (o.w / n * 100).toFixed(1) + '%"></i>' : '') + (o.g ? '<i class="g" style="width:' + (o.g / n * 100).toFixed(1) + '%"></i>' : '') + '</div>';
+  }
+  function stackLegend() { return '<div class="mk-legend"><span><i class="anb-sw b"></i>불량</span><span><i class="anb-sw w"></i>주의</span><span><i class="anb-sw g"></i>양호</span></div>'; }
+
+  /* ================= AI 요약 · 인쇄 ================= */
+  AN.aiSummary = function () {
+    var s = scope(), dg = AN.digest(s);
+    var dlg = null;
+    dlg = App.dialog ? App.dialog({ title: 'AI 요약 · ' + s.label, wide: true, body: '<div class="stack"><div class="skel" style="height:16px;width:90%"></div><div class="skel" style="height:16px;width:75%"></div><div class="skel" style="height:16px;width:82%"></div></div>',
+      actions: [{ label: '닫기', kind: 'ghost', onClick: function () { if (dlg && dlg.close) dlg.close(); } }] }) : null;
+    function show(html) { var bd = dlg && dlg.el && dlg.el.querySelector('.dlg-bd'); if (bd) bd.innerHTML = html; else if (!dlg && App.toast) App.toast(html.replace(/<[^>]+>/g, ''), 'neu'); }
+    if (!App.api) { show('<p>서버에 연결되지 않았습니다.</p>'); return; }
+    App.api('ai.insight', { scope: { from: s.from, to: s.to, sites: s.all ? [] : s.sites }, digest: dg }, { silent: true }).then(function (d) {
+      var text = String((d && d.text) || '').trim();
+      show(text ? '<div class="anb-ai">' + text.split(/\n{2,}/).map(function (p) { return '<p>' + esc(p).replace(/\n/g, '<br>') + '</p>'; }).join('') + '</div><p class="faint small">규칙 기반 숫자(기록 ' + s.label + ')를 AI 가 요약한 글입니다. 판단 전에 각 화면의 숫자를 확인해 주세요.</p>' : '<p class="muted">요약 결과가 비어 있습니다.</p>');
+    }).catch(function (e) {
+      var msg = String((e && e.message) || '');
+      var nokey = /키|key|설정|API/i.test(msg) || (e && e.code === 'INVALID');
+      show(nokey ? '<p>AI 요약을 쓰려면 관리자가 설정에서 Claude API 키를 넣어야 합니다.</p>' + (App.isAdmin && App.isAdmin() ? '<p><a class="btn sm" href="#/settings">설정 열기</a></p>' : '<p class="muted">관리자에게 요청해 주세요.</p>')
+        : '<div class="err">요약을 만들지 못했습니다. ' + esc(msg) + '</div>');
+    });
+  };
+  function printNow() {
+    var body = document.querySelector('.anb-body'); if (!body) { window.print(); return; }
+    var s = scope(), title = body.getAttribute('data-title') || '분석';
+    var sub = document.querySelector('.anb .title-row .sub');
+    var html = '<p class="anb-pmeta">' + esc(s.label) + ' (' + esc(s.from) + ' ~ ' + esc(s.to) + ') · 사업장 ' + s.siteObjs.length + '곳 · 출력 ' + esc(today()) + '</p>' +
+      (sub ? '<p class="anb-pfind"><b>' + sub.innerHTML + '</b></p>' : '') + body.innerHTML;
+    if (AN.printReport) AN.printReport(title, html); else window.print();
+  }
+
+  /* ================= 액션·이벤트 ================= */
+  App.actions = App.actions || {};
+  var acts = {
+    'an.bPrint': function () { printNow(); },
+    'an.bRetry': function () { rerender(); },
+    'an.bSort': function (el) { var k = el.getAttribute('data-key'); if (sortSt.key === k) sortSt.desc = !sortSt.desc; else { sortSt.key = k; sortSt.desc = k === 'name' ? false : k === 'inc' || k === 'acts'; } rerender(); }
+  };
+  if (!App.actions['an.ai']) acts['an.ai'] = function () { AN.aiSummary(); };
+  Object.keys(acts).forEach(function (k) { App.actions[k] = acts[k]; });
+  document.addEventListener('change', function (ev) {
+    var el = ev.target; if (!el || !el.getAttribute) return;
+    var k = el.getAttribute('data-an');
+    if (k === 'daily-site') { dailySite = el.value; rerender(); }
+    else if (k === 'form') go('#/analytics/form/' + el.value);
+  });
+  AN.aiButton = function () { return isHQ() ? '<button class="btn ghost" type="button" data-act="an.ai">' + icon('chart') + '<span>AI 요약</span></button>' : ''; };
+
+  /* ================= 화면 등록 ================= */
+  view('daily', '분석 · 일일점검', renderDaily);
+  view('edu', '분석 · 교육·훈련', renderEdu);
+  view('acts', '분석 · 조치 이행', renderActs);
+  view('hec', '분석 · HEC 준비도', renderHec);
+  view('sites', '분석 · 사업장 비교', renderSites);
+  view('form', '분석 · 양식별', renderForm);
+
+  /* Node 자기 검사용(브라우저에선 쓰지 않음) */
+  AN._b = { dailyStats: dailyStats, eduSite: eduSite, riskOf: riskOf, periodicStats: periodicStats, norm: norm, periodOf: periodOf, buckets: buckets };
 })();
 /* ===== [analytics-b] 끝 ===== */
 </script>

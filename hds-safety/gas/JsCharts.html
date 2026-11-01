@@ -652,7 +652,7 @@
   // Stacked columns: per period, the parts of a whole (재해와 아차). 2px seams between segments, five series at most,
   // the legend returned (only series with data). percent: true draws each column as 100%.
   //   Charts.stack(el, { labels: ['6월', …], series: [{ name: '재해·사고', values: [...] }, { name: '아차·제안', values: [...] }], format })
-  function stack(el, { labels, series, format = fmt.int, tickFormat = null, height = null, annotations, reference, xAt = null, legend = null, percent = false, unit = '' }) {
+  function stack(el, { labels, series, format = fmt.int, tickFormat = null, height = null, annotations, reference, xAt = null, legend = null, percent = false, unit = '', partial = null }) {
     el._fmt = format;
     series = (series || []).slice(0, 5);
     const cols = () => series.map((sr, k) => colourOf(el, sr.colour, k));
@@ -678,8 +678,8 @@
           const v = +sr.values[i] || 0; if (v <= 0) return;
           const vv = percent ? (tot ? v / tot : 0) : v, seam = acc > 0 ? 2 : 0;
           const y1 = y(acc), y0 = y(acc + vv); acc += vv;
-          const r = svg('rect', { x: x(i) - bw / 2, y: y0, width: bw, height: Math.max(1, y1 - y0 - seam), fill: C[k], 'shape-rendering': 'crispEdges' }, g);
-          titled(r, `${lab} · ${sr.name}: ${format(v)}${unit}`);
+          const r = svg('rect', { x: x(i) - bw / 2, y: y0, width: bw, height: Math.max(1, y1 - y0 - seam), fill: C[k], opacity: partial === i ? 0.5 : null, 'shape-rendering': 'crispEdges' }, g);
+          titled(r, `${lab}${partial === i ? '(진행 중)' : ''} · ${sr.name}: ${format(v)}${unit}`);
         });
         boxes.push({ x0: x(i) - bw / 2, x1: x(i) + bw / 2, y0: y(percent ? (tot ? 1 : 0) : tot), y1: y(0) });
       });
@@ -693,7 +693,7 @@
         const r = s.getBoundingClientRect(), px = ((ev.clientX - r.left) / r.width) * w;
         const i = Math.max(0, Math.min(labels.length - 1, Math.floor((px - padL) / band)));
         hl.setAttribute('x', padL + band * i); hl.setAttribute('opacity', 0.06);
-        tip.innerHTML = `<div style="opacity:.7">${esc(labels[i])}</div>` + series.map((sr, k) => `<div><span style="display:inline-block;width:8px;height:8px;margin-right:6px;background:${C[k]}"></span>${esc(sr.name)} <b style="font-weight:600">${esc(format(+sr.values[i] || 0))}${esc(unit)}</b></div>`).join('') + (series.length > 1 ? `<div style="opacity:.7">합계 ${esc(format(totals[i]))}${esc(unit)}</div>` : '');
+        tip.innerHTML = `<div style="opacity:.7">${esc(labels[i])}${partial === i ? ' · 진행 중' : ''}</div>` + series.map((sr, k) => `<div><span style="display:inline-block;width:8px;height:8px;margin-right:6px;background:${C[k]}"></span>${esc(sr.name)} <b style="font-weight:600">${esc(format(+sr.values[i] || 0))}${esc(unit)}</b></div>`).join('') + (series.length > 1 ? `<div style="opacity:.7">합계 ${esc(format(totals[i]))}${esc(unit)}</div>` : '');
         const left = Math.min((x(i) / w) * r.width + 12, r.width - tip.offsetWidth - 4);
         tip.style.left = `${Math.max(0, left)}px`; tip.style.top = '0px'; tip.style.opacity = 1;
       };

@@ -51,7 +51,7 @@ function doGet(e) {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
-/** 템플릿에서 <?!= include('Css'); ?> 로 다른 HTML 파일 내용을 넣는다. */
+/** Index 템플릿의 include 스크립틀릿이 부른다: 다른 HTML 파일 내용을 그대로 넣는다. */
 function include(name) {
   return HtmlService.createHtmlOutputFromFile(name).getContent();
 }

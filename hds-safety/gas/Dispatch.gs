@@ -16,7 +16,7 @@
  *
  * 규칙
  *   - 다른 파일의 객체(Db·Auth·SCHEMA 등)는 함수 안에서만 참조한다(붙여넣기 파일 순서와 무관하게 동작).
- *   - 시트는 표마다 한 번씩만 읽는다(makeCtx 메모). records 는 data 열을 빼고 필요한 열만 읽는다.
+ *   - 시트는 표마다 한 번씩만 읽는다(makeCtx 메모 + Db 실행 메모). records 는 data(늦게 읽는 열)를 건드리지 않는다.
  *   - 메일은 사업장당 한 통으로 모아서 보낸다. 성공·실패·건너뜀 모두 log(kind 'mail') 에 남긴다.
  */
 var Dispatch = (function () {
@@ -240,93 +240,22 @@ var Dispatch = (function () {
     return map;
   }
 
-  function schemaTypes(table) {
-    var out = {};
-    try {
-      SCHEMA[table].cols.forEach(function (c) { out[c[0]] = c[1]; });
-    } catch (e) { /* 스키마가 없으면 문자열로 본다 */ }
-    return out;
-  }
-
-  function decode(type, v, name) {
-    if (v instanceof Date) {
-      var s = Utilities.formatDate(v, tz(), "yyyy-MM-dd'T'HH:mm:ss");
-      return name === 'date' ? s.slice(0, 10) : s;
-    }
-    if (type === 'b') return v === true || /^(true|1|y|yes)$/i.test(String(v == null ? '' : v));
-    if (type === 'n') return (v === '' || v == null) ? null : Number(v);
-    if (type === 'j') {
-      if (typeof v === 'string') {
-        if (!v) return null;
-        try { return JSON.parse(v); } catch (e) { return null; }
-      }
-      return v == null ? null : v;
-    }
-    return v == null ? '' : String(v);
-  }
+  var LIGHT_REC = ['id', 'form', 'site', 'date', 'period', 'shift', 'status', 'stageDone', 'author', 'requestId',
+    'createdAt', 'updatedAt', 'submittedAt', 'confirmedAt', 'returnedAt', 'deleted'];
 
   /**
-   * records 를 data 열 없이 읽는다(대량 사업장에서도 가볍게). withFacts 면 facts 청크를 이어 붙여 함께.
-   * 시트 구조가 예상과 다르면 Db.all('records') 로 대체한다.
+   * records 를 data 없이 가볍게 복사한다. Db.all 은 큰 data 열을 늦게 읽으므로(그 속성을 건드릴 때만 읽음)
+   * 여기서는 필요한 열만 골라 복사해 data 를 건드리지 않는다. withFacts 면 facts 도.
    */
   function recordRows(withFacts) {
-    var cols = ['id', 'form', 'site', 'date', 'period', 'shift', 'status', 'stageDone', 'author', 'requestId',
-      'createdAt', 'updatedAt', 'submittedAt', 'confirmedAt', 'returnedAt', 'deleted'];
-    try {
-      var sh = Db.sheet('records');
-      if (!sh || typeof sh.getRange !== 'function') throw new Error('records 시트 없음');
-      var lastRow = sh.getLastRow();
-      if (lastRow < 2) return [];
-      var lastCol = sh.getLastColumn();
-      var head = sh.getRange(1, 1, 1, lastCol).getValues()[0].map(function (h) { return String(h).trim(); });
-      var pos = {};
-      head.forEach(function (h, i) { if (!pos.hasOwnProperty(h)) pos[h] = i; });
-      var max = 0;
-      cols.forEach(function (c) {
-        if (!pos.hasOwnProperty(c)) throw new Error('records 열 없음: ' + c);
-        if (pos[c] > max) max = pos[c];
-      });
-      var factCols = [];
-      if (withFacts) {
-        head.forEach(function (h, i) {
-          var m = /^facts(?:_(\d+))?$/.exec(h);
-          if (m) factCols.push({ i: i, n: m[1] ? Number(m[1]) : 1 });
-        });
-        factCols.sort(function (a, b) { return a.n - b.n; });
-        factCols.forEach(function (f) { if (f.i > max) max = f.i; });
-      }
-      var types = schemaTypes('records');
-      var vals = sh.getRange(2, 1, lastRow - 1, max + 1).getValues();
-      var out = [];
-      for (var r = 0; r < vals.length; r++) {
-        var row = vals[r];
-        var id = row[pos.id];
-        if (id === '' || id == null) continue;
-        var o = {};
-        for (var k = 0; k < cols.length; k++) o[cols[k]] = decode(types[cols[k]] || 's', row[pos[cols[k]]], cols[k]);
-        if (!Array.isArray(o.stageDone)) o.stageDone = [];
-        if (withFacts) o.facts = joinFacts(row, factCols);
-        out.push(o);
-      }
-      return out;
-    } catch (e) {
-      console.warn('records 빠른 읽기 대신 전체 읽기: ' + msgOf(e));
-      return all('records').map(function (r) {
-        var o = assign(r, {});
-        delete o.data;
-        if (!Array.isArray(o.stageDone)) o.stageDone = [];
-        return o;
-      });
-    }
-  }
-  function joinFacts(row, factCols) {
-    var s = '';
-    factCols.forEach(function (f) { var v = row[f.i]; if (v !== '' && v != null) s += String(v); });
-    if (!s) return {};
-    if (s.indexOf('@drive:') === 0) {
-      try { return Db.getJson(s.slice(7)) || {}; } catch (e) { return {}; }
-    }
-    try { var o = JSON.parse(s); return isObj(o) ? o : {}; } catch (e2) { return {}; }
+    return all('records').map(function (r) {
+      var o = {};
+      for (var i = 0; i < LIGHT_REC.length; i++) o[LIGHT_REC[i]] = r[LIGHT_REC[i]];
+      if (!Array.isArray(o.stageDone)) o.stageDone = [];
+      o.deleted = o.deleted === true || /^(true|y|1)$/i.test(String(o.deleted || ''));
+      if (withFacts) o.facts = isObj(r.facts) ? r.facts : {};
+      return o;
+    });
   }
 
   /** 한 실행 안에서 표를 한 번씩만 읽게 하는 묶음. */
@@ -449,14 +378,8 @@ var Dispatch = (function () {
     return { period: { key: last.slice(0, 4), from: last, to: next, label: '직전 평가 ' + last }, due: next, status: 'ok', label: next + '까지 유효', recId: lastRec && lastRec.id };
   }
 
-  function dailyStatus(def, site, ref, R, open, nowCap, st) {
-    var f = def.frequency || {};
-    var day = addDays(ref, -1);
-    var time = /^\d{1,2}:\d{2}$/.test(str(st.dailyDue)) ? str(st.dailyDue) : '10:00';
-    if (time.length === 4) time = '0' + time;
-    var dueAt = ref + 'T' + time + ':00';
-    var p = { key: day, from: day, to: day, label: fmtDay(day) };
-    if (open && open > day) return { period: p, due: ref, dueAt: dueAt, status: 'na', label: '개설 전' };
+  /** 하루치 교대별 제출 판정. dueAt 기준 지연 여부, nowCap 기준 기한경과 여부. */
+  function dayEval(f, site, day, R, dueAt, nowCap, time) {
     var shifts = f.shifts ? arr(site.shifts).map(str).filter(Boolean) : [];
     if (!shifts.length) shifts = [''];
     var dayRecs = R.filter(function (r) { return dateOf(r.date) === day || (!r.date && str(r.period) === day); });
@@ -466,35 +389,66 @@ var Dispatch = (function () {
       if (!mine.length) return;
       done++;
       recId = recId || mine[0].id;
-      var onTime = mine.some(function (r) { return !r.submittedAt || String(r.submittedAt) <= dueAt; });
-      if (!onTime) late = true;
+      if (!mine.some(function (r) { return !r.submittedAt || String(r.submittedAt) <= dueAt; })) late = true;
     });
     var need = shifts.length;
-    var base = { period: p, due: ref, dueAt: dueAt, done: done, need: need };
+    var base = { period: { key: day, from: day, to: day, label: fmtDay(day) }, due: dueAt.slice(0, 10), dueAt: dueAt, done: done, need: need };
     if (done === need) return assign(base, { status: late ? 'late' : 'ok', label: late ? '지연 제출' : '제출', recId: recId });
     var over = nowCap > dueAt;
     var part = need > 1 ? ' (' + done + '/' + need + '교대)' : '';
-    return assign(base, { status: over ? 'miss' : 'pending', label: (over ? '미제출' : '오늘 ' + time + ' 마감') + part, recId: recId || undefined });
+    return assign(base, { status: over ? 'miss' : 'pending', label: (over ? '미제출' : fmtDay(dueAt.slice(0, 10)) + ' ' + time + ' 마감') + part, recId: recId || undefined });
   }
 
+  /**
+   * 매일 양식: 어제 근무분(마감 오늘 dailyDue). 어제분이 아직 마감 전이면 그제분이 빠졌는지 먼저 본다(기한경과 우선).
+   */
+  function dailyStatus(def, site, ref, R, open, nowCap, st) {
+    var f = def.frequency || {};
+    var time = /^\d{1,2}:\d{2}$/.test(str(st.dailyDue)) ? str(st.dailyDue) : '10:00';
+    if (time.length === 4) time = '0' + time;
+    var day = addDays(ref, -1);
+    if (open && open > day) {
+      return { period: { key: day, from: day, to: day, label: fmtDay(day) }, due: ref, dueAt: ref + 'T' + time + ':00', status: 'na', label: '개설 전' };
+    }
+    var cur = dayEval(f, site, day, R, ref + 'T' + time + ':00', nowCap, time);
+    if (cur.status !== 'pending') return cur;
+    var prevDay = addDays(ref, -2);
+    if (open && open > prevDay) return cur;
+    var prev = dayEval(f, site, prevDay, R, day + 'T' + time + ':00', nowCap, time);
+    return prev.status === 'miss' ? prev : cur;
+  }
+
+  /**
+   * 기간 양식(월·분기·반기·계절). 프로토타입 schedStatus 규칙 + 보완:
+   *  - 직전 기간의 마감 전이면 직전 기간을 본다(제출/지연/마감 전).
+   *  - 직전 기간 마감이 지났는데 안 냈으면 직전 기간을 '기한경과 미제출'로(프로토타입은 이 경우를 놓친다).
+   *  - 그 밖에는 이번 기간. 계절 양식은 해당 월에만, 개설 전 기간은 '해당없음'.
+   */
   function periodicStatus(def, site, ref, R, open, months, st) {
     var type = def.frequency.type;
     var inSeason = function (ymd) { return !months.length || months.indexOf(monthNo(ymd)) >= 0; };
+    var evalP = function (p, due) {
+      var inP = R.filter(function (r) { return inPeriod(r, type, p); });
+      if (inP.length) {
+        var onTime = inP.some(function (r) { var d = dateOf(r.submittedAt) || dateOf(r.updatedAt); return !d || d <= due; });
+        var last = inP.slice().sort(function (a, b) { return String(b.submittedAt || '').localeCompare(String(a.submittedAt || '')); })[0];
+        return { period: p, due: due, status: onTime ? 'ok' : 'late', label: onTime ? '제출' : '지연 제출', recId: last && last.id };
+      }
+      var over = ref > due;
+      return { period: p, due: due, status: over ? 'miss' : 'pending', label: over ? '미제출' : '마감 ' + due };
+    };
     var p = periodOf(type, ref);
-    if (!inSeason(ref)) return { period: p, due: '', status: 'na', label: '시즌 아님' };
     var due = dueOf(def, p, st);
     var prev = periodOf(type, addDays(p.from, -1));
     var prevDue = dueOf(def, prev, st);
-    if (ref <= prevDue && inSeason(prev.from)) { p = prev; due = prevDue; }
-    if (open && open > p.to) return { period: p, due: due, status: 'na', label: '개설 전' };
-    var inP = R.filter(function (r) { return inPeriod(r, type, p); });
-    if (inP.length) {
-      var onTime = inP.some(function (r) { var d = dateOf(r.submittedAt) || dateOf(r.updatedAt); return !d || d <= due; });
-      var last = inP.slice().sort(function (a, b) { return String(b.submittedAt || '').localeCompare(String(a.submittedAt || '')); })[0];
-      return { period: p, due: due, status: onTime ? 'ok' : 'late', label: onTime ? '제출' : '지연 제출', recId: last && last.id };
+    var prevApplies = inSeason(prev.from) && !(open && open > prev.to);
+    if (prevApplies) {
+      var pe = evalP(prev, prevDue);
+      if (ref <= prevDue || pe.status === 'miss') return pe;
     }
-    var over = ref > due;
-    return { period: p, due: due, status: over ? 'miss' : 'pending', label: over ? '미제출' : '마감 ' + due };
+    if (!inSeason(ref)) return { period: p, due: '', status: 'na', label: '시즌 아님' };
+    if (open && open > p.to) return { period: p, due: due, status: 'na', label: '개설 전' };
+    return evalP(p, due);
   }
 
   /**
@@ -1189,6 +1143,13 @@ var Dispatch = (function () {
 
   /* ───────────── 매일 점검 (트리거 08시) ───────────── */
 
+  /** 정기 양식 기한경과 독촉 주기: 경과 1·2·3일째, 그 뒤로는 7일마다(마감일이 없으면 월요일마다). 오래 밀린 반기 양식으로 매일 메일이 가지 않게. */
+  function overdueDay(left, t) {
+    if (left == null || isNaN(left)) return weekday(t) === '월';
+    var over = -left;
+    return over <= 3 || over % 7 === 0;
+  }
+
   function daily() {
     var started = Date.now();
     var res = { at: now(), cleaned: 0, sites: 0, mails: 0, failed: 0, noEmail: 0, requestItems: 0, formItems: 0, overdueActs: 0, hqMail: false, note: '' };
@@ -1240,7 +1201,7 @@ var Dispatch = (function () {
       dueStatus(site, t, ctx).forEach(function (it) {
         if (covered[site.id + '|' + it.form + '|' + it.period.key]) return;
         var left = isYmd(it.due) ? daysDiff(t, it.due) : null;
-        var take = (it.status === 'miss' && overdueOn) ||
+        var take = (it.status === 'miss' && overdueOn && overdueDay(left, t)) ||
           (it.status === 'pending' && left != null && (left === 0 || before.indexOf(left) >= 0));
         if (!take) return;
         add(site.id, { what: formTitle(it.form), period: it.period.label, due: it.due, dueAt: it.dueAt, left: it.status === 'miss' && left != null && left >= 0 ? -1 : left });
@@ -1248,18 +1209,25 @@ var Dispatch = (function () {
       });
     });
 
-    // 사업장당 한 통
+    // 사업장당 한 통. 같은 날 다시 돌려도(수동 실행·시간 초과 뒤 재실행) 이미 보낸 사업장은 건너뛴다.
+    var mem = null;
+    try { mem = Db.kvGet('cron.daily', null); } catch (e3) { mem = null; }
+    if (!isObj(mem) || mem.date !== t) mem = { date: t, sites: {}, hq: false };
+    if (!isObj(mem.sites)) mem.sites = {};
     var siteMap = ctx.siteMap();
     var mailedSites = {};
     var ids = Object.keys(bucket);
     for (var i = 0; i < ids.length; i++) {
       var site = siteMap[ids[i]];
       if (!site) continue;
+      if (mem.sites[site.id]) { res.already = (res.already || 0) + 1; continue; }
       res.sites++;
       if (Date.now() - started > TIME_BUDGET_MS) { res.note = '실행 시간 한도에 가까워 ' + (ids.length - i) + '곳은 다음 실행으로 미룸'; break; }
       if (!emailsOf(site.managerEmail).length) { res.noEmail++; continue; }
       var m = remindMail(site, bucket[ids[i]], st);
-      if (mail(site.managerEmail, m.subject, m.html, { who: 'system', ref: 'cron:' + site.id, settings: st })) { res.mails++; mailedSites[site.id] = true; } else res.failed++;
+      if (mail(site.managerEmail, m.subject, m.html, { who: 'system', ref: 'cron:' + site.id, settings: st })) {
+        res.mails++; mailedSites[site.id] = true; mem.sites[site.id] = 1;
+      } else res.failed++;
     }
     var done = marks.map(function (x) { return { id: x.id, sites: x.sites.filter(function (s) { return mailedSites[s]; }) }; })
       .filter(function (x) { return x.sites.length; });
@@ -1269,7 +1237,7 @@ var Dispatch = (function () {
     var late = ctx.acts().filter(function (a) { return a.level === '높음' && OPEN_ACT[a.status] && isYmd(dateOf(a.due)) && dateOf(a.due) < t; })
       .sort(function (a, b) { return String(a.due).localeCompare(String(b.due)); });
     res.overdueActs = late.length;
-    if (late.length) {
+    if (late.length && !mem.hq) {
       var to = hqRecipients(st, ctx);
       var rows = late.slice(0, 40).map(function (a) {
         var s = siteMap[a.site];
@@ -1290,10 +1258,13 @@ var Dispatch = (function () {
       });
       if (to.length) res.hqMail = mail(to, tag(st) + '기한경과 위험도 높음 조치 ' + late.length + '건', html, { who: 'system', ref: 'cron:acts', settings: st });
       else log('system', 'mail', 'cron:acts', '보내지 않음(본사 수신 메일 미설정) · 기한경과 높음 조치 ' + late.length + '건');
+      if (res.hqMail) mem.hq = true;
     }
+    try { Db.kvSet('cron.daily', mem); } catch (e4) { log('system', 'cron', 'daily', '오늘 보낸 곳 기록 실패: ' + msgOf(e4)); }
 
     log('system', 'cron', 'daily', '매일 점검 · 만료 세션 ' + res.cleaned + '건 정리 · 독촉 대상 ' + res.sites + '곳(요청 ' + res.requestItems + '건, 정기 양식 ' + res.formItems + '건) · 메일 ' + res.mails + '통' +
       (res.failed ? ' · 실패 ' + res.failed + '통' : '') + (res.noEmail ? ' · 담당자 메일 없음 ' + res.noEmail + '곳' : '') +
+      (res.already ? ' · 오늘 이미 보낸 곳 ' + res.already + '곳 건너뜀' : '') +
       ' · 기한경과 높음 조치 ' + res.overdueActs + '건' + (res.note ? ' · ' + res.note : '') + ' · ' + Math.round((Date.now() - started) / 100) / 10 + '초');
     return res;
   }
@@ -1424,7 +1395,7 @@ var Dispatch = (function () {
         ] },
         {
           type: 'table', title: '사업장별 (손볼 곳 먼저)',
-          cols: [{ label: '사업장' }, { label: '일일점검', num: true }, { label: '사고·아차', num: true }, { label: '작업중지', num: true }, { label: '기한경과 조치', num: true }, { label: '미제출 양식', num: true }],
+          cols: [{ label: '사업장' }, { label: '일일점검', num: true }, { label: '사고 · 아차', num: true }, { label: '작업중지', num: true }, { label: '기한경과 조치', num: true }, { label: '미제출 양식', num: true }],
           rows: show.map(function (x) {
             var r = x.r;
             return [

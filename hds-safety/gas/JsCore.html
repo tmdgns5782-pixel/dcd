@@ -1,7 +1,1911 @@
 <script>
 /* ===== [ui-core] 시작 ===== */
+/*
+ * HDS 안전장부 — App 코어 (SPEC §7.1)
+ * util(App.u) · api · 상태(App.S) · 라우터 · 셸 · 로그인 · UI 컴포넌트(App.ui) · 아이콘(App.icon) · 이벤트 위임.
+ * 다른 모듈(JsEngine/JsHq/JsAnalytics/JsSite/JsDemo)은 여기서 내놓는 App.* 공개 함수만 쓴다.
+ * 구글 앱스 스크립트 복붙 배포(SPEC §12): import/export·require 없음, 이 파일 안 문자열에 스크립틀릿 표식 없음.
+ */
 (function () {
-  "use strict";
+  'use strict';
+
+  var App = window.App = window.App || {};
+  App.actions = App.actions || {};
+  App.views = App.views || {};
+  App.ui = App.ui || {};
+  var BOOT = {};
+
+  /* =====================================================================
+   * 0. 브라우저 저장소(localStorage) — 막힌 환경(사생활 보호 창 등)에서도 죽지 않게
+   * ===================================================================== */
+  var K = { token: 'hds.token', siteToken: 'hds.siteToken', name: 'hds.name', lastName: 'hds.lastName', kind: 'hds.kind' };
+  var store = {
+    get: function (k) { try { return window.localStorage.getItem(k) || ''; } catch (e) { return ''; } },
+    set: function (k, v) { try { window.localStorage.setItem(k, String(v)); } catch (e) { /* 저장 불가 환경 */ } },
+    del: function (k) { try { window.localStorage.removeItem(k); } catch (e) { /* 저장 불가 환경 */ } }
+  };
+  App.store = store;
+
+  /* =====================================================================
+   * 1. 양식 정의(FD)
+   * ===================================================================== */
+  function readFD() {
+    try {
+      var el = document.getElementById('forms-data');
+      if (el) return JSON.parse(el.textContent);
+    } catch (e) {
+      console.error('[App] 양식 정의(FormsData)를 읽지 못했습니다', e);
+    }
+    return { forms: [], codes: {}, libraries: {} };
+  }
+  App.FD = readFD();
+  App.FORMS = Array.isArray(App.FD.forms) ? App.FD.forms : [];
+  App.FORM = {};
+  App.FORMS.forEach(function (f) { if (f && f.code) App.FORM[f.code] = f; });
+
+  /* =====================================================================
+   * 2. 유틸 App.u
+   * ===================================================================== */
+  var skew = 0; // 서버 시각 - 브라우저 시각(ms). boot 의 serverTime 으로 보정.
+  var ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  var DOW = ['일', '월', '화', '수', '목', '금', '토'];
+
+  function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return ESC[c]; }); }
+  function pad(n, w) { return String(n).padStart(w || 2, '0'); }
+  function now() { return new Date(Date.now() + skew); }
+  function dkey(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function isoLocal(d) {
+    d = d || now();
+    return dkey(d) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+  }
+  function today() { return dkey(now()); }
+  function parseD(s) {
+    if (!s) return null;
+    if (s instanceof Date) return isNaN(s) ? null : new Date(s.getFullYear(), s.getMonth(), s.getDate());
+    var m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(s));
+    if (!m) return null;
+    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  }
+  /** 'YYYY-MM-DDTHH:mm(:ss)' 또는 'YYYY-MM-DD HH:mm' → 브라우저 지역 시각 Date (KST 문자열을 그대로 읽음) */
+  function parseDT(s) {
+    if (!s) return null;
+    if (s instanceof Date) return isNaN(s) ? null : new Date(s.getTime());
+    var m = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ](\d{1,2}):(\d{2})(?::(\d{2}))?)?/.exec(String(s));
+    if (!m) return null;
+    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4] || 0), Number(m[5] || 0), Number(m[6] || 0));
+  }
+  function addDays(s, n) {
+    var d = parseD(s) || parseD(today());
+    d.setDate(d.getDate() + Number(n || 0));
+    return dkey(d);
+  }
+  /** b - a (일). 둘 중 하나라도 못 읽으면 NaN */
+  function daysDiff(a, b) {
+    var x = parseD(a), y = parseD(b);
+    if (!x || !y) return NaN;
+    return Math.round((y - x) / 86400000);
+  }
+  function fmtD(s) { return s ? String(s).slice(0, 10) : ''; }
+  function fmtDT(s) { return s ? String(s).replace('T', ' ').slice(0, 16) : ''; }
+  function weekday(s) { var d = parseD(s); return d ? DOW[d.getDay()] : ''; }
+  /** '10월 31일 (금)' */
+  function fmtK(s) {
+    var d = parseD(s);
+    return d ? (d.getMonth() + 1) + '월 ' + d.getDate() + '일 (' + DOW[d.getDay()] + ')' : '';
+  }
+  /** 상대 표현: 시각이 있으면 '방금·n분 전·n시간 전', 날짜는 '오늘·어제·내일·n일 전·n일 후', 두 달 넘으면 날짜 그대로 */
+  function rel(s) {
+    if (!s) return '';
+    var str = String(s);
+    var t = now();
+    if (/[T ]\d{1,2}:\d{2}/.test(str)) {
+      var d = parseDT(str);
+      if (d) {
+        var min = Math.floor((t - d) / 60000);
+        if (min >= -1 && min < 1) return '방금';
+        if (min >= 1 && min < 60) return min + '분 전';
+        if (min >= 60 && dkey(d) === dkey(t)) return Math.floor(min / 60) + '시간 전';
+      }
+    }
+    var n = daysDiff(str.slice(0, 10), dkey(t));
+    if (isNaN(n)) return str;
+    if (n === 0) return '오늘';
+    if (n === 1) return '어제';
+    if (n === -1) return '내일';
+    if (n > 1 && n < 60) return n + '일 전';
+    if (n < -1 && n > -60) return (-n) + '일 후';
+    return fmtD(str);
+  }
+  /** 천 단위 구분. 없는 값은 '—' (0 은 '0') */
+  function num(v, d) {
+    if (v === null || v === undefined || v === '' || typeof v === 'boolean') return '—';
+    var x = Number(v);
+    if (!isFinite(x)) return '—';
+    d = d == null ? 0 : d;
+    return x.toLocaleString('ko-KR', { minimumFractionDigits: d, maximumFractionDigits: d });
+  }
+  /** 비율(0~1) → '62.5%'. 없는 값·무한대는 '—' */
+  function pct(v, d) {
+    if (v === null || v === undefined || v === '') return '—';
+    var x = Number(v);
+    if (!isFinite(x)) return '—';
+    d = d == null ? 1 : d;
+    return (x * 100).toFixed(d) + '%';
+  }
+  function uid() { return Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4); }
+  function clone(o) { return o === undefined ? undefined : JSON.parse(JSON.stringify(o)); }
+  function isEmpty(v) {
+    if (v === undefined || v === null || v === '') return true;
+    if (Array.isArray(v)) return v.length === 0;
+    if (typeof v === 'object' && !(v instanceof Date)) return Object.keys(v).length === 0;
+    return false;
+  }
+  function debounce(fn, ms) {
+    var t = null;
+    var f = function () {
+      var self = this, args = arguments;
+      clearTimeout(t);
+      t = setTimeout(function () { t = null; fn.apply(self, args); }, ms == null ? 250 : ms);
+    };
+    f.cancel = function () { clearTimeout(t); t = null; };
+    return f;
+  }
+  /** 배열 → { 키: [항목] } (처음 나온 순서 유지) */
+  function groupBy(arr, fn) {
+    var out = {};
+    var get = typeof fn === 'function' ? fn : function (x) { return x == null ? undefined : x[fn]; };
+    (arr || []).forEach(function (x, i) {
+      var k = get(x, i);
+      (out[k] || (out[k] = [])).push(x);
+    });
+    return out;
+  }
+  function sum(arr, fn) {
+    var get = typeof fn === 'function' ? fn : (fn ? function (x) { return x == null ? 0 : x[fn]; } : function (x) { return x; });
+    return (arr || []).reduce(function (a, x, i) { var v = Number(get(x, i)); return a + (isFinite(v) ? v : 0); }, 0);
+  }
+  var collator = (window.Intl && Intl.Collator) ? new Intl.Collator('ko', { numeric: true, sensitivity: 'base' }) : null;
+  /** 새 배열로 정렬(원본 유지). 없는 값은 언제나 뒤로. 문자열은 한국어 사전순(숫자 인식) */
+  function sortBy(arr, fn, desc) {
+    var get = typeof fn === 'function' ? fn : function (x) { return x == null ? undefined : x[fn]; };
+    var dir = desc ? -1 : 1;
+    return (arr || []).map(function (x, i) { return { x: x, k: get(x), i: i }; }).sort(function (a, b) {
+      var ae = a.k === null || a.k === undefined || a.k === '', be = b.k === null || b.k === undefined || b.k === '';
+      if (ae || be) return ae && be ? a.i - b.i : (ae ? 1 : -1);
+      var c;
+      if (typeof a.k === 'number' && typeof b.k === 'number') c = a.k - b.k;
+      else c = collator ? collator.compare(String(a.k), String(b.k)) : (String(a.k) < String(b.k) ? -1 : String(a.k) > String(b.k) ? 1 : 0);
+      return c ? c * dir : a.i - b.i;
+    }).map(function (o) { return o.x; });
+  }
+  /**
+   * 기간: 프로토타입 periodOf 규칙(월·계절=YYYY-MM, 분기=YYYY-Qn, 반기=YYYY-H1|H2, 그 밖=날짜)에
+   * SPEC §5 의 연간(YYYY)·수시('') 키를 더함.
+   */
+  function periodOf(type, date) {
+    var ds = fmtD(date) || today();
+    var d = parseD(ds) || parseD(today());
+    var y = d.getFullYear(), m = d.getMonth();
+    if (type === 'monthly' || type === 'season') {
+      return { key: y + '-' + pad(m + 1), from: dkey(new Date(y, m, 1)), to: dkey(new Date(y, m + 1, 0)), label: y + '년 ' + (m + 1) + '월' };
+    }
+    if (type === 'quarterly') {
+      var q = Math.floor(m / 3);
+      return { key: y + '-Q' + (q + 1), from: dkey(new Date(y, q * 3, 1)), to: dkey(new Date(y, q * 3 + 3, 0)), label: y + '년 ' + (q + 1) + '분기' };
+    }
+    if (type === 'half') {
+      var h = m < 6 ? 0 : 1;
+      return { key: y + '-H' + (h + 1), from: dkey(new Date(y, h * 6, 1)), to: dkey(new Date(y, h * 6 + 6, 0)), label: y + '년 ' + (h ? '하' : '상') + '반기' };
+    }
+    if (type === 'annual') {
+      return { key: String(y), from: y + '-01-01', to: y + '-12-31', label: y + '년' };
+    }
+    if (type === 'event') {
+      return { key: '', from: ds, to: ds, label: ds };
+    }
+    return { key: ds, from: ds, to: ds, label: ds };
+  }
+  function yymmdd(s) { s = String(s || ''); return s.slice(2, 4) + s.slice(5, 7) + s.slice(8, 10); }
+  function yymm(s) { s = String(s || ''); return s.slice(2, 4) + s.slice(5, 7); }
+  function stamp() { var d = now(); return String(d.getFullYear()).slice(2) + pad(d.getMonth() + 1) + pad(d.getDate()) + '-' + pad(d.getHours()) + pad(d.getMinutes()); }
+  function size(b) {
+    b = Number(b) || 0;
+    if (b < 1024) return b + 'B';
+    if (b < 1024 * 1024) return (b / 1024).toFixed(b < 10240 ? 1 : 0) + 'KB';
+    return (b / 1048576).toFixed(1) + 'MB';
+  }
+  /** 이름 첫 글자(아바타) */
+  function initial(name) {
+    var s = String(name || '').trim();
+    if (!s) return '?';
+    return Array.from(s)[0].toUpperCase();
+  }
+  /** 사람마다 고정된 옅은 색조(정체성 표시용 — 데이터 색 아님) */
+  function tint(name) {
+    var s = String(name || ''), h = 0;
+    for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    var hue = (h % 12) * 30 + 15; // 30° 간격 12색
+    return { bg: 'hsl(' + hue + ' 55% 92%)', ink: 'hsl(' + hue + ' 45% 26%)', hue: hue };
+  }
+  /** {a:1, b:true, c:false} → ' a="1" b' (값은 이스케이프) */
+  function attrs(o) {
+    if (!o) return '';
+    if (typeof o === 'string') return ' ' + o;
+    var out = '';
+    Object.keys(o).forEach(function (k) {
+      var v = o[k];
+      if (v === false || v === null || v === undefined) return;
+      out += v === true ? ' ' + k : ' ' + k + '="' + esc(v) + '"';
+    });
+    return out;
+  }
+  function $(sel, el) { return (el || document).querySelector(sel); }
+  function $$(sel, el) { return Array.prototype.slice.call((el || document).querySelectorAll(sel)); }
+  function dataUrlBytes(u) {
+    var s = String(u || ''), i = s.indexOf(',');
+    if (i < 0) return 0;
+    var b64 = /;base64/i.test(s.slice(0, i));
+    var body = s.slice(i + 1);
+    if (!b64) return decodeURIComponent(body).length;
+    var padN = body.slice(-2) === '==' ? 2 : body.slice(-1) === '=' ? 1 : 0;
+    return Math.floor(body.length * 3 / 4) - padN;
+  }
+  function dataUrlMime(u) { var m = /^data:([^;,]+)/.exec(String(u || '')); return m ? m[1].toLowerCase() : ''; }
+  function b64ToBlob(b64, mime) {
+    var bin = atob(String(b64 || '').replace(/\s+/g, ''));
+    var arr = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: mime || 'application/octet-stream' });
+  }
+  function dataUrlToBlob(u) {
+    var s = String(u), i = s.indexOf(',');
+    var mime = dataUrlMime(s) || 'application/octet-stream';
+    if (/;base64/i.test(s.slice(0, i))) return b64ToBlob(s.slice(i + 1), mime);
+    return new Blob([decodeURIComponent(s.slice(i + 1))], { type: mime });
+  }
+
+  App.u = {
+    esc: esc, pad: pad, today: today, now: now, isoLocal: isoLocal, dkey: dkey, parseD: parseD, parseDT: parseDT,
+    addDays: addDays, daysDiff: daysDiff, fmtD: fmtD, fmtDT: fmtDT, fmtK: fmtK, weekday: weekday, rel: rel,
+    num: num, pct: pct, uid: uid, clone: clone, isEmpty: isEmpty, debounce: debounce, groupBy: groupBy, sum: sum,
+    sortBy: sortBy, periodOf: periodOf, yymmdd: yymmdd, yymm: yymm, stamp: stamp, size: size, initial: initial,
+    tint: tint, attrs: attrs, $: $, $$: $$, dataUrlBytes: dataUrlBytes, dataUrlMime: dataUrlMime,
+    b64ToBlob: b64ToBlob, dataUrlToBlob: dataUrlToBlob
+  };
+
+  function setSkew(serverTime) {
+    var d = parseDT(serverTime);
+    if (!d) return;
+    var diff = d.getTime() - Date.now();
+    // 왕복 지연(1~3초)은 무시하고, 시계가 틀렸거나 시간대가 다른 경우만 보정
+    skew = Math.abs(diff) > 90000 ? diff : 0;
+  }
+
+  /* =====================================================================
+   * 3. 아이콘 — 16px 격자, 1.5px 선, 한 세트
+   *    표기: 'M…' path, 'c:cx,cy,r' 원, 'r:x,y,w,h,rx' 사각. 조각은 '|' 로 구분.
+   * ===================================================================== */
+  var ICONS = {
+    home: 'M2.25 7.5 8 2.75l5.75 4.75|M3.75 6.5v7h3.5V10h1.5v3.5h3.5v-7',
+    inbox: 'M2.25 9h3.25l1 2h3l1-2h3.25|M2.25 9 4 3.25h8L13.75 9v4.25H2.25z',
+    send: 'M14 2 7.25 8.75|M14 2 9.75 14l-2.5-5.25L2 6.25z',
+    check: 'M3 8.5 6.25 11.5 13 4.5',
+    x: 'M4 4l8 8|M12 4l-8 8',
+    alert: 'M8 2.5 14.25 13.25H1.75z|M8 6.5v3|M8 11.5v.01',
+    chart: 'M2.25 13.75h11.5|M4.5 11V8|M8 11V3.75|M11.5 11V6.25',
+    file: 'M4 1.75h5.25L12.5 5v9.25H4z|M9 1.75V5.25h3.5|M6 8.5h4.5|M6 11h4.5',
+    folder: 'M1.75 3.5h4.25l1.5 1.75h6.75v7.5H1.75z|M1.75 7h12.5',
+    users: 'c:6,5,2.5|M1.75 13.5c.4-2.4 2.15-3.75 4.25-3.75s3.85 1.35 4.25 3.75|M10.5 2.75a2.3 2.3 0 0 1 0 4.5|M12 10c1.25.5 2 1.6 2.25 3.5',
+    user: 'c:8,5,2.75|M2.75 14c.5-2.75 2.6-4.25 5.25-4.25s4.75 1.5 5.25 4.25',
+    settings: 'M2.25 4.5h6.25|M11.75 4.5h2|M2.25 11.5h2|M7.5 11.5h6.25|c:10.25,4.5,1.5|c:5.75,11.5,1.5',
+    search: 'c:7,7,4.25|M10.25 10.25 13.75 13.75',
+    plus: 'M8 3v10|M3 8h10',
+    minus: 'M3 8h10',
+    edit: 'M10.25 2.5l3.25 3.25L6 13.25H2.75V10z|M8.75 4l3.25 3.25',
+    trash: 'M2.5 4.25h11|M6 4.25v-1.5h4v1.5|M3.75 4.25 4.5 13.75h7l.75-9.5|M6.5 6.75v4.5|M9.5 6.75v4.5',
+    download: 'M8 2v8.5|M4.5 7 8 10.5 11.5 7|M2.5 13.75h11',
+    upload: 'M8 10.5V2|M4.5 5.5 8 2l3.5 3.5|M2.5 13.75h11',
+    print: 'M4.5 5.75V2h7v3.75|M4.5 11.5h-2.25V5.75h11.5v5.75H11.5|M4.5 9h7v5h-7z',
+    link: 'M6.75 9.25a3 3 0 0 0 4.25 0l2-2a3 3 0 0 0-4.25-4.25l-.75.75|M9.25 6.75a3 3 0 0 0-4.25 0l-2 2a3 3 0 0 0 4.25 4.25l.75-.75',
+    copy: 'r:5.5,5.5,8.25,8.25,1.25|M10.5 5.5V3.25c0-.55-.45-1-1-1H3.25c-.55 0-1 .45-1 1V9.5c0 .55.45 1 1 1H5.5',
+    bell: 'M3.75 11V7a4.25 4.25 0 0 1 8.5 0v4l1.25 1.25h-11z|M6.5 14a1.6 1.6 0 0 0 3 0',
+    calendar: 'r:2.25,3.25,11.5,10.5,1.25|M2.25 6.75h11.5|M5.5 1.75v3|M10.5 1.75v3',
+    clock: 'c:8,8,6|M8 4.75V8l2.25 1.5',
+    shield: 'M8 1.75 13.25 3.75v4c0 3-2.15 5.25-5.25 6.5-3.1-1.25-5.25-3.5-5.25-6.5v-4z|M5.75 8l1.5 1.5 3-3',
+    flame: 'M8 14.25c2.6 0 4.5-1.85 4.5-4.4 0-2.6-1.75-4-2.6-6.1-.85.95-1.2 2.05-1.2 3.05-.95-1.5-1.95-3.2-1.75-4.95C4.6 3.4 3.5 6.15 3.5 9.85c0 2.55 1.9 4.4 4.5 4.4z',
+    helmet: 'M3 11.25V9.5a5 5 0 0 1 10 0v1.75|M6.5 4.75V8|M9.5 4.75V8|M1.75 11.25h12.5v1.75H1.75z',
+    list: 'M5.75 4h8|M5.75 8h8|M5.75 12h8|M2.5 4h.01|M2.5 8h.01|M2.5 12h.01',
+    grid: 'r:2.25,2.25,4.5,4.5,.75|r:9.25,2.25,4.5,4.5,.75|r:2.25,9.25,4.5,4.5,.75|r:9.25,9.25,4.5,4.5,.75',
+    filter: 'M1.75 2.75h12.5l-4.75 5.5v4.5l-3 1.5v-6z',
+    'chevron-right': 'M6 3.5 10.5 8 6 12.5',
+    'chevron-left': 'M10 3.5 5.5 8l4.5 4.5',
+    'chevron-down': 'M3.5 6 8 10.5 12.5 6',
+    'chevron-up': 'M3.5 10 8 5.5l4.5 4.5',
+    'arrow-left': 'M13 8H3|M7 4 3 8l4 4',
+    more: 'M3.25 8h.01|M8 8h.01|M12.75 8h.01',
+    menu: 'M2.25 4.25h11.5|M2.25 8h11.5|M2.25 11.75h11.5',
+    logout: 'M6.25 2.25H3.5c-.55 0-1 .45-1 1v9.5c0 .55.45 1 1 1h2.75|M10.5 4.75 13.75 8l-3.25 3.25|M13.75 8H6.25',
+    refresh: 'M2.5 8a5.5 5.5 0 0 1 9.5-3.75l1.5 1.5|M13.5 2.25v3.5H10|M13.5 8A5.5 5.5 0 0 1 4 11.75l-1.5-1.5|M2.5 13.75v-3.5H6',
+    eye: 'M1.5 8S3.9 3.5 8 3.5 14.5 8 14.5 8 12.1 12.5 8 12.5 1.5 8 1.5 8z|c:8,8,2',
+    lock: 'r:2.75,7,10.5,7.25,1.25|M5.25 7V5a2.75 2.75 0 0 1 5.5 0v2|M8 9.75v1.75',
+    camera: 'M1.75 5h2.75l1.25-2h4.5l1.25 2h2.75v8.5H1.75z|c:8,9,2.5',
+    pen: 'M9.75 2.25l3 3-6.5 6.5-3.75.75.75-3.75z|M2 14.25h12',
+    mail: 'r:1.75,3.25,12.5,9.5,1.25|M2.25 4.25 8 8.75l5.75-4.5',
+    building: 'M2.75 14.25V2h7v12.25|M9.75 5.75h3.5v8.5|M1.25 14.25h13.5|M5 4.75h.01|M7.5 4.75h.01|M5 7.75h.01|M7.5 7.75h.01|M5 10.75h.01|M7.5 10.75h.01',
+    clipboard: 'M5.75 2h4.5v2.25h-4.5z|M10.25 3.25h2v11h-8.5v-11h2|M6 8h4|M6 10.75h2.75',
+    sun: 'c:8,8,2.75|M8 1.5v1.5|M8 13v1.5|M1.5 8H3|M13 8h1.5|M3.4 3.4l1.05 1.05|M11.55 11.55l1.05 1.05|M3.4 12.6l1.05-1.05|M11.55 4.45l1.05-1.05',
+    thermometer: 'M6.5 9.25V3a1.5 1.5 0 0 1 3 0v6.25a3 3 0 1 1-3 0z|M8 6v5.25',
+    stop: 'M5.25 1.75h5.5l3.5 3.5v5.5l-3.5 3.5h-5.5l-3.5-3.5v-5.5z|M5.25 8h5.5',
+    flag: 'M3.5 14.25V2.25|M3.5 2.75h9l-2 3.25 2 3.25h-9',
+    book: 'M2.25 3.25c2.1-.85 3.95-.6 5.75.9v9.6c-1.8-1.4-3.65-1.7-5.75-.9z|M13.75 3.25c-2.1-.85-3.95-.6-5.75.9v9.6c1.8-1.4 3.65-1.7 5.75-.9z',
+    siren: 'M4.25 11.75V8.5a3.75 3.75 0 0 1 7.5 0v3.25|M2.25 11.75h11.5v2H2.25z|M8 1.5v1.25|M2.75 3.5l.9.9|M13.25 3.5l-.9.9|M8 8.25v1.5',
+    external: 'M9.5 2.25h4.25V6.5|M13.75 2.25 7.5 8.5|M12 9.5v3.5c0 .55-.45 1-1 1H3c-.55 0-1-.45-1-1V5c0-.55.45-1 1-1h3.5',
+    info: 'c:8,8,6|M8 7.25v3.75|M8 5h.01',
+    history: 'M2.25 8a5.75 5.75 0 1 0 1.7-4.1|M2 2.25v3.25h3.25|M8 5v3.25l2.25 1.5',
+    qr: 'r:2,2,4.5,4.5,.5|r:9.5,2,4.5,4.5,.5|r:2,9.5,4.5,4.5,.5|M9.5 9.5h1.5v1.5|M13 9.5h1|M9.5 13h1|M12 12h2v2|M4.25 4.25h.01|M11.75 4.25h.01|M4.25 11.75h.01',
+    phone: 'r:4.25,1.75,7.5,12.5,1.5|M7.25 11.75h1.5',
+    dot: 'c:8,8,2.5'
+  };
+  var iconCache = {};
+  var iconWarned = {};
+  function iconInner(src) {
+    return src.split('|').map(function (p) {
+      if (p.slice(0, 2) === 'c:') {
+        var c = p.slice(2).split(',');
+        return '<circle cx="' + c[0] + '" cy="' + c[1] + '" r="' + c[2] + '"/>';
+      }
+      if (p.slice(0, 2) === 'r:') {
+        var r = p.slice(2).split(',');
+        return '<rect x="' + r[0] + '" y="' + r[1] + '" width="' + r[2] + '" height="' + r[3] + '" rx="' + (r[4] || 0) + '"/>';
+      }
+      return '<path d="' + p + '"/>';
+    }).join('');
+  }
+  App.icon = function (name, size) {
+    var s = Number(size) || 16;
+    var src = ICONS[name];
+    if (src == null) {
+      if (!iconWarned[name]) { iconWarned[name] = 1; console.warn('[App] 없는 아이콘 이름: ' + name); }
+      src = ICONS.dot;
+    }
+    var inner = iconCache[name] || (iconCache[name] = iconInner(src));
+    return '<svg class="ico ico-' + esc(name) + '" width="' + s + '" height="' + s + '" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + inner + '</svg>';
+  };
+  App.icon.names = Object.keys(ICONS);
+
+  /* HDS 마크: 굵은 기울임 'HDS' + 위를 가로지르는 빨간 스우시, (선택) 아래 'SECURITY & SYSTEM' */
+  var markSeq = 0;
+  function markSvg(o) {
+    o = o || {};
+    var ink = o.white ? '#ffffff' : '#223189';
+    var tag = !!o.tagline;
+    var h = tag ? 60 : 47;
+    var id = 'hdsm' + (++markSeq);
+    var stripes = o.stripes
+      ? '<defs><mask id="' + id + '" maskUnits="userSpaceOnUse" x="20" y="0" width="100" height="48">' +
+        '<rect x="20" y="0" width="100" height="48" fill="#fff"/>' +
+        '<rect x="30" y="25.4" width="80" height="1.25" fill="#000"/><rect x="30" y="28.9" width="80" height="1.25" fill="#000"/><rect x="30" y="32.4" width="80" height="1.25" fill="#000"/></mask></defs>'
+      : '';
+    return '<svg class="hds-mark" viewBox="0 0 104 ' + h + '"' + (o.h ? ' height="' + o.h + '"' : '') + ' role="img" aria-label="HDS">' + stripes +
+      '<g transform="translate(11.5 0) skewX(-14)" fill="' + ink + '">' +
+        '<rect x="6" y="3" width="9.5" height="41"/><rect x="24.5" y="3" width="9.5" height="41"/>' +
+        '<g' + (o.stripes ? ' mask="url(#' + id + ')"' : '') + '>' +
+          '<path fill-rule="evenodd" d="M38 21h15.5a8 8 0 0 1 8 8v7a8 8 0 0 1-8 8H38z M45 27v11h7.5a2.5 2.5 0 0 0 2.5-2.5v-6a2.5 2.5 0 0 0-2.5-2.5z"/>' +
+          '<path fill="none" stroke="' + ink + '" stroke-width="6" d="M90 24H70.5a4 4 0 0 0 0 8h12a4 4 0 0 1 0 8H64"/>' +
+        '</g>' +
+      '</g>' +
+      '<path fill="#e03024" d="M0.5 42 Q 36 12 103 13.5 Q 40 19.5 0.5 42 Z"/>' +
+      (tag ? '<text x="2" y="58" textLength="100" lengthAdjust="spacingAndGlyphs" fill="' + ink + '" font-family="Pretendard Variable,Pretendard,Arial,Helvetica,sans-serif" font-weight="800" font-size="9.6">SECURITY &amp; SYSTEM</text>' : '') +
+      '</svg>';
+  }
+  /* 로그인 브랜드 면의 큰 빨간 곡선(사업계획서 표지의 스우시) — 브랜드 자산, 로그인에서만 */
+  function arcSvg() {
+    return '<div class="login-arc" aria-hidden="true"><svg viewBox="0 0 1000 300" focusable="false">' +
+      '<path fill="#e03024" d="M0 296 C 170 120 470 34 700 52 C 840 63 940 110 1000 150 C 930 118 840 88 700 82 C 480 74 200 160 0 296 Z"/>' +
+      '</svg></div>';
+  }
+  App.markSvg = markSvg;
+
+  /* =====================================================================
+   * 4. 서버 호출 App.api
+   * ===================================================================== */
+  var NET_RE = /network|connection|HTTP 0|timed? ?out|failed to fetch|unavailable|\b50[234]\b|\b429\b/i;
+  var READ_RE = /^(boot|auth\.status)$|\.(get|bulkGet|index|info|log)$/;
+  function apiError(message, code, method) {
+    var e = new Error(message || '요청을 처리하지 못했습니다');
+    e.code = code || 'SERVER';
+    if (method) e.method = method;
+    return e;
+  }
+  App.apiError = apiError;
+  function runner() {
+    try { return (window.google && google.script && google.script.run) ? google.script.run : null; } catch (e) { return null; }
+  }
+
+  App.api = function (method, payload, opts) {
+    opts = opts || {};
+    return new Promise(function (resolve, reject) {
+      var tries = 0;
+      function finish(err) {
+        if (err.code === 'AUTH' && !/^auth\./.test(method) && !opts.noAuthRedirect) {
+          err.toasted = true;
+          reject(err);
+          authLost(err);
+          return;
+        }
+        if (!opts.silent) { App.toast(err.message, 'neg'); err.toasted = true; }
+        reject(err);
+      }
+      function attempt() {
+        tries++;
+        var run = runner();
+        if (!run) { finish(apiError('서버에 연결할 수 없습니다. 웹앱 주소로 다시 열어 주세요', 'NETWORK', method)); return; }
+        var body;
+        try { body = JSON.stringify(payload == null ? {} : payload); }
+        catch (e) { finish(apiError('보낼 내용을 정리하지 못했습니다', 'INVALID', method)); return; }
+        run
+          .withSuccessHandler(function (res) {
+            var out = null;
+            try { out = typeof res === 'string' ? JSON.parse(res) : res; } catch (e) { out = null; }
+            if (!out || typeof out !== 'object') { finish(apiError('서버 응답을 읽지 못했습니다', 'SERVER', method)); return; }
+            if (out.ok) { resolve(out.data); return; }
+            finish(apiError(out.error, out.code || 'SERVER', method));
+          })
+          .withFailureHandler(function (err) {
+            var msg = (err && (err.message || String(err))) || '';
+            var net = NET_RE.test(msg);
+            if (tries < 2 && opts.retry !== false && (net || READ_RE.test(method))) { setTimeout(attempt, 700); return; }
+            finish(net
+              ? apiError('네트워크가 불안정해 서버에 닿지 못했습니다. 잠시 뒤 다시 시도하세요', 'NETWORK', method)
+              : apiError('서버에서 오류가 났습니다' + (msg ? ' — ' + msg : ''), 'SERVER', method));
+          })
+          .api(method, body, store.get(K.token));
+      }
+      attempt();
+    });
+  };
+
+  /* =====================================================================
+   * 5. 상태 App.S 와 편의 함수
+   * ===================================================================== */
+  function freshState() {
+    return {
+      boot: null, me: null, settings: {}, sites: [], people: [], users: [], requests: [], reads: [],
+      acts: new Map(), index: new Map(), records: new Map(), files: new Map(),
+      urls: {}, serverTime: '', loadedAt: 0
+    };
+  }
+  App.S = freshState();
+  function resetState() {
+    var f = freshState();
+    Object.keys(f).forEach(function (k) { App.S[k] = f[k]; });
+  }
+  function arr(x) { return Array.isArray(x) ? x : []; }
+
+  var INDEX_KEYS = ['id', 'form', 'formVersion', 'site', 'date', 'period', 'shift', 'status', 'stageDone', 'author', 'createdBy', 'requestId',
+    'rev', 'createdAt', 'updatedAt', 'submittedAt', 'confirmedAt', 'confirmedBy', 'returnedAt', 'returnedBy', 'returnNote', 'facts'];
+
+  function applyBoot(d) {
+    var S = App.S;
+    d = d || {};
+    S.boot = d;
+    S.me = d.me || S.me || null;
+    S.settings = d.settings || {};
+    S.sites = sortBy(arr(d.sites), 'id');
+    S.people = arr(d.people);
+    S.users = arr(d.users);
+    S.requests = arr(d.requests);
+    S.reads = arr(d.reads);
+    S.urls = d.urls || {};
+    var acts = new Map();
+    arr(d.acts).forEach(function (a) { if (a && a.id && !a.deleted) acts.set(a.id, a); });
+    S.acts = acts;
+    var idx = new Map();
+    arr(d.index).forEach(function (r) { if (r && r.id && !r.deleted) idx.set(r.id, r); });
+    // 바뀐 기록은 전체 기록 캐시에서 버림
+    S.records.forEach(function (rec, id) {
+      var row = idx.get(id);
+      if (!row || row.updatedAt !== rec.updatedAt) S.records.delete(id);
+    });
+    S.index = idx;
+    S.serverTime = d.serverTime || '';
+    setSkew(d.serverTime);
+    S.loadedAt = Date.now();
+    if (S.me) store.set(K.kind, S.me.kind);
+  }
+
+  App.load = function (opts) {
+    opts = opts || {};
+    return App.api('boot', { days: opts.days || 400 }, { silent: !!opts.silent, noAuthRedirect: !!opts.noAuthRedirect })
+      .then(function (d) { applyBoot(d); return App.S; });
+  };
+
+  var refreshing = null;
+  App.refresh = function () {
+    if (refreshing) return refreshing;
+    var btns = $$('[data-act="core.refresh"]');
+    btns.forEach(function (b) { b.disabled = true; b.setAttribute('aria-busy', 'true'); });
+    refreshing = App.load()
+      .then(function () {
+        if (shellOn) { updateShell(); return App.route({ keep: true }); }
+      })
+      .catch(function (err) { if (!err || err.code !== 'AUTH') console.warn('[App] 새로 고침 실패 — ' + ((err && err.message) || err)); })
+      .then(function () {
+        btns.forEach(function (b) { b.disabled = false; b.removeAttribute('aria-busy'); });
+        refreshing = null;
+      });
+    return refreshing;
+  };
+
+  App.me = function () { return App.S.me; };
+  App.site = function (id) {
+    if (!id) return null;
+    var list = App.S.sites;
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    return null;
+  };
+  App.siteName = function (id) { var s = App.site(id); return s ? (s.name || s.id) : (id || '—'); };
+  App.activeSites = function () { return App.S.sites.filter(function (s) { return s.status !== '종료'; }); };
+  App.isHQ = function () { return !!(App.S.me && App.S.me.kind === 'hq'); };
+  App.isSite = function () { return !!(App.S.me && App.S.me.kind === 'site'); };
+  App.isAdmin = function () { return !!(App.S.me && App.S.me.role === 'admin'); };
+  App.canWrite = function () {
+    var me = App.S.me;
+    return !!(me && (me.kind === 'site' || me.role === 'admin' || me.role === 'hq'));
+  };
+  App.peopleOf = function (site) {
+    return sortBy(App.S.people.filter(function (p) { return p.site === site && p.active !== false; }), 'name');
+  };
+  App.recs = function (fn) {
+    var out = [];
+    App.S.index.forEach(function (r) { if (!r.deleted && (!fn || fn(r))) out.push(r); });
+    return out;
+  };
+  App.acts = function (fn) {
+    var out = [];
+    App.S.acts.forEach(function (a) { if (!a.deleted && (!fn || fn(a))) out.push(a); });
+    return out;
+  };
+  var OPEN_ACT = ['등록', '조치중'];
+  App.actOpen = function (a) { return !!a && OPEN_ACT.indexOf(a.status) >= 0; };
+  App.actOverdue = function (a) { return !!(a && !a.deleted && App.actOpen(a) && a.due && String(a.due).slice(0, 10) < today()); };
+  /** 본사가 아직 확인하지 않은 제출·단계 보고 */
+  App.reviewPending = function (r) {
+    return !!r && !r.deleted && (r.status === '제출' || (r.status === '작성중' && arr(r.stageDone).length > 0));
+  };
+  function reqTargets(req, siteId) {
+    var s = arr(req.sites);
+    return s.indexOf('*') >= 0 || s.indexOf(siteId) >= 0;
+  }
+  /** 사업장이 받은(열 수 있는) 요청·공지 */
+  App.requestsFor = function (siteId) {
+    var nowS = isoLocal();
+    return App.S.requests.filter(function (q) {
+      return q && q.status !== '취소' && reqTargets(q, siteId) && (!q.openAt || String(q.openAt) <= nowS);
+    });
+  };
+  App.isRead = function (refId, siteId) {
+    return App.S.reads.some(function (x) { return x.refId === refId && (!siteId || x.site === siteId); });
+  };
+  /** 미열람 요청·공지(진행 중) */
+  App.unread = function (siteId) {
+    siteId = siteId || (App.S.me && App.S.me.site);
+    if (!siteId) return [];
+    return App.requestsFor(siteId).filter(function (q) { return q.status !== '마감' && !App.isRead(q.id, siteId); });
+  };
+
+  /** 전체 기록(data 포함) — 캐시 우선 */
+  var recPending = {};
+  App.getRecord = function (id, opts) {
+    opts = opts || {};
+    if (!id) return Promise.reject(apiError('기록 번호가 없습니다', 'INVALID'));
+    if (!opts.fresh && App.S.records.has(id)) return Promise.resolve(App.S.records.get(id));
+    if (recPending[id]) return recPending[id];
+    var p = App.api('records.get', { id: id }, { silent: opts.silent !== false })
+      .then(function (rec) {
+        delete recPending[id];
+        if (rec && rec.id) { App.S.records.set(rec.id, rec); App.putIndex(rec); }
+        return rec;
+      }, function (err) { delete recPending[id]; throw err; });
+    recPending[id] = p;
+    return p;
+  };
+  App.putIndex = function (rec) {
+    if (!rec || !rec.id) return null;
+    if (rec.deleted) {
+      App.S.index.delete(rec.id);
+      App.S.records.delete(rec.id);
+      scheduleCounts();
+      return null;
+    }
+    var row = Object.assign({}, App.S.index.get(rec.id) || {});
+    INDEX_KEYS.forEach(function (k) { if (rec[k] !== undefined) row[k] = rec[k]; });
+    App.S.index.set(rec.id, row);
+    if (rec.data !== undefined) App.S.records.set(rec.id, rec);
+    else {
+      var cached = App.S.records.get(rec.id);
+      if (cached && cached.updatedAt !== rec.updatedAt) App.S.records.delete(rec.id);
+    }
+    scheduleCounts();
+    return row;
+  };
+  App.putAct = function (act) {
+    if (!act || !act.id) return null;
+    if (act.deleted) App.S.acts.delete(act.id);
+    else App.S.acts.set(act.id, Object.assign({}, App.S.acts.get(act.id) || {}, act));
+    scheduleCounts();
+    return App.S.acts.get(act.id) || null;
+  };
+  App.putRead = function (read) {
+    if (!read || !read.refId) return;
+    if (!App.S.reads.some(function (x) { return x.id && x.id === read.id; })) App.S.reads.push(read);
+    scheduleCounts();
+  };
+  App.putRequest = function (req) {
+    if (!req || !req.id) return;
+    var list = App.S.requests, i;
+    for (i = 0; i < list.length; i++) if (list[i].id === req.id) break;
+    if (i < list.length) list[i] = Object.assign({}, list[i], req); else list.unshift(req);
+    scheduleCounts();
+  };
+
+  /** 첨부·사진 → Promise<dataUrl> (캐시) */
+  var filePending = {};
+  App.getFile = function (id) {
+    if (!id) return Promise.reject(apiError('파일 번호가 없습니다', 'INVALID'));
+    if (App.S.files.has(id)) return Promise.resolve(App.S.files.get(id));
+    if (filePending[id]) return filePending[id];
+    var p = App.api('files.get', { id: id }, { silent: true }).then(function (d) {
+      delete filePending[id];
+      var u = d && (d.dataUrl || (d.file && d.file.dataUrl)) || '';
+      if (u) App.S.files.set(id, u);
+      return u;
+    }, function (err) { delete filePending[id]; throw err; });
+    filePending[id] = p;
+    return p;
+  };
+
+  var MAX_FILE = 8 * 1024 * 1024;
+  var COMPRESS_RE = /^image\/(jpe?g|png|webp|bmp|heic|heif)$/i;
+  function readAsDataUrl(blob) {
+    return new Promise(function (resolve, reject) {
+      var fr = new FileReader();
+      fr.onload = function () { resolve(String(fr.result)); };
+      fr.onerror = function () { reject(apiError('파일을 읽지 못했습니다', 'INVALID')); };
+      fr.readAsDataURL(blob);
+    });
+  }
+  /** 이미지 → 긴 변 1600px·JPEG .72. 못 읽으면 null */
+  function compressImage(src) {
+    return new Promise(function (resolve) {
+      var url = src instanceof Blob ? URL.createObjectURL(src) : String(src);
+      var img = new Image();
+      img.onload = function () {
+        try {
+          var w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+          var s = Math.min(1, 1600 / Math.max(w, h || 1));
+          var c = document.createElement('canvas');
+          c.width = Math.max(1, Math.round(w * s));
+          c.height = Math.max(1, Math.round(h * s));
+          var g = c.getContext('2d');
+          g.fillStyle = '#ffffff';
+          g.fillRect(0, 0, c.width, c.height);
+          g.drawImage(img, 0, 0, c.width, c.height);
+          resolve({ dataUrl: c.toDataURL('image/jpeg', 0.72), scaled: s < 1 });
+        } catch (e) { resolve(null); }
+        if (src instanceof Blob) URL.revokeObjectURL(url);
+      };
+      img.onerror = function () { if (src instanceof Blob) URL.revokeObjectURL(url); resolve(null); };
+      img.src = url;
+    });
+  }
+  function toJpgName(name) { return String(name || 'photo').replace(/\.[A-Za-z0-9]{2,5}$/, '') + '.jpg'; }
+
+  /** 파일·dataUrl 올리기 → Promise<fileId>. 사진은 줄여서, 서명(kind 'sign')·그 밖은 원본. 8MB 초과 거부 */
+  App.uploadFile = function (src, o) {
+    o = o || {};
+    var isBlob = typeof Blob !== 'undefined' && src instanceof Blob;
+    var mime = isBlob ? String(src.type || '').toLowerCase() : dataUrlMime(src);
+    var name = o.name || (isBlob && src.name) || ((o.kind || 'file') + '-' + stamp());
+    var wantShrink = COMPRESS_RE.test(mime) && o.kind !== 'sign' && o.compress !== false;
+    var kind = o.kind || (/^image\//.test(mime) ? 'photo' : 'attach');
+    var fail = function (msg) { var e = apiError(msg, 'INVALID'); App.toast(msg, 'neg'); e.toasted = true; return Promise.reject(e); };
+    if (!src) return fail('올릴 파일이 없습니다');
+    if (!isBlob && !/^data:/.test(String(src))) return fail('파일 형식을 알 수 없습니다');
+    if (isBlob && !wantShrink && src.size > MAX_FILE) return fail('8MB 를 넘는 파일은 올릴 수 없습니다 (' + size(src.size) + ')');
+
+    var ready = wantShrink
+      ? compressImage(src).then(function (r) {
+          if (r) {
+            var origBytes = isBlob ? src.size : dataUrlBytes(src);
+            // 이미 작고 줄일 필요 없는 사진은 원본 유지
+            if (!r.scaled && dataUrlBytes(r.dataUrl) >= origBytes) return isBlob ? readAsDataUrl(src) : String(src);
+            name = toJpgName(name);
+            return r.dataUrl;
+          }
+          return isBlob ? readAsDataUrl(src) : String(src);
+        })
+      : (isBlob ? readAsDataUrl(src) : Promise.resolve(String(src)));
+
+    return ready.then(function (dataUrl) {
+      var bytes = dataUrlBytes(dataUrl);
+      if (bytes > MAX_FILE) return fail('8MB 를 넘는 파일은 올릴 수 없습니다 (' + size(bytes) + ')');
+      return App.api('files.put', {
+        dataUrl: dataUrl, name: name, kind: kind, recordId: o.recordId || '', site: o.site || (App.S.me && App.S.me.site) || ''
+      }).then(function (d) {
+        var f = (d && d.file) || d || {};
+        if (!f.id) throw apiError('파일 번호를 받지 못했습니다', 'SERVER');
+        App.S.files.set(f.id, dataUrl);
+        return f.id;
+      });
+    });
+  };
+
+  /* =====================================================================
+   * 6. 내비 정의 App.NAV
+   * ===================================================================== */
+  function cReview() { return App.recs(App.reviewPending).length; }
+  function cOverdue() { return App.acts(App.actOverdue).length; }
+  function cSiteOverdue() {
+    var s = App.S.me && App.S.me.site;
+    return App.acts(function (a) { return a.site === s && App.actOverdue(a); }).length;
+  }
+  function cUnread() { return App.unread().length; }
+  App.NAV = {
+    hq: [
+      { key: 'home', label: '종합 현황', icon: 'home', href: '#/home', group: '현황' },
+      { key: 'collect', label: '취합 현황', icon: 'grid', href: '#/collect', group: '현황' },
+      { key: 'review', label: '검토함', icon: 'inbox', href: '#/review', group: '현황', count: cReview, countLabel: '확인 대기' },
+      { key: 'requests', label: '배포·요청', icon: 'send', href: '#/requests', group: '현황' },
+      { key: 'forms', label: '양식', icon: 'clipboard', href: '#/forms', group: '기록' },
+      { key: 'records', label: '기록 조회', icon: 'list', href: '#/records', group: '기록' },
+      { key: 'acts', label: '조치대장', icon: 'flag', href: '#/acts', group: '기록', count: cOverdue, countLabel: '기한경과' },
+      { key: 'analytics', label: '분석', icon: 'chart', href: '#/analytics', group: '분석' },
+      { key: 'sites', label: '사업장', icon: 'building', href: '#/sites', group: '관리' },
+      { key: 'users', label: '사용자', icon: 'users', href: '#/users', group: '관리', admin: true },
+      { key: 'settings', label: '설정', icon: 'settings', href: '#/settings', group: '관리', admin: true }
+    ],
+    site: [
+      { key: 'home', label: '홈', icon: 'home', href: '#/home', tab: true },
+      { key: 'inbox', label: '받은 요청', icon: 'inbox', href: '#/inbox', tab: true, count: cUnread, countLabel: '안 읽은 요청·공지' },
+      { key: 'forms', label: '양식', icon: 'clipboard', href: '#/forms', tab: true },
+      { key: 'records', label: '우리 기록', icon: 'list', href: '#/records', tab: true },
+      { key: 'acts', label: '조치', icon: 'flag', href: '#/acts', tab: true, count: cSiteOverdue, countLabel: '기한경과' },
+      { key: 'site', label: '사업장 정보', icon: 'building', href: '#/site', tab: false }
+    ]
+  };
+  function navItems(kind) {
+    var admin = App.isAdmin();
+    return (App.NAV[kind] || []).filter(function (it) { return !it.admin || admin; });
+  }
+  function countOf(it) {
+    if (typeof it.count !== 'function') return 0;
+    try { return Number(it.count()) || 0; } catch (e) { return 0; }
+  }
+
+  /* =====================================================================
+   * 7. 셸
+   * ===================================================================== */
+  var shellOn = false;
+  var ROLE_KO = { admin: '관리자', hq: '본사 담당', viewer: '본사 열람', site: '사업장 작성자' };
+  App.roleLabel = function (role) { return ROLE_KO[role] || role || ''; };
+
+  function kindNow() { return App.S.me && App.S.me.kind === 'site' ? 'site' : 'hq'; }
+  function appName() { return (App.S.settings && App.S.settings.appName) || BOOT.appName || 'HDS 안전장부'; }
+  function scopeText() {
+    var me = App.S.me;
+    if (me && me.kind === 'site') {
+      var s = App.site(me.site);
+      return (me.site || '') + ' ' + ((s && s.name) || me.siteName || '');
+    }
+    return '안전경영지원실 · 사업장 ' + App.activeSites().length + '곳';
+  }
+  function brandHtml() {
+    return '<div class="side-brand" data-href="#/home" title="홈"><span class="mark">' + markSvg({ h: 28 }) + '</span><span class="brand-name">안전장부</span></div>';
+  }
+  function navItemHtml(it) {
+    var n = countOf(it);
+    return '<a class="nav-item" href="' + it.href + '" data-nav="' + it.key + '">' + App.icon(it.icon) +
+      '<span class="nav-label">' + esc(it.label) + '</span>' +
+      '<span class="nav-count num"' + (n ? '' : ' hidden') + ' title="' + esc((it.countLabel || '') + ' ' + n + '건') + '">' + n + '</span></a>';
+  }
+  function navHtml(kind) {
+    var items = navItems(kind);
+    if (kind === 'site') return '<div class="nav-group">' + items.map(navItemHtml).join('') + '</div>';
+    var groups = [], by = {};
+    items.forEach(function (it) {
+      if (!by[it.group]) { by[it.group] = []; groups.push(it.group); }
+      by[it.group].push(it);
+    });
+    return groups.map(function (g) {
+      return '<div class="nav-group"><div class="nav-group-label">' + esc(g) + '</div>' + by[g].map(navItemHtml).join('') + '</div>';
+    }).join('');
+  }
+  function tabsHtml() {
+    return navItems('site').filter(function (it) { return it.tab; }).map(function (it) {
+      var n = countOf(it);
+      return '<a class="tab" href="' + it.href + '" data-nav="' + it.key + '">' + App.icon(it.icon, 20) + '<span>' + esc(it.label) + '</span>' +
+        '<span class="nav-count num"' + (n ? '' : ' hidden') + ' aria-label="' + esc((it.countLabel || '') + ' ' + n + '건') + '">' + n + '</span></a>';
+    }).join('');
+  }
+  App.ui.avatar = function (name, sz) {
+    var t = tint(name);
+    var st = 'background:' + t.bg + ';color:' + t.ink + (sz ? ';width:' + sz + 'px;height:' + sz + 'px' : '');
+    return '<span class="avatar" style="' + st + '" aria-hidden="true">' + esc(initial(name)) + '</span>';
+  };
+  function meHtml() {
+    var me = App.S.me || {};
+    return '<div class="me">' + App.ui.avatar(me.name) +
+      '<div><b>' + esc(me.name || '') + '</b><span>' + esc(App.roleLabel(me.role)) + '</span></div>' +
+      '<button type="button" class="icon-btn" data-act="core.logout" aria-label="로그아웃" title="로그아웃">' + App.icon('logout') + '</button></div>';
+  }
+  function searchForm(cls) {
+    return '<form class="search' + (cls ? ' ' + cls : '') + '" data-act="core.search" role="search">' + App.icon('search') +
+      '<input name="q" type="search" placeholder="기록번호·사업장·내용 검색" aria-label="검색" autocomplete="off" enterkeyhint="search"></form>';
+  }
+  function shellHtml(kind, opts) {
+    opts = opts || {};
+    var loading = !!opts.loading;
+    var nav = loading ? skelNav() : navHtml(kind);
+    return '<div class="shell" data-kind="' + kind + '"' + (loading ? ' aria-busy="true"' : '') + '>' +
+      '<aside class="side">' + brandHtml() +
+        '<div class="side-scope">' + (loading ? '<span class="skel" style="height:12px;width:150px;margin:0"></span>' : esc(scopeText())) + '</div>' +
+        '<nav class="nav" aria-label="주 메뉴">' + nav + '</nav>' +
+        '<div class="side-foot">' + (loading ? '' : meHtml()) + '</div>' +
+      '</aside>' +
+      '<header class="topbar">' +
+        '<button type="button" class="icon-btn only-phone" data-act="core.menu" aria-label="메뉴 열기"' + (loading ? ' disabled' : '') + '>' + App.icon('menu', 18) + '</button>' +
+        '<div class="topbar-title only-phone" id="topbar-title">' + (loading ? '' : esc(appName())) + '</div>' +
+        (kind === 'hq' && !loading ? searchForm('hide-phone') : '<span class="spacer hide-phone"></span>') +
+        '<div class="topbar-right">' + (loading ? '' :
+          '<span class="stamp hide-phone" id="stamp"></span>' +
+          '<button type="button" class="icon-btn" data-act="core.refresh" aria-label="새로 고침" title="새로 고침">' + App.icon('refresh') + '</button>') +
+        '</div>' +
+      '</header>' +
+      '<main class="sheet" id="main"><div class="page" id="page">' + (opts.page || '') + '</div></main>' +
+      (kind === 'site' && !loading ? '<nav class="tabbar only-phone" aria-label="하단 메뉴">' + tabsHtml() + '</nav>' : '') +
+      '</div>';
+  }
+  function navsheetHtml(kind) {
+    return '<div class="navsheet" id="navsheet" hidden role="dialog" aria-modal="true" aria-label="메뉴">' +
+      '<div class="navsheet-hd">' + brandHtml() +
+        '<button type="button" class="icon-btn" data-act="core.menuClose" aria-label="메뉴 닫기">' + App.icon('x', 18) + '</button></div>' +
+      '<div class="side-scope">' + esc(scopeText()) + '</div>' +
+      (kind === 'hq' ? '<div style="margin:4px 0 12px">' + searchForm('').replace('<form class="search"', '<form class="search" style="width:100%"') + '</div>' : '') +
+      '<nav class="nav" aria-label="메뉴">' + navHtml(kind) + '</nav>' +
+      '<div class="side-foot">' + meHtml() + '</div>' +
+      '</div>';
+  }
+  function skelNav() {
+    var w = [62, 48, 40, 56, 34, 52, 44, 38];
+    return '<div class="nav-group">' + w.map(function (x) {
+      return '<div class="nav-item" aria-hidden="true"><span class="skel" style="width:16px;height:16px;margin:0"></span><span class="skel" style="width:' + x + '%;height:12px;margin:0"></span></div>';
+    }).join('') + '</div>';
+  }
+  /** 화면 모양 그대로의 회색 막대(쉬머 없음). msg 는 제목 아래 한 문장 */
+  function pageSkeleton(msg) {
+    var kp = '';
+    for (var i = 0; i < 4; i++) kp += '<div class="kpi"><div class="kpi-label"><span class="skel" style="width:56%;height:12px;margin:0"></span></div><div class="kpi-value"><span class="skel" style="width:40%;height:28px;margin:6px 0 0"></span></div></div>';
+    return '<div class="title-row"><div class="title-main"><h1><span class="skel" style="width:180px;height:24px;margin:3px 0"></span></h1>' +
+      '<p class="sub">' + (msg ? esc(msg) : '<span class="skel" style="width:280px;height:12px;margin:4px 0 0"></span>') + '</p></div></div>' +
+      '<div class="kpis" style="--n:4" aria-hidden="true">' + kp + '</div>' +
+      '<div class="grid"><section class="panel span-8"><header class="panel-hd"><div><h2><span class="skel" style="width:140px;height:14px;margin:5px 0"></span></h2></div></header><div class="panel-bd">' + App.ui.skeleton(5) + '</div></section>' +
+      '<section class="panel span-4"><header class="panel-hd"><div><h2><span class="skel" style="width:100px;height:14px;margin:5px 0"></span></h2></div></header><div class="panel-bd">' + App.ui.skeleton(5) + '</div></section></div>';
+  }
+  App.ui.pageSkeleton = pageSkeleton;
+
+  App.renderShell = function () {
+    var kind = kindNow();
+    var root = document.getElementById('app');
+    if (!root) return;
+    root.innerHTML = shellHtml(kind) + navsheetHtml(kind);
+    shellOn = true;
+    updateStamp();
+    App.updateCounts();
+  };
+  /** 숫자·범위·사용자만 다시(화면은 그대로) */
+  function updateShell() {
+    if (!shellOn) return;
+    $$('.side-scope').forEach(function (el) { el.textContent = scopeText(); });
+    updateStamp();
+    App.updateCounts();
+  }
+  App.updateShell = updateShell;
+  App.updateCounts = function () {
+    if (!shellOn) return;
+    var items = navItems(kindNow());
+    items.forEach(function (it) {
+      if (typeof it.count !== 'function') return;
+      var n = countOf(it);
+      $$('[data-nav="' + it.key + '"] .nav-count').forEach(function (el) {
+        el.textContent = String(n);
+        el.hidden = !n;
+        el.setAttribute('title', (it.countLabel || '') + ' ' + n + '건');
+      });
+    });
+  };
+  var countTimer = null;
+  function scheduleCounts() {
+    if (countTimer) return;
+    countTimer = setTimeout(function () { countTimer = null; App.updateCounts(); }, 0);
+  }
+  function updateStamp() {
+    var el = document.getElementById('stamp');
+    if (!el || !App.S.loadedAt) return;
+    var min = Math.floor((Date.now() - App.S.loadedAt) / 60000);
+    var d = new Date(App.S.loadedAt + skew);
+    el.textContent = min < 1 ? '방금 갱신' : (min < 60 ? min + '분 전 갱신' : pad(d.getHours()) + ':' + pad(d.getMinutes()) + ' 갱신');
+    el.title = '마지막 갱신 ' + isoLocal(d).replace('T', ' ');
+  }
+  function markNav(key) {
+    $$('[data-nav]').forEach(function (el) {
+      var on = el.getAttribute('data-nav') === key;
+      el.classList.toggle('on', on);
+      if (on) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current');
+    });
+  }
+  App.setTitle = function (text) {
+    var t = String(text || '');
+    document.title = t ? t + ' · ' + appName() : appName();
+    var el = document.getElementById('topbar-title');
+    if (el) el.textContent = t || appName();
+  };
+  function openNavsheet() {
+    var ns = document.getElementById('navsheet');
+    if (!ns) return;
+    ns.hidden = false;
+    var b = ns.querySelector('.nav-item.on') || ns.querySelector('[data-act="core.menuClose"]');
+    if (b) b.focus();
+  }
+  function closeNavsheet() { var ns = document.getElementById('navsheet'); if (ns) ns.hidden = true; }
+
+  /* =====================================================================
+   * 8. 라우터
+   * ===================================================================== */
+  var routeSeq = 0;
+  App.current = { name: '', args: [], query: new URLSearchParams(''), hash: '', seq: 0 };
+  App.view = function (name, def) {
+    if (!name || !def) return null;
+    App.views[name] = def;
+    return def;
+  };
+  App.go = function (hash, opts) {
+    hash = String(hash || '#/home');
+    if (hash.charAt(0) !== '#') hash = '#' + (hash.charAt(0) === '/' ? '' : '/') + hash;
+    if (opts && opts.replace) {
+      try { history.replaceState(null, '', hash); } catch (e) { location.replace(hash); return; }
+      App.route();
+      return;
+    }
+    if (location.hash === hash) App.route();
+    else location.hash = hash;
+  };
+  function parseHash(h) {
+    h = String(h == null ? location.hash : h).replace(/^#/, '');
+    var qi = h.indexOf('?');
+    var path = qi >= 0 ? h.slice(0, qi) : h;
+    var qs = qi >= 0 ? h.slice(qi + 1) : '';
+    var parts = path.split('/').filter(Boolean);
+    return { parts: parts, query: new URLSearchParams(qs) };
+  }
+  function dec(s) { try { return decodeURIComponent(s); } catch (e) { return s; } }
+  /** 세션 종류 접두사('hq:'·'site:') 먼저, 없으면 공용 이름. 두 조각 이름을 먼저 시도 */
+  function resolveView(parts) {
+    var pre = kindNow() + ':';
+    var tries = [];
+    if (parts.length >= 2) {
+      var two = parts[0] + '/' + parts[1];
+      tries.push([pre + two, 2], [two, 2]);
+    }
+    if (parts.length >= 1) tries.push([pre + parts[0], 1], [parts[0], 1]);
+    for (var i = 0; i < tries.length; i++) {
+      var d = App.views[tries[i][0]];
+      if (d && typeof d.render === 'function') return { name: tries[i][0], def: d, used: tries[i][1] };
+    }
+    return null;
+  }
+  App.resolveView = function (hash) { var p = parseHash(hash); return resolveView(p.parts.length ? p.parts : ['home']); };
+
+  function closeOverlays() {
+    $$('dialog[open]').forEach(function (d) { try { d.close(); } catch (e) { d.removeAttribute('open'); } });
+    closeMenu();
+    closeNavsheet();
+  }
+  App.closeOverlays = closeOverlays;
+
+  function renderFail(page, err, seq, title) {
+    if (seq !== routeSeq) return;
+    console.error('[App] 화면을 그리지 못했습니다', err);
+    page.innerHTML = (title ? App.ui.titleRow({ title: title }) : '') + App.ui.error(err, 'core.retry');
+  }
+
+  App.route = function (opts) {
+    opts = opts || {};
+    if (!shellOn || !App.S.me) return Promise.resolve();
+    var page = document.getElementById('page');
+    if (!page) return Promise.resolve();
+    var p = parseHash();
+    if (!p.parts.length) p.parts = ['home'];
+    var hit = resolveView(p.parts);
+    if (!hit) {
+      if (p.parts.join('/') !== 'home' && resolveView(['home'])) { App.go('#/home', { replace: true }); return Promise.resolve(); }
+      routeSeq++;
+      App.setTitle('');
+      page.innerHTML = App.ui.titleRow({ title: appName() }) + App.ui.empty('이 화면은 아직 준비되지 않았습니다.', '<a href="#/home">홈으로</a>');
+      return Promise.resolve();
+    }
+    var args = p.parts.slice(hit.used).map(dec);
+    var seq = ++routeSeq;
+    if (!opts.keep) closeOverlays(); else closeMenu();
+    App.current = { name: hit.name, def: hit.def, args: args, query: p.query, hash: location.hash, seq: seq };
+    var title = '';
+    try { title = typeof hit.def.title === 'function' ? hit.def.title(args, p.query) : (hit.def.title || ''); } catch (e) { title = ''; }
+    App.setTitle(title);
+    markNav(hit.def.nav || p.parts[0]);
+    var keepY = opts.keep ? (document.getElementById('main') || {}).scrollTop || window.scrollY : 0;
+    var out;
+    try {
+      out = hit.def.render(page, args, p.query);
+    } catch (err) {
+      renderFail(page, err, seq, title);
+    }
+    if (opts.keep) {
+      var m = document.getElementById('main');
+      if (m) m.scrollTop = keepY;
+    } else {
+      var mm = document.getElementById('main');
+      if (mm) mm.scrollTop = 0;
+      window.scrollTo(0, 0);
+    }
+    App.updateCounts();
+    try { document.dispatchEvent(new CustomEvent('app:route', { detail: { name: hit.name, args: args, query: p.query } })); } catch (e) { /* 무시 */ }
+    if (out && typeof out.then === 'function') {
+      return out.then(function () {}, function (err) { renderFail(page, err, seq, title); });
+    }
+    return Promise.resolve();
+  };
+  /** 비동기 화면이 그리기 전에 아직 같은 화면인지 확인 */
+  App.isCurrent = function (seq) { return seq === routeSeq; };
+
+  /* =====================================================================
+   * 9. UI 컴포넌트 App.ui (모두 HTML 문자열)
+   * ===================================================================== */
+  App.ui.titleRow = function (o) {
+    o = o || {};
+    return '<div class="title-row"><div class="title-main"><h1>' + esc(o.title || '') + '</h1>' +
+      (o.sub ? '<p class="sub">' + o.sub + '</p>' : '') + '</div>' +
+      (o.actions ? '<div class="actions">' + o.actions + '</div>' : '') + '</div>';
+  };
+  App.ui.panel = function (o) {
+    o = o || {};
+    var hd = (o.title || o.sub || o.actions)
+      ? '<header class="panel-hd"><div>' + (o.title ? '<h2>' + esc(o.title) + '</h2>' : '') +
+        (o.sub ? '<p class="panel-sub">' + o.sub + '</p>' : '') + '</div>' +
+        (o.actions ? '<div class="panel-actions">' + o.actions + '</div>' : '') + '</header>'
+      : '';
+    return '<section class="panel' + (o.cls ? ' ' + o.cls : '') + '"' + (o.id ? ' id="' + esc(o.id) + '"' : '') + '>' + hd +
+      '<div class="panel-bd' + (o.flush ? ' flush' : '') + '">' + (o.body == null ? '' : o.body) + '</div>' +
+      (o.foot ? '<footer class="panel-ft">' + o.foot + '</footer>' : '') + '</section>';
+  };
+  App.ui.kpis = function (items, opts) {
+    items = (items || []).filter(Boolean);
+    opts = opts || {};
+    return '<div class="kpis' + (opts.cls ? ' ' + opts.cls : '') + '" style="--n:' + Math.max(1, items.length) + '">' + items.map(function (k) {
+      var v = k.value;
+      var vHtml;
+      if (v === null || v === undefined || v === '' || (typeof v === 'number' && !isFinite(v))) vHtml = '<span class="faint">—</span>';
+      else if (typeof v === 'number') vHtml = num(v, k.d || 0);
+      else vHtml = k.html ? String(v) : esc(v);
+      var hasV = !(v === null || v === undefined || v === '');
+      return '<div class="kpi' + (k.lead ? ' is-lead' : '') + (k.href ? ' click' : '') + '"' + (k.href ? ' data-href="' + esc(k.href) + '" tabindex="0"' : '') + '>' +
+        '<div class="kpi-label">' + esc(k.label || '') + '</div>' +
+        '<div class="kpi-value num' + (k.tone ? ' t-' + k.tone : '') + '">' + vHtml + (k.unit && hasV ? '<span class="unit">' + esc(k.unit) + '</span>' : '') + '</div>' +
+        (k.sub ? '<div class="kpi-sub">' + k.sub + '</div>' : '') + '</div>';
+    }).join('') + '</div>';
+  };
+  App.ui.pill = function (text, tone) {
+    return '<span class="pill ' + (tone || 'neu') + '">' + esc(text) + '</span>';
+  };
+  App.ui.dot = function (tone) { return '<span class="dot ' + (tone || 'neu') + '"></span>'; };
+  /** 기록 상태 → {text, tone} */
+  App.recStatusInfo = function (row) {
+    if (!row) return { text: '—', tone: 'neu' };
+    var st = row.status || '작성중';
+    var done = arr(row.stageDone).length;
+    if (row.deleted) return { text: '삭제', tone: 'neu' };
+    if (st === '작성중' && done) return { text: done + '단계 보고', tone: 'warn' };
+    if (st === '제출') return { text: '제출', tone: 'acc' };
+    if (st === '확인') return { text: '확인', tone: 'pos' };
+    if (st === '반려') return { text: '반려', tone: 'neg' };
+    return { text: '작성중', tone: 'neu' };
+  };
+  App.ui.recStatus = function (row) { var i = App.recStatusInfo(row); return App.ui.pill(i.text, i.tone); };
+  /** 조치 상태 → {text, tone} */
+  App.actStatusInfo = function (act) {
+    if (!act) return { text: '—', tone: 'neu' };
+    if (App.actOverdue(act)) return { text: '기한경과', tone: 'neg' };
+    switch (act.status) {
+      case '등록': return { text: '등록', tone: 'warn' };
+      case '조치중': return { text: '조치중', tone: 'warn' };
+      case '완료': return { text: '확인 대기', tone: 'acc' };
+      case '확인': return { text: '종결', tone: 'pos' };
+      case '보류': return { text: '보류', tone: 'neu' };
+      case '고객사 이관': return { text: '고객사 이관', tone: 'acc' };
+      default: return { text: act.status || '등록', tone: 'neu' };
+    }
+  };
+  App.ui.actStatus = function (act) { var i = App.actStatusInfo(act); return App.ui.pill(i.text, i.tone); };
+  App.ui.level = function (level) {
+    var tone = level === '높음' ? 'neg' : level === '보통' ? 'warn' : 'neu';
+    return level ? App.ui.pill(level, tone) : '<span class="faint">—</span>';
+  };
+  App.ui.empty = function (text, actionHtml) {
+    return '<div class="empty">' + esc(text || '아직 기록이 없습니다.') + (actionHtml ? ' ' + actionHtml : '') + '</div>';
+  };
+  App.ui.skeleton = function (rows) {
+    rows = Number(rows) || 5;
+    var w = [46, 62, 38, 54, 42, 58, 34];
+    var h = '';
+    for (var i = 0; i < rows; i++) {
+      h += '<div><span class="skel" style="width:' + w[i % w.length] + '%"></span><span class="skel" style="width:14%;margin-left:auto"></span></div>';
+    }
+    return '<div class="skel-rows" aria-busy="true" aria-label="불러오는 중">' + h + '</div>';
+  };
+  App.ui.error = function (err, retryAct) {
+    var msg = (err && (err.message || (typeof err === 'string' ? err : ''))) || '';
+    var last = App.S.loadedAt ? ' 마지막 갱신 ' + fmtDT(isoLocal(new Date(App.S.loadedAt + skew))).slice(11) + '.' : '';
+    return '<div class="err" role="alert"><span style="flex:1 1 220px;min-width:0">불러오지 못했습니다' + (msg ? ' — ' + esc(msg) : '') + '.' + esc(last) + '</span>' +
+      '<button type="button" class="btn ghost sm" data-act="' + esc(retryAct || 'core.retry') + '">다시 시도</button></div>';
+  };
+  function optList(options) {
+    return (options || []).map(function (o) {
+      if (o && typeof o === 'object' && !Array.isArray(o)) return { value: o.value, label: o.label == null ? o.value : o.label, disabled: !!o.disabled, count: o.count };
+      if (Array.isArray(o)) return { value: o[0], label: o[1] == null ? o[0] : o[1] };
+      return { value: o, label: o };
+    });
+  }
+  App.ui.seg = function (name, options, value) {
+    return '<div class="seg" data-seg="' + esc(name) + '" role="group">' + optList(options).map(function (o) {
+      var on = String(o.value) === String(value);
+      return '<button type="button" data-value="' + esc(o.value) + '"' + (on ? ' class="on"' : '') + ' aria-pressed="' + on + '"' + (o.disabled ? ' disabled' : '') + '>' + esc(o.label) + '</button>';
+    }).join('') + '</div>';
+  };
+  App.ui.tabs = function (name, items, value) {
+    return '<div class="tabs" data-tab="' + esc(name) + '" role="tablist">' + optList(items).map(function (o) {
+      var on = String(o.value) === String(value);
+      return '<button type="button" role="tab" data-value="' + esc(o.value) + '"' + (on ? ' class="on"' : '') + ' aria-selected="' + on + '"' + (o.disabled ? ' disabled' : '') + '>' +
+        esc(o.label) + (o.count == null ? '' : '<span class="tab-count num">' + esc(typeof o.count === 'number' ? num(o.count) : o.count) + '</span>') + '</button>';
+    }).join('') + '</div>';
+  };
+  function cellText(v, col) {
+    if (v === null || v === undefined || v === '' || (Array.isArray(v) && !v.length)) return '<span class="faint">—</span>';
+    if (col && col.num && typeof v === 'number') return num(v, col.d || 0);
+    if (Array.isArray(v)) return esc(v.join(', '));
+    return esc(v);
+  }
+  /**
+   * 표. cols:[{key,label,num?,width?,render?(row,i),cls?,nowrap?}], rows, rowHref?(row)|'키', empty, cls, keep
+   * 휴대폰 두 줄 변환을 위해 td 마다 data-label.
+   */
+  App.ui.table = function (o) {
+    o = o || {};
+    var cols = o.cols || [], rows = o.rows || [];
+    var head = '<thead><tr>' + cols.map(function (c) {
+      var cl = [c.num ? 'num' : '', c.cls || ''].filter(Boolean).join(' ');
+      return '<th' + (cl ? ' class="' + cl + '"' : '') + (c.width ? ' style="width:' + esc(typeof c.width === 'number' ? c.width + 'px' : c.width) + '"' : '') + ' scope="col">' + esc(c.label || '') + '</th>';
+    }).join('') + '</tr></thead>';
+    var body;
+    if (!rows.length) {
+      body = '<tr class="tbl-empty"><td colspan="' + Math.max(1, cols.length) + '">' + App.ui.empty(o.empty || '표시할 기록이 없습니다.', o.emptyAction) + '</td></tr>';
+    } else {
+      body = rows.map(function (r, i) {
+        var href = typeof o.rowHref === 'function' ? o.rowHref(r, i) : (o.rowHref ? r[o.rowHref] : '');
+        var extra = typeof o.rowAttrs === 'function' ? attrs(o.rowAttrs(r, i)) : '';
+        var trCls = [href ? 'click' : '', typeof o.rowCls === 'function' ? o.rowCls(r, i) : ''].filter(Boolean).join(' ');
+        return '<tr' + (trCls ? ' class="' + trCls + '"' : '') + (href ? ' data-href="' + esc(href) + '" tabindex="0"' : '') + extra + '>' + cols.map(function (c) {
+          var v;
+          try { v = c.render ? c.render(r, i) : cellText(r[c.key], c); } catch (e) { console.error(e); v = '<span class="faint">—</span>'; }
+          if (v === null || v === undefined || v === '') v = '<span class="faint">—</span>';
+          var cl = [c.num ? 'num' : '', c.nowrap ? 'nowrap' : '', c.cls || ''].filter(Boolean).join(' ');
+          return '<td' + (cl ? ' class="' + cl + '"' : '') + ' data-label="' + esc(c.label || '') + '">' + v + '</td>';
+        }).join('') + '</tr>';
+      }).join('');
+    }
+    return '<div class="tbl-wrap"><table class="tbl' + (o.keep ? ' keep' : '') + (o.cls ? ' ' + o.cls : '') + '">' + head + '<tbody>' + body + '</tbody></table></div>';
+  };
+  App.ui.field = function (o) {
+    o = o || {};
+    var html = o.html || '';
+    var group = o.group || /<button|type="(radio|checkbox)"|class="(seg|tabs|cluster)/.test(html) || (html.match(/<(input|select|textarea)\b/g) || []).length > 1;
+    var tag = group ? 'div' : 'label';
+    return '<' + tag + ' class="field' + (o.err ? ' has-err' : '') + (o.cls ? ' ' + o.cls : '') + '"' + (group ? ' role="group"' : '') + (o.fid ? ' data-field="' + esc(o.fid) + '"' : '') + '>' +
+      '<span class="field-label">' + esc(o.label || '') + (o.required ? '<em class="req">*</em>' : '') + '</span>' + html +
+      (o.hint ? '<span class="field-hint">' + o.hint + '</span>' : '') +
+      '<span class="field-err">' + esc(o.err || '') + '</span></' + tag + '>';
+  };
+  App.ui.select = function (id, options, value, a) {
+    a = Object.assign({}, typeof a === 'object' && a ? a : {});
+    var ph = a.placeholder; delete a.placeholder;
+    var cls = 'select' + (a['class'] ? ' ' + a['class'] : ''); delete a['class'];
+    var vals = Array.isArray(value) ? value.map(String) : [String(value == null ? '' : value)];
+    var opts = (ph != null ? '<option value="">' + esc(ph) + '</option>' : '') + optList(options).map(function (o) {
+      var sel = vals.indexOf(String(o.value)) >= 0;
+      return '<option value="' + esc(o.value) + '"' + (sel ? ' selected' : '') + (o.disabled ? ' disabled' : '') + '>' + esc(o.label) + '</option>';
+    }).join('');
+    return '<select class="' + cls + '"' + (id ? ' id="' + esc(id) + '" name="' + esc(a.name || id) + '"' : '') + attrs(Object.assign(a, { name: null })) + '>' + opts + '</select>';
+  };
+  App.ui.input = function (id, value, a) {
+    a = Object.assign({}, typeof a === 'object' && a ? a : {});
+    var type = a.type || 'text'; delete a.type;
+    var nm = a.name || id; delete a.name;
+    var v = value == null ? '' : value;
+    if (type === 'textarea' || a.multiline) {
+      delete a.multiline;
+      var tc = 'textarea' + (a['class'] ? ' ' + a['class'] : ''); delete a['class'];
+      return '<textarea class="' + tc + '"' + (id ? ' id="' + esc(id) + '"' : '') + (nm ? ' name="' + esc(nm) + '"' : '') + attrs(a) + '>' + esc(v) + '</textarea>';
+    }
+    var ic = 'input' + (a['class'] ? ' ' + a['class'] : ''); delete a['class'];
+    return '<input class="' + ic + '" type="' + esc(type) + '"' + (id ? ' id="' + esc(id) + '"' : '') + (nm ? ' name="' + esc(nm) + '"' : '') + ' value="' + esc(v) + '"' + attrs(a) + '>';
+  };
+  App.ui.kv = function (pairs) {
+    return '<dl class="kv">' + (pairs || []).filter(Boolean).map(function (p) {
+      var label = Array.isArray(p) ? p[0] : p.label, val = Array.isArray(p) ? p[1] : p.value, html = Array.isArray(p) ? p[2] : p.html;
+      var v = (val === null || val === undefined || val === '') ? '<span class="faint">—</span>' : (html ? String(val) : esc(val));
+      return '<div><dt>' + esc(label) + '</dt><dd>' + v + '</dd></div>';
+    }).join('') + '</dl>';
+  };
+  App.ui.bar = function (ratio, tone) {
+    var r = Math.max(0, Math.min(1, Number(ratio) || 0));
+    return '<div class="bar' + (tone ? ' ' + tone : '') + '" role="img" aria-label="' + pct(r, 0) + '"><i style="width:' + (r * 100).toFixed(1) + '%"></i></div>';
+  };
+
+  /* ---------- 토스트 ---------- */
+  App.toast = function (msg, tone) {
+    if (!msg) return;
+    var box = document.getElementById('toasts');
+    if (!box) { box = document.createElement('div'); box.id = 'toasts'; box.setAttribute('role', 'status'); document.body.appendChild(box); }
+    var t = document.createElement('div');
+    t.className = 'toast' + (tone ? ' ' + tone : '');
+    t.setAttribute('role', tone === 'neg' ? 'alert' : 'status');
+    t.textContent = String(msg);
+    box.appendChild(t);
+    while (box.children.length > 3) box.removeChild(box.firstChild);
+    setTimeout(function () {
+      t.classList.add('out');
+      setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 200);
+    }, 3000);
+  };
+
+  /* ---------- 대화상자 ---------- */
+  App.dialog = function (o) {
+    o = o || {};
+    var acts = o.actions || [];
+    var dlg = document.createElement('dialog');
+    dlg.className = 'dlg' + (o.wide ? ' wide' : '') + (o.cls ? ' ' + o.cls : '');
+    dlg.setAttribute('aria-label', o.title || '대화상자');
+    dlg.innerHTML = '<header class="dlg-hd"><h2>' + esc(o.title || '') + '</h2>' +
+      '<button type="button" class="icon-btn" data-close aria-label="닫기">' + App.icon('x') + '</button></header>' +
+      '<div class="dlg-bd"></div>' +
+      (acts.length ? '<footer class="dlg-ft">' + acts.map(function (a, i) {
+        if (a === 'spacer') return '<span class="spacer"></span>';
+        return '<button type="button" class="btn' + (a.kind ? ' ' + a.kind : '') + '" data-dlg="' + i + '"' +
+          (a.act ? ' data-act="' + esc(a.act) + '"' : '') + (a.disabled ? ' disabled' : '') + attrs(a.attrs) + '>' + esc(a.label) + '</button>';
+      }).join('') + '</footer>' : '');
+    var bd = dlg.querySelector('.dlg-bd');
+    if (o.body && typeof o.body === 'object' && o.body.nodeType) bd.appendChild(o.body);
+    else bd.innerHTML = o.body == null ? '' : String(o.body);
+    document.body.appendChild(dlg);
+    var closed = false;
+    var ctx = {
+      el: dlg, body: bd, value: undefined,
+      close: function (v) {
+        if (closed) return;
+        ctx.value = v;
+        try { dlg.close(); } catch (e) { onClosed(); }
+      },
+      q: function (sel) { return dlg.querySelector(sel); },
+      qa: function (sel) { return $$(sel, dlg); }
+    };
+    function onClosed() {
+      if (closed) return;
+      closed = true;
+      if (typeof o.onClose === 'function') { try { o.onClose(ctx.value, ctx); } catch (e) { console.error(e); } }
+      setTimeout(function () { if (dlg.parentNode) dlg.parentNode.removeChild(dlg); }, 0);
+    }
+    dlg.addEventListener('close', onClosed);
+    var downOutside = false;
+    function outside(e) {
+      var r = dlg.getBoundingClientRect();
+      return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
+    }
+    dlg.addEventListener('pointerdown', function (e) { downOutside = e.target === dlg && outside(e); });
+    dlg.addEventListener('click', function (e) {
+      if (e.target === dlg && downOutside && outside(e)) { ctx.close(); return; }
+      var b = e.target.closest ? e.target.closest('[data-dlg]') : null;
+      if (!b || !dlg.contains(b) || b.disabled) return;
+      var a = acts[Number(b.getAttribute('data-dlg'))];
+      if (!a) return;
+      if (typeof a.onClick === 'function') {
+        var r;
+        try { r = a.onClick(ctx, b, e); } catch (err) { actFail(err); return; }
+        if (r && typeof r.then === 'function') {
+          setBusy(b, true);
+          r.then(function (v) { setBusy(b, false); if (v !== false) ctx.close(v); }, function (err) { setBusy(b, false); actFail(err); });
+        } else if (r !== false) ctx.close(r);
+      } else if (!a.act || a.close) ctx.close(a.value);
+    });
+    try { dlg.showModal(); } catch (e) { dlg.setAttribute('open', ''); }
+    var af = dlg.querySelector('[autofocus]');
+    if (af) { try { af.focus(); } catch (e) { /* 무시 */ } }
+    if (typeof o.onOpen === 'function') { try { o.onOpen(ctx); } catch (e) { console.error(e); } }
+    return ctx;
+  };
+  function setBusy(btn, on) {
+    if (!btn) return;
+    btn.disabled = !!on;
+    if (on) btn.setAttribute('aria-busy', 'true'); else btn.removeAttribute('aria-busy');
+  }
+  App.ui.busy = setBusy;
+
+  App.confirm = function (msg, o) {
+    o = o || {};
+    return new Promise(function (resolve) {
+      var ok = false;
+      var body = String(msg || '').split(/\n+/).map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('');
+      App.dialog({
+        title: o.title || '확인해 주세요',
+        body: body,
+        actions: [
+          { label: o.cancel || '취소' },
+          { label: o.ok || '확인', kind: o.danger ? 'danger' : 'primary', onClick: function () { ok = true; } }
+        ],
+        onClose: function () { resolve(ok); }
+      });
+    });
+  };
+
+  App.promptText = function (o) {
+    o = o || {};
+    return new Promise(function (resolve) {
+      var id = 'pt-' + uid();
+      var result = null;
+      var ctl = o.multiline
+        ? '<textarea class="textarea" id="' + id + '" rows="4"' + (o.placeholder ? ' placeholder="' + esc(o.placeholder) + '"' : '') + '>' + esc(o.value || '') + '</textarea>'
+        : '<input class="input" id="' + id + '" type="text" value="' + esc(o.value || '') + '"' + (o.placeholder ? ' placeholder="' + esc(o.placeholder) + '"' : '') + '>';
+      var body = '<form class="pt-form" novalidate>' + App.ui.field({ label: o.label || '', html: ctl, hint: o.hint, required: o.required }) + '</form>';
+      function take(ctx) {
+        var el = ctx.q('#' + id);
+        var v = el.value.trim();
+        if (o.required && !v) {
+          var f = el.closest('.field');
+          if (f) { f.classList.add('has-err'); f.querySelector('.field-err').textContent = (o.label || '내용') + '을(를) 입력하세요'; }
+          el.focus();
+          return false;
+        }
+        result = v;
+        return v;
+      }
+      App.dialog({
+        title: o.title || '입력',
+        body: body,
+        actions: [{ label: o.cancel || '취소' }, { label: o.ok || '확인', kind: o.danger ? 'danger' : 'primary', onClick: take }],
+        onOpen: function (ctx) {
+          var el = ctx.q('#' + id);
+          if (el) { el.focus(); if (el.select) el.select(); }
+          ctx.q('form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (take(ctx) !== false) ctx.close(result);
+          });
+        },
+        onClose: function () { resolve(result); }
+      });
+    });
+  };
+
+  /* ---------- 떠 있는 메뉴 ---------- */
+  var openMenu = null;
+  function closeMenu() {
+    if (!openMenu) return;
+    var m = openMenu;
+    openMenu = null;
+    m.cleanup();
+    if (m.el.parentNode) m.el.parentNode.removeChild(m.el);
+    if (m.anchor && m.anchor.setAttribute) m.anchor.setAttribute('aria-expanded', 'false');
+  }
+  App.closeMenu = closeMenu;
+  App.menu = function (anchor, items) {
+    var same = openMenu && openMenu.anchor === anchor;
+    closeMenu();
+    if (same) return null; // 같은 버튼 다시 누르면 닫기
+    items = (items || []).filter(Boolean);
+    var el = document.createElement('div');
+    el.className = 'menu';
+    el.setAttribute('role', 'menu');
+    el.innerHTML = items.map(function (it, i) {
+      if (it === '-' || it.sep) return '<div class="menu-sep" role="separator"></div>';
+      if (it.heading) return '<div class="menu-label">' + esc(it.heading) + '</div>';
+      return '<button type="button" class="menu-item' + (it.danger ? ' danger' : '') + '" role="menuitem" data-mi="' + i + '"' + (it.disabled ? ' disabled' : '') + '>' +
+        (it.icon ? App.icon(it.icon) : '') + '<span>' + esc(it.label) + '</span></button>';
+    }).join('');
+    var host = (anchor && anchor.closest && anchor.closest('dialog[open]')) || document.body;
+    host.appendChild(el);
+    el.style.position = 'fixed';
+    var r = anchor && anchor.getBoundingClientRect ? anchor.getBoundingClientRect() : { left: 8, right: 8, top: 8, bottom: 8 };
+    var w = el.offsetWidth, h = el.offsetHeight, vw = window.innerWidth, vh = window.innerHeight;
+    var left = r.right - w;
+    if (left < 8) left = Math.min(r.left, vw - w - 8);
+    left = Math.max(8, Math.min(left, vw - w - 8));
+    var top = r.bottom + 4;
+    if (top + h > vh - 8 && r.top - h - 4 > 8) top = r.top - h - 4;
+    top = Math.max(8, Math.min(top, vh - h - 8));
+    el.style.left = Math.round(left) + 'px';
+    el.style.top = Math.round(top) + 'px';
+    if (anchor && anchor.setAttribute) { anchor.setAttribute('aria-expanded', 'true'); anchor.setAttribute('aria-haspopup', 'menu'); }
+
+    function onDown(e) { if (!el.contains(e.target) && !(anchor && anchor.contains && anchor.contains(e.target))) closeMenu(); }
+    function onKey(e) {
+      var btns = $$('.menu-item:not([disabled])', el);
+      var i = btns.indexOf(document.activeElement);
+      if (e.key === 'Escape') { e.preventDefault(); closeMenu(); if (anchor && anchor.focus) anchor.focus(); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); if (btns.length) btns[(i + 1) % btns.length].focus(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); if (btns.length) btns[(i - 1 + btns.length) % btns.length].focus(); }
+      else if (e.key === 'Tab') closeMenu();
+    }
+    function onScroll(e) { if (!el.contains(e.target)) closeMenu(); }
+    document.addEventListener('pointerdown', onDown, true);
+    document.addEventListener('keydown', onKey, true);
+    window.addEventListener('resize', closeMenu);
+    document.addEventListener('scroll', onScroll, true);
+    el.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-mi]');
+      if (!b || b.disabled) return;
+      e.stopPropagation();
+      var it = items[Number(b.getAttribute('data-mi'))];
+      closeMenu();
+      if (it && typeof it.onClick === 'function') {
+        try {
+          var res = it.onClick(anchor, e);
+          if (res && typeof res.then === 'function') res.catch(actFail);
+        } catch (err) { actFail(err); }
+      } else if (it && it.href) App.go(it.href);
+    });
+    openMenu = {
+      el: el, anchor: anchor,
+      cleanup: function () {
+        document.removeEventListener('pointerdown', onDown, true);
+        document.removeEventListener('keydown', onKey, true);
+        window.removeEventListener('resize', closeMenu);
+        document.removeEventListener('scroll', onScroll, true);
+      }
+    };
+    var first = el.querySelector('.menu-item:not([disabled])');
+    if (first) first.focus({ preventScroll: true });
+    return { el: el, close: closeMenu };
+  };
+
+  /* ---------- 내려받기 · 복사 ---------- */
+  App.download = function (name, data, mime) {
+    var blob;
+    if (typeof Blob !== 'undefined' && data instanceof Blob) blob = data;
+    else if (typeof data === 'string' && /^data:/.test(data)) blob = dataUrlToBlob(data);
+    else blob = new Blob([data == null ? '' : data], { type: mime || 'application/octet-stream' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = name || 'download';
+    a.rel = 'noopener';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(url); if (a.parentNode) a.parentNode.removeChild(a); }, 4000);
+  };
+  App.copy = function (text) {
+    var s = String(text == null ? '' : text);
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = s;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      (document.querySelector('dialog[open]') || document.body).appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      ta.parentNode.removeChild(ta);
+      return ok;
+    }
+    var p = (navigator.clipboard && navigator.clipboard.writeText)
+      ? navigator.clipboard.writeText(s).then(function () { return true; }, function () { return fallback(); })
+      : Promise.resolve(fallback());
+    return p.then(function (ok) {
+      App.toast(ok ? '복사했습니다' : '복사하지 못했습니다. 길게 눌러 직접 복사하세요', ok ? 'pos' : 'neg');
+      return ok;
+    });
+  };
+
+  /* =====================================================================
+   * 10. 이벤트 위임
+   * ===================================================================== */
+  function actFail(err) {
+    console.error('[App]', err);
+    if (!err || !err.toasted) App.toast((err && err.message) || '처리하지 못했습니다', 'neg');
+  }
+  App.actFail = actFail;
+  function runAct(name, el, ev) {
+    var fn = App.actions[name];
+    if (typeof fn !== 'function') { console.warn('[App] 등록되지 않은 동작: ' + name); return; }
+    try {
+      var r = fn(el, ev);
+      if (r && typeof r.then === 'function') r.catch(actFail);
+    } catch (err) { actFail(err); }
+  }
+  App.runAct = runAct;
+  function closeDialogOf(el) {
+    var d = el.closest('dialog');
+    if (d) { try { d.close(); } catch (e) { d.removeAttribute('open'); } }
+  }
+  function onClick(ev) {
+    if (ev.defaultPrevented || (ev.button != null && ev.button > 0)) return;
+    var t = ev.target;
+    if (t && t.nodeType !== 1) t = t.parentElement;
+    if (!t || !t.closest) return;
+
+    var segBtn = t.closest('[data-seg] button[data-value], [data-tab] button[data-value]');
+    if (segBtn && !segBtn.disabled) {
+      var group = segBtn.closest('[data-seg], [data-tab]');
+      var isSeg = group.hasAttribute('data-seg');
+      var name = group.getAttribute(isSeg ? 'data-seg' : 'data-tab');
+      var value = segBtn.getAttribute('data-value');
+      $$('button[data-value]', group).forEach(function (b) {
+        if (b.closest('[data-seg], [data-tab]') !== group) return;
+        var on = b === segBtn;
+        b.classList.toggle('on', on);
+        b.setAttribute(isSeg ? 'aria-pressed' : 'aria-selected', on ? 'true' : 'false');
+      });
+      group.dispatchEvent(new CustomEvent(isSeg ? 'seg' : 'tab', { bubbles: true, detail: { name: name, value: value } }));
+      if (!segBtn.hasAttribute('data-act')) return;
+    }
+
+    var actEl = t.closest('[data-act]');
+    if (actEl && actEl.tagName === 'FORM') actEl = null;
+    var hrefEl = t.closest('[data-href]');
+    var closeEl = t.closest('[data-close]');
+    if (actEl && (!hrefEl || hrefEl.contains(actEl))) {
+      if (actEl.disabled || actEl.getAttribute('aria-disabled') === 'true') return;
+      if (actEl.tagName === 'A' || actEl.getAttribute('type') === 'submit') ev.preventDefault();
+      runAct(actEl.getAttribute('data-act'), actEl, ev);
+      if (actEl.hasAttribute('data-close')) closeDialogOf(actEl);
+      return;
+    }
+    if (closeEl) { ev.preventDefault(); closeDialogOf(closeEl); return; }
+    if (hrefEl) {
+      var inter = t.closest('a[href], button, input, select, textarea, label, summary, [contenteditable]');
+      if (inter && inter !== hrefEl && hrefEl.contains(inter)) return;
+      ev.preventDefault();
+      App.go(hrefEl.getAttribute('data-href'));
+      return;
+    }
+    var a = t.closest('a[href^="#/"]');
+    if (a && a.getAttribute('href') === location.hash) { ev.preventDefault(); App.route(); }
+  }
+  function onSubmit(ev) {
+    var f = ev.target;
+    if (!f || !f.matches || !f.matches('form[data-act]')) return;
+    ev.preventDefault();
+    runAct(f.getAttribute('data-act'), f, ev);
+  }
+  function onKey(ev) {
+    if (ev.key === 'Escape') {
+      var ns = document.getElementById('navsheet');
+      if (ns && !ns.hidden) { closeNavsheet(); return; }
+    }
+    if ((ev.key === 'Enter' || ev.key === ' ') && ev.target && ev.target.matches && ev.target.matches('[data-href][tabindex]')) {
+      ev.preventDefault();
+      App.go(ev.target.getAttribute('data-href'));
+    }
+  }
+  var bound = false;
+  function bindOnce() {
+    if (bound) return;
+    bound = true;
+    document.addEventListener('click', onClick);
+    document.addEventListener('submit', onSubmit);
+    document.addEventListener('keydown', onKey);
+    window.addEventListener('hashchange', function () { App.route(); });
+    setInterval(updateStamp, 30000);
+  }
+
+  /* =====================================================================
+   * 11. 로그인 · 부팅 흐름
+   * ===================================================================== */
+  function brandPanel() {
+    return '<section class="login-brand">' +
+      '<div class="mark">' + markSvg({ white: true, tagline: true, stripes: true }) + '</div>' +
+      '<div class="login-word"><h1 class="login-title">HDS 안전장부</h1><p class="login-lead">표준 양식을 보내고, 모으고, 읽습니다.</p></div>' +
+      arcSvg() +
+      '<div class="login-foot"><b>안전경영지원실</b>&nbsp;&nbsp;|&nbsp;&nbsp;HDS CORPORATION</div>' +
+      '</section>';
+  }
+  function loginShell(panelHtml) {
+    closeOverlays();
+    shellOn = false;
+    var root = document.getElementById('app');
+    if (root) root.innerHTML = '<div class="login">' + brandPanel() + '<section class="login-panel">' + panelHtml + '</section></div>';
+    document.title = appName();
+  }
+  function fieldErr(form, name, msg) {
+    $$('.field', form).forEach(function (f) { f.classList.remove('has-err'); var e = f.querySelector('.field-err'); if (e) e.textContent = ''; });
+    if (!msg) return;
+    var el = form.querySelector('[name="' + name + '"]');
+    var f = el && el.closest('.field');
+    if (f) {
+      f.classList.add('has-err');
+      f.querySelector('.field-err').textContent = msg;
+    }
+    if (el) el.focus();
+  }
+
+  function renderLogin(o) {
+    o = o || {};
+    loginShell('<form class="login-form" data-act="core.login" novalidate autocomplete="on">' +
+      '<h2>본사 로그인</h2><p class="login-sub">안전경영지원실 계정으로 들어갑니다.</p>' +
+      App.ui.field({ label: '아이디', html: App.ui.input('login-uid', o.id || '', { name: 'uid', autocomplete: 'username', autocapitalize: 'none', spellcheck: 'false', required: true }) }) +
+      App.ui.field({ label: '비밀번호', html: App.ui.input('login-pw', '', { name: 'pw', type: 'password', autocomplete: 'current-password', required: true }), err: o.msg || '' }) +
+      '<button type="submit" class="btn primary lg">로그인</button>' +
+      '<div class="login-sep">또는</div>' +
+      '<button type="button" class="btn lg" data-act="core.google">' + App.icon('user') + '<span>구글 계정으로 로그인</span></button>' +
+      '<p class="login-note">사업장 담당자는 본사에서 받은 사업장 링크로 들어오세요.</p>' +
+      '</form>');
+    var f = document.getElementById(o.msg ? 'login-pw' : 'login-uid');
+    if (f) f.focus();
+  }
+  function siteTokenNow() { return BOOT.s || (store.get(K.kind) === 'site' ? store.get(K.siteToken) : ''); }
+  function renderSiteLogin(o) {
+    o = o || {};
+    var info = BOOT.s ? BOOT.site : undefined; // undefined: 서버가 알려 주지 않음, null: 맞지 않는 링크
+    var needPin = info && info.needPin;
+    var showPin = needPin || info === undefined;
+    var name = store.get(K.name) || store.get(K.lastName);
+    var bad = info === null;
+    loginShell('<form class="login-form" data-act="core.siteLogin" novalidate autocomplete="on">' +
+      '<h2>사업장 링크로 들어왔습니다</h2><p class="login-sub">작성자 이름을 적으면 이 기기에서 30일 동안 로그인이 유지됩니다.</p>' +
+      (info ? '<div class="login-site">' + App.icon('building', 20) + '<div><b>' + esc(info.name || info.id) + '</b><span>' + esc(info.id) + (needPin ? ' · PIN 사용' : '') + '</span></div></div>' : '') +
+      (bad ? '<div class="err"><span style="flex:1 1 220px;min-width:0">이 사업장 링크는 쓸 수 없습니다. 링크가 바뀌었거나 운영이 끝났습니다 — 본사 안전경영지원실에 새 링크를 요청하세요.</span></div>' : '') +
+      App.ui.field({ label: '작성자 이름', required: true, html: App.ui.input('site-name', name, { name: 'name', autocomplete: 'name', maxlength: 30, placeholder: '예: 홍길동' }), err: o.nameMsg || '' }) +
+      (showPin ? App.ui.field({
+        label: needPin ? 'PIN' : 'PIN (선택)', required: !!needPin,
+        html: App.ui.input('site-pin', '', { name: 'pin', type: 'password', inputmode: 'numeric', autocomplete: 'off', maxlength: 12 }),
+        hint: needPin ? '본사가 정한 사업장 PIN 을 입력하세요.' : '본사가 PIN 을 정한 사업장만 입력합니다.',
+        err: o.msg || ''
+      }) : '') +
+      (!showPin && o.msg ? '<div class="err"><span style="flex:1 1 220px;min-width:0">' + esc(o.msg) + '</span></div>' : '') +
+      '<button type="submit" class="btn primary lg"' + (bad ? ' disabled' : '') + '>들어가기</button>' +
+      '<button type="button" class="btn ghost" data-act="core.hqLogin">본사 직원 로그인</button>' +
+      '</form>');
+    var f = document.getElementById(name ? (showPin ? 'site-pin' : 'site-name') : 'site-name');
+    if (f && !bad) f.focus();
+  }
+  function renderSetup() {
+    loginShell('<div class="login-form">' +
+      '<h2>설치가 끝나지 않았습니다</h2><p class="login-sub">Apps Script 편집기에서 setup 을 실행하세요.</p>' +
+      '<ol class="stack" style="padding-left:20px;list-style:decimal;color:var(--muted)">' +
+        '<li>script.google.com 에서 이 프로젝트를 엽니다.</li>' +
+        '<li>위쪽 함수 목록에서 <b>setup</b> 을 고르고 <b>실행</b>을 누릅니다(처음엔 권한을 허용).</li>' +
+        '<li>실행 로그에 나온 관리자 <b>admin</b> 비밀번호를 적어 둡니다.</li>' +
+        '<li>이 화면을 새로 고칩니다.</li>' +
+      '</ol>' +
+      '<button type="button" class="btn primary lg" data-act="core.reload">다시 확인</button></div>');
+  }
+  function renderFatal(msg) {
+    loginShell('<div class="login-form"><h2>열 수 없습니다</h2><div class="err"><span style="flex:1 1 220px;min-width:0">' + esc(msg) + '</span></div>' +
+      '<button type="button" class="btn lg" data-act="core.reload">다시 열기</button></div>');
+  }
+  function renderLoading(kind, msg) {
+    var root = document.getElementById('app');
+    shellOn = false;
+    if (root) root.innerHTML = shellHtml(kind || 'hq', { loading: true, page: pageSkeleton(msg) });
+  }
+  function bootFail(err) {
+    if (err && err.code === 'AUTH') { store.del(K.token); return afterNoToken(true); }
+    console.error('[App] 시작 실패', err);
+    renderLoading(store.get(K.kind) === 'site' ? 'site' : 'hq');
+    var page = document.getElementById('page');
+    if (page) page.innerHTML = App.ui.titleRow({ title: appName() }) + App.ui.error(err, 'core.restart');
+  }
+  function saveAuth(d, siteToken, name) {
+    if (!d || !d.token) throw apiError('로그인 응답이 비었습니다', 'SERVER');
+    store.set(K.token, d.token);
+    if (d.me) { store.set(K.kind, d.me.kind); App.S.me = d.me; }
+    if (siteToken) store.set(K.siteToken, siteToken);
+    if (name) { store.set(K.name, name); store.set(K.lastName, name); }
+  }
+  /** boot → 셸 → (미리보기 예시 데이터) → 화면 */
+  function enter() {
+    renderLoading(store.get(K.kind) === 'site' ? 'site' : 'hq');
+    return App.load({ silent: true, noAuthRedirect: true }).then(function () {
+      App.renderShell();
+      return maybeDemo();
+    }).then(function () { return App.route(); });
+  }
+  function maybeDemo() {
+    if (!BOOT.demo || App.S.index.size || !App.demo || typeof App.demo.load !== 'function' || !App.isHQ()) return null;
+    var page = document.getElementById('page');
+    if (page) page.innerHTML = pageSkeleton('예시 데이터를 만드는 중…');
+    return Promise.resolve().then(function () { return App.demo.load(); }).catch(function (err) {
+      console.error('[App] 예시 데이터 실패', err);
+      App.toast('예시 데이터를 만들지 못했습니다 — ' + ((err && err.message) || ''), 'neg');
+    });
+  }
+  function silentSiteLogin() {
+    var tok = siteTokenNow();
+    var name = store.get(K.name);
+    if (!tok || !name) return Promise.reject(apiError('', 'AUTH'));
+    if (BOOT.s && BOOT.site && BOOT.site.needPin) return Promise.reject(apiError('', 'AUTH'));
+    return App.api('auth.siteLogin', { siteToken: tok, name: name, pin: '' }, { silent: true }).then(function (d) {
+      saveAuth(d, tok, name);
+    });
+  }
+  function afterNoToken(expired) {
+    var siteMode = !!BOOT.s || (store.get(K.kind) === 'site' && !!store.get(K.siteToken));
+    if (siteMode) {
+      if (store.get(K.name) && !(BOOT.s && BOOT.site && BOOT.site.needPin) && BOOT.site !== null) {
+        renderLoading('site');
+        return silentSiteLogin().then(function () { return enter().catch(bootFail); }, function (err) {
+          var m = err && err.message && !/PIN/.test(err.message) ? err.message : '';
+          renderSiteLogin({ msg: m });
+        });
+      }
+      renderSiteLogin({ msg: expired ? '로그인이 만료되었습니다. 다시 들어와 주세요' : '' });
+      return null;
+    }
+    if (BOOT.demo) {
+      renderLoading('hq');
+      return App.api('auth.login', { id: 'admin', password: 'hds1234' }, { silent: true }).then(function (d) {
+        saveAuth(d);
+        return enter().catch(bootFail);
+      }, function () { renderLogin({}); });
+    }
+    renderLogin({ msg: expired ? '로그인이 만료되었습니다. 다시 로그인하세요' : '' });
+    return null;
+  }
+  function begin() {
+    var tok = store.get(K.token);
+    if (BOOT.s) {
+      // 사업장 링크로 들어옴: 같은 사업장의 사업장 세션만 이어 씀
+      if (store.get(K.kind) !== 'site' || store.get(K.siteToken) !== BOOT.s) tok = '';
+    }
+    if (tok) {
+      return enter().catch(function (err) {
+        if (err && err.code === 'AUTH') { store.del(K.token); return afterNoToken(true); }
+        return bootFail(err);
+      });
+    }
+    return afterNoToken(false);
+  }
+  App.begin = begin;
+
+  /** 쓰는 도중 세션이 끊김(AUTH) — 사업장은 조용히 다시 로그인, 본사는 로그인 화면 */
+  var relogging = null;
+  function authLost() {
+    if (relogging || !shellOn) return;
+    store.del(K.token);
+    var wasSite = App.isSite();
+    var hash = location.hash;
+    relogging = (wasSite ? silentSiteLogin() : Promise.reject(apiError('', 'AUTH')))
+      .then(function () {
+        return App.load({ silent: true, noAuthRedirect: true }).then(function () {
+          App.renderShell();
+          if (location.hash !== hash) location.hash = hash;
+          App.toast('로그인을 다시 이었습니다. 방금 한 작업을 한 번 더 해 주세요');
+          return App.route();
+        });
+      })
+      .catch(function () {
+        resetState();
+        if (wasSite) renderSiteLogin({ msg: '로그인이 만료되었습니다. 다시 들어와 주세요' });
+        else renderLogin({ msg: '로그인이 만료되었습니다. 다시 로그인하세요' });
+      })
+      .then(function () { relogging = null; });
+  }
+  App.toLogin = function (msg) {
+    store.del(K.token);
+    resetState();
+    if (siteTokenNow()) renderSiteLogin({ msg: msg || '' }); else renderLogin({ msg: msg || '' });
+  };
+
+  App.start = function () {
+    if (App.started) return;
+    App.started = true;
+    BOOT = App.BOOT = window.BOOT || {};
+    bindOnce();
+    if (BOOT.view && !location.hash) {
+      try { history.replaceState(null, '', '#/' + String(BOOT.view).replace(/^[#/]+/, '')); } catch (e) { /* 무시 */ }
+    }
+    if (BOOT.ready === false) { renderSetup(); return; }
+    if (!runner()) { renderFatal('서버에 연결할 수 없습니다. 웹앱 주소(script.google.com/macros/s/…/exec)로 열어 주세요.'); return; }
+    begin();
+  };
+
+  /* =====================================================================
+   * 12. core.* 동작
+   * ===================================================================== */
+  Object.assign(App.actions, {
+    'core.login': function (form) {
+      var id = String((form.elements.uid || {}).value || '').trim();
+      var pw = String((form.elements.pw || {}).value || '');
+      if (!id) { fieldErr(form, 'uid', '아이디를 입력하세요'); return; }
+      if (!pw) { fieldErr(form, 'pw', '비밀번호를 입력하세요'); return; }
+      fieldErr(form, '', '');
+      var btn = form.querySelector('[type="submit"]');
+      setBusy(btn, true);
+      return App.api('auth.login', { id: id, password: pw }, { silent: true }).then(function (d) {
+        saveAuth(d);
+        return enter().catch(bootFail);
+      }, function (err) {
+        setBusy(btn, false);
+        fieldErr(form, 'pw', err.message || '로그인하지 못했습니다');
+        var p = form.elements.pw;
+        if (p) { p.value = ''; p.focus(); }
+      });
+    },
+    'core.google': function (btn) {
+      var form = btn.closest('form');
+      setBusy(btn, true);
+      return App.api('auth.google', {}, { silent: true }).then(function (d) {
+        saveAuth(d);
+        return enter().catch(bootFail);
+      }, function (err) {
+        setBusy(btn, false);
+        var m = err.message || '구글 계정으로 로그인하지 못했습니다';
+        if (form) fieldErr(form, 'pw', m); else App.toast(m, 'neg');
+      });
+    },
+    'core.siteLogin': function (form) {
+      var name = String((form.elements.name || {}).value || '').replace(/\s+/g, ' ').trim();
+      var pinEl = form.elements.pin;
+      var pin = pinEl ? String(pinEl.value || '').trim() : '';
+      var tok = siteTokenNow();
+      if (!name) { fieldErr(form, 'name', '작성자 이름을 입력하세요'); return; }
+      if (pinEl && pinEl.required && !pin) { fieldErr(form, 'pin', 'PIN 을 입력하세요'); return; }
+      if (!tok) { fieldErr(form, 'name', '사업장 링크 정보가 없습니다. 본사에서 받은 링크로 다시 열어 주세요'); return; }
+      fieldErr(form, '', '');
+      var btn = form.querySelector('[type="submit"]');
+      setBusy(btn, true);
+      return App.api('auth.siteLogin', { siteToken: tok, pin: pin, name: name }, { silent: true }).then(function (d) {
+        saveAuth(d, tok, name);
+        return enter().catch(bootFail);
+      }, function (err) {
+        setBusy(btn, false);
+        var m = err.message || '들어가지 못했습니다';
+        if (pinEl && /PIN/.test(m)) { fieldErr(form, 'pin', m); pinEl.value = ''; }
+        else fieldErr(form, 'name', m);
+      });
+    },
+    'core.hqLogin': function () { renderLogin({}); },
+    'core.siteForm': function () { renderSiteLogin({}); },
+    'core.logout': function () {
+      var wasSite = App.isSite();
+      var token = store.get(K.token);
+      if (token) App.api('auth.logout', {}, { silent: true, noAuthRedirect: true }).catch(function () { /* 이미 끊긴 세션 */ });
+      store.del(K.token);
+      if (wasSite) store.del(K.name);
+      resetState();
+      if (wasSite && siteTokenNow()) renderSiteLogin({}); else renderLogin({});
+    },
+    'core.menu': function () { openNavsheet(); },
+    'core.menuClose': function () { closeNavsheet(); },
+    'core.refresh': function () { return App.refresh(); },
+    'core.search': function (form) {
+      var q = String((form.elements.q || {}).value || '').trim();
+      closeNavsheet();
+      App.go('#/search' + (q ? '?q=' + encodeURIComponent(q) : ''));
+    },
+    'core.copy': function (el) { return App.copy(el.getAttribute('data-copy') || ''); },
+    'core.retry': function () { return App.route({ keep: true }); },
+    'core.restart': function () { return begin(); },
+    'core.reload': function () { location.reload(); },
+    'core.back': function () { if (history.length > 1) history.back(); else App.go('#/home'); }
+  });
 })();
 /* ===== [ui-core] 끝 ===== */
 </script>
