@@ -9120,8 +9120,15 @@ function cronWeekly(e) {
 
 /** 트리거 실행(이벤트에 triggerUid) 또는 소유자 실행일 때만 true. 이름이 _ 로 끝나 웹앱에서 부를 수 없다. */
 function cronAllowed_(e) {
-  if (e && typeof e === 'object' && e.triggerUid) return true;
-  try { return typeof ownerRun_ === 'function' ? ownerRun_() : false; } catch (x) { return false; }
+  try { if (typeof ownerRun_ === 'function' && ownerRun_()) return true; } catch (x) { /* 아래 트리거 확인 */ }
+  if (!(e && typeof e === 'object' && e.triggerUid)) return false;
+  // 이벤트의 triggerUid 가 이 프로젝트에 실제로 설치된 트리거 ID 와 같을 때만 믿는다(웹앱에서 위조한 값 거부).
+  try {
+    var uid = String(e.triggerUid);
+    return ScriptApp.getProjectTriggers().some(function (t) {
+      return typeof t.getUniqueId === 'function' && String(t.getUniqueId()) === uid;
+    });
+  } catch (x2) { return false; }
 }
 
 /* ===== Export.gs ===== */
