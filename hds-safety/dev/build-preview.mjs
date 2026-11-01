@@ -333,8 +333,8 @@ function runtimeSource({ factorySrc, functionNames, htmlNames, version }) {
     setTimeout(function () {
       var res, err = null;
       try {
-        if (FUNCTIONS.indexOf(fnName) < 0 || /_$/.test(fnName)) throw new Error('Script function not found: ' + fnName);
-        res = exec(fnName, JSON.parse(payload));
+        if (FUNCTIONS.indexOf(fnName) < 0 || /_$/.test(fnName) || typeof window.__server[fnName] !== 'function') throw new Error('Script function not found: ' + fnName);
+        res = window.__server[fnName].apply(null, JSON.parse(payload));
         if (res !== undefined) {
           if (hasDate(res, 0)) {
             console.warn('[미리보기] 서버 함수 ' + fnName + ' 이 Date 를 돌려줘 GAS 처럼 null 로 바꿉니다');

@@ -1102,20 +1102,20 @@
     Array.prototype.forEach.call(ed.root.querySelectorAll('[data-fe-act="submit"]'), function (b) { b.classList.toggle('is-busy', !!on); b.disabled = !!on; });
   }
   function paintHeader(ed) {
-    if (!ed || !ed.root) return; var el = ed.root.querySelector('[data-fe-sub]'); if (el) el.innerHTML = subHtml();
+    if (!ed || !ed.root || ED !== ed) return; var el = ed.root.querySelector('[data-fe-sub]'); if (el) el.innerHTML = subHtml();
   }
 
   /* ───── 머리 ───── */
   function subHtml() {
     var def = ED.def, rec = ED.rec, site = siteOf(rec.site) || {};
-    var parts = ['<span class="mono">' + esc(rec.id || '새 기록') + '</span>', esc(rec.site + ' ' + (site.name || '')), esc(def.docNo + ' ' + def.version)];
+    var parts = [rec.id ? '<span class="mono">' + esc(rec.id) + '</span>' : '새 기록', esc(rec.site + ' ' + (site.name || '')), esc(def.docNo + ' ' + def.version)];
     if (Number(rec.rev) > 1) parts.push('수정 ' + esc(rec.rev) + '차');
     return parts.join(' · ') + ' <span class="fe-badges">' + statusPill(rec) + (rec.createdBy === 'hq' ? pill('본사 대리 작성', 'acc') : '') + '</span>';
   }
   function bannersHtml() {
     var rec = ED.rec, h = '';
     if (rec.status === '반려') {
-      h += '<div class="fe-banner" data-tone="neg">' + icon('alert') + '<div><b>반려된 기록입니다.</b> ' + esc(rec.returnNote || '사유가 적혀 있지 않습니다.')
+      h += '<div class="fe-banner" data-tone="warn">' + icon('alert') + '<div><b>반려된 기록입니다.</b> ' + esc(rec.returnNote || '사유가 적혀 있지 않습니다.')
         + (rec.returnedAt ? ' <span class="faint">' + esc([rec.returnedBy, fmtDT(rec.returnedAt)].filter(Boolean).join(' · ')) + '</span>' : '') + '<br>고친 뒤 [다시 제출]을 눌러 주세요.</div></div>';
     } else if (rec.status === '제출') {
       h += '<div class="fe-banner" data-tone="info">' + icon('edit') + '<div>제출한 기록을 고치고 있습니다. 자동 저장은 하지 않으니 고친 뒤 [수정 제출]을 눌러 주세요.</div></div>';
@@ -1454,7 +1454,7 @@
     ed.root = ed.main.querySelector('[data-fe-root]');
     wire(ed.root); hydrate(ed.root); autosizeAll(ed.root); spy();
     if (ed.showErr) runValidate(); else applyErrors();
-    if (!keepScroll) { var top = ed.root; if (top && top.scrollIntoView && ed.scrolled) top.scrollIntoView({ block: 'start' }); }
+    if (!keepScroll && ed.root.scrollIntoView) ed.root.scrollIntoView({ block: 'start' });
   }
   function rerenderSec(sid) {
     var ed = ED; if (!ed || !ed.root) return;
@@ -1690,7 +1690,7 @@
     e.preventDefault();
     var sid = b.getAttribute('data-fe-sec-id');
     switch (act) {
-      case 'save': doSave(ed, true).catch(function (err) { toast((err && err.message) || '저장하지 못했습니다', 'neg'); }); break;
+      case 'save': doSave(ed, true).catch(function (err) { if (!err || !err.toasted) toast((err && err.message) || '저장하지 못했습니다', 'neg'); }); break;
       case 'submit': submit(); break;
       case 'chk-all': {
         var s = secById(ed.def, sid); var cl = ed.rec.data[sid] = asObj(ed.rec.data[sid]); var n = 0;
@@ -1745,7 +1745,7 @@
         });
       });
     });
-    chain.catch(function (err) { toast((err && err.message) || '사진을 올리지 못했습니다', 'neg'); })
+    chain.catch(function (err) { if (!err || !err.toasted) toast((err && err.message) || '사진을 올리지 못했습니다', 'neg'); })
       .then(function () { if (host) host.classList.remove('is-busy'); if (ED === ed && n) { changed({ secs: [sid] }); toast('사진 ' + n + '장을 올렸습니다'); } });
   }
 
@@ -1792,7 +1792,7 @@
         var sg = ed.rec.data[sid] = asObj(ed.rec.data[sid]); var prev = sg[key] || {};
         sg[key] = { img: id, at: nowIso(), by: label }; if (prev.paper) sg[key].paper = true;
         d.close(); if (ED === ed) { changed({ secs: [sid] }); toast(label + ' 서명을 저장했습니다'); }
-      }).catch(function (err) { x.classList.remove('is-busy'); x.disabled = false; toast((err && err.message) || '서명을 저장하지 못했습니다', 'neg'); });
+      }).catch(function (err) { x.classList.remove('is-busy'); x.disabled = false; if (!err || !err.toasted) toast((err && err.message) || '서명을 저장하지 못했습니다', 'neg'); });
     });
   }
   function openLibrary(sid) {
@@ -1925,12 +1925,13 @@
         cacheRec(rec);
         ed.dirty = false; ed.busy = false;
         toast((stage && !last ? stage.label + ' 단계를 보고했습니다' : '제출했습니다') + (made.length ? ' · 조치 ' + made.length + '건 등록' : ''), 'pos');
+        if (ED !== ed) return;
         var id = rec.id; leaveEditor(false);
         var to = '#/rec/' + encodeURIComponent(id);
         if (typeof App.go === 'function') App.go(to); else location.hash = to;
       }).catch(function (err) {
         ed.busy = false; paintBusy(ed, false);
-        toast((err && err.message) || '제출하지 못했습니다. 다시 눌러 주세요.', 'neg');
+        if (!err || !err.toasted) toast((err && err.message) || '제출하지 못했습니다. 다시 눌러 주세요.', 'neg');
       });
     });
   }
@@ -2003,6 +2004,7 @@
     if (!siteId) { leaveEditor(true); main.innerHTML = sitePickerHtml(def, q); return; }
     if (!siteOf(siteId)) { leaveEditor(true); main.innerHTML = pageMsg(def.title, '사업장 ' + siteId + '을(를) 찾지 못했습니다.', '<a href="#/sites">사업장 목록</a>'); return; }
     if (my !== seq) return;
+    if (ED && ED.isNew && !ED.rec.id && ED.route === currentHash() && ED.def.code === def.code && ED.rec.site === siteId) { ED.main = main; renderAll(true); return; }
     var rec = newRecord(def, siteId, { requestId: q.req || '', shift: q.shift || '', date: /^\d{4}-\d{2}-\d{2}$/.test(q.date || '') ? q.date : '' });
     openEditor(main, def, rec, { req: findRequest(q.req), dup: findDup(def, rec) });
   }
@@ -2573,7 +2575,18 @@
   }
 
   /* ───────── 화면: 기록 상세 #/rec/<id> ───────── */
-  var RV = { tok: 0, main: null, id: '' };
+  var RV = { tok: 0, main: null, id: '', seq: null };
+  /* 같은 #page 를 다른 화면이 쓰므로, 늦게 도착한 응답이 다른 화면을 덮지 않게 */
+  function alive(tok) {
+    if (tok !== RV.tok) return false;
+    if (RV.seq != null && typeof App.isCurrent === 'function') return !!App.isCurrent(RV.seq);
+    return true;
+  }
+  function onRecScreen(id) {
+    var c = App.current;
+    if (c && c.name) return /(^|:)rec$/.test(c.name) && (c.args || [])[0] === id;
+    return !!(RV.main && document.body.contains(RV.main) && RV.id === id);
+  }
   function titleRowHtml(title, sub, actions) {
     return '<div class="title-row"><div class="title-main"><h1>' + esc(title) + '</h1>' + (sub ? '<p class="sub">' + sub + '</p>' : '') + '</div>' +
       (actions ? '<div class="actions">' + actions + '</div>' : '') + '</div>';
@@ -2702,7 +2715,7 @@
     if (!def) { main.innerHTML = titleRowHtml('기록', '<span class="mono">' + esc(rec.id) + '</span>', '') + '<div class="err">양식 정의(' + esc(rec.form) + ')를 찾지 못했습니다.</div>'; return; }
     var sub = '<span class="mono">' + esc(rec.id) + '</span> · ' + esc(siteLabel(rec.site)) + ' · <span class="num">' + esc(rec.date || '') + '</span>' + (rec.shift ? ' ' + esc(rec.shift) : '') + (rec.author ? ' · 작성 ' + esc(rec.author) : '');
     return renderRecordBody(rec).then(function (body) {
-      if (tok !== RV.tok) return;
+      if (!alive(tok)) return;
       main.innerHTML = titleRowHtml(def.title, sub, recActions(def, rec)) +
         '<div class="rv" data-rv-id="' + esc(rec.id) + '"><div class="rv-main">' + bandHtml(def, rec) + body + '</div><aside class="rv-rail">' + railHtml(def, rec) + '</aside></div>';
       hydrate(main);
@@ -2712,22 +2725,25 @@
     var id = argOf(args, 0);
     if (id === 'rec') id = argOf(args, 1);
     RV.main = main; RV.id = id;
+    RV.seq = App.current && typeof App.current.seq === 'number' ? App.current.seq : null;
     var tok = ++RV.tok;
     ensureObserver();
     if (!id) { main.innerHTML = titleRowHtml('기록', '', '') + '<div class="empty">기록 번호가 없습니다. <button type="button" class="btn ghost sm" data-href="#/records">기록 조회</button></div>'; return; }
     main.innerHTML = recSkeleton();
     var get = App.getRecord ? Promise.resolve(App.getRecord(id)) : apiCall('records.get', { id: id });
     return get.then(function (rec) {
-      if (tok !== RV.tok) return;
+      if (!alive(tok)) return;
       if (!rec) throw new Error('기록을 찾지 못했습니다.');
       return drawRec(main, rec, tok);
     }).catch(function (err) {
-      if (tok !== RV.tok) return;
+      if (!alive(tok)) return;
       main.innerHTML = titleRowHtml('기록', '<span class="mono">' + esc(id) + '</span>', '') + errorHtml(err, 'fe.rv-reload');
     });
   }
-  function rerenderRec() {
-    if (RV.main && document.body.contains(RV.main) && RV.id) return viewRec(RV.main, [RV.id]);
+  function rerenderRec(id) {
+    id = id || RV.id;
+    if (!id || !onRecScreen(id)) return;
+    if (RV.main && document.body.contains(RV.main)) return viewRec(RV.main, [id]);
     if (App.route) App.route();
   }
   function cachedRec(id) { var m = S().records; return (m && m.get && m.get(id)) || indexGet(id) || { id: id }; }
@@ -2754,7 +2770,7 @@
         var r = res && res.record ? res.record : res;
         if (r && r.id) storeRecord(Object.assign({}, cachedRec(id), r));
         toast(decision === '확인' ? '확인했습니다. 이 기록은 잠깁니다.' : decision === '반려' ? '반려했습니다. 사업장에 알렸습니다.' : '확인을 취소했습니다.', 'pos');
-        rerenderRec();
+        rerenderRec(id);
       });
     }).catch(function (err) { if (err && !App.api) toast(err.message || String(err), 'neg'); });
   }
@@ -2771,7 +2787,8 @@
   }
   function recLink(id) {
     var b = S().boot || {}; var base = (b.urls && b.urls.app) || (window.BOOT && window.BOOT.url) || String(location.href).split('#')[0].split('?')[0];
-    return base + (base.indexOf('?') >= 0 ? '&' : '?') + 'v=' + encodeURIComponent('rec/' + id);
+    var sTok = !isHQ() && window.BOOT && window.BOOT.s ? '&s=' + encodeURIComponent(window.BOOT.s) : '';
+    return base + (base.indexOf('?') >= 0 ? '&' : '?') + 'v=' + encodeURIComponent('rec/' + id) + sTok;
   }
   function moreMenu(el) {
     var id = el.getAttribute('data-id'); var rec = cachedRec(id); var def = formOf(rec.form) || {};
@@ -3295,6 +3312,7 @@
     var root = printRoot();
     root.innerHTML = barHtml(label, true) + '<div class="print-pages"><div class="print-wait">' + esc(label) + '</div></div>';
     bindBar(root);
+    root.classList.add('show');
     document.body.classList.add('rv-printing');
     window.scrollTo(0, 0);
     if (!PR.onKey) {
@@ -3318,7 +3336,7 @@
     PR.tok++;
     document.body.classList.remove('rv-printing');
     var root = document.getElementById('print-root');
-    if (root) root.innerHTML = '';
+    if (root) { root.innerHTML = ''; root.classList.remove('show'); }
   }
   function loadFull(ids) {
     var cache = S().records; var have = {}; var miss = [];
@@ -3582,7 +3600,7 @@
     'fe.rv-more': function (el) { moreMenu(el); },
     'fe.rv-print': function (el) { printRecords([el.getAttribute('data-id')]); },
     'fe.rv-photo': function (el) { openPhoto(el); },
-    'fe.rv-reload': function () { rerenderRec(); },
+    'fe.rv-reload': function () { if (RV.main && document.body.contains(RV.main) && RV.id) viewRec(RV.main, [RV.id]); else if (App.route) App.route(); },
     'fe.rv-chkfilter': function (el) {
       var sec = el.closest('.rv-sec'); if (!sec) return;
       var on = sec.classList.toggle('is-only-bad');

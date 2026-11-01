@@ -591,7 +591,10 @@
     var sink = opts.log || (typeof console !== 'undefined' ? console : { log: function () {}, warn: function () {}, error: function () {}, info: function () {} });
     var autoSave = opts.autoSave !== false;
     var debounceMs = opts.debounceMs == null ? 300 : opts.debounceMs;
-    var timers = opts.timers || (typeof setTimeout === 'function' ? { set: setTimeout, clear: clearTimeout } : null);
+    // setTimeout 을 객체 메서드로 부르면 브라우저에서 Illegal invocation — 감싸서 쓴다.
+    var timers = opts.timers || (typeof setTimeout === 'function'
+      ? { set: function (f, ms) { return setTimeout(f, ms); }, clear: function (t) { clearTimeout(t); } }
+      : null);
     var htmlFiles = Array.isArray(opts.htmlFiles) ? opts.htmlFiles.slice() : null;
 
     var mock = {
