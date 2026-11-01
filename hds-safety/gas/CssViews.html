@@ -201,11 +201,13 @@
 
 /* 태블릿·휴대폰 */
 @media (max-width: 1100px) {
+  .hq-site-grid > .span-4 { order: -1; }
   .hq-set { grid-template-columns: 1fr; gap: 12px; padding: 24px 0; }
   .hq-act-title { max-width: none; }
 }
 @media (max-width: 640px) {
   .hq-q, .hq-searchbar .hq-q, .hq-rec-tools .select { width: 100%; max-width: none; }
+  .toolbar .hq-q { flex: 1 1 100%; }
   .hq-range { width: 100%; }
   .hq-range .input { flex: 1; width: auto; min-width: 0; }
   .hq-rec-tabs { overflow-x: auto; padding: 0 12px; }
