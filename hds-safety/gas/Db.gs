@@ -16,6 +16,7 @@
 var Db = (function () {
   'use strict';
 
+  var SINGLE_MAX = 8;            // 한 실행에서 큰 열을 행 단위로 읽는 최대 건수(넘으면 전 행 한 번에)
   var HEAVY_CHUNK = 4;          // chunk 가 이 이상이면 '큰 열'로 보고 늦게 읽는다
   var CELL_MAX = 49000;         // 칸 하나 최대 50,000자 — 여유를 둔다
   var LOG_MAX = 5000;           // log 테이블 최대 행
@@ -309,13 +310,28 @@ var Db = (function () {
     var cur = m.rows[i];
     var d = Object.getOwnPropertyDescriptor(cur, colName);
     if (d && !(d.get && d.get.lazy)) return d.value;
-    var block = heavyBlock(m);
     var inf = sheetInfo(table);
-    var r = block[m.rowOf[key] - 2] || [];
+    var r = heavyRow(m, key, m.rowOf[key]);
     var s = col.names.map(function (n) { return cellText(r[inf.idx[n] - inf.hs]); }).join('');
     var v = decodeJson(table, key, col, s);
     Object.defineProperty(cur, colName, { value: v, writable: true, enumerable: true, configurable: true });
     return v;
+  }
+
+  /**
+   * 한 행의 큰 열 원본 값. 기록 1건 조회·수정처럼 몇 건만 읽을 때는 그 행만 읽고(기록 수와 무관),
+   * 한 실행에서 SINGLE_MAX 건을 넘게 읽으면(목록·내보내기·재구축) 그때 전 행을 한 번에 읽는다.
+   */
+  function heavyRow(m, key, row) {
+    if (m.block || !key) return heavyBlock(m)[row - 2] || [];
+    m.single = m.single || {};
+    if (m.single[key]) return m.single[key];
+    m.nSingle = (m.nSingle || 0) + 1;
+    if (m.nSingle > SINGLE_MAX) return heavyBlock(m)[row - 2] || [];
+    var inf = sheetInfo(m.table);
+    var r = row >= 2 && row <= m.last ? inf.sh.getRange(row, inf.hs + 1, 1, inf.width - inf.hs).getValues()[0] : [];
+    m.single[key] = r;
+    return r;
   }
 
   function heavyBlock(m) {
@@ -454,8 +470,7 @@ var Db = (function () {
       var vals = run.items.map(function (it) {
         if (!light && it.enc.light) {
           // 이 행은 큰 열을 바꾸지 않았다 — 시트에 있는 그대로 다시 쓴다.
-          var block = it.row <= m.last ? heavyBlock(m) : [];
-          var raw = block[it.row - 2] || [];
+          var raw = it.row <= m.last ? heavyRow(m, it.enc.key, it.row) : [];
           for (var c = inf.hs; c < inf.width; c++) it.enc.cells[c] = raw[c - inf.hs] === undefined ? '' : raw[c - inf.hs];
         }
         return it.enc.cells.slice(0, w);
@@ -609,6 +624,7 @@ var Db = (function () {
       m.rows.splice(i, 1);
       m.rowNums.splice(i, 1);
       if (m.block && row - 2 < m.block.length) m.block.splice(row - 2, 1);
+      if (m.single) delete m.single[key];
       delete m.extras[key];
       m.last = Math.max(1, m.last - 1);
       m.pos = {};

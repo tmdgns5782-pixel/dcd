@@ -303,7 +303,8 @@
       case 'drills': return by('N2').length;
       case 'stopWork': return by('F10').length;
       case 'violations': return by('F05').length;
-      case 'ptw': return by('N3').length;
+      /* 허가서 '발행'은 허가한 건만(보류·불허는 발행 아님) */
+      case 'ptw': return by('N3').filter(function (r) { return (factsOfRow(r).v || {}).decision === '허가'; }).length;
       case 'voices': return by('F02').length;
       default: return '';
     }
@@ -329,6 +330,22 @@
 
   /* ───────── 검증 ───────── */
   function cmpVal(f, v) { return (f.type === 'number' || f.type === 'computed') && num(v) !== null ? Number(v) : String(v); }
+  /* 사람 수·건수·대수처럼 셀 수 있는 단위는 정수만. f.integer 가 있으면 그 값을 따른다(시간·%·ppm·℃ 는 소수 허용) */
+  var INT_UNITS = ['명', '건', '회', '대', '종', '개소', '곳', '항목', '개', '일'];
+  function isIntField(f) {
+    if (!f || f.type !== 'number') return false;
+    if (f.integer !== undefined) return !!f.integer;
+    return INT_UNITS.indexOf(String(f.unit || '')) >= 0;
+  }
+  /* requiredIf 조건: value(일치) 외에 gte/lte(숫자)·in/notIn(목록)·notEmpty 를 지원 */
+  function ruleCond(rule, o) {
+    if (rule.gte !== undefined) return num(o) !== null && Number(o) >= rule.gte;
+    if (rule.lte !== undefined) return num(o) !== null && Number(o) <= rule.lte;
+    if (rule.in) return Array.isArray(o) ? o.some(function (x) { return rule.in.indexOf(x) >= 0; }) : rule.in.indexOf(o) >= 0;
+    if (rule.notIn) return !isEmpty(o) && (Array.isArray(o) ? !o.some(function (x) { return rule.notIn.indexOf(x) >= 0; }) : rule.notIn.indexOf(o) < 0);
+    if (rule.notEmpty || rule.value === undefined) return !isEmpty(o);
+    return Array.isArray(o) ? o.indexOf(rule.value) >= 0 : (o === rule.value || String(o) === String(rule.value));
+  }
   function validateField(f, v, data, top) {
     var errs = []; var label = f.label;
     var other = function (id) { return data && data[id] !== undefined ? data[id] : (top ? top[id] : undefined); };
@@ -339,6 +356,7 @@
       else {
         if (f.min !== undefined && f.min !== null && n < f.min) errs.push(label + ': ' + f.min + ' 이상이어야 합니다');
         if (f.max !== undefined && f.max !== null && n > f.max) errs.push(label + ': ' + f.max + ' 이하여야 합니다');
+        if (isIntField(f) && Math.floor(n) !== n) errs.push(label + ': 소수 없이 정수로 적으세요');
       }
     }
     (f.validate || []).forEach(function (rule) {
@@ -352,7 +370,7 @@
         var target = rule.value !== undefined && !rule.field ? rule.value : o;
         if (!isEmpty(v) && !isEmpty(target) && String(cmpVal(f, v)) !== String(cmpVal(f, target))) errs.push(msg || label + ' 값을 확인하세요');
       } else if (rule.rule === 'requiredIf') {
-        var cond = Array.isArray(o) ? o.indexOf(rule.value) >= 0 : (rule.value === undefined ? !isEmpty(o) : (o === rule.value || String(o) === String(rule.value)));
+        var cond = ruleCond(rule, o);
         if (cond && isEmpty(v) && f.type !== 'computed') errs.push(msg || label + ': 입력이 필요합니다');
       } else if (rule.rule === 'pattern' && !isEmpty(v) && rule.pattern) {
         var ok = true; try { ok = new RegExp(rule.pattern).test(String(v)); } catch (e) { ok = true; }
@@ -360,6 +378,103 @@
       }
     });
     return uniq(errs);
+  }
+  /* 양식 정의(FD)에 아직 없는 교차 검증 — 안내문이 '반드시'라고 한 조건부 필수와 판정 일관성.
+     FD 의 def.rules(같은 모양)가 있으면 함께 적용한다.
+       { req: 칸, when: { field|sum:[칸…], gte|lte|in|notIn|value }, msg }   조건이 맞으면 req 칸 필수
+       { kind: 'airOk', result: 판정 칸, okPrefix, limits: [{ id, label, unit, min, maxEx }] }   '적정' 판정인데 측정값이 범위 밖
+       { kind: 'measuresConfirmed', prefix, when, na }   허가인데 한 묶음(공통·[유형]) 조치가 모두 '해당없음' */
+  var CROSS_RULES = {
+    F07: [
+      { req: 'noReplyAction', when: { field: 'noReply', gte: 1 }, msg: '안부확인 미응답이 있으면 미응답 때 한 조치(확인 방법·결과)를 적어야 합니다' },
+      { req: 'incidentRef', when: { sum: ['accidentCount', 'nearMissCount'], gte: 1 }, msg: '사고·아차사고가 1건 이상이면 F04 재해사고 보고(아차사고는 F02 접수도 가능)를 연결해야 합니다' },
+      { req: 'healthAction', when: { field: 'healthIssue', gte: 1 }, msg: '건강 이상 인원이 있으면 한 조치를 골라야 합니다' }
+    ],
+    F06: [
+      { req: 'illnessRef', when: { field: 'heatIllness', gte: 1 }, msg: '온열질환 의심자가 있었으면 F04 재해사고 보고를 연결해야 합니다' }
+    ],
+    F09: [
+      { req: 'overdueNote', when: { field: 'actsOverdue', gte: 1 }, msg: '기한경과 조치가 있으면 조치번호별 사유와 완료 계획을 적어야 합니다' }
+    ],
+    N3: [
+      { kind: 'measuresConfirmed', prefix: 'm_', na: '해당없음', when: { field: 'decision', value: '허가' } },
+      { kind: 'airOk', result: 'gasResult', okPrefix: '적정', limits: [
+        { id: 'gasO2', label: '산소', unit: '%', min: 18, maxEx: 23.5 },
+        { id: 'gasCO2', label: '탄산가스', unit: '%', maxEx: 1.5 },
+        { id: 'gasCO', label: '일산화탄소', unit: 'ppm', maxEx: 30 },
+        { id: 'gasH2S', label: '황화수소', unit: 'ppm', maxEx: 10 }
+      ] }
+    ]
+  };
+  function crossRulesOf(def) { return asArr(def.rules).concat(CROSS_RULES[def.code] || []); }
+  function crossValidate(def, rec, stageOk, out) {
+    var d = rec.data || {}; var fm = fieldMap(def);
+    var live = function (id) {   /* 그 칸이 지금 보이고 검사할 단계 안에 있나 */
+      var x = fm[id]; if (!x) return null;
+      if (x.sec !== '_head' && !stageOk(secById(def, x.sec) || { id: x.sec })) return null;
+      return showOk(x.f.showIf, d, rec.site) ? x : null;
+    };
+    var whenOk = function (w) {
+      if (!w) return true;
+      var o = w.sum ? w.sum.reduce(function (t, k) { var n = num(d[k]); return t + (n === null ? 0 : n); }, 0) : d[w.field];
+      return ruleCond(w, o);
+    };
+    crossRulesOf(def).forEach(function (r) {
+      if (r.req) {
+        var x = live(r.req); if (!x || !whenOk(r.when) || !isEmpty(d[r.req])) return;
+        out.push({ sec: x.sec, id: r.req, msg: r.msg || (x.f.label + ': 입력이 필요합니다') });
+      } else if (r.kind === 'airOk') {
+        var xr = live(r.result); var v = String(d[r.result] || '');
+        if (!xr || !v || v.indexOf(r.okPrefix) !== 0) return;
+        var bad = (r.limits || []).filter(function (l) {
+          var n = num(d[l.id]); if (n === null) return false;
+          return (l.min !== undefined && n < l.min) || (l.maxEx !== undefined && n >= l.maxEx);
+        }).map(function (l) {
+          var rg = (l.min !== undefined ? l.min + l.unit + ' 이상 ' : '') + l.maxEx + l.unit + ' 미만';
+          return l.label + ' ' + d[l.id] + l.unit + '(적정 ' + rg + ')';
+        });
+        if (bad.length) out.push({ sec: xr.sec, id: r.result, msg: '측정값이 적정 범위를 벗어났습니다 — ' + bad.join(', ') + '. \'기준 벗어남\'을 고르고 환기 후 다시 재세요' });
+      } else if (r.kind === 'measuresConfirmed') {
+        if (!whenOk(r.when)) return;
+        var groups = {}, order = [];
+        fieldList(def).forEach(function (x) {
+          if (String(x.f.id).indexOf(r.prefix) !== 0 || x.f.type !== 'select' || !live(x.f.id)) return;
+          var m = /^\[([^\]]+)\]/.exec(x.f.label || ''); var g = m ? m[1] : '';
+          if (!groups[g]) { groups[g] = []; order.push(g); }
+          groups[g].push(x);
+        });
+        order.forEach(function (g) {
+          var xs = groups[g];
+          if (!xs.length || !xs.every(function (x) { return d[x.f.id] === r.na; })) return;
+          out.push({ sec: xs[0].sec, id: xs[0].f.id, msg: g
+            ? '[' + g + '] 안전조치가 모두 \'' + r.na + '\'입니다. 이 작업을 하면 갖춘 조치를 확인하고, 하지 않으면 작업유형에서 빼세요'
+            : '공통 안전조치가 모두 \'' + r.na + '\'입니다. 모든 작업에 해당하는 조치이니 갖춘 것을 확인하세요. 갖출 수 없으면 \'보류\'로 결정합니다' });
+        });
+      }
+    });
+  }
+  /* 서명(증빙): s.required 가 있으면 그대로 따르고, 없으면
+       from(참석자·작업자 등 고른 사람) 칸 → 전원 서명,
+       roles 칸 → 단계형 양식(교육·훈련·허가서·작업중지 등 HEC 증빙)에서만 '(필요 시)'를 뺀 역할 전부.
+         같은 일의 회차별 점검자(작업 시작·오전·오후 점검자)는 1명 이상.
+       제목이 '…사람만)' 인 칸(보충교육·전달교육)은 받은 사람만 서명하므로 검사하지 않는다. 종이 서명지 별첨도 서명으로 본다 */
+  function sigValidate(def, s, rec, out) {
+    var req = s.required !== undefined ? !!s.required : (!!s.from || !!def.stages);
+    if (!req || /사람만\)\s*$/.test(s.title || '')) return;
+    var sg = asObj((rec.data || {})[s.id]);
+    if (sg._paper === true) return;
+    var signed = function (t) { var x = sg[t.key]; return !!(x && (x.img || x.paper)); };
+    var need = s.from ? sigTargets(s, rec) : sigTargets(s, rec).filter(function (t) { return !/필요 시/.test(t.label); });
+    if (!need.length) return;
+    var title = s.title || '서명';
+    if (!s.from && need.length > 1 && need.every(function (t) { return /점검자$/.test(t.label); })) {
+      if (!need.some(signed)) out.push({ sec: s.id, id: s.id, msg: title + ': 점검자 서명이 1명 이상 필요합니다' });
+      return;
+    }
+    var miss = need.filter(function (t) { return !signed(t); });
+    if (!miss.length) return;
+    var names = miss.slice(0, 3).map(function (t) { return t.label; }).join(', ') + (miss.length > 3 ? ' 외 ' + (miss.length - 3) + '명' : '');
+    out.push({ sec: s.id, id: s.id, msg: title + ': ' + names + ' 서명이 필요합니다(종이에 받았으면 \'종이 서명지 별첨\' 체크)' });
   }
   /* uptoStage: 단계형 양식에서 그 단계(0부터)까지만 검사. 생략하면 전체. → [{sec, id, msg}] */
   function validate(def, rec, uptoStage) {
@@ -397,7 +512,9 @@
         var p = Array.isArray(d[s.id]) ? d[s.id] : [];
         if ((s.minCount || 0) > p.length) out.push({ sec: s.id, id: s.id, msg: (s.title || '사진') + ': 사진 ' + s.minCount + '장 이상 필요합니다' });
       }
+      if (s.type === 'signatures') sigValidate(def, s, rec, out);
     });
+    crossValidate(def, rec, stageOk, out);
     return out;
   }
 
@@ -1071,6 +1188,9 @@
 
   /* ───── 상태 문구 ───── */
   function stageNow() { return ED.def.stages ? ED.def.stages[ED.stage] : null; }
+  /* 본사 전용 단계(who 가 '본사…'로 시작하거나 role:'hq'): 사업장 세션은 읽기만 하고 보고할 수 없다 */
+  function isHqStage(st) { return !!st && (st.role === 'hq' || /^본사/.test(String(st.who || ''))); }
+  function hqStageBlocked() { return isHqStage(stageNow()) && !isHQ(); }
   function isLastStage() { return !ED.def.stages || ED.stage >= ED.def.stages.length - 1; }
   function submitLabel() {
     var rec = ED.rec, st = stageNow();
@@ -1133,12 +1253,17 @@
     } else if (rec.status === '제출') {
       h += '<div class="fe-banner" data-tone="info">' + icon('edit') + '<div>제출한 기록을 고치고 있습니다. 자동 저장은 하지 않으니 고친 뒤 [수정 제출]을 눌러 주세요.</div></div>';
     }
+    if (hqStageBlocked()) {
+      h += '<div class="fe-banner" data-tone="info">' + icon('lock') + '<div><b>본사가 쓰는 단계입니다.</b> ‘' + esc(stageNow().label) + '’ 단계는 ' + esc(stageNow().who || '본사') + '가 직접 확인하고 보고합니다. 사업장에서는 내용만 볼 수 있습니다.</div></div>';
+    }
     if (ED.req) {
       var r = ED.req;
       h += '<div class="fe-banner" data-tone="acc">' + icon('inbox') + '<div><b>요청</b> ' + esc(r.title || r.id) + (r.due ? ' · 마감 <span class="num">' + esc(String(r.due).slice(0, 10)) + '</span>' : '')
         + (r.message ? '<span class="fe-banner-sub">' + esc(String(r.message).split('\n')[0]).slice(0, 160) + '</span>' : '') + '</div></div>';
     }
-    if (ED.dup) {
+    if (ED.dup && ED.dup.multi) {
+      h += '<div class="fe-banner" data-tone="info">' + icon('file') + '<div>' + esc(ED.dup.label ? ED.dup.label + '에' : '이번 기간에') + ' 이미 쓴 기록이 <b class="num">' + esc(ED.dup.n) + '건</b> 있습니다. 이 양식은 회차마다 1건씩 새로 씁니다.</div></div>';
+    } else if (ED.dup) {
       h += '<div class="fe-banner" data-tone="warn">' + icon('file') + '<div>같은 기간 기록이 이미 있습니다(' + esc(ED.dup.status) + '). <a class="link" href="#/edit/' + encodeURIComponent(ED.dup.id) + '">그 기록 이어서 쓰기</a></div></div>';
     }
     return h;
@@ -1158,6 +1283,24 @@
     return '<div class="fe-purpose">' + (def.purpose ? '<p>' + esc(def.purpose) + '</p>' : '')
       + ((def.frequency || {}).due ? '<p class="fe-due">' + icon('clock', 14) + '<span>' + esc(def.frequency.due) + '</span></p>' : '')
       + (basis.length ? '<details class="fe-basis"><summary>근거 보기</summary><ul>' + basis.map(function (b) { return '<li>' + esc(b) + '</li>'; }).join('') + '</ul></details>' : '') + '</div>';
+  }
+  /* 일일점검(F07) 원본 27번 '전일 미결 조치 확인': 이 사업장의 미결·기한경과 조치를 점검 화면 위에 보여 준다(def.showOpenActs 로도 켬) */
+  function openActsHtml() {
+    var def = ED.def, rec = ED.rec;
+    if (!(def.showOpenActs || def.code === 'F07') || !rec.site) return '';
+    var t = today();
+    var list = actList(function (a) { return a.site === rec.site && isOpenAct(a) && a.status !== '보류'; })
+      .sort(function (a, b) { return String(a.due || '9999').localeCompare(String(b.due || '9999')); });
+    if (!list.length) return '<div class="fe-openacts is-empty">' + icon('check', 14) + '<span>전일까지 미결 조치가 없습니다.</span></div>';
+    var late = list.filter(function (a) { return a.due && a.due < t; }).length;
+    var rows = list.slice(0, 12).map(function (a) {
+      var over = a.due && a.due < t;
+      return '<li><a class="fe-oa-row" href="#/acts/' + encodeURIComponent(a.id) + '"><span class="mono faint">' + esc(a.id) + '</span><span class="fe-oa-title">' + esc(a.title || '조치') + '</span>'
+        + '<span class="fe-oa-side num">' + (a.due ? (over ? pill('기한경과 ' + String(a.due).slice(5, 10), 'neg') : '<span class="faint">기한 ' + esc(String(a.due).slice(5, 10)) + '</span>') : '') + '</span></a></li>';
+    }).join('');
+    return '<details class="fe-openacts"' + (late ? ' open' : '') + '><summary>' + icon('flag', 14) + '<b>전일 미결 조치 확인</b><span class="num">' + list.length + '건' + (late ? ' · 기한경과 ' + late + '건' : '') + '</span></summary>'
+      + '<p class="faint">점검하면서 아래 조치가 끝났는지 현장에서 확인합니다. 완료한 조치는 조치 화면에서 완료 처리합니다.</p>'
+      + '<ul class="fe-oa-list">' + rows + '</ul>' + (list.length > 12 ? '<p class="faint">외 ' + (list.length - 12) + '건 — <a class="link" href="#/acts">조치 전체 보기</a></p>' : '') + '</details>';
   }
   function showHead() { return !ED.def.stages || ED.stage === 0; }
   function secsNow() { var def = ED.def; return (def.sections || []).filter(function (s) { return !def.stages || sectionStage(def, s.id) === ED.stage; }); }
@@ -1210,7 +1353,7 @@
     switch (f.type) {
       case 'text': return '<input class="input" type="text" autocomplete="off"' + base + ' value="' + esc(val) + '">';
       case 'textarea': return '<textarea class="textarea fe-ta" rows="2"' + base + '>' + esc(val) + '</textarea>';
-      case 'number': return '<div class="fe-num"><input class="input num" type="number" inputmode="decimal" step="any"' + base + ' value="' + esc(val) + '"'
+      case 'number': return '<div class="fe-num"><input class="input num" type="number"' + (isIntField(f) ? ' inputmode="numeric" step="1"' : ' inputmode="decimal" step="any"') + base + ' value="' + esc(val) + '"'
         + (f.min !== undefined && f.min !== null ? ' min="' + f.min + '"' : '') + (f.max !== undefined && f.max !== null ? ' max="' + f.max + '"' : '') + '>'
         + (f.unit ? '<span class="fe-unit">' + esc(f.unit) + '</span>' : '') + '</div>';
       case 'date': return '<input class="input" type="date"' + base + ' value="' + esc(String(val).slice(0, 10)) + '">';
@@ -1436,6 +1579,7 @@
     h += bannersHtml();
     if (def.stages) h += stagesHtml();
     h += purposeHtml();
+    h += openActsHtml();
     h += '<div class="fe-errs" data-fe-errs role="alert" hidden></div>';
     h += '<div class="fe-layout"><aside class="fe-toc" data-fe-toc>' + tocHtml() + '</aside><div class="fe-body" data-fe-body>' + bodyHtml() + '</div></div>';
     h += '<div class="fe-bar only-phone">' + saveStateHtml() + '<span class="spacer"></span>' + saveBtn.replace('class="btn"', 'class="btn lg"') + '<button type="button" class="btn primary lg" data-fe-act="submit">' + esc(submitLabel()) + '</button></div>';
@@ -1910,6 +2054,7 @@
   function submit() {
     var ed = ED; if (!ed || ed.busy) return;
     var def = ed.def, rec = ed.rec;
+    if (hqStageBlocked()) { toast('‘' + stageNow().label + '’ 단계는 본사(안전경영지원실)만 보고할 수 있습니다', 'neg'); return; }
     computeAll(def, rec); ed.showErr = true; runValidate();
     if (ed.errs.length) {
       var box = ed.root.querySelector('[data-fe-errs]'); if (box && box.scrollIntoView) box.scrollIntoView({ block: 'start', behavior: 'smooth' });
@@ -1980,11 +2125,18 @@
     if (typeof document !== 'undefined' && document.body) document.body.classList.add('fe-editing');
     renderAll(true);
   }
+  /* 한 기간에 여러 건 쓰는 양식(교육 1회 = 기록 1건 등): '이어서 쓰기'로 유도하지 않는다 */
+  function multiPerPeriod(def) {
+    var fq = def.frequency || {};
+    if (fq.multiPerPeriod !== undefined) return !!fq.multiPerPeriod;
+    return /회마다 기록 1건|1회 이상|차수마다/.test(String(fq.due || ''));
+  }
   function findDup(def, rec) {
     var type = (def.frequency || {}).type; if (!type || type === 'event') return null;
     var pk = periodKeyOf(def, rec);
     var rows = idx(function (r) { return r.site === rec.site && r.form === def.code && (r.period || '') === pk && (!def.frequency.shifts || !r.shift || r.shift === rec.shift); });
     if (!rows.length) return null;
+    if (multiPerPeriod(def)) return { multi: true, n: rows.length, label: periodOf(type, rec.date).label || '' };
     var open = rows.filter(function (r) { return !isDone(r); })[0];
     var x = open || rows[0];
     return { id: x.id, status: x.status === '작성중' ? (asArr(x.stageDone).length ? '단계 보고' : '작성 중') : x.status };
@@ -2923,9 +3075,9 @@
       var code = esc(f.code);
       var isReq = site && req.indexOf(f.code) >= 0;
       return '<tr>' +
-        '<td class="rv-fcell"><span class="rv-fno num faint">' + esc(f.no || '') + '</span><div class="rv-fmain"><button type="button" class="rv-link rv-fname" data-act="fe.forms-info" data-code="' + code + '">' + esc(f.title) + '</button><div class="faint rv-fsub">' + esc(f.code) + ' · ' + esc(CAT_NAME[f.category] || f.category || '') + (isReq ? ' · 필수' : '') + '</div></div></td>' +
+        '<td class="rv-fcell"><div class="rv-fcell-in"><span class="rv-fno num faint">' + esc(f.no || '') + '</span><div class="rv-fmain"><button type="button" class="rv-link rv-fname" data-act="fe.forms-info" data-code="' + code + '">' + esc(f.title) + '</button><div class="faint rv-fsub">' + esc(f.code) + ' · ' + esc(CAT_NAME[f.category] || f.category || '') + (isReq ? ' · 필수' : '') + '</div></div></div></td>' +
         '<td class="nowrap" data-label="주기">' + esc(freqLabel(f)) + '</td>' +
-        (site ? '<td data-label="다음 마감">' + schedHtml(sched[f.code], f) + '</td>' : '') +
+        (site ? '<td class="rv-sched" data-label="다음 마감">' + schedHtml(sched[f.code], f) + '</td>' : '') +
         '<td class="mono nowrap" data-label="문서번호">' + esc(f.docNo || '') + '</td>' +
         '<td class="nowrap" data-label="버전">' + esc(f.version || '') + '</td>' +
         '<td data-label="작성자"><span title="' + esc(f.fillBy || '') + '">' + esc(fillSummary(f.fillBy)) + '</span></td>' +

@@ -9,7 +9,7 @@
  *   paste/Code.gs          gas/*.gs 전부(Config.gs 먼저, 나머지 이름순)를 파일별 머리 주석과 함께 이어 붙인 한 파일
  *   paste/Index.html       gas/Index.html 에서 include 를 FormsData·Styles·App·App2·App3 다섯 개로 바꿔 쓴 것
  *   paste/Styles.html      Css + CssEngine + CssViews
- *   paste/App.html         JsCharts + JsCore + JsEngine + JsDemo + JsHq + JsAnalytics + JsSite (Index.html 의 include 순서대로)
+ *   paste/App.html         JsCharts + JsCore + JsEngine,  paste/App2.html  JsDemo + JsHq,  paste/App3.html  JsAnalytics + JsSite (BUNDLES 정의, 파일당 500KB 이하)
  *   paste/FormsData.html   gas/FormsData.html 그대로 (서버 Db.forms() 가 이 이름으로 읽는다)
  *   paste/appsscript.json  gas/appsscript.json 그대로 (편집기 [프로젝트 설정 > "appsscript.json" 표시] 후 붙여넣기)
  *   paste/붙여넣기-안내.txt  편집기에서 만들 파일 이름과 순서, setup 실행, 배포 설정
@@ -170,11 +170,12 @@ export function buildPaste({ quiet = false, outDir = PASTE } = {}) {
     '4) 설치 실행 — 배포보다 먼저',
     '   위쪽 함수 목록에서 setup 을 고르고 [실행]. 처음에는 권한 승인 창이 뜹니다(고급 > 안전하지 않은 페이지로 이동 > 허용).',
     '   [실행 로그]에 나오는 관리자 아이디(admin)와 임시 비밀번호를 적어 둡니다. 다시 보여 주지 않습니다.',
-    '   여러 번 실행해도 안전합니다(이미 있으면 그대로 씁니다).',
+    '   여러 번 실행해도 안전합니다(이미 있으면 그대로 씁니다). setup 은 스크립트 소유자가 편집기에서 실행할 때만 동작합니다.',
     '',
     '5) 웹앱 배포',
     '   [배포] > [새 배포] > 유형 "웹 앱" > 설명 입력 > 실행 계정: 나 > 액세스 권한: 모든 사용자 > [배포].',
     '   나온 웹앱 URL(…/exec)로 들어가 admin 과 임시 비밀번호로 로그인하고 [설정 > 비밀번호 변경]부터 합니다.',
+    '   시크릿 창은 브라우저 저장소가 막혀 로그인 뒤 바로 튕길 수 있습니다. 로그인은 일반 창에서 하십시오.',
     '',
     '6) 사업장 등록 후 [사업장 > 링크 복사]로 사업장 링크(…/exec?s=…)를 담당자에게 전달합니다.',
     '',

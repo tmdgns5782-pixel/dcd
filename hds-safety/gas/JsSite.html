@@ -1028,7 +1028,7 @@
 
     var nameNow = me().name || '';
     var savedName = '';
-    try { savedName = localStorage.getItem('hds.name') || ''; } catch (e) { savedName = ''; }
+    savedName = App.store ? App.store.get('hds.name') : '';
     var device = '<form class="st-nameform" novalidate>' +
       '<label class="field" data-field="name"><span class="field-label">작성자 이름</span>' +
       '<input class="input" name="name" maxlength="30" autocomplete="name" value="' + esc(savedName || nameNow) + '"><span class="field-hint">지금은 ‘' + esc(nameNow) + '’(으)로 기록됩니다. 바꾼 이름은 다음 로그인부터 쓰입니다.</span><span class="field-err"></span></label>' +
@@ -1216,16 +1216,16 @@
       fieldErr(form, 'name', '');
       if (!v) { fieldErr(form, 'name', '이름을 넣으세요'); return; }
       if (v.length > 30) { fieldErr(form, 'name', '30자까지 적을 수 있습니다'); return; }
-      try { localStorage.setItem('hds.name', v); } catch (e) { toast('이 기기에 저장하지 못했습니다', 'neg'); return; }
-      toast('다음 로그인부터 ‘' + v + '’(으)로 기록됩니다', 'pos');
+      if (App.store) App.store.set('hds.name', v);
+      toast(App.store && !App.store.persistent() ? '이 창에서 다음 로그인부터 ‘' + v + '’(으)로 기록됩니다(이 브라우저는 이름을 오래 저장하지 못합니다)' : '다음 로그인부터 ‘' + v + '’(으)로 기록됩니다', 'pos');
     },
     'st.logout': function (el, ev) {
       confirmAsk('이 기기에서 로그아웃할까요?', { ok: '로그아웃' }).then(function (yes) {
         if (!yes) return;
         if (App.actions && App.actions['core.logout']) { App.actions['core.logout'](el, ev); return; }
         api('auth.logout', {}, { silent: true }).catch(function () { return null; }).then(function () {
-          try { localStorage.removeItem('hds.token'); } catch (e) { /* 무시 */ }
-          location.reload();
+          if (App.store) App.store.del('hds.token');
+          if (typeof App.restartApp === 'function') App.restartApp(); else if (typeof App.begin === 'function') App.begin();
         });
       });
     }

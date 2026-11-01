@@ -7,27 +7,28 @@
    편집기로 돌아와 appsscript.json 을 열고 내용을 모두 지운 뒤 paste/appsscript.json 내용을 붙여넣습니다.
 
 2) 서버 코드
-   처음부터 있는 Code.gs 를 열고 내용을 모두 지운 뒤 paste/Code.gs (279KB) 내용을 붙여넣습니다.
+   처음부터 있는 Code.gs 를 열고 내용을 모두 지운 뒤 paste/Code.gs (290KB) 내용을 붙여넣습니다.
 
 3) HTML 파일 6개 — 파일 옆 [+] > HTML 로 아래 이름 그대로 만듭니다(.html 은 편집기가 붙입니다. 대소문자 그대로).
    새 파일에 들어 있는 기본 내용은 모두 지우고 붙여넣습니다.
    - Index      ← paste/Index.html (1KB)
-   - Styles     ← paste/Styles.html (127KB)
-   - App        ← paste/App.html (431KB)
-   - App2       ← paste/App2.html (377KB)
-   - App3       ← paste/App3.html (268KB)
-   - FormsData  ← paste/FormsData.html (447KB)
+   - Styles     ← paste/Styles.html (131KB)
+   - App        ← paste/App.html (445KB)
+   - App2       ← paste/App2.html (379KB)
+   - App3       ← paste/App3.html (285KB)
+   - FormsData  ← paste/FormsData.html (460KB)
    큰 파일은 텍스트 편집기에서 전체 선택(Ctrl+A)·복사 후 붙여넣고, 끝부분이 잘리지 않았는지 마지막 줄을 확인합니다.
    [저장](Ctrl+S) 을 누릅니다. 파일 목록 순서는 상관없습니다.
 
 4) 설치 실행 — 배포보다 먼저
    위쪽 함수 목록에서 setup 을 고르고 [실행]. 처음에는 권한 승인 창이 뜹니다(고급 > 안전하지 않은 페이지로 이동 > 허용).
    [실행 로그]에 나오는 관리자 아이디(admin)와 임시 비밀번호를 적어 둡니다. 다시 보여 주지 않습니다.
-   여러 번 실행해도 안전합니다(이미 있으면 그대로 씁니다).
+   여러 번 실행해도 안전합니다(이미 있으면 그대로 씁니다). setup 은 스크립트 소유자가 편집기에서 실행할 때만 동작합니다.
 
 5) 웹앱 배포
    [배포] > [새 배포] > 유형 "웹 앱" > 설명 입력 > 실행 계정: 나 > 액세스 권한: 모든 사용자 > [배포].
    나온 웹앱 URL(…/exec)로 들어가 admin 과 임시 비밀번호로 로그인하고 [설정 > 비밀번호 변경]부터 합니다.
+   시크릿 창은 브라우저 저장소가 막혀 로그인 뒤 바로 튕길 수 있습니다. 로그인은 일반 창에서 하십시오.
 
 6) 사업장 등록 후 [사업장 > 링크 복사]로 사업장 링크(…/exec?s=…)를 담당자에게 전달합니다.
 

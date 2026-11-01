@@ -275,6 +275,19 @@
 @media print {
   .fe-bar, .fe-toc { display: none !important; }
 }
+/* 일일점검: 전일 미결 조치 확인 */
+.fe-openacts { margin-top: 12px; border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--surface); font-size: 13px; line-height: 20px; }
+.fe-openacts > summary { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 14px; cursor: pointer; list-style: none; }
+.fe-openacts > summary::-webkit-details-marker { display: none; }
+.fe-openacts > summary .num { margin-left: auto; color: var(--muted); }
+.fe-openacts > p { margin: 0; padding: 0 14px 8px; }
+.fe-openacts.is-empty { display: flex; align-items: center; gap: 8px; padding: 10px 14px; color: var(--muted); }
+.fe-oa-list { margin: 0; padding: 0 0 6px; list-style: none; }
+.fe-oa-row { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 6px 14px; border-top: 1px solid var(--rule); color: inherit; text-decoration: none; }
+.fe-oa-row:hover { background: var(--raised); }
+.fe-oa-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fe-oa-side { flex: none; white-space: nowrap; }
+@media (max-width: 640px) { .fe-oa-row .mono { display: none; } }
 /* ===== [engine-a] 끝 ===== */
 /* ===== [engine-b] 시작 ===== */
 /* engine-b: 기록 상세(.rv-*)·표준 양식 목록·A4 인쇄(.pdoc, .print-bar) */
@@ -367,14 +380,19 @@
 .rv-fname { color: var(--text); font-weight: 600; }
 .rv-fsub { margin-top: 2px; font-size: 12px; }
 .rv-fcell { min-width: 260px; }
-.rv-forms td.rv-fcell { display: flex; align-items: baseline; gap: 12px; }
+/* td 는 table-cell 그대로 두어 행 높이를 채우고(행 선 정렬), 안쪽 div 만 flex */
+.rv-fcell-in { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+.rv-forms th .rv-fno { margin-right: 12px; }
+.rv-forms td.rv-sched { white-space: nowrap; min-width: 128px; }
+.rv-forms td.rv-sched .pill { white-space: nowrap; }
 .rv-fno { flex: none; display: inline-block; width: 36px; text-align: right; }
 .rv-fmain { min-width: 0; }
 .rv-act-col { width: 1%; text-align: right; }
 .rv-row-acts { display: flex; align-items: center; justify-content: flex-end; gap: 4px; white-space: nowrap; }
 @media (max-width: 640px) {
   .rv-fcell { min-width: 0; }
-  .rv-forms td.rv-fcell { display: flex !important; }
+  .rv-forms td.rv-fcell { display: block !important; }
+  .rv-forms td.rv-sched { min-width: 0; }
   .rv-fno { width: auto; text-align: left; }
   .rv-forms .rv-act-col { flex: 1 1 100%; width: auto; margin-top: 6px; text-align: left; }
   .rv-row-acts { justify-content: flex-start; }
@@ -480,5 +498,7 @@ body.rv-printing #print-root { display: block; min-height: 100vh; }
   body.rv-printing .pdoc { page: hdsdoc; width: auto; min-height: 0; padding: 0; border: 0; break-after: page; page-break-after: always; }
   body.rv-printing .pdoc:last-child { break-after: auto; page-break-after: auto; }
 }
+/* 값 없는 KPI: 값 크기(28px) 대시는 '로딩 중'처럼 보여 작은 회색 대시로 */
+.kpi-value .dash { font-size: 16px; }
 /* ===== [engine-b] 끝 ===== */
 </style>

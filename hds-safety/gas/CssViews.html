@@ -18,6 +18,7 @@
 .hq-mini .mx-col { min-width: 44px; }
 .hq-mini .matrix tbody td { height: 30px; }
 .hq-mini .mk { width: 26px; height: 26px; }
+@media (max-width: 640px) { .hq-mini .matrix tbody td { height: 44px; } .hq-mini .mk { width: 44px; height: 44px; } }
 /* 현황판 공통 덧붙임 */
 .hq-mx-name { font-weight: 400; color: var(--muted); }
 .hq-mx-per { display: block; font-style: normal; font-size: 11px; line-height: 14px; color: var(--muted); white-space: nowrap; }
@@ -80,14 +81,20 @@
   .hq-plabel { min-width: 0; }
   .hq-col-panel .panel-actions { max-width: 100%; }
   .hq-rv-left .panel-bd { max-height: none; }
+  /* 취합 현황 휴대폰: 컨트롤 두 줄(범위+요청 열 / 기간 이동+업무구성), 기간 줄은 숨기고 범례는 가로 한 줄 */
+  .hq-col-tools .seg { display: inline-flex; width: auto; flex: 1 1 auto; order: 0; }
+  .hq-col-tools .seg button { flex: 1 1 0; }
+  .hq-col-tools .check { order: 1; flex: none; }
+  .hq-col-tools .hq-pnav { order: 2; flex: none; }
+  .hq-col-tools .hq-col-tag { order: 3; }
+  .hq-col-tools .spacer { display: none; }
+  .hq-col-panel .panel-sub { display: none; }
+  .hq-col-panel .mk-legend { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
 }
 /* ===== [hq-a] 끝 ===== */
 /* ===== [hq-b] 시작 ===== */
-/* 화면 뿌리 .hq-b 가 .page 의 자식 간격 규칙을 이어받게 (Css.html .page > * 규칙과 같은 값) */
+/* 화면 뿌리 .hq-b 가 .page 의 자식 간격 규칙을 이어받게 (Css.html .page > * 규칙과 같은 값: 한 거터) */
 .hq-b > * + * { margin-top: var(--gap); }
-.hq-b > .title-row + * { margin-top: 20px; }
-.hq-b > .toolbar + *, .hq-b > .tabs + * { margin-top: 16px; }
-.hq-b > .title-row + .tabs { margin-top: 12px; }
 .hq-sets > .hq-set + .hq-set { margin-top: 0; }
 /* 기록 조회·조치대장: 패널 머리 아래 탭 줄, 선택 칸, 둘째 줄 */
 .hq-rec-tabs { padding: 0 var(--card-pad, 20px); border-bottom: 1px solid var(--rule); }
@@ -110,8 +117,16 @@
 .hq-b .li-side .t-neg { color: var(--negative); }
 .hq-b .li-side .t-warn { color: var(--warning); }
 .hq-sitec { max-width: 150px; }
+/* 조치 목록: 표 폭이 카드를 넘지 않게 고정 배치. 내용 열이 나머지 폭을 모두 쓰고 말줄임 */
+.hq-act-tbl { table-layout: fixed; }
 .hq-act-tbl td, .hq-act-tbl th { padding-left: 10px; padding-right: 10px; }
 .hq-act-tbl td:first-child, .hq-act-tbl th:first-child { padding-left: var(--card-pad, 20px); }
+.hq-act-tbl td:last-child, .hq-act-tbl th:last-child { padding-right: var(--card-pad, 20px); }
+.hq-act-tbl .hq-act-title { max-width: none; }
+.hq-act-tbl th.hq-sitec { width: 140px; }
+.hq-act-tbl th.hq-c-lv { width: 72px; }
+.hq-act-tbl th.hq-c-due { width: 104px; }
+.hq-act-tbl th.hq-c-st { width: 112px; }
 .hq-b .panel-ft[hidden] { display: none; }
 .hq-off td { color: var(--faint); }
 
@@ -217,6 +232,14 @@
   .hq-checks { grid-template-columns: 1fr 1fr; }
   .hq-dist-row { grid-template-columns: 64px 1fr 32px; }
   .hq-set-panel { padding: 14px 16px; }
+  /* 조치 목록 휴대폰: 1줄 내용(말줄임) + 상태 알약, 2줄 사업장·담당 · 수준 · 기한 */
+  .hq-act-tbl.tbl:not(.keep) tr { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 4px 10px; }
+  .hq-act-tbl.tbl:not(.keep) td.hq-act-title { grid-column: 1 / 3; grid-row: 1; min-width: 0; font-weight: 600; }
+  .hq-act-tbl.tbl:not(.keep) td.hq-c-st { grid-column: 3; grid-row: 1; justify-self: end; }
+  .hq-act-tbl.tbl:not(.keep) td.hq-sitec { grid-column: 1; grid-row: 2; min-width: 0; display: block; }
+  .hq-act-tbl.tbl:not(.keep) td.hq-c-lv { grid-column: 2; grid-row: 2; }
+  .hq-act-tbl.tbl:not(.keep) td.hq-c-due { grid-column: 3; grid-row: 2; justify-self: end; }
+  .hq-act-tbl .hq-l2 { display: none; }
 }
 /* ===== [hq-b] 끝 ===== */
 /* ===== [analytics-a] 시작 ===== */
@@ -254,6 +277,12 @@
 @media (max-width: 1100px) {
   .an-scope-note { display: none; }
 }
+/* 태블릿 폭: 6칸 KPI 는 3×2 로(라벨이 잘리고 설명이 6줄로 접히지 않게) */
+@media (min-width: 641px) and (max-width: 1100px) {
+  .an-kpis[style*="--n:6"], .an-kpis[style*="--n:5"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .an-kpis[style*="--n:6"] > .kpi:nth-child(3n+1), .an-kpis[style*="--n:5"] > .kpi:nth-child(3n+1) { border-left: 0; }
+  .an-kpis[style*="--n:6"] > .kpi:nth-child(n+4), .an-kpis[style*="--n:5"] > .kpi:nth-child(n+4) { border-top: 1px solid var(--border, #e4e6ee); }
+}
 @media (max-width: 640px) {
   .an-filter { flex-wrap: wrap; }
   .an-filter > .select { flex: 1 1 0; min-width: 0; max-width: none; }
@@ -265,6 +294,9 @@
   .an-legend { justify-content: flex-start; }
   .an-legend .chart-legend { justify-content: flex-start; }
 }
+/* 긴 카드 옆 작은 카드 세로 쌓기 · 높이대로 나눠 담은 칸(App.analytics.pack) */
+.an-stack { display: flex; flex-direction: column; gap: var(--gap, 24px); min-width: 0; }
+.an-stack > .panel { min-width: 0; }
 /* 분석 보고서 인쇄(#print-root, A4) */
 .an-print { color: #14183c; font-size: 11px; line-height: 1.45; }
 .an-print-hd { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; padding-bottom: 8px; border-bottom: 1.5px solid #14183c; }
@@ -289,6 +321,9 @@
 /* ===== [analytics-b] 시작 ===== */
 /* 분석(일일점검·교육·조치·HEC·사업장 비교·양식별) — 코어 클래스로 안 되는 것만 */
 .anb-body { margin-top: 16px; }
+/* 긴 표 옆에 작은 카드 둘을 세로로 쌓는 칸(격자 한 칸 안에서 카드끼리 같은 간격) */
+.anb-stack { display: flex; flex-direction: column; gap: var(--gap, 24px); min-width: 0; }
+.anb-stack > .panel { min-width: 0; }
 .anb-body > .kpis { margin-bottom: var(--gap, 24px); }
 .anb-chart { position: relative; min-height: 40px; }
 .anb-legend:empty { display: none; }
@@ -391,7 +426,8 @@ a.anb-hkb:focus-visible { outline: 2px solid var(--accent, #223189); outline-off
 /* ===== [site] 시작 ===== */
 /* 사업장 화면(JsSite). 코어 컴포넌트(.panel .list .li .pill .btn .tabs .kv .bar .dlg)를 그대로 쓰고,
    배치·큰 터치 버튼(장갑 낀 손 기준 64px 이상)·두 칸 나눔만 더한다. 색은 상태와 주 동작 하나에만. */
-.st-page { max-width: 960px; min-width: 0; }
+/* 사업장 화면은 모두 시트 폭을 그대로 쓴다(양식·받은 요청과 같은 폭, 오른쪽 빈 띠 없음) */
+.st-page { min-width: 0; }
 .st-page > * + * { margin-top: var(--gap); }
 .st-page > .title-row + * { margin-top: 20px; }
 .st-page > .st-tabrow + * { margin-top: 12px; }
@@ -448,7 +484,6 @@ a.anb-hkb:focus-visible { outline: 2px solid var(--accent, #223189); outline-off
 .st-more { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 12px; border-top: 1px solid var(--rule); }
 
 /* 받은 요청: 목록 | 상세 (좁으면 한 번에 한 칸) */
-.st-page.st-inbox { max-width: 1160px; }
 .st-split { display: grid; grid-template-columns: minmax(300px, 5fr) minmax(0, 7fr); gap: var(--gap); align-items: start; }
 .st-pane-list, .st-pane-detail { min-width: 0; }
 .st-pane-list > .st-tabrow + * { margin-top: 8px; }

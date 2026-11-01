@@ -32,6 +32,10 @@ var Views = (function () {
   var OPEN_ACT = ['등록', '조치중', '보류', '고객사 이관'];
   var CELL_MAX = 49000;
   var BATCH = 5000;
+  var GROW = 200;                 // 평탄화 시트에 남겨 두는 빈 행(행 추가 호출을 줄이는 여유)
+  var BUDGET_MS = 4.5 * 60 * 1000; // 재구축 한 번의 시간 예산(GAS 실행 한도 6분)
+  var RESUME_KEY = 'viewsRebuild';
+  var RESUME_TTL_MS = 6 * 60 * 60 * 1000;
 
   var LAYOUTS = {};
 
@@ -49,6 +53,12 @@ var Views = (function () {
     if (v === '' || v === null || v === undefined || typeof v === 'boolean') return null;
     var n = Number(v);
     return isFinite(n) ? n : null;
+  }
+
+  /** 배열 뒤에 붙이기. push.apply 는 인자 수 한도(수만~수십만 개)에 걸리므로 하나씩 넣는다. */
+  function pushAll(to, from) {
+    for (var i = 0, n = from ? from.length : 0; i < n; i++) to.push(from[i]);
+    return to;
   }
 
   function dt(s) { return s ? String(s).replace('T', ' ').slice(0, 19) : ''; }
@@ -470,17 +480,45 @@ var Views = (function () {
     r.setValues([header.map(function (h) { return clean(h, 's'); })]);
     r.setFontWeight('bold');
     sh.setFrozenRows(1);
-    header.forEach(function (h, i) {
-      try { sh.setColumnWidth(i + 1, colWidth(h, kinds[i])); } catch (e) { /* 너비는 보기 좋게일 뿐 */ }
-    });
+    setWidths(sh, header, kinds);
+  }
+
+  /**
+   * 열 너비: 모든 열을 한 번에 같은 너비로, 첫 열이 번호 열이면 그 열만 넓게(호출 1~2번).
+   * 열마다 setColumnWidth 를 부르면 큰 양식에서 수백 번 호출돼 재구축·첫 제출이 느려진다. 보기 좋게일 뿐이라 실패는 무시.
+   */
+  function setWidths(sh, header, kinds) {
+    try {
+      var n = header.length;
+      if (!n) return;
+      if (typeof sh.setColumnWidths === 'function') sh.setColumnWidths(1, n, 130);
+      var w1 = colWidth(header[0], kinds[0]);
+      if (w1 > 130) sh.setColumnWidth(1, w1);
+    } catch (e) { /* 너비는 보기 좋게일 뿐 */ }
+  }
+
+  /**
+   * 쓰지 않는 칸 줄이기. 스프레드시트 한 파일의 셀 한도(1,000만)는 '할당된' 칸 기준이라,
+   * 새 시트 기본 26열·1,000행이나 옛 내용보다 큰 격자를 남기지 않는다. rows 는 머리 포함 행 수, slack 은 덧붙일 여유 행.
+   */
+  function trimGrid(sh, rows, cols, slack) {
+    try {
+      var mc = sh.getMaxColumns();
+      if (cols >= 1 && mc > cols) sh.deleteColumns(cols + 1, mc - cols);
+      var keep = Math.max(2, rows + (slack || 0));
+      var mr = sh.getMaxRows();
+      if (mr > keep) sh.deleteRows(keep + 1, mr - keep);
+    } catch (e) { /* 줄이기는 한도 여유를 위한 것 — 실패해도 내용은 맞다 */ }
   }
 
   /** 시트를 비우고 머리 + 행을 새로 쓴다(재구축·내보내기). */
   function writeTable(ss, name, header, kinds, rows) {
     var sh = ss.getSheetByName(name);
     if (sh) sh.clear(); else sh = ss.insertSheet(name);
+    rows = rows || [];
     styleHeader(sh, header, kinds);
-    writeBlock(sh, 2, rows || [], kinds);
+    writeBlock(sh, 2, rows, kinds);
+    trimGrid(sh, rows.length + 1, header.length, GROW);
     return sh;
   }
 
@@ -494,6 +532,7 @@ var Views = (function () {
       if (!create) return null;
       sh = ss.insertSheet(name);
       styleHeader(sh, header, kinds);
+      trimGrid(sh, 1, header.length, GROW);
       return { sh: sh, header: header.slice(), kinds: kinds.slice(), map: header.map(function (h, i) { return i; }), last: 1 };
     }
     var lc = sh.getLastColumn();
@@ -708,13 +747,45 @@ var Views = (function () {
 
   /* =========================================================== 공개 */
 
+  /**
+   * 이 기록이 쓸 평탄화 시트가 없으면 미리 만든다(잠금 밖에서 — 시트 만들기는 느려서 다른 저장을 막지 않게).
+   * 동시에 두 실행이 같은 시트를 만들려 하면 한쪽 insertSheet 가 실패하는데, 그건 이미 있다는 뜻이라 무시한다.
+   */
+  function prepareSheets(rec) {
+    try {
+      if (!eligible(rec) || rec.status === '반려') return;
+      var def = Db.form(rec.form);
+      if (!def) return;
+      var ss = Db.book();
+      var L = layout(def);
+      var want = [[L.main.name, L.main.header, L.main.kinds]];
+      L.tables.forEach(function (t) { if (tableRows(t, rec).length) want.push([t.name, t.header, t.kinds]); });
+      if (L.checks.length && checkRows(L, rec, {}).length) {
+        want.push([CHECK_SHEET, CHECK_COLS.map(function (c) { return c[0]; }), CHECK_COLS.map(function (c) { return c[1]; })]);
+      }
+      if (def.code === 'F09') { var K = kpiSpec(); want.push([K.name, K.cols, K.kinds]); }
+      want.forEach(function (w) {
+        if (ss.getSheetByName(w[0])) return;
+        try { vsheet(ss, w[0], w[1], w[2], true); } catch (e) { /* 다른 실행이 막 만들었다 */ }
+      });
+    } catch (e) {
+      console.warn('평탄화 시트 미리 만들기 실패(' + rec.id + '): ' + (e && e.message || e));
+    }
+  }
+
+  /** 잠금 안에서 저장된 최신 기록으로 바꾼다(잠금 밖 후처리 순서가 뒤바뀌어도 마지막 상태가 남게). */
+  function latestRecord(rec) {
+    var cur = null;
+    try { cur = Db.get('records', rec.id); } catch (e) { cur = null; }
+    return cur || rec;
+  }
+
   function onRecord(rec) {
     if (!rec || !rec.id) return false;
     try {
+      prepareSheets(rec.data === undefined || rec.data === null ? latestRecord(rec) : rec);
       return Db.withLock(function () {
-        // 색인 행(data 없음)을 넘겨받으면 저장된 전체 기록으로 바꾼다.
-        if (rec.data === undefined || rec.data === null) rec = Db.get('records', rec.id) || rec;
-        return applyRecord(rec);
+        return applyRecord(latestRecord(rec));
       });
     } catch (e) {
       console.warn('평탄화 시트 갱신 실패(' + rec.id + '): ' + (e && e.message || e));
@@ -722,22 +793,27 @@ var Views = (function () {
     }
   }
 
+  function applyAct(ss, act) {
+    var header = ACT_COLS.map(function (c) { return c[0]; });
+    var kinds = ACT_COLS.map(function (c) { return c[1]; });
+    if (act.deleted) {
+      var old = vsheet(ss, ACT_SHEET, header, kinds, false);
+      if (old) deleteRowNums(old, keyRows(old, 0)[act.id]);
+      return true;
+    }
+    var site = Db.get('sites', act.site) || {};
+    var vs = vsheet(ss, ACT_SHEET, header, kinds, true);
+    upsertKeyed(vs, 0, [[act.id, actRow(act, site)]]);
+    return true;
+  }
+
   function onAct(act) {
     if (!act || !act.id) return false;
     try {
       return Db.withLock(function () {
-        var ss = Db.book();
-        var header = ACT_COLS.map(function (c) { return c[0]; });
-        var kinds = ACT_COLS.map(function (c) { return c[1]; });
-        if (act.deleted) {
-          var old = vsheet(ss, ACT_SHEET, header, kinds, false);
-          if (old) deleteRowNums(old, keyRows(old, 0)[act.id]);
-          return true;
-        }
-        var site = Db.get('sites', act.site) || {};
-        var vs = vsheet(ss, ACT_SHEET, header, kinds, true);
-        upsertKeyed(vs, 0, [[act.id, actRow(act, site)]]);
-        return true;
+        var cur = null;
+        try { cur = Db.get('acts', act.id); } catch (e) { cur = null; }
+        return applyAct(Db.book(), cur || act);
       });
     } catch (e) {
       console.warn('조치대장 시트 갱신 실패(' + act.id + '): ' + (e && e.message || e));
@@ -765,8 +841,8 @@ var Views = (function () {
     (recs || []).forEach(function (rec) {
       var site = sm[rec.site] || {};
       main.rows.push(mainRow(L, rec, site));
-      L.tables.forEach(function (t, i) { Array.prototype.push.apply(tabs[i].rows, tableRows(t, rec)); });
-      if (L.checks.length) Array.prototype.push.apply(checks.rows, checkRows(L, rec, site));
+      L.tables.forEach(function (t, i) { pushAll(tabs[i].rows, tableRows(t, rec)); });
+      if (L.checks.length) pushAll(checks.rows, checkRows(L, rec, site));
     });
     var out = [main].concat(tabs.filter(function (t) { return t.rows.length; }));
     if (checks.rows.length) out.push(checks);
@@ -784,76 +860,125 @@ var Views = (function () {
     };
   }
 
-  /** 모든 V_ 시트와 월간지표 시트를 지우고 다시 만든다. */
-  function rebuildAll() {
-    return Db.withLock(function () {
-      var ss = Db.book();
-      var sm = siteMap();
-      var acts = Db.all('acts').filter(function (a) { return !a.deleted; });
-      var recs = Db.all('records').filter(eligible).sort(function (a, b) {
-        return String(a.date || '').localeCompare(String(b.date || '')) || String(a.id).localeCompare(String(b.id));
-      });
-      var byForm = {};
-      var order = [];
-      recs.forEach(function (r) {
-        if (!byForm[r.form]) { byForm[r.form] = []; order.push(r.form); }
-        byForm[r.form].push(r);
-      });
-      var FD = Db.forms();
-      var formOrder = (FD.forms || []).map(function (f) { return f.code; });
-      order.sort(function (a, b) { return formOrder.indexOf(a) - formOrder.indexOf(b); });
+  /** 재구축에 쓸 표 전부를 만든다(읽기만 — 잠금 없이). → [{name, header, kinds, rows}] (KPI 시트 맨 끝) */
+  function buildAll() {
+    var sm = siteMap();
+    var acts = Db.all('acts').filter(function (a) { return !a.deleted; });
+    var recs = Db.all('records').filter(eligible).sort(function (a, b) {
+      return String(a.date || '').localeCompare(String(b.date || '')) || String(a.id).localeCompare(String(b.id));
+    });
+    var byForm = {};
+    var order = [];
+    recs.forEach(function (r) {
+      if (!byForm[r.form]) { byForm[r.form] = []; order.push(r.form); }
+      byForm[r.form].push(r);
+    });
+    var FD = Db.forms();
+    var formOrder = (FD.forms || []).map(function (f) { return f.code; });
+    order.sort(function (a, b) { return formOrder.indexOf(a) - formOrder.indexOf(b); });
 
-      var tables = [];
-      var checkAll = null;
-      var K = kpiSpec();
-      var kpiBest = {};
-      var kpiOrder = [];
-      var actsBySite = {};
-      acts.forEach(function (a) { (actsBySite[a.site] = actsBySite[a.site] || []).push(a); });
+    var tables = [];
+    var checkAll = null;
+    var K = kpiSpec();
+    var kpiBest = {};
+    var kpiOrder = [];
+    var actsBySite = {};
+    acts.forEach(function (a) { (actsBySite[a.site] = actsBySite[a.site] || []).push(a); });
 
-      order.forEach(function (code) {
-        var def = Db.form(code);
-        if (!def) return;
-        tablesFor(def, byForm[code], sm).forEach(function (t) {
-          if (t.name === CHECK_SHEET) {
-            if (!checkAll) checkAll = t; else Array.prototype.push.apply(checkAll.rows, t.rows);
-          } else {
-            tables.push(t);
-          }
-        });
-        if (code === 'F09') {
-          byForm[code].forEach(function (rec) {
-            kpiRows(K, rec, sm[rec.site] || {}, def, actsBySite[rec.site] || []).forEach(function (row) {
-              var k = row[K.keyIdx];
-              var cur = kpiBest[k];
-              if (!cur) { kpiOrder.push(k); kpiBest[k] = { rec: rec, row: row }; return; }
-              if (cur.rec.id === rec.id || newer(rec.rev, rec.submittedAt, cur.rec.rev, cur.rec.submittedAt)) kpiBest[k] = { rec: rec, row: row };
-            });
-          });
+    order.forEach(function (code) {
+      var def = Db.form(code);
+      if (!def) return;
+      tablesFor(def, byForm[code], sm).forEach(function (t) {
+        if (t.name === CHECK_SHEET) {
+          if (!checkAll) checkAll = t; else pushAll(checkAll.rows, t.rows);
+        } else {
+          tables.push(t);
         }
       });
-      if (checkAll) tables.push(checkAll);
-      tables.push(actTable(acts, sm));
+      if (code === 'F09') {
+        byForm[code].forEach(function (rec) {
+          kpiRows(K, rec, sm[rec.site] || {}, def, actsBySite[rec.site] || []).forEach(function (row) {
+            var k = row[K.keyIdx];
+            var cur = kpiBest[k];
+            if (!cur) { kpiOrder.push(k); kpiBest[k] = { rec: rec, row: row }; return; }
+            if (cur.rec.id === rec.id || newer(rec.rev, rec.submittedAt, cur.rec.rev, cur.rec.submittedAt)) kpiBest[k] = { rec: rec, row: row };
+          });
+        });
+      }
+    });
+    if (checkAll) tables.push(checkAll);
+    tables.push(actTable(acts, sm));
+    tables.push({ name: K.name, header: K.cols, kinds: K.kinds, rows: kpiOrder.map(function (k) { return kpiBest[k].row; }) });
+    return tables;
+  }
 
-      var names = [];
-      var total = 0;
-      tables.forEach(function (t) {
-        writeTable(ss, t.name, t.header, t.kinds, t.rows);
-        names.push(t.name);
-        total += t.rows.length;
+  /** 재구축이 시작된 뒤 바뀐 기록·조치를 다시 반영한다(시트별로 잠금을 나눠 잡았으므로 그 사이 저장분이 덮였을 수 있다). */
+  function catchUp(since) {
+    var n = 0;
+    Db.withLock(function () {
+      var ss = Db.book();
+      Db.all('records').forEach(function (r) {
+        if (String(r.updatedAt || '') >= since) { try { applyRecord(r); n++; } catch (e) { console.warn('재구축 뒤 반영 실패(' + r.id + '): ' + (e && e.message || e)); } }
       });
-      var kRows = kpiOrder.map(function (k) { return kpiBest[k].row; });
-      writeTable(ss, K.name, K.cols, K.kinds, kRows);
-      names.push(K.name);
-      total += kRows.length;
+      Db.all('acts').forEach(function (a) {
+        if (String(a.updatedAt || '') >= since) { try { applyAct(ss, a); n++; } catch (e) { console.warn('재구축 뒤 반영 실패(' + a.id + '): ' + (e && e.message || e)); } }
+      });
+    });
+    return n;
+  }
 
+  function readResume() {
+    try {
+      var st = Db.kvGet(RESUME_KEY, null);
+      if (st && typeof st === 'object' && Array.isArray(st.done) && st.since && Date.now() - Number(st.t || 0) < RESUME_TTL_MS) return st;
+    } catch (e) { /* 없으면 처음부터 */ }
+    return null;
+  }
+
+  function saveResume(st) {
+    try { Db.withLock(function () { Db.kvSet(RESUME_KEY, st); }); } catch (e) { console.warn('재구축 진행 상태 저장 실패: ' + (e && e.message || e)); }
+  }
+
+  /**
+   * 모든 V_ 시트와 월간지표 시트를 지우고 다시 만든다.
+   * - 표 계산은 잠금 없이, 시트 쓰기는 시트 하나마다 잠금(그 사이 다른 사용자 저장이 기다리지 않게).
+   * - 시간 예산(4분 30초)이 다하면 멈추고 진행 상태를 kv 에 남긴다 → {partial:true, left:n}. 다시 부르면 남은 시트부터 잇는다.
+   * - 다 쓰면 재구축 시작 뒤 바뀐 기록·조치를 다시 반영하고, 쓰지 않는 V_ 시트를 지운다.
+   * 반환 { sheets:[이번에 쓴 시트 이름], rows:n, partial, left, caughtUp }
+   */
+  function rebuildAll() {
+    var t0 = Date.now();
+    var st = readResume() || { since: Db.now(), done: [], t: t0 };
+    var tables = buildAll();
+    var all = tables.map(function (t) { return t.name; });
+    var ss = Db.book();
+    var names = [];
+    var total = 0;
+    var left = 0;
+    tables.forEach(function (t) {
+      if (st.done.indexOf(t.name) >= 0) return;
+      if (names.length && Date.now() - t0 > BUDGET_MS) { left++; return; }
+      Db.withLock(function () { writeTable(ss, t.name, t.header, t.kinds, t.rows); });
+      names.push(t.name);
+      st.done.push(t.name);
+      total += t.rows.length;
+    });
+    if (left) {
+      st.t = Date.now();
+      saveResume(st);
+      try { Db.log('system', 'views', '', '평탄화 시트 재구축 일부: 시트 ' + names.length + '개 씀, ' + left + '개 남음(다시 누르면 이어서)'); } catch (e) { /* 무시 */ }
+      return { sheets: names, rows: total, partial: true, left: left };
+    }
+    var caught = catchUp(st.since);
+    Db.withLock(function () {
       ss.getSheets().forEach(function (sh) {
         var n = sh.getName();
-        if (n.indexOf('V_') === 0 && names.indexOf(n) < 0) ss.deleteSheet(sh);
+        if (n.indexOf('V_') === 0 && all.indexOf(n) < 0) ss.deleteSheet(sh);
       });
-      try { Db.log('system', 'views', '', '평탄화 시트 재구축: 시트 ' + names.length + '개, ' + total + '행'); } catch (e) { /* 기록 실패는 무시 */ }
-      return { sheets: names, rows: total };
+      try { Db.kvSet(RESUME_KEY, null); } catch (e) { /* 무시 */ }
     });
+    try { Db.log('system', 'views', '', '평탄화 시트 재구축: 시트 ' + all.length + '개, ' + total + '행' + (caught ? ', 진행 중 바뀐 ' + caught + '건 다시 반영' : '')); } catch (e) { /* 기록 실패는 무시 */ }
+    return { sheets: all, rows: total, partial: false, left: 0, caughtUp: caught };
   }
 
   return {

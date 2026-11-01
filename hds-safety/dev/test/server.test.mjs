@@ -597,6 +597,75 @@ await step('admin.installTriggers / admin.info', () => {
   return `트리거 ${trig.join(', ')}`;
 });
 
+await step('requests.save — 사업장 메일은 스크립트 잠금을 푼 뒤 발송', () => {
+  const G = mock.globals;
+  const oLock = G.LockService, oMail = G.MailApp;
+  let held = 0;
+  const atMail = [];
+  G.LockService = Object.assign({}, oLock, { getScriptLock() {
+    const l = oLock.getScriptLock(); let mine = false;
+    return Object.assign({}, l, {
+      waitLock(ms) { l.waitLock(ms); if (!mine) { mine = true; held++; } },
+      tryLock(ms) { const r = l.tryLock(ms); if (r && !mine) { mine = true; held++; } return r; },
+      releaseLock() { l.releaseLock(); if (mine) { mine = false; held--; } },
+      hasLock() { return mine; }
+    });
+  } });
+  G.MailApp = Object.assign({}, oMail, { sendEmail(...a) { atMail.push(held > 0); return oMail.sendEmail(...a); } });
+  try {
+    const req = { kind: 'form', title: '잠금 시험 요청', forms: ['F01'], sites: ['*'], due: addDays(TODAY, 5) };
+    ok(api('requests.save', { request: req }, need(S.hq, '본사 토큰')), 'requests.save');
+  } finally {
+    G.LockService = oLock; G.MailApp = oMail;
+  }
+  assert(atMail.length > 0, '요청 메일이 한 통도 나가지 않았습니다');
+  assert(atMail.every((x) => !x), `메일 발송 중 잠금 보유: ${JSON.stringify(atMail)}`);
+  return `메일 ${atMail.length}통 모두 잠금 밖`;
+});
+
+await step('admin.rebuildViews — 끝까지 재구축, 뷰 시트 격자 줄임, push.apply 없음', () => {
+  for (const f of files) assert(!/\.push\.apply\(/.test(f.src), `${f.name} 에 push.apply 가 있습니다(큰 배열에서 인자 수 한도로 실패)`);
+  const d = ok(api('admin.rebuildViews', {}, need(S.hq, '본사 토큰')), 'rebuildViews');
+  eq(d.partial, false, 'partial');
+  assert(Array.isArray(d.sheets) && d.sheets.length > 0, '재구축한 시트가 없습니다');
+  const sh = mock.globals.SpreadsheetApp.openById(mock.globals.PropertiesService.getScriptProperties().getProperty('DB_ID')).getSheetByName('V_조치대장');
+  assert(sh, 'V_조치대장 시트가 없습니다');
+  eq(sh.getMaxColumns(), 22, 'V_조치대장 열 수(쓰지 않는 열은 지움)');
+  return `시트 ${d.sheets.length}개 · ${d.rows}행`;
+});
+
+await step('setup·installTriggers·cron — 익명 웹앱 방문자 호출은 막힘(소유자 실행만)', () => {
+  // 웹앱은 '배포자로 실행' — effective 는 소유자, active 는 익명 방문자면 빈 값·편집기 실행이면 소유자(모의는 opts 를 호출 때마다 읽음)
+  const ident = { autoSave: false, formsHtml, htmlFiles: htmlFileNames(SRC_DIR), log: sink, activeUserEmail: '', effectiveUserEmail: 'owner@hds.test' };
+  const c3 = vm.createContext({ console: sink });
+  vm.runInContext(mockSrc, c3, { filename: 'gas-mock.js' });
+  const m3 = c3.createGasMock(ident);
+  Object.assign(c3, m3.globals);
+  for (const f of files) vm.runInContext(f.src, c3, { filename: f.name });
+  const props = m3.globals.PropertiesService.getScriptProperties();
+  let threw = false;
+  try { c3.setup({ adminPassword: 'Attacker1234' }); } catch (e) { threw = true; }
+  assert(threw, '설치 전 익명 setup 이 거부되지 않았습니다');
+  assert(!props.getProperty('DB_ID'), '익명 setup 이 DB 를 만들었습니다');
+  ident.activeUserEmail = 'owner@hds.test';
+  const r0 = c3.setup({ adminPassword: 'owner-pw-1', triggers: false });
+  assert(r0.dbUrl, '소유자 setup 이 동작하지 않았습니다');
+  ident.activeUserEmail = '';
+  const logN = () => m3.table('log').length;
+  const n0 = logN();
+  const r1 = c3.setup({ adminPassword: 'Hacker123' });
+  assert(r1 && r1.already === true && !r1.dbUrl && !r1.folderUrl, `설치 후 익명 setup 반환이 정보를 내보냅니다: ${JSON.stringify(r1)}`);
+  eq(JSON.stringify(c3.installTriggers()), '{"already":true}', '익명 installTriggers');
+  eq(JSON.stringify(c3.ensureSchema()), '{"already":true}', '익명 ensureSchema');
+  eq(c3.cronDaily(), undefined, '익명 cronDaily 반환');
+  eq(c3.cronWeekly(), undefined, '익명 cronWeekly 반환');
+  eq(logN(), n0, '익명 호출 뒤 로그 행 수');
+  eq(m3.globals.ScriptApp.getProjectTriggers().length, 0, '익명 호출 뒤 트리거 수');
+  const login = JSON.parse(c3.api('auth.login', JSON.stringify({ id: 'admin', password: 'Hacker123' }), ''));
+  eq(login.ok, false, '공격자 비밀번호 로그인');
+  return '익명 setup 거부 · 설치 후 {already:true}';
+});
+
 await step('영속 왕복 — 저장 후 새 모의에서 로그인·조회', () => {
   assert(mock.save(), '저장 실패');
   const size = String(memStore.getItem('hds-preview-db') || '').length;

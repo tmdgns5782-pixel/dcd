@@ -212,13 +212,19 @@ var Api = (function () {
     });
   }
 
-  /** 뷰 시트 갱신(잠금 안, 실패해도 무시 — admin.rebuildViews 로 다시 만들 수 있음). */
-  function views(name, arg) {
-    try {
-      if (typeof Views !== 'undefined' && Views && typeof Views[name] === 'function') Views[name](arg);
-    } catch (e) {
-      console.warn('Views.' + name + ' 실패: ' + (e && e.message || e));
+  /**
+   * 뷰 시트 갱신 — 잠금을 푼 뒤(ctx.after) 실행한다. Views 가 시트 만들기는 잠금 밖에서, 행 쓰기만 짧게 잠그고
+   * 저장된 최신 기록을 다시 읽어 반영하므로 순서가 뒤바뀌어도 마지막 상태가 남는다. 실패해도 무시(admin.rebuildViews 로 다시 만듦).
+   */
+  function views(name, arg, ctx) {
+    function run() {
+      try {
+        if (typeof Views !== 'undefined' && Views && typeof Views[name] === 'function') Views[name](arg);
+      } catch (e) {
+        console.warn('Views.' + name + ' 실패: ' + (e && e.message || e));
+      }
     }
+    if (ctx && ctx.after) ctx.after.push(run); else run();
   }
 
   function mod(name) {
@@ -511,7 +517,7 @@ var Api = (function () {
     if (!isNew && x.cur.status === '제출') fail('CONFLICT', '제출된 기록은 임시저장할 수 없습니다. 고친 내용은 [수정 제출]로 반영하세요');
     if (isNew) rec.id = newRecordId(x.def, rec.site, rec.date, me);
     writeRecord(rec, isNew);
-    if (rec.status !== '작성중' || rec.stageDone.length) views('onRecord', rec);
+    if (rec.status !== '작성중' || rec.stageDone.length) views('onRecord', rec, ctx);
     // 자동 임시저장(3초마다)이 감사 기록을 채우지 않도록 새로 만들 때만 남긴다. 제출·검토·삭제는 각 핸들러가 남긴다.
     if (isNew) audit(ctx, 'record', rec.id, formName(x.def) + ' 새로 작성(임시저장)');
     return { record: rec };
@@ -667,8 +673,8 @@ var Api = (function () {
     rec.updatedAt = now();
     writeRecord(rec, isNew);
     var acts = upsertActs(def, rec, p.acts, me);
-    views('onRecord', rec);
-    acts.forEach(function (a) { views('onAct', a); });
+    views('onRecord', rec, ctx);
+    acts.forEach(function (a) { views('onAct', a, ctx); });
 
     var what = formName(def) + (stage ? ' ' + (stage.label || stage.id) + ' 단계' : '') + (wasReturned ? ' 다시 제출' : ' 제출');
     audit(ctx, 'submit', rec.id, what + ' (rev ' + rec.rev + (acts.length ? ', 조치 ' + acts.length + '건' : '') + ')');
@@ -716,7 +722,7 @@ var Api = (function () {
     }
     r.updatedAt = t;
     Db.upsert('records', r);
-    views('onRecord', r);
+    views('onRecord', r, ctx);
     audit(ctx, 'review', r.id, decision + (note ? ': ' + note : ''));
     var done = clone(r);
     later(ctx, 'Dispatch.onReviewed', function () {
@@ -757,8 +763,8 @@ var Api = (function () {
         return nx;
       });
     if (acts.length) Db.upsertMany('acts', acts);
-    views('onRecord', r);
-    acts.forEach(function (a) { views('onAct', a); });
+    views('onRecord', r, ctx);
+    acts.forEach(function (a) { views('onAct', a, ctx); });
     audit(ctx, 'delete', r.id, '기록 삭제' + (reason ? ': ' + reason : '') + (acts.length ? ' (조치 ' + acts.length + '건 함께)' : ''));
     return {};
   }
@@ -825,7 +831,7 @@ var Api = (function () {
     var from = a.status;
     applyTransition(a, to, note, photo, me);
     Db.upsert('acts', a);
-    views('onAct', a);
+    views('onAct', a, ctx);
     audit(ctx, 'act', a.id, from + ' → ' + to + (note ? ': ' + note : ''));
     return { act: a };
   }
@@ -900,7 +906,7 @@ var Api = (function () {
       Db.insert('acts', a);
       audit(ctx, 'act', a.id, '조치 등록: ' + a.title);
     }
-    views('onAct', a);
+    views('onAct', a, ctx);
     return { act: a };
   }
 
@@ -1506,8 +1512,8 @@ var Api = (function () {
   }
 
   function hInstallTriggers(p, me, ctx) {
-    if (typeof installTriggers !== 'function') fail('SERVER', 'Setup.gs 의 installTriggers 가 설치되지 않았습니다');
-    var r = installTriggers();
+    if (typeof installTriggers_ !== 'function') fail('SERVER', 'Setup.gs 의 installTriggers_ 가 설치되지 않았습니다');
+    var r = installTriggers_();
     audit(ctx, 'admin', 'triggers', '자동 실행(트리거) 다시 설치');
     if (r && r.triggers) return r;
     return { triggers: Array.isArray(r) ? r : triggerList() };
@@ -1570,7 +1576,8 @@ var Api = (function () {
     'users.save': { perm: 'admin', lock: true, fn: hUsersSave },
     'users.delete': { perm: 'admin', lock: true, fn: hUsersDelete },
 
-    'requests.save': { perm: 'hqWrite', lock: true, fn: hRequestsSave },
+    // 잠금 없음: Dispatch.saveRequest 가 요청 행 저장만 Db.withLock 으로 감싸고, 사업장별 메일은 잠금 밖에서 보낸다.
+    'requests.save': { perm: 'hqWrite', fn: hRequestsSave },
     'requests.close': { perm: 'hqWrite', lock: true, fn: hRequestsClose },
     'requests.remind': { perm: 'hqWrite', fn: hRequestsRemind },
     'reads.mark': { perm: 'any', lock: true, fn: hReadsMark },

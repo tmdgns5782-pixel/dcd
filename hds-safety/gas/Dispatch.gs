@@ -1458,22 +1458,41 @@ var Dispatch = (function () {
   };
 })();
 
-/** 트리거가 부르는 매일 점검(08시). 세션 정리 + 독촉 + 기한경과 높음 조치 요약. */
-function cronDaily() {
+/**
+ * 트리거가 부르는 매일 점검(08시). 세션 정리 + 독촉 + 기한경과 높음 조치 요약.
+ * 전역 함수라 웹앱 방문자도 google.script.run 으로 부를 수 있다 — 트리거 이벤트도 없고 소유자 실행(ownerRun_)도 아니면 아무것도 하지 않는다.
+ * 집계 결과는 돌려주지 않는다(트리거는 반환값을 쓰지 않고, 외부에 숫자를 내보이지 않게). 같은 날 중복 발송은 Dispatch 가 막는다.
+ */
+function cronDaily(e) {
+  if (!cronAllowed_(e)) return;
   try {
-    return Dispatch.daily();
-  } catch (e) {
-    try { Db.log('system', 'cron', 'daily', '매일 점검 실패: ' + ((e && e.message) || e)); } catch (e2) { console.error('매일 점검 실패 기록도 실패'); }
-    throw e;
+    Dispatch.daily();
+  } catch (err) {
+    try { Db.log('system', 'cron', 'daily', '매일 점검 실패: ' + ((err && err.message) || err)); } catch (e2) { console.error('매일 점검 실패 기록도 실패'); }
+    throw err;
   }
 }
 
-/** 트리거가 부르는 주간 요약(월요일 08시). */
-function cronWeekly() {
+/** 트리거가 부르는 주간 요약(월요일 08시). 보호·반환은 cronDaily 와 같다. */
+function cronWeekly(e) {
+  if (!cronAllowed_(e)) return;
   try {
-    return Dispatch.weekly();
-  } catch (e) {
-    try { Db.log('system', 'cron', 'weekly', '주간 요약 실패: ' + ((e && e.message) || e)); } catch (e2) { console.error('주간 요약 실패 기록도 실패'); }
-    throw e;
+    Dispatch.weekly();
+  } catch (err) {
+    try { Db.log('system', 'cron', 'weekly', '주간 요약 실패: ' + ((err && err.message) || err)); } catch (e2) { console.error('주간 요약 실패 기록도 실패'); }
+    throw err;
   }
+}
+
+/** 트리거 실행(이벤트에 triggerUid) 또는 소유자 실행일 때만 true. 이름이 _ 로 끝나 웹앱에서 부를 수 없다. */
+function cronAllowed_(e) {
+  try { if (typeof ownerRun_ === 'function' && ownerRun_()) return true; } catch (x) { /* 아래 트리거 확인 */ }
+  if (!(e && typeof e === 'object' && e.triggerUid)) return false;
+  // 이벤트의 triggerUid 가 이 프로젝트에 실제로 설치된 트리거 ID 와 같을 때만 믿는다(웹앱에서 위조한 값 거부).
+  try {
+    var uid = String(e.triggerUid);
+    return ScriptApp.getProjectTriggers().some(function (t) {
+      return typeof t.getUniqueId === 'function' && String(t.getUniqueId()) === uid;
+    });
+  } catch (x2) { return false; }
 }

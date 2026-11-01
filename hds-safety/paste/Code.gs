@@ -536,13 +536,19 @@ var Api = (function () {
     });
   }
 
-  /** 뷰 시트 갱신(잠금 안, 실패해도 무시 — admin.rebuildViews 로 다시 만들 수 있음). */
-  function views(name, arg) {
-    try {
-      if (typeof Views !== 'undefined' && Views && typeof Views[name] === 'function') Views[name](arg);
-    } catch (e) {
-      console.warn('Views.' + name + ' 실패: ' + (e && e.message || e));
+  /**
+   * 뷰 시트 갱신 — 잠금을 푼 뒤(ctx.after) 실행한다. Views 가 시트 만들기는 잠금 밖에서, 행 쓰기만 짧게 잠그고
+   * 저장된 최신 기록을 다시 읽어 반영하므로 순서가 뒤바뀌어도 마지막 상태가 남는다. 실패해도 무시(admin.rebuildViews 로 다시 만듦).
+   */
+  function views(name, arg, ctx) {
+    function run() {
+      try {
+        if (typeof Views !== 'undefined' && Views && typeof Views[name] === 'function') Views[name](arg);
+      } catch (e) {
+        console.warn('Views.' + name + ' 실패: ' + (e && e.message || e));
+      }
     }
+    if (ctx && ctx.after) ctx.after.push(run); else run();
   }
 
   function mod(name) {
@@ -835,7 +841,7 @@ var Api = (function () {
     if (!isNew && x.cur.status === '제출') fail('CONFLICT', '제출된 기록은 임시저장할 수 없습니다. 고친 내용은 [수정 제출]로 반영하세요');
     if (isNew) rec.id = newRecordId(x.def, rec.site, rec.date, me);
     writeRecord(rec, isNew);
-    if (rec.status !== '작성중' || rec.stageDone.length) views('onRecord', rec);
+    if (rec.status !== '작성중' || rec.stageDone.length) views('onRecord', rec, ctx);
     // 자동 임시저장(3초마다)이 감사 기록을 채우지 않도록 새로 만들 때만 남긴다. 제출·검토·삭제는 각 핸들러가 남긴다.
     if (isNew) audit(ctx, 'record', rec.id, formName(x.def) + ' 새로 작성(임시저장)');
     return { record: rec };
@@ -991,8 +997,8 @@ var Api = (function () {
     rec.updatedAt = now();
     writeRecord(rec, isNew);
     var acts = upsertActs(def, rec, p.acts, me);
-    views('onRecord', rec);
-    acts.forEach(function (a) { views('onAct', a); });
+    views('onRecord', rec, ctx);
+    acts.forEach(function (a) { views('onAct', a, ctx); });
 
     var what = formName(def) + (stage ? ' ' + (stage.label || stage.id) + ' 단계' : '') + (wasReturned ? ' 다시 제출' : ' 제출');
     audit(ctx, 'submit', rec.id, what + ' (rev ' + rec.rev + (acts.length ? ', 조치 ' + acts.length + '건' : '') + ')');
@@ -1040,7 +1046,7 @@ var Api = (function () {
     }
     r.updatedAt = t;
     Db.upsert('records', r);
-    views('onRecord', r);
+    views('onRecord', r, ctx);
     audit(ctx, 'review', r.id, decision + (note ? ': ' + note : ''));
     var done = clone(r);
     later(ctx, 'Dispatch.onReviewed', function () {
@@ -1081,8 +1087,8 @@ var Api = (function () {
         return nx;
       });
     if (acts.length) Db.upsertMany('acts', acts);
-    views('onRecord', r);
-    acts.forEach(function (a) { views('onAct', a); });
+    views('onRecord', r, ctx);
+    acts.forEach(function (a) { views('onAct', a, ctx); });
     audit(ctx, 'delete', r.id, '기록 삭제' + (reason ? ': ' + reason : '') + (acts.length ? ' (조치 ' + acts.length + '건 함께)' : ''));
     return {};
   }
@@ -1149,7 +1155,7 @@ var Api = (function () {
     var from = a.status;
     applyTransition(a, to, note, photo, me);
     Db.upsert('acts', a);
-    views('onAct', a);
+    views('onAct', a, ctx);
     audit(ctx, 'act', a.id, from + ' → ' + to + (note ? ': ' + note : ''));
     return { act: a };
   }
@@ -1224,7 +1230,7 @@ var Api = (function () {
       Db.insert('acts', a);
       audit(ctx, 'act', a.id, '조치 등록: ' + a.title);
     }
-    views('onAct', a);
+    views('onAct', a, ctx);
     return { act: a };
   }
 
@@ -1830,8 +1836,8 @@ var Api = (function () {
   }
 
   function hInstallTriggers(p, me, ctx) {
-    if (typeof installTriggers !== 'function') fail('SERVER', 'Setup.gs 의 installTriggers 가 설치되지 않았습니다');
-    var r = installTriggers();
+    if (typeof installTriggers_ !== 'function') fail('SERVER', 'Setup.gs 의 installTriggers_ 가 설치되지 않았습니다');
+    var r = installTriggers_();
     audit(ctx, 'admin', 'triggers', '자동 실행(트리거) 다시 설치');
     if (r && r.triggers) return r;
     return { triggers: Array.isArray(r) ? r : triggerList() };
@@ -1894,7 +1900,8 @@ var Api = (function () {
     'users.save': { perm: 'admin', lock: true, fn: hUsersSave },
     'users.delete': { perm: 'admin', lock: true, fn: hUsersDelete },
 
-    'requests.save': { perm: 'hqWrite', lock: true, fn: hRequestsSave },
+    // 잠금 없음: Dispatch.saveRequest 가 요청 행 저장만 Db.withLock 으로 감싸고, 사업장별 메일은 잠금 밖에서 보낸다.
+    'requests.save': { perm: 'hqWrite', fn: hRequestsSave },
     'requests.close': { perm: 'hqWrite', lock: true, fn: hRequestsClose },
     'requests.remind': { perm: 'hqWrite', fn: hRequestsRemind },
     'reads.mark': { perm: 'any', lock: true, fn: hReadsMark },
@@ -2438,6 +2445,7 @@ var Auth = (function () {
 var Db = (function () {
   'use strict';
 
+  var SINGLE_MAX = 8;            // 한 실행에서 큰 열을 행 단위로 읽는 최대 건수(넘으면 전 행 한 번에)
   var HEAVY_CHUNK = 4;          // chunk 가 이 이상이면 '큰 열'로 보고 늦게 읽는다
   var CELL_MAX = 49000;         // 칸 하나 최대 50,000자 — 여유를 둔다
   var LOG_MAX = 5000;           // log 테이블 최대 행
@@ -2731,13 +2739,28 @@ var Db = (function () {
     var cur = m.rows[i];
     var d = Object.getOwnPropertyDescriptor(cur, colName);
     if (d && !(d.get && d.get.lazy)) return d.value;
-    var block = heavyBlock(m);
     var inf = sheetInfo(table);
-    var r = block[m.rowOf[key] - 2] || [];
+    var r = heavyRow(m, key, m.rowOf[key]);
     var s = col.names.map(function (n) { return cellText(r[inf.idx[n] - inf.hs]); }).join('');
     var v = decodeJson(table, key, col, s);
     Object.defineProperty(cur, colName, { value: v, writable: true, enumerable: true, configurable: true });
     return v;
+  }
+
+  /**
+   * 한 행의 큰 열 원본 값. 기록 1건 조회·수정처럼 몇 건만 읽을 때는 그 행만 읽고(기록 수와 무관),
+   * 한 실행에서 SINGLE_MAX 건을 넘게 읽으면(목록·내보내기·재구축) 그때 전 행을 한 번에 읽는다.
+   */
+  function heavyRow(m, key, row) {
+    if (m.block || !key) return heavyBlock(m)[row - 2] || [];
+    m.single = m.single || {};
+    if (m.single[key]) return m.single[key];
+    m.nSingle = (m.nSingle || 0) + 1;
+    if (m.nSingle > SINGLE_MAX) return heavyBlock(m)[row - 2] || [];
+    var inf = sheetInfo(m.table);
+    var r = row >= 2 && row <= m.last ? inf.sh.getRange(row, inf.hs + 1, 1, inf.width - inf.hs).getValues()[0] : [];
+    m.single[key] = r;
+    return r;
   }
 
   function heavyBlock(m) {
@@ -2876,8 +2899,7 @@ var Db = (function () {
       var vals = run.items.map(function (it) {
         if (!light && it.enc.light) {
           // 이 행은 큰 열을 바꾸지 않았다 — 시트에 있는 그대로 다시 쓴다.
-          var block = it.row <= m.last ? heavyBlock(m) : [];
-          var raw = block[it.row - 2] || [];
+          var raw = it.row <= m.last ? heavyRow(m, it.enc.key, it.row) : [];
           for (var c = inf.hs; c < inf.width; c++) it.enc.cells[c] = raw[c - inf.hs] === undefined ? '' : raw[c - inf.hs];
         }
         return it.enc.cells.slice(0, w);
@@ -3031,6 +3053,7 @@ var Db = (function () {
       m.rows.splice(i, 1);
       m.rowNums.splice(i, 1);
       if (m.block && row - 2 < m.block.length) m.block.splice(row - 2, 1);
+      if (m.single) delete m.single[key];
       delete m.extras[key];
       m.last = Math.max(1, m.last - 1);
       m.pos = {};
@@ -4848,24 +4871,36 @@ var Dispatch = (function () {
   };
 })();
 
-/** 트리거가 부르는 매일 점검(08시). 세션 정리 + 독촉 + 기한경과 높음 조치 요약. */
-function cronDaily() {
+/**
+ * 트리거가 부르는 매일 점검(08시). 세션 정리 + 독촉 + 기한경과 높음 조치 요약.
+ * 전역 함수라 웹앱 방문자도 google.script.run 으로 부를 수 있다 — 트리거 이벤트도 없고 소유자 실행(ownerRun_)도 아니면 아무것도 하지 않는다.
+ * 집계 결과는 돌려주지 않는다(트리거는 반환값을 쓰지 않고, 외부에 숫자를 내보이지 않게). 같은 날 중복 발송은 Dispatch 가 막는다.
+ */
+function cronDaily(e) {
+  if (!cronAllowed_(e)) return;
   try {
-    return Dispatch.daily();
-  } catch (e) {
-    try { Db.log('system', 'cron', 'daily', '매일 점검 실패: ' + ((e && e.message) || e)); } catch (e2) { console.error('매일 점검 실패 기록도 실패'); }
-    throw e;
+    Dispatch.daily();
+  } catch (err) {
+    try { Db.log('system', 'cron', 'daily', '매일 점검 실패: ' + ((err && err.message) || err)); } catch (e2) { console.error('매일 점검 실패 기록도 실패'); }
+    throw err;
   }
 }
 
-/** 트리거가 부르는 주간 요약(월요일 08시). */
-function cronWeekly() {
+/** 트리거가 부르는 주간 요약(월요일 08시). 보호·반환은 cronDaily 와 같다. */
+function cronWeekly(e) {
+  if (!cronAllowed_(e)) return;
   try {
-    return Dispatch.weekly();
-  } catch (e) {
-    try { Db.log('system', 'cron', 'weekly', '주간 요약 실패: ' + ((e && e.message) || e)); } catch (e2) { console.error('주간 요약 실패 기록도 실패'); }
-    throw e;
+    Dispatch.weekly();
+  } catch (err) {
+    try { Db.log('system', 'cron', 'weekly', '주간 요약 실패: ' + ((err && err.message) || err)); } catch (e2) { console.error('주간 요약 실패 기록도 실패'); }
+    throw err;
   }
+}
+
+/** 트리거 실행(이벤트에 triggerUid) 또는 소유자 실행일 때만 true. 이름이 _ 로 끝나 웹앱에서 부를 수 없다. */
+function cronAllowed_(e) {
+  if (e && typeof e === 'object' && e.triggerUid) return true;
+  try { return typeof ownerRun_ === 'function' ? ownerRun_() : false; } catch (x) { return false; }
 }
 
 
@@ -5185,7 +5220,8 @@ function include(name) {
 /**
  * Setup.gs — 설치(setup), 테이블 보장(ensureSchema), 트리거 설치(installTriggers). SPEC §4.
  *
- * 전역으로 내놓는 것: setup(opts), ensureSchema(), installTriggers().
+ * 전역으로 내놓는 것: setup(opts), ensureSchema(), installTriggers() (편집기용, 소유자 실행만 동작)
+ *  + 내부용 ownerRun_(), ensureSchema_(), installTriggers_() (이름이 _ 로 끝나 웹앱에서 부를 수 없음).
  * 스크립트 편집기에서 함수 목록의 setup 을 골라 [실행] 하면 된다(인자 없이도 동작). 여러 번 실행해도 안전(idempotent).
  *
  * setup 이 하는 일
@@ -5195,11 +5231,22 @@ function include(name) {
  *  4) 사용자가 하나도 없으면 관리자 admin 계정 생성 — 비밀번호는 opts.adminPassword 또는 임의 10자(실행 로그에 크게 출력).
  *  5) 매일·매주 알림 트리거 설치(opts.triggers === false 면 건너뜀).
  * 반환 { dbUrl, folderUrl, admin:'admin', password(임의로 만들었을 때만), triggers }
+ *
+ * 보호: 전역 함수는 웹앱 방문자도 google.script.run 으로 부를 수 있다(이름이 _ 로 끝나는 함수만 막힘).
+ * 그래서 setup·ensureSchema·installTriggers 는 '소유자 실행'(ownerRun_)일 때만 일한다.
+ *  - 설치 뒤 다른 사람이 부르면 아무것도 하지 않고 {already:true} 만 돌려준다(주소·비밀번호 없음).
+ *  - 설치 전 다른 사람이 부르면 거부한다(남이 먼저 관리자 비밀번호를 정하지 못하게).
+ *  - 소유자 신원을 읽지 못하는 특수한 환경이면 스크립트 속성 ALLOW_SETUP=1 을 잠깐 넣고 실행한 뒤 지운다.
+ * 웹앱의 [설정 > 트리거 설치](admin.installTriggers)는 관리자 로그인을 거쳐 installTriggers_ 를 직접 부른다.
  */
 function setup(opts) {
   // 편집기·트리거에서 부르면 이벤트 객체가 들어올 수 있다 — 평범한 설정 객체만 받는다.
   opts = (opts && typeof opts === 'object' && !Array.isArray(opts) && !opts.triggerUid && !opts.authMode) ? opts : {};
   var props = PropertiesService.getScriptProperties();
+  if (!ownerRun_()) {
+    if (props.getProperty('DB_ID')) return { already: true };
+    throw new Error('setup 은 스크립트 편집기에서 소유자가 실행해야 합니다');
+  }
 
   var out = Db.withLock(function () {
     var created = false;
@@ -5236,7 +5283,7 @@ function setup(opts) {
 
     // 3) 테이블
     Db.reset();
-    var tables = ensureSchema();
+    var tables = ensureSchema_();
     dropBlankDefaultSheets(ss, tables);
 
     // 4) 기본 설정
@@ -5276,7 +5323,7 @@ function setup(opts) {
 
   if (opts.triggers !== false) {
     try {
-      out.triggers = installTriggers();
+      out.triggers = installTriggers_();
     } catch (e) {
       out.triggers = [];
       console.warn('트리거를 설치하지 못했습니다(관리 화면에서 다시 설치하세요): ' + (e && e.message || e));
@@ -5300,8 +5347,30 @@ function setup(opts) {
   }
 }
 
-/** SCHEMA 의 모든 테이블 시트를 만들고 빠진 열을 끝에 붙인다. 반환: 테이블 이름 배열. */
+/**
+ * 이 실행이 스크립트 소유자 본인인지(편집기 [실행], 소유자가 설치한 트리거).
+ * 웹앱은 '나(배포자)로 실행'이라 실행 계정(effective)은 늘 소유자이고, 방문자(active)는 익명이면 빈 값, 다른 구글 계정이면 그 주소다.
+ * 실제 GAS 는 userinfo.email 범위가 있어 effective 주소가 늘 있다. 둘 다 비면 신원이 없는 로컬 모의 실행으로 본다.
+ * 이름이 _ 로 끝나 google.script.run 으로는 부를 수 없다.
+ */
+function ownerRun_() {
+  try {
+    if (PropertiesService.getScriptProperties().getProperty('ALLOW_SETUP') === '1') return true;
+  } catch (e) { /* 속성을 못 읽으면 신원으로만 판단 */ }
+  var act = '', eff = '';
+  try { act = String(Session.getActiveUser().getEmail() || '').trim().toLowerCase(); } catch (e) { act = ''; }
+  try { eff = String(Session.getEffectiveUser().getEmail() || '').trim().toLowerCase(); } catch (e) { eff = ''; }
+  if (!eff) return !act;
+  return act === eff;
+}
+
+/** SCHEMA 의 모든 테이블 시트를 만들고 빠진 열을 끝에 붙인다(소유자 실행만). 반환: 테이블 이름 배열 또는 {already:true}. */
 function ensureSchema() {
+  if (!ownerRun_()) return { already: true };
+  return ensureSchema_();
+}
+
+function ensureSchema_() {
   Db.reset();
   var names = Object.keys(SCHEMA);
   names.forEach(function (t) { Db.sheet(t); });
@@ -5310,9 +5379,15 @@ function ensureSchema() {
 
 /**
  * 매일 알림(cronDaily, settings.reminder.hour 시)과 주간 요약(cronWeekly, 월요일 8시) 트리거를 다시 만든다.
- * 함수 본체는 Dispatch.gs 에 있다. 반환 [{fn, type, when}]
+ * 함수 본체는 Dispatch.gs 에 있다. 반환 [{fn, type, when}]. 편집기용 전역 — 소유자 실행이 아니면 {already:true} 만.
  */
 function installTriggers() {
+  if (!ownerRun_()) return { already: true };
+  return installTriggers_();
+}
+
+/** 트리거 설치 본체(setup·관리자 API 가 부른다). */
+function installTriggers_() {
   var hour = 8;
   try {
     var st = Db.settings();
@@ -5375,6 +5450,10 @@ var Views = (function () {
   var OPEN_ACT = ['등록', '조치중', '보류', '고객사 이관'];
   var CELL_MAX = 49000;
   var BATCH = 5000;
+  var GROW = 200;                 // 평탄화 시트에 남겨 두는 빈 행(행 추가 호출을 줄이는 여유)
+  var BUDGET_MS = 4.5 * 60 * 1000; // 재구축 한 번의 시간 예산(GAS 실행 한도 6분)
+  var RESUME_KEY = 'viewsRebuild';
+  var RESUME_TTL_MS = 6 * 60 * 60 * 1000;
 
   var LAYOUTS = {};
 
@@ -5392,6 +5471,12 @@ var Views = (function () {
     if (v === '' || v === null || v === undefined || typeof v === 'boolean') return null;
     var n = Number(v);
     return isFinite(n) ? n : null;
+  }
+
+  /** 배열 뒤에 붙이기. push.apply 는 인자 수 한도(수만~수십만 개)에 걸리므로 하나씩 넣는다. */
+  function pushAll(to, from) {
+    for (var i = 0, n = from ? from.length : 0; i < n; i++) to.push(from[i]);
+    return to;
   }
 
   function dt(s) { return s ? String(s).replace('T', ' ').slice(0, 19) : ''; }
@@ -5813,17 +5898,45 @@ var Views = (function () {
     r.setValues([header.map(function (h) { return clean(h, 's'); })]);
     r.setFontWeight('bold');
     sh.setFrozenRows(1);
-    header.forEach(function (h, i) {
-      try { sh.setColumnWidth(i + 1, colWidth(h, kinds[i])); } catch (e) { /* 너비는 보기 좋게일 뿐 */ }
-    });
+    setWidths(sh, header, kinds);
+  }
+
+  /**
+   * 열 너비: 모든 열을 한 번에 같은 너비로, 첫 열이 번호 열이면 그 열만 넓게(호출 1~2번).
+   * 열마다 setColumnWidth 를 부르면 큰 양식에서 수백 번 호출돼 재구축·첫 제출이 느려진다. 보기 좋게일 뿐이라 실패는 무시.
+   */
+  function setWidths(sh, header, kinds) {
+    try {
+      var n = header.length;
+      if (!n) return;
+      if (typeof sh.setColumnWidths === 'function') sh.setColumnWidths(1, n, 130);
+      var w1 = colWidth(header[0], kinds[0]);
+      if (w1 > 130) sh.setColumnWidth(1, w1);
+    } catch (e) { /* 너비는 보기 좋게일 뿐 */ }
+  }
+
+  /**
+   * 쓰지 않는 칸 줄이기. 스프레드시트 한 파일의 셀 한도(1,000만)는 '할당된' 칸 기준이라,
+   * 새 시트 기본 26열·1,000행이나 옛 내용보다 큰 격자를 남기지 않는다. rows 는 머리 포함 행 수, slack 은 덧붙일 여유 행.
+   */
+  function trimGrid(sh, rows, cols, slack) {
+    try {
+      var mc = sh.getMaxColumns();
+      if (cols >= 1 && mc > cols) sh.deleteColumns(cols + 1, mc - cols);
+      var keep = Math.max(2, rows + (slack || 0));
+      var mr = sh.getMaxRows();
+      if (mr > keep) sh.deleteRows(keep + 1, mr - keep);
+    } catch (e) { /* 줄이기는 한도 여유를 위한 것 — 실패해도 내용은 맞다 */ }
   }
 
   /** 시트를 비우고 머리 + 행을 새로 쓴다(재구축·내보내기). */
   function writeTable(ss, name, header, kinds, rows) {
     var sh = ss.getSheetByName(name);
     if (sh) sh.clear(); else sh = ss.insertSheet(name);
+    rows = rows || [];
     styleHeader(sh, header, kinds);
-    writeBlock(sh, 2, rows || [], kinds);
+    writeBlock(sh, 2, rows, kinds);
+    trimGrid(sh, rows.length + 1, header.length, GROW);
     return sh;
   }
 
@@ -5837,6 +5950,7 @@ var Views = (function () {
       if (!create) return null;
       sh = ss.insertSheet(name);
       styleHeader(sh, header, kinds);
+      trimGrid(sh, 1, header.length, GROW);
       return { sh: sh, header: header.slice(), kinds: kinds.slice(), map: header.map(function (h, i) { return i; }), last: 1 };
     }
     var lc = sh.getLastColumn();
@@ -6051,13 +6165,45 @@ var Views = (function () {
 
   /* =========================================================== 공개 */
 
+  /**
+   * 이 기록이 쓸 평탄화 시트가 없으면 미리 만든다(잠금 밖에서 — 시트 만들기는 느려서 다른 저장을 막지 않게).
+   * 동시에 두 실행이 같은 시트를 만들려 하면 한쪽 insertSheet 가 실패하는데, 그건 이미 있다는 뜻이라 무시한다.
+   */
+  function prepareSheets(rec) {
+    try {
+      if (!eligible(rec) || rec.status === '반려') return;
+      var def = Db.form(rec.form);
+      if (!def) return;
+      var ss = Db.book();
+      var L = layout(def);
+      var want = [[L.main.name, L.main.header, L.main.kinds]];
+      L.tables.forEach(function (t) { if (tableRows(t, rec).length) want.push([t.name, t.header, t.kinds]); });
+      if (L.checks.length && checkRows(L, rec, {}).length) {
+        want.push([CHECK_SHEET, CHECK_COLS.map(function (c) { return c[0]; }), CHECK_COLS.map(function (c) { return c[1]; })]);
+      }
+      if (def.code === 'F09') { var K = kpiSpec(); want.push([K.name, K.cols, K.kinds]); }
+      want.forEach(function (w) {
+        if (ss.getSheetByName(w[0])) return;
+        try { vsheet(ss, w[0], w[1], w[2], true); } catch (e) { /* 다른 실행이 막 만들었다 */ }
+      });
+    } catch (e) {
+      console.warn('평탄화 시트 미리 만들기 실패(' + rec.id + '): ' + (e && e.message || e));
+    }
+  }
+
+  /** 잠금 안에서 저장된 최신 기록으로 바꾼다(잠금 밖 후처리 순서가 뒤바뀌어도 마지막 상태가 남게). */
+  function latestRecord(rec) {
+    var cur = null;
+    try { cur = Db.get('records', rec.id); } catch (e) { cur = null; }
+    return cur || rec;
+  }
+
   function onRecord(rec) {
     if (!rec || !rec.id) return false;
     try {
+      prepareSheets(rec.data === undefined || rec.data === null ? latestRecord(rec) : rec);
       return Db.withLock(function () {
-        // 색인 행(data 없음)을 넘겨받으면 저장된 전체 기록으로 바꾼다.
-        if (rec.data === undefined || rec.data === null) rec = Db.get('records', rec.id) || rec;
-        return applyRecord(rec);
+        return applyRecord(latestRecord(rec));
       });
     } catch (e) {
       console.warn('평탄화 시트 갱신 실패(' + rec.id + '): ' + (e && e.message || e));
@@ -6065,22 +6211,27 @@ var Views = (function () {
     }
   }
 
+  function applyAct(ss, act) {
+    var header = ACT_COLS.map(function (c) { return c[0]; });
+    var kinds = ACT_COLS.map(function (c) { return c[1]; });
+    if (act.deleted) {
+      var old = vsheet(ss, ACT_SHEET, header, kinds, false);
+      if (old) deleteRowNums(old, keyRows(old, 0)[act.id]);
+      return true;
+    }
+    var site = Db.get('sites', act.site) || {};
+    var vs = vsheet(ss, ACT_SHEET, header, kinds, true);
+    upsertKeyed(vs, 0, [[act.id, actRow(act, site)]]);
+    return true;
+  }
+
   function onAct(act) {
     if (!act || !act.id) return false;
     try {
       return Db.withLock(function () {
-        var ss = Db.book();
-        var header = ACT_COLS.map(function (c) { return c[0]; });
-        var kinds = ACT_COLS.map(function (c) { return c[1]; });
-        if (act.deleted) {
-          var old = vsheet(ss, ACT_SHEET, header, kinds, false);
-          if (old) deleteRowNums(old, keyRows(old, 0)[act.id]);
-          return true;
-        }
-        var site = Db.get('sites', act.site) || {};
-        var vs = vsheet(ss, ACT_SHEET, header, kinds, true);
-        upsertKeyed(vs, 0, [[act.id, actRow(act, site)]]);
-        return true;
+        var cur = null;
+        try { cur = Db.get('acts', act.id); } catch (e) { cur = null; }
+        return applyAct(Db.book(), cur || act);
       });
     } catch (e) {
       console.warn('조치대장 시트 갱신 실패(' + act.id + '): ' + (e && e.message || e));
@@ -6108,8 +6259,8 @@ var Views = (function () {
     (recs || []).forEach(function (rec) {
       var site = sm[rec.site] || {};
       main.rows.push(mainRow(L, rec, site));
-      L.tables.forEach(function (t, i) { Array.prototype.push.apply(tabs[i].rows, tableRows(t, rec)); });
-      if (L.checks.length) Array.prototype.push.apply(checks.rows, checkRows(L, rec, site));
+      L.tables.forEach(function (t, i) { pushAll(tabs[i].rows, tableRows(t, rec)); });
+      if (L.checks.length) pushAll(checks.rows, checkRows(L, rec, site));
     });
     var out = [main].concat(tabs.filter(function (t) { return t.rows.length; }));
     if (checks.rows.length) out.push(checks);
@@ -6127,76 +6278,125 @@ var Views = (function () {
     };
   }
 
-  /** 모든 V_ 시트와 월간지표 시트를 지우고 다시 만든다. */
-  function rebuildAll() {
-    return Db.withLock(function () {
-      var ss = Db.book();
-      var sm = siteMap();
-      var acts = Db.all('acts').filter(function (a) { return !a.deleted; });
-      var recs = Db.all('records').filter(eligible).sort(function (a, b) {
-        return String(a.date || '').localeCompare(String(b.date || '')) || String(a.id).localeCompare(String(b.id));
-      });
-      var byForm = {};
-      var order = [];
-      recs.forEach(function (r) {
-        if (!byForm[r.form]) { byForm[r.form] = []; order.push(r.form); }
-        byForm[r.form].push(r);
-      });
-      var FD = Db.forms();
-      var formOrder = (FD.forms || []).map(function (f) { return f.code; });
-      order.sort(function (a, b) { return formOrder.indexOf(a) - formOrder.indexOf(b); });
+  /** 재구축에 쓸 표 전부를 만든다(읽기만 — 잠금 없이). → [{name, header, kinds, rows}] (KPI 시트 맨 끝) */
+  function buildAll() {
+    var sm = siteMap();
+    var acts = Db.all('acts').filter(function (a) { return !a.deleted; });
+    var recs = Db.all('records').filter(eligible).sort(function (a, b) {
+      return String(a.date || '').localeCompare(String(b.date || '')) || String(a.id).localeCompare(String(b.id));
+    });
+    var byForm = {};
+    var order = [];
+    recs.forEach(function (r) {
+      if (!byForm[r.form]) { byForm[r.form] = []; order.push(r.form); }
+      byForm[r.form].push(r);
+    });
+    var FD = Db.forms();
+    var formOrder = (FD.forms || []).map(function (f) { return f.code; });
+    order.sort(function (a, b) { return formOrder.indexOf(a) - formOrder.indexOf(b); });
 
-      var tables = [];
-      var checkAll = null;
-      var K = kpiSpec();
-      var kpiBest = {};
-      var kpiOrder = [];
-      var actsBySite = {};
-      acts.forEach(function (a) { (actsBySite[a.site] = actsBySite[a.site] || []).push(a); });
+    var tables = [];
+    var checkAll = null;
+    var K = kpiSpec();
+    var kpiBest = {};
+    var kpiOrder = [];
+    var actsBySite = {};
+    acts.forEach(function (a) { (actsBySite[a.site] = actsBySite[a.site] || []).push(a); });
 
-      order.forEach(function (code) {
-        var def = Db.form(code);
-        if (!def) return;
-        tablesFor(def, byForm[code], sm).forEach(function (t) {
-          if (t.name === CHECK_SHEET) {
-            if (!checkAll) checkAll = t; else Array.prototype.push.apply(checkAll.rows, t.rows);
-          } else {
-            tables.push(t);
-          }
-        });
-        if (code === 'F09') {
-          byForm[code].forEach(function (rec) {
-            kpiRows(K, rec, sm[rec.site] || {}, def, actsBySite[rec.site] || []).forEach(function (row) {
-              var k = row[K.keyIdx];
-              var cur = kpiBest[k];
-              if (!cur) { kpiOrder.push(k); kpiBest[k] = { rec: rec, row: row }; return; }
-              if (cur.rec.id === rec.id || newer(rec.rev, rec.submittedAt, cur.rec.rev, cur.rec.submittedAt)) kpiBest[k] = { rec: rec, row: row };
-            });
-          });
+    order.forEach(function (code) {
+      var def = Db.form(code);
+      if (!def) return;
+      tablesFor(def, byForm[code], sm).forEach(function (t) {
+        if (t.name === CHECK_SHEET) {
+          if (!checkAll) checkAll = t; else pushAll(checkAll.rows, t.rows);
+        } else {
+          tables.push(t);
         }
       });
-      if (checkAll) tables.push(checkAll);
-      tables.push(actTable(acts, sm));
+      if (code === 'F09') {
+        byForm[code].forEach(function (rec) {
+          kpiRows(K, rec, sm[rec.site] || {}, def, actsBySite[rec.site] || []).forEach(function (row) {
+            var k = row[K.keyIdx];
+            var cur = kpiBest[k];
+            if (!cur) { kpiOrder.push(k); kpiBest[k] = { rec: rec, row: row }; return; }
+            if (cur.rec.id === rec.id || newer(rec.rev, rec.submittedAt, cur.rec.rev, cur.rec.submittedAt)) kpiBest[k] = { rec: rec, row: row };
+          });
+        });
+      }
+    });
+    if (checkAll) tables.push(checkAll);
+    tables.push(actTable(acts, sm));
+    tables.push({ name: K.name, header: K.cols, kinds: K.kinds, rows: kpiOrder.map(function (k) { return kpiBest[k].row; }) });
+    return tables;
+  }
 
-      var names = [];
-      var total = 0;
-      tables.forEach(function (t) {
-        writeTable(ss, t.name, t.header, t.kinds, t.rows);
-        names.push(t.name);
-        total += t.rows.length;
+  /** 재구축이 시작된 뒤 바뀐 기록·조치를 다시 반영한다(시트별로 잠금을 나눠 잡았으므로 그 사이 저장분이 덮였을 수 있다). */
+  function catchUp(since) {
+    var n = 0;
+    Db.withLock(function () {
+      var ss = Db.book();
+      Db.all('records').forEach(function (r) {
+        if (String(r.updatedAt || '') >= since) { try { applyRecord(r); n++; } catch (e) { console.warn('재구축 뒤 반영 실패(' + r.id + '): ' + (e && e.message || e)); } }
       });
-      var kRows = kpiOrder.map(function (k) { return kpiBest[k].row; });
-      writeTable(ss, K.name, K.cols, K.kinds, kRows);
-      names.push(K.name);
-      total += kRows.length;
+      Db.all('acts').forEach(function (a) {
+        if (String(a.updatedAt || '') >= since) { try { applyAct(ss, a); n++; } catch (e) { console.warn('재구축 뒤 반영 실패(' + a.id + '): ' + (e && e.message || e)); } }
+      });
+    });
+    return n;
+  }
 
+  function readResume() {
+    try {
+      var st = Db.kvGet(RESUME_KEY, null);
+      if (st && typeof st === 'object' && Array.isArray(st.done) && st.since && Date.now() - Number(st.t || 0) < RESUME_TTL_MS) return st;
+    } catch (e) { /* 없으면 처음부터 */ }
+    return null;
+  }
+
+  function saveResume(st) {
+    try { Db.withLock(function () { Db.kvSet(RESUME_KEY, st); }); } catch (e) { console.warn('재구축 진행 상태 저장 실패: ' + (e && e.message || e)); }
+  }
+
+  /**
+   * 모든 V_ 시트와 월간지표 시트를 지우고 다시 만든다.
+   * - 표 계산은 잠금 없이, 시트 쓰기는 시트 하나마다 잠금(그 사이 다른 사용자 저장이 기다리지 않게).
+   * - 시간 예산(4분 30초)이 다하면 멈추고 진행 상태를 kv 에 남긴다 → {partial:true, left:n}. 다시 부르면 남은 시트부터 잇는다.
+   * - 다 쓰면 재구축 시작 뒤 바뀐 기록·조치를 다시 반영하고, 쓰지 않는 V_ 시트를 지운다.
+   * 반환 { sheets:[이번에 쓴 시트 이름], rows:n, partial, left, caughtUp }
+   */
+  function rebuildAll() {
+    var t0 = Date.now();
+    var st = readResume() || { since: Db.now(), done: [], t: t0 };
+    var tables = buildAll();
+    var all = tables.map(function (t) { return t.name; });
+    var ss = Db.book();
+    var names = [];
+    var total = 0;
+    var left = 0;
+    tables.forEach(function (t) {
+      if (st.done.indexOf(t.name) >= 0) return;
+      if (names.length && Date.now() - t0 > BUDGET_MS) { left++; return; }
+      Db.withLock(function () { writeTable(ss, t.name, t.header, t.kinds, t.rows); });
+      names.push(t.name);
+      st.done.push(t.name);
+      total += t.rows.length;
+    });
+    if (left) {
+      st.t = Date.now();
+      saveResume(st);
+      try { Db.log('system', 'views', '', '평탄화 시트 재구축 일부: 시트 ' + names.length + '개 씀, ' + left + '개 남음(다시 누르면 이어서)'); } catch (e) { /* 무시 */ }
+      return { sheets: names, rows: total, partial: true, left: left };
+    }
+    var caught = catchUp(st.since);
+    Db.withLock(function () {
       ss.getSheets().forEach(function (sh) {
         var n = sh.getName();
-        if (n.indexOf('V_') === 0 && names.indexOf(n) < 0) ss.deleteSheet(sh);
+        if (n.indexOf('V_') === 0 && all.indexOf(n) < 0) ss.deleteSheet(sh);
       });
-      try { Db.log('system', 'views', '', '평탄화 시트 재구축: 시트 ' + names.length + '개, ' + total + '행'); } catch (e) { /* 기록 실패는 무시 */ }
-      return { sheets: names, rows: total };
+      try { Db.kvSet(RESUME_KEY, null); } catch (e) { /* 무시 */ }
     });
+    try { Db.log('system', 'views', '', '평탄화 시트 재구축: 시트 ' + all.length + '개, ' + total + '행' + (caught ? ', 진행 중 바뀐 ' + caught + '건 다시 반영' : '')); } catch (e) { /* 기록 실패는 무시 */ }
+    return { sheets: all, rows: total, partial: false, left: 0, caughtUp: caught };
   }
 
   return {

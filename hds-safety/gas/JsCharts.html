@@ -71,6 +71,17 @@
     const out = []; for (let v = lo; v <= hi + step / 2; v += step) out.push(+v.toFixed(10));
     return out;
   }
+  // ticks whose printed labels are all different: when the label format rounds two ticks to the same text
+  // (0.2% and 0.4% printed as '0%'), take fewer, wider steps until every label is distinct (HDS 확장)
+  function labelledTicks(min, max, int, tick, count = 4) {
+    let yt = ticks(min, max, count, int);
+    for (let c = count - 1; c >= 1; c--) {
+      const seen = new Set(yt.map((v) => String(tick(v))));
+      if (seen.size === yt.length) return yt;
+      yt = ticks(min, max, c, int);
+    }
+    return yt;
+  }
   // x labels keep one step all the way: every k-th label, with k chosen so the labels fit the width, and a step that
   // lands on the last label when one gives enough labels. Never a forced end label that breaks the step. Clock labels
   // ('08:30') step in whole hours (or halves and quarters) from a round time, so a half-hourly axis reads 06:00, 09:00.
@@ -265,8 +276,8 @@
       const all = series.flatMap((x) => x.values.filter((v) => v != null)).concat([].concat(reference || []).map((r) => r.value));
       // max caps the range (a flat series with one spike): values above it are clipped and their peak labelled
       const top = max ?? Math.max(...all);
-      const yt = yTicks || ticks(min ?? Math.min(0, ...all), top, 4, all.every((v) => Number.isInteger(+v)));
       const tick = tickFormat || format;
+      const yt = yTicks || labelledTicks(min ?? Math.min(0, ...all), top, all.every((v) => Number.isInteger(+v)), tick);
       const lastVal = series[0].values.filter((v) => v != null).at(-1);
       const padL = 12 + Math.max(...yt.map((v) => measure(s, tick(v), 12))), padB = 26, padR = endLabel ? 10 + measure(s, format(lastVal), 12, 600) : 0;
       const x = (i) => padL + (i * (w - padL - padR)) / Math.max(1, labels.length - 1);
@@ -325,7 +336,7 @@
     const lit = (i) => highlight == null || (Array.isArray(highlight) ? highlight.includes(i) : highlight === i);
     const draw = () => {
       const { s, w, h } = frame(el, heightOf(height == null ? respH(el, 200) : height));
-      const yt = ticks(0, Math.max(...values, ...[].concat(reference || []).map((r) => r.value)), 4, values.every((v) => Number.isInteger(+v))), tick = tickFormat || format;
+      const tick = tickFormat || format, yt = labelledTicks(0, Math.max(...values, ...[].concat(reference || []).map((r) => r.value)), values.every((v) => Number.isInteger(+v)), tick);
       const padL = 12 + Math.max(...yt.map((v) => measure(s, tick(v), 12))), padB = 26;
       const band = (w - padL) / values.length, bw = Math.max(2, band * 0.62);
       const x = (i) => padL + band * i + band / 2;
@@ -649,8 +660,15 @@
     + ':where(.ch-split-tot){font-weight:500;text-align:right;min-width:4ch}'
     + ':where(.ch-split-empty){height:24px;border:1px dashed var(--control,#cbcfdb);border-radius:2px}';
   function useCss() { if (!document.getElementById('charts-ext-css')) { const st = document.createElement('style'); st.id = 'charts-ext-css'; st.textContent = extCss; document.head.appendChild(st); } }
-  // ink on a filled mark: white on a dark fill, ink on a pale one
-  const inkOn = (el, fill) => { const c = rgb(el, fill); if (!c) return css(el, '--text', '#14183c'); const l = (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) / 255; return l < 0.6 ? '#ffffff' : css(el, '--text', '#14183c'); };
+  // ink on a filled mark: whichever of white and the text ink has the higher WCAG contrast on that fill
+  // (a mid grey such as #8b90a7 takes the dark ink: white there is only 3.2:1)
+  const relLum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); };
+  const inkOn = (el, fill) => {
+    const dark = css(el, '--text', '#14183c'), c = rgb(el, fill); if (!c) return dark;
+    const d = rgb(el, dark) || [20, 24, 60], lf = relLum(c), lw = 1, ld = relLum(d);
+    const cw = (lw + 0.05) / (lf + 0.05), cd = (Math.max(lf, ld) + 0.05) / (Math.min(lf, ld) + 0.05);
+    return cw >= cd ? '#ffffff' : dark;
+  };
 
   // Stacked columns: per period, the parts of a whole (재해와 아차). 2px seams between segments, five series at most,
   // the legend returned (only series with data). percent: true draws each column as 100%.
@@ -663,8 +681,8 @@
     const draw = () => {
       const { s, w, h } = frame(el, heightOf(height == null ? respH(el, 220) : height));
       const C = cols();
-      const yt = percent ? [0, 0.25, 0.5, 0.75, 1] : ticks(0, Math.max(1, ...totals, ...[].concat(reference || []).map((r) => r.value)), 4, totals.every((v) => Number.isInteger(v)));
-      const tick = percent ? fmt.pct(0) : tickFormat || format, top = yt[yt.length - 1];
+      const tick = percent ? fmt.pct(0) : tickFormat || format;
+      const yt = percent ? [0, 0.25, 0.5, 0.75, 1] : labelledTicks(0, Math.max(1, ...totals, ...[].concat(reference || []).map((r) => r.value)), totals.every((v) => Number.isInteger(v)), tick), top = yt[yt.length - 1];
       const padL = 12 + Math.max(...yt.map((v) => measure(s, tick(v), 12))), padB = 26;
       const band = (w - padL) / Math.max(1, labels.length), bw = Math.max(2, Math.min(band * 0.62, 64));
       const x = (i) => padL + band * i + band / 2;
