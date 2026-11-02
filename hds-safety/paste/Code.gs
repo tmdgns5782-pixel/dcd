@@ -2116,13 +2116,13 @@ var Api = (function () {
 
   function hWipe(p, me, ctx) {
     if (p.confirm !== '삭제') fail('INVALID', "확인 문구로 '삭제'를 입력하세요");
-    var keepKv = Db.all('kv', { fresh: true }).filter(function (r) { return r.key === 'folders'; });
+    var keepKv = Db.all('kv', { fresh: true }).filter(function (r) { return r.key === 'folders' || r.key === 'settings'; });
     Object.keys(SCHEMA).forEach(function (t) {
       if (t === 'users' || t === 'sessions') return;
       Db.replaceAll(t, t === 'kv' ? keepKv : []);
     });
     Auth.killSessions(function (r) { return r.kind === 'site'; });
-    audit(ctx, 'wipe', 'all', '전체 자료 삭제(사용자 계정 제외)');
+    audit(ctx, 'wipe', 'all', '전체 자료 삭제(사용자 계정·설정 제외)');
     return {};
   }
 
